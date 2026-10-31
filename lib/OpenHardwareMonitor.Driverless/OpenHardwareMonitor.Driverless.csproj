@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <AssemblyName>NemeSIS.OpenHardwareMonitor.Driverless</AssemblyName>
+    <RootNamespace>OpenHardwareMonitor</RootNamespace>
+    <Version>1.0.9513.1</Version>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <NuGetAudit>false</NuGetAudit>
+    <Description>Modified Open Hardware Monitor GPU and SMART readers. No raw-access kernel driver or embedded executable resources.</Description>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <EnableDefaultNoneItems>false</EnableDefaultNoneItems>
+  </PropertyGroup>
+  <ItemGroup><PackageReference Include="System.Management" Version="10.0.2" /><PackageReference Include="HidSharp" Version="2.6.4" /></ItemGroup>
+  <Target Name="RejectDriverPayloads" BeforeTargets="CoreCompile">
+    <Error Condition="'@(EmbeddedResource)' != ''" Text="The driverless OHM library must not embed any resource payloads." />
+  </Target>
+</Project>

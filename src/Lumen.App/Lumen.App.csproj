@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>Lumen.App</RootNamespace>
+    <AssemblyName>Lumen</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\lumen.ico</ApplicationIcon>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+  <!-- The Windows build also reaches the media controls ("now playing"); every other build,
+       including the headless screenshot tool, stays plain net8.0. -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'win-x64'">
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <DefineConstants>$(DefineConstants);WINRT</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
+    <PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="$(AvaloniaVersion)" />
+    <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Lumen.Core\Lumen.Core.csproj" />
+  </ItemGroup>
+  <!-- Second sensor source for the Windows build: driverless Open Hardware Monitor (MPL-2.0). -->
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x64'">
+    <ProjectReference Include="..\..\lib\OpenHardwareMonitor.Driverless\OpenHardwareMonitor.Driverless.csproj" />
+  </ItemGroup>
+</Project>

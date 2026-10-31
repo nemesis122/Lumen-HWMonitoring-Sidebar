@@ -1,0 +1,10 @@
+bin/
+obj/
+*.user
+.vs/
+publish/
+shots/
+out/
+lumen-settings.json
+lumen-usage.json
+lumen-sensors.txt

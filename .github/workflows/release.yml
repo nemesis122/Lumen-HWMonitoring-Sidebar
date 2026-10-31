@@ -1,0 +1,50 @@
+name: Build and publish release
+
+# Builds on Windows, runs the tests and publishes the portable EXE, the source ZIP and the
+# screenshots as a GitHub release named after the version in Directory.Build.props.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Version
+        id: version
+        shell: pwsh
+        run: |
+          $v = ([xml](Get-Content Directory.Build.props)).Project.PropertyGroup.Version
+          "version=$v" >> $env:GITHUB_OUTPUT
+      - name: Test
+        run: dotnet test tests/Lumen.Tests -c Release
+      - name: Publish portable EXE
+        run: dotnet publish src/Lumen.App -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:IncludeAllContentForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o publish
+      - name: Package
+        shell: pwsh
+        run: |
+          $v = "${{ steps.version.outputs.version }}"
+          New-Item -ItemType Directory out | Out-Null
+          Copy-Item publish/Lumen.exe "out/Lumen-$v.exe"
+          git archive --format=zip -o "out/Lumen-$v-Source.zip" HEAD
+          Compress-Archive -Path docs/images/* -DestinationPath "out/Lumen-$v-Screenshots.zip"
+          Get-FileHash out/* -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $([IO.Path]::GetFileName($_.Path))" } | Set-Content out/SHA256SUMS.txt
+      - name: Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v = "${{ steps.version.outputs.version }}"
+          $notes = "docs/release-notes/v$v.md"
+          if (-not (Test-Path $notes)) { $notes = $null }
+          if (gh release view "v$v" 2>$null) { gh release upload "v$v" out/* --clobber }
+          elseif ($notes) { gh release create "v$v" out/* --title "Lumen $v" --notes-file $notes }
+          else { gh release create "v$v" out/* --title "Lumen $v" --generate-notes }
