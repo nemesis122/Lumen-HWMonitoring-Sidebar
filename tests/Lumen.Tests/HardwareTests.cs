@@ -16,7 +16,8 @@ public class HardwareTests
         var hw = Fixture("demo-ryzen-3900x-rtx-3070ti.txt");
         var cpu = SensorPicker.Cpu(hw)!;
         Assert.Equal("AMD Ryzen 9 3900X", cpu.Name);
-        Assert.Equal(70.36, cpu.Temperature!.Value, 2);
+        Assert.Equal(60, cpu.Temperature);                   // the mainboard's "CPU" probe, as AIDA64 shows it
+        Assert.Equal(70.36, SensorPicker.Cpu(hw.Where(n => !n.IsBoard).ToList())!.Temperature!.Value, 2); // without one: Tctl/Tdie
         Assert.Equal(24, cpu.CoreLoads.Count);
         Assert.InRange(cpu.ClockMhz!.Value, 2000, 5000);      // real core clocks, not "(Effective)"
         Assert.Equal(1.348, cpu.Voltage!.Value, 3);
@@ -96,7 +97,8 @@ public class HardwareTests
     SmallData    D3D Shared Memory Total            16304
 """);
         var cpu = SensorPicker.Cpu(hw)!;
-        Assert.Equal(56, cpu.Temperature);                   // package, not the distance to TjMax
+        Assert.Equal(48, cpu.Temperature);                   // the mainboard's "CPU" probe
+        Assert.Equal(56, SensorPicker.Cpu(hw.Where(n => !n.IsBoard).ToList())!.Temperature); // without one: package, not the distance to TjMax
         Assert.Equal(12.5, cpu.Load);
         Assert.Equal(2, cpu.CoreLoads.Count);                // the threads, not "CPU Core Max"
         Assert.Equal(4900, cpu.ClockMhz);                    // P- and E-cores, without the bus clock
@@ -157,7 +159,8 @@ public class HardwareTests
     SmallData    GPU Memory Total                   24560
 """);
         var cpu = SensorPicker.Cpu(hw)!;
-        Assert.Equal(50, cpu.Temperature);                   // Tdie: without the 20 °C Tctl offset of these chips
+        Assert.Equal(49, cpu.Temperature);                   // the mainboard's "CPU" probe
+        Assert.Equal(50, SensorPicker.Cpu(hw.Where(n => !n.IsBoard).ToList())!.Temperature); // without one: Tdie, without the 20 °C Tctl offset
         Assert.Equal(3500, cpu.ClockMhz);
         Assert.Equal(31, cpu.PowerW);
         Assert.Equal(1.15, cpu.Voltage);                     // highest requested core voltage

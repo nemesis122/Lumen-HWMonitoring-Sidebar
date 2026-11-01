@@ -58,10 +58,10 @@ public static class External
         }
         var nodes = new List<SensorNode>();
 
-        // Processor: the package or die probe first; AIDA64's plain "CPU" is often the board's socket probe.
+        // Processor: AIDA64's "CPU" (the mainboard's socket probe) first, like everywhere in Lumen; package or diode otherwise.
         var cpu = new List<SensorValue>();
         void Add(List<SensorValue> list, string type, string name, double? value, int index = 0) { if (value is double v) list.Add(new SensorValue(type, name, v, index, "aida/" + type + "/" + name)); }
-        Add(cpu, "Temperature", "CPU Package", V("TCPUPKG", "TCPUDIO", "TCPU"));
+        Add(cpu, "Temperature", "CPU Package", V("TCPU", "TCPUPKG", "TCPUDIO"));
         Add(cpu, "Load", "CPU Total", V("SCPUUTI"));
         foreach (var core in items.Select(i => (i, m: AidaCore.Match(i.Id))).Where(x => x.m.Success && x.i.Value is not null)
                      .OrderBy(x => int.Parse(x.m.Groups[1].Value, CultureInfo.InvariantCulture)))

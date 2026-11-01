@@ -41,7 +41,7 @@ public class ExternalTests
     {
         var nodes = External.AidaNodes(External.ParseAida(Aida));
         var cpu = SensorPicker.Cpu(nodes)!;
-        Assert.Equal(50, cpu.Temperature);          // die probe before the socket probe
+        Assert.Equal(45, cpu.Temperature);          // AIDA64's "CPU", not the diode
         Assert.Equal(4, cpu.Load);
         Assert.Equal(new[] { 10d, 2d }, cpu.CoreLoads);
         Assert.Equal(4941, cpu.ClockMhz);

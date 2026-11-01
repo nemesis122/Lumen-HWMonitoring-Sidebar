@@ -49,8 +49,11 @@ public static class SensorPicker
         var sensors = h.All.ToList();
         var boards = hardware.Where(x => x.IsBoard).SelectMany(x => x.All).ToList();
 
+        // The CPU temperature is the mainboard's "CPU" probe, as AIDA64 and the BIOS label it – not the die
+        // or package diode, which jumps with every short burst of load. Without such a probe, the processor's own.
+        double? temp = Find(boards.Where(s => s.Value is > 0 and < 125), "Temperature", "CPU", "CPU Socket", "CPU (PECI)");
         // 0 °C is what the libraries report without the driver – never a real processor temperature.
-        double? temp = Find(sensors.Where(s => s.Value is > 0 and < 125), "Temperature", "Core (Tctl/Tdie)", "CPU Package", "Package", "Core (Tdie)", "Core (Tctl)",
+        temp ??= Find(sensors.Where(s => s.Value is > 0 and < 125), "Temperature", "Core (Tctl/Tdie)", "CPU Package", "Package", "Core (Tdie)", "Core (Tctl)",
             "Core Max", "Core Average", "Tdie", "Tctl", "CCDs Max (Tdie)", "CCD1 (Tdie)", "CPU Cores", "CPU Core");
         // Unknown naming: the hottest core or die reading the CPU reports (never "Distance to TjMax").
         temp ??= sensors.Where(s => s.Type == "Temperature" && s.Value is > 0 and < 125 && !Contains(s.Name, "Distance", "TjMax", "SoC"))
