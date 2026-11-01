@@ -212,6 +212,8 @@ Copied.|Kopiert.|Copié.|Copiato.|Copiado.|Copiado.
 Save as file|Als Datei speichern|Enregistrer dans un fichier|Salva come file|Guardar como archivo|Guardar como ficheiro
 Saved: {0}|Gespeichert: {0}|Enregistré : {0}|Salvato: {0}|Guardado: {0}|Guardado: {0}
 Shown in the sidebar|In der Sidebar angezeigt|Affiché dans la barre|Mostrato nella barra|Mostrado en la barra|Mostrado na barra
+Smooth transitions|Sanfte Übergänge|Transitions douces|Transizioni fluide|Transiciones suaves|Transições suaves
+Numbers count, bars glide and charts scroll smoothly.|Zahlen zählen weich, Balken gleiten und Kurven scrollen gleichmässig.|Les chiffres défilent, les barres glissent et les courbes défilent en douceur.|I numeri scorrono, le barre scivolano e i grafici scorrono in modo fluido.|Los números cuentan, las barras se deslizan y las curvas se desplazan con suavidad.|Os números contam, as barras deslizam e os gráficos deslizam suavemente.
 """;
 
     private static readonly Dictionary<string, string[]> Rows = Parse();

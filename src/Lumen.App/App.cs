@@ -117,6 +117,10 @@ public sealed class Controller
     private void Rebuild()
     {
         var palette = CurrentPalette();
+        Motion.Enabled = settings.Smooth;
+        // Charts scroll for most of each update interval, so they move continuously.
+        Motion.ScrollDuration = Math.Min(900, settings.IntervalMs * .9);
+        Motion.Duration = Math.Min(450, settings.IntervalMs * .6);
         if (Application.Current is { } app) app.RequestedThemeVariant = settings.Theme switch { ThemeMode.Dark => ThemeVariant.Dark, ThemeMode.Light => ThemeVariant.Light, _ => ThemeVariant.Default };
         window ??= new SidebarWindow();
         var view = new SidebarView(settings, palette);

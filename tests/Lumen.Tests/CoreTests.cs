@@ -348,3 +348,16 @@ public class MergeTests
         Assert.Contains("GPU  NVIDIA GeForce RTX 3080", text);
     }
 }
+
+public class MotionTests
+{
+    [Fact] public void TextWithoutMotionIsReplacedAtOnce()
+    {
+        Lumen.App.Motion.Enabled = false;
+        var tb = new Avalonia.Controls.TextBlock { Text = "57 °C" };
+        Lumen.App.Motion.Text(tb, "61 °C");
+        Assert.Equal("61 °C", tb.Text);
+        Lumen.App.Motion.Text(tb, "—");
+        Assert.Equal("—", tb.Text);
+    }
+}

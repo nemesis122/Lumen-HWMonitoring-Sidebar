@@ -17,6 +17,38 @@ Directory.CreateDirectory(outDir);
 AppBuilder.Configure<ShotsApp>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).WithInterFont().SetupWithoutStarting();
 
 const int ScreenW = 2560, ScreenH = 1440, Taskbar = 48;
+// Still pictures show the final values, not a frame mid-transition.
+Motion.Enabled = false;
+
+// "--anim": frames of the sidebar while it updates, to check the transitions.
+if (args.Contains("--anim"))
+{
+    Motion.Enabled = true;
+    L.Use("de");
+    var src = new DemoSource();
+    var hist = new History();
+    for (int i = 0; i < 150; i++) hist.Record(src.Read());
+    var settings = new Settings { Language = "de", Density = Density.Comfortable, Widgets = Only(WidgetKind.Cpu, WidgetKind.Network) };
+    var view = new SidebarView(settings, Palette.For(true, true));
+    var back = new Image { Source = Wall(true, true), Stretch = Stretch.None, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top };
+    var w = new Window { Width = 300, Height = 640, Content = new Panel { ClipToBounds = true, Children = { back, view } } };
+    w.Show();
+    int frame = 0;
+    for (int second = 0; second < 4; second++)
+    {
+        var s = src.Read(); hist.Record(s); view.Update(s, hist);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (sw.ElapsedMilliseconds < 1000)
+        {
+            Thread.Sleep(50);
+            Motion.Pump();
+            Dispatcher.UIThread.RunJobs();
+            w.CaptureRenderedFrame()!.Save(Path.Combine(outDir, $"anim-{frame++:000}.png"));
+        }
+    }
+    Console.WriteLine($"frames {frame}");
+    return;
+}
 
 (Snapshot, History) Demo()
 {

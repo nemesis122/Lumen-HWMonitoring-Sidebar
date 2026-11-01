@@ -127,7 +127,7 @@ public sealed class CpuCard : Card
         Subtitle = c?.Name ?? "";
         Aside = Format.Clock(c?.ClockMhz);
         hero.Set(Temp(c?.Temperature), TempUnit, HeatColor(c?.Temperature));
-        load.Text = Format.Percent(c?.Load);
+        Motion.Text(load, Format.Percent(c?.Load));
         chart?.Set(h.Read("cpu.load"), P.At(Format.Share(c?.Load) * .9));
         if (cores != null)
         {
@@ -170,13 +170,13 @@ public sealed class GpuCard : Card
         Subtitle = g?.Name ?? "";
         Aside = Format.Clock(g?.ClockMhz);
         hero.Set(Temp(g?.Temperature), TempUnit, HeatColor(g?.Temperature));
-        load.Text = Format.Percent(g?.Load);
+        Motion.Text(load, Format.Percent(g?.Load));
         chart?.Set(g is null ? Array.Empty<double>() : h.Read($"gpu.{g.Id}.load"), P.At(Format.Share(g?.Load) * .9));
         if (vram != null && vramBar != null)
         {
             if (g?.MemoryUsedMb is double used && g.MemoryTotalMb is double total && total > 0)
             {
-                vram.Text = $"{Format.Number(used / 1024, "0.0")} / {Format.Gigabytes(total / 1024)}";
+                Motion.Text(vram, $"{Format.Number(used / 1024, "0.0")} / {Format.Gigabytes(total / 1024)}");
                 vramBar.Set(used / total, P.At(used / total * .85));
             }
             else { vram.Text = Format.Missing; vramBar.Set(0, P.Cool); }
@@ -216,7 +216,7 @@ public sealed class MemoryCard : Card
         var m = s.Memory;
         var (num, unit) = Format.Split(Format.Gigabytes(m?.UsedGb));
         hero.Set(num, unit + " " + T("used"), P.Ink);
-        load.Text = Format.Percent(m?.Load);
+        Motion.Text(load, Format.Percent(m?.Load));
         load.Foreground = Palette.Brush(P.At(Format.Share(m?.Load) * .9));
         bar?.Set(Format.Share(m?.Load), P.Cool);
         Put(stats, "mem.free", Format.Gigabytes(m?.AvailableGb));
@@ -255,7 +255,7 @@ public sealed class DrivesCard : Card
                 map[d.Id] = r = (name, temp, used, usedText, io);
             }
             r.name.Text = ShortName(d.Name);
-            r.temp.Text = TempWithUnit(d.Temperature);
+            Motion.Text(r.temp, TempWithUnit(d.Temperature));
             r.temp.Foreground = Palette.Brush(d.Temperature is null ? P.Faint : HeatColor(d.Temperature + 10));
             double share = Format.Share(d.UsedPercent);
             r.used.Set(share, share >= .9 ? P.Ramp[^1] : share >= .8 ? P.Ramp[2] : P.Cool);
@@ -310,7 +310,7 @@ public sealed class NetworkCard : Card
         down.Set(dn, du, P.Ink);
         up.Set(un, uu, P.Ink);
         var downs = h.Read("net.down");
-        if (chart != null) { chart.Down = downs; chart.Up = h.Read("net.up"); chart.InvalidateVisual(); }
+        chart?.SetData(downs, h.Read("net.up"));
         // In bits per second, the unit of the link speed itself: 16 Mbit/s of 10 Gbit/s.
         double bits = Math.Max(n?.DownloadBytesPerSecond ?? 0, n?.UploadBytesPerSecond ?? 0) * 8;
         Put(stats, "net.use", n is null ? Format.Missing : Format.Bits(bits));
@@ -492,7 +492,7 @@ public sealed class CoolingCard : Card
         var hottest = s.BoardTemps.OrderByDescending(t => t.Celsius).FirstOrDefault();
         heroName.Text = (hottest is null ? T("Board") : T(hottest.Name)).ToUpper(L.Culture);
         hero.Set(Temp(hottest?.Celsius), TempUnit, HeatColor(hottest?.Celsius + 5));
-        active.Text = s.Fans.Count == 0 ? Format.Missing : $"{s.Fans.Count(f => f.Rpm > 0)}/{s.Fans.Count}";
+        Motion.Text(active, s.Fans.Count == 0 ? Format.Missing : $"{s.Fans.Count(f => f.Rpm > 0)}/{s.Fans.Count}");
         Aside = "";
         if (fans != null)
         {
@@ -511,7 +511,7 @@ public sealed class CoolingCard : Card
                     rows[f.Name] = r = (name, rpm, bar);
                 }
                 r.name.Text = f.Name.StartsWith("Fan #") ? T("Fan") + " " + f.Name[5..] : T(f.Name);
-                r.rpm.Text = f.Rpm > 0 ? Format.Rpm(f.Rpm) : T("Stopped");
+                Motion.Text(r.rpm, f.Rpm > 0 ? Format.Rpm(f.Rpm) : T("Stopped"));
                 r.rpm.Foreground = Palette.Brush(f.Rpm > 0 ? P.Ink : P.Faint);
                 r.bar.Set(f.Rpm / top, P.Cool);
             }
@@ -572,8 +572,8 @@ public sealed class ProcessesCard : Card
             if (i >= top.Count) continue;
             var pr = top[i];
             r.name.Text = pr.Name;
-            r.mem.Text = pr.MemoryMb >= 1024 ? Format.Number(pr.MemoryMb / 1024, "0.0") + " GB" : Format.Number(pr.MemoryMb) + " MB";
-            r.cpu.Text = Format.Number(pr.CpuPercent, pr.CpuPercent < 10 ? "0.0" : "0") + " %";
+            Motion.Text(r.mem, pr.MemoryMb >= 1024 ? Format.Number(pr.MemoryMb / 1024, "0.0") + " GB" : Format.Number(pr.MemoryMb) + " MB");
+            Motion.Text(r.cpu, Format.Number(pr.CpuPercent, pr.CpuPercent < 10 ? "0.0" : "0") + " %");
             r.cpu.Foreground = Palette.Brush(P.At(pr.CpuPercent / 100 * .9 + .1));
             r.bar.Set(pr.CpuPercent / scale, P.At(pr.CpuPercent / 100 * .9 + .1));
         }

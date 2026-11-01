@@ -25,7 +25,7 @@ public sealed class PingCard : Card
         var pi = s.Ping;
         var (num, unit) = Format.Split(Format.Milliseconds(pi?.Ms));
         hero.Set(num, unit, Summaries.PingColor(pi?.Ms, P));
-        router.Text = Format.Milliseconds(pi?.GatewayMs);
+        Motion.Text(router, Format.Milliseconds(pi?.GatewayMs));
         if (chart != null)
         {
             var series = h.Read("ping");
@@ -59,7 +59,7 @@ public sealed class PowerCard : Card
     {
         var u = s.Usage;
         hero.Set(Format.Number(u?.WattsNow), "W", P.At(Math.Clamp((u?.WattsNow ?? 0) / 600, 0, 1)));
-        today.Text = u is null ? Format.Missing : Format.Number(u.KwhToday, "0.00") + " kWh";
+        Motion.Text(today, u is null ? Format.Missing : Format.Number(u.KwhToday, "0.00") + " kWh");
         chart?.Set(h.Read("power"), P.At(Math.Clamp((u?.WattsNow ?? 0) / 600, 0, 1)));
         if (u == null) return;
         Put(stats, "power.today", Format.Money(u.KwhToday * S.PricePerKwh, S.Currency));
@@ -142,7 +142,7 @@ public sealed class VolumesCard : Card
                 map[v.Name] = r = (name, free, bar, detail);
             }
             r.name.Text = string.IsNullOrWhiteSpace(v.Label) ? v.Name : $"{v.Name}  {v.Label}";
-            r.free.Text = F("{0} free", Format.Capacity(v.FreeGb));
+            Motion.Text(r.free, F("{0} free", Format.Capacity(v.FreeGb)));
             double share = v.UsedPercent / 100;
             var c = share >= .9 ? P.Ramp[^1] : share >= .8 ? P.Ramp[2] : P.Cool;
             r.free.Foreground = Palette.Brush(share >= .8 ? c : P.Ink);

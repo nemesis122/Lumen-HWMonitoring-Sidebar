@@ -37,6 +37,7 @@ public sealed class Settings
     public bool Glass { get; set; } = true;
     public bool HighContrast { get; set; }
     public bool ShowNames { get; set; } = true;
+    public bool Smooth { get; set; } = true;
     public double Opacity { get; set; } = .55;
     public double TextScale { get; set; } = 1;
     public string Colors { get; set; } = StateColors;

@@ -15,16 +15,35 @@ public sealed class AreaChart : Control
     public double FillOpacity { get; set; } = .30;
     public double LineWidth { get; set; } = 1.6;
 
-    public void Set(double[] values, Color color) { Values = values; Color = color; InvalidateVisual(); }
+    public AreaChart() => ClipToBounds = true;
+
+    // 0..1 of one step: the new point starts just outside on the right and slides in.
+    private double shift;
+    private double? shownMax;
+
+    public void Set(double[] values, Color color)
+    {
+        bool scrolled = Values.Length > 0 && values.Length > 0 && !ReferenceEquals(values, Values);
+        Values = values;
+        Color = color;
+        double target = Max ?? Math.Max(1e-9, values.Where(double.IsFinite).DefaultIfEmpty(1).Max() * 1.15);
+        double from = shownMax ?? target, fromShift = scrolled ? 1 : shift;
+        Motion.Run(this, scrolled ? Motion.ScrollDuration : Motion.Duration, t =>
+        {
+            shownMax = from + (target - from) * t;
+            shift = fromShift * (1 - t);
+            InvalidateVisual();
+        });
+    }
 
     public override void Render(DrawingContext context)
     {
         var b = Bounds;
         if (b.Width < 4 || b.Height < 4) return;
         var v = Values;
-        double max = Max ?? Math.Max(1e-9, v.Where(double.IsFinite).DefaultIfEmpty(1).Max() * 1.15);
+        double max = shownMax ?? Max ?? Math.Max(1e-9, v.Where(double.IsFinite).DefaultIfEmpty(1).Max() * 1.15);
         int slots = Lumen.Core.History.Capacity - 1;
-        double step = b.Width / slots, offset = b.Width - (v.Length - 1) * step;
+        double step = b.Width / slots, offset = b.Width - (v.Length - 1) * step + shift * step;
         // Keep a sliver visible at zero so an idle machine still shows the line.
         Point P(int i) => new(offset + i * step, b.Height - Math.Clamp(v[i] / max, .02, 1) * (b.Height - LineWidth) - LineWidth / 2);
 
@@ -72,19 +91,39 @@ public sealed class AreaChart : Control
 // One slim column per logical core, coloured by that core's own load.
 public sealed class Skyline : Control
 {
-    public IReadOnlyList<double> Loads { get; set; } = Array.Empty<double>();
+    private double[] shown = Array.Empty<double>();
+    private IReadOnlyList<double> loads = Array.Empty<double>();
+
+    // Each column glides from its last height to the new one.
+    public IReadOnlyList<double> Loads
+    {
+        get => loads;
+        set
+        {
+            loads = value;
+            var from = shown.Length == value.Count ? shown.ToArray() : value.ToArray();
+            var to = value.ToArray();
+            shown = from.ToArray();
+            Motion.Run(this, Motion.Duration, t =>
+            {
+                for (int i = 0; i < to.Length; i++) shown[i] = from[i] + (to[i] - from[i]) * t;
+                InvalidateVisual();
+            });
+        }
+    }
+
     public Palette? Palette { get; set; }
 
     public override void Render(DrawingContext context)
     {
         var b = Bounds;
-        if (Palette is null || Loads.Count == 0 || b.Width < 4) return;
-        int n = Loads.Count;
+        if (Palette is null || shown.Length == 0 || b.Width < 4) return;
+        int n = shown.Length;
         double gap = n > 24 ? 1.5 : 2.5, w = (b.Width - gap * (n - 1)) / n, r = Math.Min(2, w / 2);
         var track = new SolidColorBrush(Palette.Track);
         for (int i = 0; i < n; i++)
         {
-            double x = i * (w + gap), load = Math.Clamp(Loads[i], 0, 100) / 100;
+            double x = i * (w + gap), load = Math.Clamp(shown[i], 0, 100) / 100;
             context.DrawRectangle(track, null, new RoundedRect(new Rect(x, 0, w, b.Height), r));
             double h = Math.Max(2, load * b.Height);
             context.DrawRectangle(new SolidColorBrush(Palette.At(load)), null, new RoundedRect(new Rect(x, b.Height - h, w, h), r));
@@ -98,25 +137,37 @@ public sealed class MirrorChart : Control
     public double[] Down { get; set; } = Array.Empty<double>();
     public double[] Up { get; set; } = Array.Empty<double>();
     public Palette? Palette { get; set; }
+    private double shift;
+
+    public MirrorChart() => ClipToBounds = true;
+
+    public void SetData(double[] down, double[] up)
+    {
+        bool scrolled = Down.Length > 0 && down.Length > 0;
+        Down = down;
+        Up = up;
+        if (!scrolled) { InvalidateVisual(); return; }
+        Motion.Run(this, Motion.ScrollDuration, t => { shift = 1 - t; InvalidateVisual(); });
+    }
 
     public override void Render(DrawingContext context)
     {
         var b = Bounds;
         if (Palette is null || b.Width < 4) return;
         double mid = Math.Round(b.Height * .62);
-        Half(context, Down, b.Width, mid, -1, Palette.Cool);
-        Half(context, Up, b.Width, b.Height - mid, 1, Palette.Calm, mid);
+        Half(context, Down, b.Width, mid, -1, Palette.Cool, 0, shift);
+        Half(context, Up, b.Width, b.Height - mid, 1, Palette.Calm, mid, shift);
         context.DrawLine(new Pen(new SolidColorBrush(Palette.Stroke), 1), new Point(0, mid + .5), new Point(b.Width, mid + .5));
     }
 
-    private static void Half(DrawingContext ctx, double[] v, double width, double height, int dir, Color color, double origin = 0)
+    private static void Half(DrawingContext ctx, double[] v, double width, double height, int dir, Color color, double origin = 0, double shift = 0)
     {
         if (v.Length < 2) return;
         // Square-root scale: a 1 MB/s trickle stays visible next to a 100 MB/s burst,
         // yet the burst still clearly towers over it (a log scale flattens everything).
         double Scale(double x) => double.IsFinite(x) && x > 0 ? Math.Sqrt(x) : 0;
         double max = Math.Max(Scale(512 * 1024), v.Select(Scale).Max());
-        double step = width / (Lumen.Core.History.Capacity - 1), offset = width - (v.Length - 1) * step;
+        double step = width / (Lumen.Core.History.Capacity - 1), offset = width - (v.Length - 1) * step + shift * step;
         double baseY = dir < 0 ? height : origin;
         var area = new StreamGeometry();
         var line = new StreamGeometry();
@@ -154,7 +205,18 @@ public sealed class Meter : Control
     public int Segments { get; set; }
     public bool RampBySegment { get; set; }
 
-    public void Set(double value, Color color) { Value = value; Color = color; InvalidateVisual(); }
+    private bool started;
+
+    // Glides from the shown value to the new one; the colour changes at once.
+    public void Set(double value, Color color)
+    {
+        Color = color;
+        double from = started ? Value : value;
+        started = true;
+        if (!double.IsFinite(value)) value = 0;
+        if (!double.IsFinite(from)) from = value;
+        Motion.Run(this, Motion.Duration, t => { Value = from + (value - from) * t; InvalidateVisual(); });
+    }
 
     public override void Render(DrawingContext context)
     {

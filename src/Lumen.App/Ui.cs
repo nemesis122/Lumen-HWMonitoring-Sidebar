@@ -89,7 +89,7 @@ public sealed class Hero : StackPanel
 
     public void Set(string value, string unitText, Color color)
     {
-        number.Text = value;
+        Motion.Text(number, value);
         number.Foreground = Palette.Brush(color);
         unit.Text = value == Lumen.Core.Format.Missing ? "" : unitText;
     }
@@ -112,7 +112,7 @@ public sealed class Stat : StackPanel
         Children.Add(value);
     }
 
-    public string Value { set => this.value.Text = value; }
+    public string Value { set => Motion.Text(this.value, value); }
     public Color Color { set => this.value.Foreground = Palette.Brush(value); }
 }
 

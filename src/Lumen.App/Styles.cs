@@ -130,6 +130,17 @@ public static class Summaries
 // A 270° gauge: grey track, coloured arc for the fraction, rounded ends.
 public sealed class RingGauge : Control
 {
+    private bool started;
+
+    public void Animate(double fraction, Color color)
+    {
+        Color = color;
+        double from = started ? Fraction : fraction;
+        started = true;
+        if (!double.IsFinite(fraction)) fraction = 0;
+        Motion.Run(this, Motion.Duration, t => { Fraction = from + (fraction - from) * t; InvalidateVisual(); });
+    }
+
     public double Fraction { get; set; }
     public Color Color { get; set; }
     public Palette? Palette { get; set; }
@@ -203,12 +214,10 @@ public sealed class RingTile : Border, IWidget
         title.Text = sum.Title;
         name.Text = sum.Name;
         name.IsVisible = s.ShowNames && sum.Name.Length > 0;
-        value.Text = sum.Value;
+        Motion.Text(value, sum.Value);
         value.Foreground = Palette.Brush(sum.Color == p.Ink ? p.Ink : sum.Color);
         unit.Text = sum.Value == Format.Missing ? "" : sum.Unit;
-        ring.Fraction = sum.Fraction;
-        ring.Color = sum.Color;
-        ring.InvalidateVisual();
+        ring.Animate(sum.Fraction, sum.Color);
         caption.Text = sum.Caption;
     }
 }
