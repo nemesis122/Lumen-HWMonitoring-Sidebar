@@ -249,7 +249,7 @@ public class ColumnsAndUsageTests
         Settings.Normalize(s);
         Assert.Equal(WidgetStyle.Standard, s.Widgets.Single(w => w.Kind == WidgetKind.Clock).Style);
         Assert.Equal(WidgetStyle.Ring, s.Widgets.Single(w => w.Kind == WidgetKind.Cpu).Style);
-        Assert.Equal(2, s.Widgets.Single(w => w.Kind == WidgetKind.Cpu).Column);
+        Assert.Equal(6, s.Widgets.Single(w => w.Kind == WidgetKind.Cpu).Column);
         Assert.False(s.Widgets.Single(w => w.Kind == WidgetKind.Media).Visible);
     }
 
@@ -378,5 +378,23 @@ public class LabelTests
         Assert.True(s.Hidden("temp:VRM"));
         Assert.Null(s.Label("temp:VRM"));
         Assert.Empty(Settings.Normalize(s).Labels);
+    }
+}
+
+public class PagesTests
+{
+    [Fact] public void SixColumnsAndRegisters()
+    {
+        var s = Settings.Normalize(new Settings { Columns = 9, Pages = 3 });
+        Assert.Equal(6, s.Columns);
+        foreach (var w in s.Widgets) w.Visible = true;
+        s.Widgets.Single(w => w.Kind == WidgetKind.Notes).Page = 2;
+        var p1 = s.Layout(page: 1);
+        var p2 = s.Layout(page: 2);
+        Assert.Equal(6, p1.Count);
+        Assert.DoesNotContain(p1.SelectMany(c => c), w => w.Kind == WidgetKind.Notes);
+        Assert.Contains(p2.SelectMany(c => c), w => w.Kind == WidgetKind.Notes);
+        Assert.Equal(WidgetKind.Clock, p1[0][0].Kind);   // reads left to right
+        Assert.Empty(s.Layout(page: 3).SelectMany(c => c));
     }
 }

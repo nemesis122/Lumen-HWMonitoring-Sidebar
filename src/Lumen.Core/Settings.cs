@@ -21,6 +21,8 @@ public sealed class WidgetSlot
     public WidgetStyle Style { get; set; }
     // 0 = placed automatically, 1 or 2 = pinned to that column (only used with two columns).
     public int Column { get; set; }
+    // Register (tab) the widget is shown on, 1..Pages.
+    public int Page { get; set; } = 1;
 }
 
 public sealed class Settings
@@ -55,6 +57,9 @@ public sealed class Settings
     public List<WidgetSlot> Widgets { get; set; } = DefaultWidgets();
     public List<string> HiddenValues { get; set; } = new();
     public int Columns { get; set; } = 1;
+    public int Pages { get; set; } = 1;
+    // Covers the whole screen up to the taskbar instead of a strip at one edge.
+    public bool FullScreen { get; set; }
     public double PricePerKwh { get; set; } = .30;
     public string Currency { get; set; } = "CHF";
     public double BaseWatts { get; set; } = 50;
@@ -132,7 +137,8 @@ public sealed class Settings
         if (s.Colors is not (StateColors or WindowsAccent) && !IsHexColor(s.Colors)) s.Colors = StateColors;
         s.Language = Languages.Contains(s.Language) ? s.Language : "auto";
         s.WeatherPlace ??= "";
-        s.Columns = Math.Clamp(s.Columns, 1, 2);
+        s.Columns = Math.Clamp(s.Columns, 1, 6);
+        s.Pages = Math.Clamp(s.Pages, 1, 6);
         s.PricePerKwh = double.IsFinite(s.PricePerKwh) ? Math.Clamp(s.PricePerKwh, 0, 5) : .30;
         s.BaseWatts = double.IsFinite(s.BaseWatts) ? Math.Clamp(s.BaseWatts, 0, 500) : 50;
         s.Currency = string.IsNullOrWhiteSpace(s.Currency) ? "CHF" : s.Currency.Trim()[..Math.Min(5, s.Currency.Trim().Length)];
@@ -146,7 +152,8 @@ public sealed class Settings
         s.Widgets = (s.Widgets ?? new()).Where(w => w != null && Enum.IsDefined(w.Kind) && seen.Add(w.Kind)).ToList();
         foreach (var w in s.Widgets)
         {
-            w.Column = Math.Clamp(w.Column, 0, 2);
+            w.Column = Math.Clamp(w.Column, 0, 6);
+            w.Page = Math.Clamp(w.Page, 1, 6);
             if (!Enum.IsDefined(w.Style) || !HasStyles(w.Kind)) w.Style = WidgetStyle.Standard;
         }
         foreach (var kind in Enum.GetValues<WidgetKind>())
@@ -171,20 +178,22 @@ public sealed class Settings
         _ => 1.05
     };
 
-    // Which column each visible widget goes in: pinned ones where they are pinned, the rest
-    // in order, each to the column that is currently shorter (ties go left).
+    // Which column each visible widget of a page goes in. Pinned widgets stay in their column;
+    // the free ones are spread so the tallest column is as short as possible (exactly for two
+    // columns, by largest-first otherwise). Within a column the widgets keep their order.
     // weight: measured card heights once the sidebar has been laid out; the estimate before that.
-    public List<List<WidgetSlot>> Layout(Func<WidgetSlot, double>? weight = null)
+    public List<List<WidgetSlot>> Layout(Func<WidgetSlot, double>? weight = null, int page = 1)
     {
         weight ??= Weight;
-        var visible = Widgets.Where(w => w.Visible).ToList();
-        if (Columns < 2) return new() { visible };
-        var cols = new List<List<WidgetSlot>> { new(), new() };
-        double[] height = { visible.Where(w => w.Column == 1).Sum(weight), visible.Where(w => w.Column == 2).Sum(weight) };
-        // Few enough free widgets: try every split and keep the one whose taller column is
-        // shortest, so neither column has to be stretched much to reach the bottom.
-        var free = visible.Where(w => w.Column == 0).ToList();
-        if (free.Count is > 0 and <= 16)
+        var visible = Widgets.Where(w => w.Visible && Math.Min(w.Page, Pages) == page).ToList();
+        int n = Columns;
+        if (n < 2) return new() { visible };
+        int Pinned(WidgetSlot w) => w.Column > 0 ? Math.Min(w.Column, n) - 1 : -1;
+        var height = new double[n];
+        foreach (var w in visible.Where(w => Pinned(w) >= 0)) height[Pinned(w)] += weight(w);
+        var free = visible.Where(w => Pinned(w) < 0).ToList();
+        var place = new Dictionary<WidgetSlot, int>();
+        if (n == 2 && free.Count is > 0 and <= 16)
         {
             int best = 0; double bestMax = double.MaxValue;
             var weights = free.Select(weight).ToArray();
@@ -195,17 +204,22 @@ public sealed class Settings
                 double worst = Math.Max(a, b);
                 if (worst < bestMax - .5) { bestMax = worst; best = mask; }
             }
-            int k = 0;
-            foreach (var w in visible)
-                cols[w.Column > 0 ? w.Column - 1 : (best & (1 << k++)) == 0 ? 0 : 1].Add(w);
-            return cols;
+            for (int i = 0; i < free.Count; i++) place[free[i]] = (best & (1 << i)) == 0 ? 0 : 1;
         }
-        foreach (var w in visible)
+        else
         {
-            int c = w.Column > 0 ? w.Column - 1 : height[0] <= height[1] ? 0 : 1;
-            if (w.Column == 0) height[c] += weight(w);
-            cols[c].Add(w);
+            foreach (var w in free.OrderByDescending(weight))
+            {
+                int c = Array.IndexOf(height, height.Min());
+                place[w] = c;
+                height[c] += weight(w);
+            }
         }
+        var cols = Enumerable.Range(0, n).Select(_ => new List<WidgetSlot>()).ToList();
+        foreach (var w in visible) cols[Pinned(w) >= 0 ? Pinned(w) : place[w]].Add(w);
+        // Without pinned columns, read left to right: the column holding the first widget comes first.
+        if (!visible.Any(w => Pinned(w) >= 0))
+            cols = cols.OrderBy(c => c.Count == 0 ? int.MaxValue : visible.IndexOf(c[0])).ToList();
         return cols;
     }
 

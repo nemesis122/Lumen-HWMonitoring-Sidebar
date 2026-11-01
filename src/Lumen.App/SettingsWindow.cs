@@ -97,7 +97,9 @@ public sealed class SettingsWindow : Window
             Row(T("Glass effect"), Toggle(s.Glass, v => s.Glass = v), T("Translucent background with blur")),
             Row(T("Opacity"), Slide(.2, 1, .05, s.Opacity, v => s.Opacity = v, v => $"{v * 100:0} %")),
             Row(T("Text size"), Slide(.85, 1.3, .05, s.TextScale, v => s.TextScale = v, v => $"{v * 100:0} %")),
-            Row(T("Columns"), Choice(new[] { "1", "2" }, s.Columns - 1, i => s.Columns = i + 1, rebuild: true), T("Two columns side by side: twice as wide, everything stays large.")),
+            Row(T("Columns"), Choice(new[] { "1", "2", "3", "4", "5", "6" }, s.Columns - 1, i => s.Columns = i + 1, rebuild: true), T("Several columns side by side; each is as wide as set below, everything stays large.")),
+            Row(T("Registers"), Choice(new[] { "1", "2", "3", "4", "5", "6" }, s.Pages - 1, i => s.Pages = i + 1, rebuild: true), T("Pages 1, 2, 3 … at the top; each widget goes on one of them. Switch by click or mouse wheel.")),
+            Row(T("Whole screen"), Toggle(s.FullScreen, v => s.FullScreen = v), T("Covers the whole monitor up to the taskbar; the columns share its width.")),
             Row(T("Density"), Choice(new[] { T("Automatic"), T("Comfortable"), T("Compact") }, (int)s.Density, i => s.Density = (Density)i), T("Automatic fills the height up to the taskbar, without scrolling.")),
             Row(T("Width"), Slide(240, 440, 10, s.Width, v => s.Width = v, v => $"{v:0} px"))));
 
@@ -251,7 +253,7 @@ public sealed class SettingsWindow : Window
         });
         values.Padding = new Thickness(10, 5);
         // Only offer "Customise" where there is something to choose.
-        values.IsVisible = Settings.HasStyles(slot.Kind) || Cards.Values(slot.Kind).Length > 0 || s.Columns == 2;
+        values.IsVisible = Settings.HasStyles(slot.Kind) || Cards.Values(slot.Kind).Length > 0 || s.Columns > 1 || s.Pages > 1;
         var row = Ui.Columns("*,Auto,Auto,Auto", check, values,
             Small(Ui.Glyph("M3,10 L8,5 L13,10", p.Soft, 12), T("Move up"), index > 0, () => Move(-1)),
             Small(Ui.Glyph("M3,6 L8,11 L13,6", p.Soft, 12), T("Move down"), index < s.Widgets.Count - 1, () => Move(1)));
@@ -262,8 +264,10 @@ public sealed class SettingsWindow : Window
             var options = new WrapPanel { Margin = new Thickness(28, 0, 0, 0) };
             if (Settings.HasStyles(slot.Kind))
                 options.Children.Add(Ui.Row(8, Ui.Text(T("Style"), 12.5, p.Soft), Choice(new[] { T("Standard"), T("Ring"), T("Minimal") }, (int)slot.Style, i => slot.Style = (WidgetStyle)i, small: true)));
-            if (s.Columns == 2)
-                options.Children.Add(Ui.Row(8, Ui.Text(T("Column"), 12.5, p.Soft), Choice(new[] { T("Automatic"), "1", "2" }, slot.Column, i => slot.Column = i, small: true)));
+            if (s.Columns > 1)
+                options.Children.Add(Ui.Row(8, Ui.Text(T("Column"), 12.5, p.Soft), Choice(new[] { T("Automatic") }.Concat(Enumerable.Range(1, s.Columns).Select(n => n.ToString())).ToList(), Math.Min(slot.Column, s.Columns), i => slot.Column = i, small: true)));
+            if (s.Pages > 1)
+                options.Children.Add(Ui.Row(8, Ui.Text(T("Register"), 12.5, p.Soft), Choice(Enumerable.Range(1, s.Pages).Select(n => n.ToString()).ToList(), Math.Min(slot.Page, s.Pages) - 1, i => slot.Page = i + 1, small: true)));
             foreach (var o in options.Children) o.Margin = new Thickness(0, 0, 18, 6);
             if (options.Children.Count > 0) panel.Children.Add(options);
             var wrap = new WrapPanel { Margin = new Thickness(28, 0, 0, 4) };

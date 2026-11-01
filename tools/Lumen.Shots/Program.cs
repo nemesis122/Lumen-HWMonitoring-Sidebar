@@ -109,7 +109,7 @@ void DesktopShot(string name, Settings settings, bool dark, int screenHeight = S
     var view = View(settings, dark, Desktop);
     var strip = new Panel
     {
-        Width = SidebarView.WindowWidth(settings),
+        Width = settings.FullScreen ? ScreenW : SidebarView.WindowWidth(settings),
         HorizontalAlignment = HorizontalAlignment.Right,
         Margin = new Thickness(0, 0, 0, Taskbar),
         ClipToBounds = true,
@@ -159,6 +159,13 @@ DesktopShot("desktop-two-columns", new Settings
     Widgets = Only(WidgetKind.Clock, WidgetKind.Weather, WidgetKind.Cpu, WidgetKind.Gpu, WidgetKind.Cooling, WidgetKind.Memory,
         WidgetKind.Media, WidgetKind.Power, WidgetKind.Ping, WidgetKind.Volumes, WidgetKind.Network, WidgetKind.DataUsage)
 }, true);
+// The whole monitor, six columns, two registers.
+var full = new Settings { Language = "de", Columns = 6, FullScreen = true, Pages = 2 };
+foreach (var w in full.Widgets) { w.Visible = w.Kind is not (WidgetKind.Notes or WidgetKind.Processes or WidgetKind.Battery); w.Page = w.Kind is WidgetKind.WorldClocks or WidgetKind.Calendar ? 2 : 1; }
+DesktopShot("desktop-full-6", full, true);
+var four = new Settings { Language = "de", Columns = 4, FullScreen = true };
+foreach (var w in four.Widgets) w.Visible = w.Kind is WidgetKind.Clock or WidgetKind.Weather or WidgetKind.Cpu or WidgetKind.Gpu or WidgetKind.Fps or WidgetKind.Cooling or WidgetKind.Memory or WidgetKind.Drives or WidgetKind.Network or WidgetKind.Ping or WidgetKind.Media or WidgetKind.Power;
+DesktopShot("desktop-full-4", four, true);
 // The user's own set in two columns: both columns must reach the bottom.
 DesktopShot("desktop-two-columns-user", new Settings
 {

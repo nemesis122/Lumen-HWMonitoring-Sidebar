@@ -33,6 +33,9 @@ public sealed class SidebarView : Border
     private Dictionary<WidgetKind, double>? measured;
     private readonly Dictionary<WidgetKind, List<Control>> builtCards = new();
     private Snapshot? last; private History? lastHistory;
+    // The register shown, kept across rebuilds (settings changes, theme switches).
+    private static int page = 1;
+    private readonly StackPanel tabs = new() { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 2, Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
 
     public SidebarView(Settings settings, Palette palette)
     {
@@ -42,7 +45,7 @@ public sealed class SidebarView : Border
         var m = metrics;
         Background = Palette.Brush(p.Surface);
         BorderBrush = Palette.Brush(p.Stroke);
-        BorderThickness = settings.Edge == Edge.Right ? new Thickness(1, 0, 0, 0) : new Thickness(0, 0, 1, 0);
+        BorderThickness = settings.FullScreen ? new Thickness(0) : settings.Edge == Edge.Right ? new Thickness(1, 0, 0, 0) : new Thickness(0, 0, 1, 0);
 
         // Top bar: wordmark, live state, settings.
         var mark = new Avalonia.Controls.Shapes.Path
@@ -82,7 +85,15 @@ public sealed class SidebarView : Border
         };
         ToolTip.SetTip(gear, T("Settings"));
         gear.Click += (_, _) => SettingsRequested?.Invoke();
-        var bar = Ui.Columns("Auto,Auto,Auto,*,Auto", mark, word, status, new Control(), gear);
+        var bar = Ui.Columns("Auto,Auto,Auto,*,Auto", mark, word, status, tabs, gear);
+        // Registers: click a number, or turn the mouse wheel anywhere on the top bar.
+        page = Math.Clamp(page, 1, settings.Pages);
+        bar.PointerWheelChanged += (_, e) =>
+        {
+            if (settings.Pages < 2) return;
+            Show(page + (e.Delta.Y < 0 ? 1 : -1));
+            e.Handled = true;
+        };
         word.Margin = new Thickness(7, 0, 0, 1);
 
         // Shown only when temperatures are out of reach.
@@ -144,7 +155,8 @@ public sealed class SidebarView : Border
     {
         widgets.Clear();
         builtCards.Clear();
-        var columns = measured is null ? settings.Layout() : settings.Layout(w => measured.TryGetValue(w.Kind, out var hgt) ? hgt : Settings.Weight(w) * 150);
+        BuildTabs();
+        var columns = measured is null ? settings.Layout(page: page) : settings.Layout(w => measured.TryGetValue(w.Kind, out var hgt) ? hgt : Settings.Weight(w) * 150, page);
         for (int c = 0; c < lists.Count; c++)
         {
             var list = lists[c];
@@ -180,6 +192,41 @@ public sealed class SidebarView : Border
         fit?.SetGap(metrics.Gap);
     }
 
+    private void BuildTabs()
+    {
+        tabs.Children.Clear();
+        if (settings.Pages < 2) return;
+        for (int i = 1; i <= settings.Pages; i++)
+        {
+            int n = i;
+            bool on = n == page;
+            var b = new Button
+            {
+                Content = Ui.Text(n.ToString(), 11.5, on ? p.Ink : p.Soft, on ? FontWeight.Bold : FontWeight.Medium),
+                Background = on ? Palette.Brush(p.Track) : Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Padding = new Thickness(8, 2),
+                MinWidth = 24,
+                CornerRadius = new CornerRadius(8),
+                Cursor = new Cursor(StandardCursorType.Hand),
+                HorizontalContentAlignment = HorizontalAlignment.Center
+            };
+            b.Click += (_, _) => Show(n);
+            tabs.Children.Add(b);
+        }
+    }
+
+    private void Show(int target)
+    {
+        target = Math.Clamp(target, 1, settings.Pages);
+        if (target == page) return;
+        page = target;
+        balanced = false;
+        rebalanceTries = 0;
+        BuildCards();
+        if (last != null) Update(last, lastHistory!);
+    }
+
     private void Remember(WidgetKind kind, Control card)
     {
         if (!builtCards.TryGetValue(kind, out var list)) builtCards[kind] = list = new();
@@ -196,8 +243,9 @@ public sealed class SidebarView : Border
             if (++rebalanceTries < 20) Dispatcher.UIThread.Post(Rebalance, DispatcherPriority.Background);
             return;
         }
-        var before = settings.Layout(measured is null ? null : w => measured.GetValueOrDefault(w.Kind, 150)).Select(c => string.Join(",", c.Select(x => x.Kind))).ToList();
-        var after = settings.Layout(w => heights.GetValueOrDefault(w.Kind, 150)).Select(c => string.Join(",", c.Select(x => x.Kind))).ToList();
+        if (measured != null) foreach (var kv in measured) heights.TryAdd(kv.Key, kv.Value);
+        var before = settings.Layout(measured is null ? null : w => measured.GetValueOrDefault(w.Kind, 150), page).Select(c => string.Join(",", c.Select(x => x.Kind))).ToList();
+        var after = settings.Layout(w => heights.GetValueOrDefault(w.Kind, 150), page).Select(c => string.Join(",", c.Select(x => x.Kind))).ToList();
         if (Environment.GetEnvironmentVariable("LUMEN_DEBUG") == "1")
             Console.WriteLine("rebalance " + string.Join(" ", heights.Select(kv => $"{kv.Key}={kv.Value:0}")) + " | " + string.Join(" / ", before) + " -> " + string.Join(" / ", after));
         measured = heights;
@@ -223,7 +271,7 @@ public sealed class SidebarView : Border
         foreach (var w in widgets) w.Update(s, h);
         // With two columns, place automatic widgets once more by their real heights, so both
         // columns come out about equally tall and nothing has to be stretched to fill.
-        if (settings.Columns == 2 && !balanced)
+        if (settings.Columns >= 2 && !balanced)
         {
             balanced = true;
             Dispatcher.UIThread.Post(Rebalance, DispatcherPriority.Background);

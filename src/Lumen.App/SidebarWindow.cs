@@ -73,15 +73,16 @@ public sealed class SidebarWindow : Window
         if (all.Count == 0) { Width = SidebarView.WindowWidth(s); Height = 900; return; }
         var screen = all[Math.Clamp(s.Screen, 0, all.Count - 1)];
         double scale = screen.Scaling;
-        double logical = SidebarView.WindowWidth(s);
-        int width = (int)Math.Round(logical * scale);
         var work = screen.WorkingArea;
+        // Full screen: the whole working area, from the left edge to the right, top to taskbar.
+        double logical = s.FullScreen ? work.Width / scale : SidebarView.WindowWidth(s);
+        int width = s.FullScreen ? work.Width : (int)Math.Round(logical * scale);
         bool right = s.Edge == Edge.Right;
-        int x = right ? work.Right - width : work.X, y = work.Y, h = work.Height;
+        int x = s.FullScreen ? work.X : right ? work.Right - width : work.X, y = work.Y, h = work.Height;
         var handle = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
         if (OperatingSystem.IsWindows() && handle != IntPtr.Zero)
         {
-            if (s.ReserveSpace)
+            if (s.ReserveSpace && !s.FullScreen)
             {
                 // The work area already excludes our own strip once reserved, so ask against the full bounds.
                 var b = screen.Bounds;
