@@ -1,8 +1,8 @@
 using Lumen.Core;
 using Xunit;
 
-// The same selection rules against real and typical sensor layouts. Synthetic layouts use the sensor
-// names LibreHardwareMonitor 0.9.x gives these chips; the first one is a real report from a user.
+// The same selection rules against typical sensor layouts, with the sensor names LibreHardwareMonitor
+// 0.9.x gives these chips. The first one follows the structure of a real report, with invented values.
 public class HardwareTests
 {
     private static List<SensorNode> Report(string text) => SensorPicker.ParseReport("=== LibreHardwareMonitor ===\n" + text.Replace("\r", ""));
@@ -11,39 +11,39 @@ public class HardwareTests
         SensorPicker.ParseReport(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", name)));
 
     [Fact]
-    public void Ryzen5900XWithRtx3080()
+    public void Ryzen3900XWithRtx3070Ti()
     {
-        var hw = Fixture("ryzen-5900x-rtx-3080.txt");
+        var hw = Fixture("demo-ryzen-3900x-rtx-3070ti.txt");
         var cpu = SensorPicker.Cpu(hw)!;
-        Assert.Equal("AMD Ryzen 9 5900X", cpu.Name);
-        Assert.Equal(75.125, cpu.Temperature!.Value, 2);
+        Assert.Equal("AMD Ryzen 9 3900X", cpu.Name);
+        Assert.Equal(70.36, cpu.Temperature!.Value, 2);
         Assert.Equal(24, cpu.CoreLoads.Count);
         Assert.InRange(cpu.ClockMhz!.Value, 2000, 5000);      // real core clocks, not "(Effective)"
-        Assert.Equal(1.425, cpu.Voltage!.Value, 3);
-        Assert.Equal(897.606, cpu.FanRpm!.Value, 2);
+        Assert.Equal(1.348, cpu.Voltage!.Value, 3);
+        Assert.Equal(851.753, cpu.FanRpm!.Value, 2);
         Assert.InRange(cpu.PowerW!.Value, 20, 200);
 
         var gpu = SensorPicker.Gpu(hw.Single(h => h.IsGpu));
         Assert.False(gpu.Integrated);
-        Assert.Equal(46, gpu.Temperature);
-        Assert.Equal(63.063, gpu.HotSpot!.Value, 2);
+        Assert.Equal(49, gpu.Temperature);
+        Assert.Equal(66.381, gpu.HotSpot!.Value, 2);
         Assert.Equal(9, gpu.Load);
-        Assert.Equal(68.673, gpu.PowerW!.Value, 2);
+        Assert.Equal(69.147, gpu.PowerW!.Value, 2);
         Assert.Equal(0, gpu.FanRpm);                          // stopped fans: "0 rpm", not missing
-        Assert.Equal(10240, gpu.MemoryTotalMb);
+        Assert.Equal(8192, gpu.MemoryTotalMb);
 
         var disks = hw.Where(h => h.Type == "Storage").Select(SensorPicker.Disk).ToList();
         Assert.Equal(3, disks.Count);
-        Assert.Equal(58, disks[0].Temperature);               // "Composite", never the 84 °C warning limit
-        Assert.Equal("Samsung SSD 870 EVO 4TB", disks[2].Name);
+        Assert.Equal(62, disks[0].Temperature);               // "Composite", never the warning limit
+        Assert.Equal("Crucial MX500 4TB", disks[2].Name);
 
         var board = SensorPicker.BoardTemps(hw.First(h => h.IsBoard));
-        Assert.Equal(new[] { "Board", "Chipset" }, board.Select(t => t.Name));  // VRM reads 20 °C: unconnected
-        Assert.Equal(67, board.Single(t => t.Name == "Chipset").Celsius);
+        Assert.Equal(new[] { "Board", "Chipset" }, board.Select(t => t.Name));  // VRM reads 19 °C: unconnected
+        Assert.Equal(68, board.Single(t => t.Name == "Chipset").Celsius);
 
         var fans = SensorPicker.Fans(hw).Where(f => f.Rpm > 0).ToList();
         Assert.Equal(new[] { "Fan #2", "Fan #3", "Chipset Fan" }, fans.Select(f => f.Name));
-        Assert.Equal(65.098, fans[0].Percent!.Value, 2);
+        Assert.Equal(61.461, fans[0].Percent!.Value, 2);
         Assert.Null(fans[2].Percent);
     }
 
