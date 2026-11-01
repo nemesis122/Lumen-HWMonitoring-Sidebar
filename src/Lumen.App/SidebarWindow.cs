@@ -23,6 +23,9 @@ public sealed class SidebarWindow : Window
         Background = Brushes.Transparent;
         Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://Lumen/Assets/lumen.ico")));
         ScalingChanged += (_, _) => { if (settings != null) Place(settings); };
+        // Any later size change (DPI, columns, width) must keep the strip flush with its edge.
+        Resized += (_, _) => Avalonia.Threading.Dispatcher.UIThread.Post(() => { if (settings != null && Position != target) Position = target; }, Avalonia.Threading.DispatcherPriority.Background);
+        Opened += (_, _) => { if (settings != null) Place(settings); };
     }
 
     private Settings? settings;
@@ -62,10 +65,17 @@ public sealed class SidebarWindow : Window
             }
             else if (reserved) { AppBar.Release(handle); reserved = false; }
         }
-        Position = new PixelPoint(x, y);
+        // Size first, then position: Windows keeps the left edge when a window is resized, so
+        // moving before resizing left a right-docked sidebar stranded away from the edge.
         Width = logical;
         Height = h / scale;
+        Position = new PixelPoint(x, y);
+        target = new PixelPoint(x, y);
+        // The resize lands a moment later; dock again once it has.
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => { if (Position != target) Position = target; }, Avalonia.Threading.DispatcherPriority.Background);
     }
+
+    private PixelPoint target;
 
     public void Release()
     {

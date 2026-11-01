@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
+using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Lumen.Core;
@@ -27,7 +28,10 @@ public sealed class SidebarView : Border
     private readonly FitPanel fit;
     private int gpuCount = 1;
     private Metrics metrics;
-    private bool compacted;
+    private bool compacted, balanced;
+    private int rebalanceTries;
+    private Dictionary<WidgetKind, double>? measured;
+    private readonly Dictionary<WidgetKind, List<Control>> builtCards = new();
     private Snapshot? last; private History? lastHistory;
 
     public SidebarView(Settings settings, Palette palette)
@@ -139,7 +143,8 @@ public sealed class SidebarView : Border
     private void BuildCards()
     {
         widgets.Clear();
-        var columns = settings.Layout();
+        builtCards.Clear();
+        var columns = measured is null ? settings.Layout() : settings.Layout(w => measured.TryGetValue(w.Kind, out var hgt) ? hgt : Settings.Weight(w) * 150);
         for (int c = 0; c < lists.Count; c++)
         {
             var list = lists[c];
@@ -155,11 +160,13 @@ public sealed class SidebarView : Border
                 var (slot, index) = items[i];
                 var card = Cards.Create(slot.Kind, slot.Style, index, p, metrics, settings);
                 widgets.Add((IWidget)card);
+                Remember(slot.Kind, card);
                 // Two ring tiles in a row share one line.
                 if (slot.Style == WidgetStyle.Ring && card is RingTile && i + 1 < items.Count && items[i + 1].slot.Style == WidgetStyle.Ring && Settings.HasStyles(items[i + 1].slot.Kind))
                 {
                     var next = Cards.Create(items[i + 1].slot.Kind, WidgetStyle.Ring, items[i + 1].index, p, metrics, settings);
                     widgets.Add((IWidget)next);
+                    Remember(items[i + 1].slot.Kind, next);
                     var pair = new Grid { ColumnDefinitions = new ColumnDefinitions($"*,{metrics.Gap},*") };
                     Grid.SetColumn(next, 2);
                     pair.Children.Add(card);
@@ -171,6 +178,32 @@ public sealed class SidebarView : Border
             }
         }
         fit?.SetGap(metrics.Gap);
+    }
+
+    private void Remember(WidgetKind kind, Control card)
+    {
+        if (!builtCards.TryGetValue(kind, out var list)) builtCards[kind] = list = new();
+        list.Add(card);
+    }
+
+    private void Rebalance()
+    {
+        // Natural heights, without the chart growth and extra spacing the fill has added.
+        var heights = builtCards.ToDictionary(kv => kv.Key, kv => kv.Value.Sum(c => fit.NaturalHeight(c) + metrics.Gap));
+        // Not laid out yet: try again shortly.
+        if (heights.Values.Any(v => v <= metrics.Gap))
+        {
+            if (++rebalanceTries < 20) Dispatcher.UIThread.Post(Rebalance, DispatcherPriority.Background);
+            return;
+        }
+        var before = settings.Layout(measured is null ? null : w => measured.GetValueOrDefault(w.Kind, 150)).Select(c => string.Join(",", c.Select(x => x.Kind))).ToList();
+        var after = settings.Layout(w => heights.GetValueOrDefault(w.Kind, 150)).Select(c => string.Join(",", c.Select(x => x.Kind))).ToList();
+        if (Environment.GetEnvironmentVariable("LUMEN_DEBUG") == "1")
+            Console.WriteLine("rebalance " + string.Join(" ", heights.Select(kv => $"{kv.Key}={kv.Value:0}")) + " | " + string.Join(" / ", before) + " -> " + string.Join(" / ", after));
+        measured = heights;
+        if (before.SequenceEqual(after)) return;
+        BuildCards();
+        if (last != null) foreach (var w in widgets) w.Update(last, lastHistory!);
     }
 
     public void Update(Snapshot s, History h)
@@ -188,6 +221,13 @@ public sealed class SidebarView : Border
         int gpus = Math.Max(1, GpuGroup.Visible(s, settings).Count);
         if (gpus != gpuCount) { gpuCount = gpus; BuildCards(); }
         foreach (var w in widgets) w.Update(s, h);
+        // With two columns, place automatic widgets once more by their real heights, so both
+        // columns come out about equally tall and nothing has to be stretched to fill.
+        if (settings.Columns == 2 && !balanced)
+        {
+            balanced = true;
+            Dispatcher.UIThread.Post(Rebalance, DispatcherPriority.Background);
+        }
     }
 }
 
@@ -216,8 +256,45 @@ public sealed class FitPanel : Panel
 
     private static int Gaps(StackPanel l) => Math.Max(1, l.Children.Count(c => c.IsVisible) - 1);
 
-    // Height without any spare spacing added, so repeated passes land on the same answer.
-    private double Natural(StackPanel l) => l.DesiredSize.Height - Gaps(l) * (l.Spacing - gap);
+    // Charts are the elastic part of a column: they can grow to soak up spare height.
+    private readonly Dictionary<Control, double> baseHeight = new();
+
+    private List<Control> Growable(StackPanel l)
+    {
+        var list = l.GetLogicalDescendants().OfType<Control>()
+            .Where(c => c is AreaChart or MirrorChart && c.IsVisible && c.GetLogicalAncestors().OfType<Control>().All(a => a.IsVisible)).ToList();
+        foreach (var c in list) if (!baseHeight.ContainsKey(c) && double.IsFinite(c.Height)) baseHeight[c] = c.Height;
+        return list.Where(baseHeight.ContainsKey).ToList();
+    }
+
+    // Inside each card, the space between its rows can open up a little too.
+    private readonly Dictionary<StackPanel, double> baseSpacing = new();
+
+    private List<StackPanel> Airy(StackPanel l)
+    {
+        var list = l.GetLogicalDescendants().OfType<StackPanel>()
+            .Where(c => Equals(c.Tag, "elastic") && c.IsVisible && c.Children.Count(x => x.IsVisible) > 1).ToList();
+        foreach (var c in list) if (!baseSpacing.ContainsKey(c)) baseSpacing[c] = c.Spacing;
+        return list;
+    }
+
+    private static int InnerGaps(StackPanel s) => s.Children.Count(x => x.IsVisible) - 1;
+
+    public double NaturalHeight(Control card)
+    {
+        double h = card.DesiredSize.Height;
+        foreach (var c in card.GetLogicalDescendants().OfType<Control>().Where(x => x is AreaChart or MirrorChart && x.IsVisible))
+            if (baseHeight.TryGetValue(c, out var b)) h -= c.Height - b;
+        foreach (var s in card.GetLogicalDescendants().OfType<StackPanel>().Where(x => Equals(x.Tag, "elastic")).Concat(card is StackPanel sp && Equals(sp.Tag, "elastic") ? new[] { sp } : Array.Empty<StackPanel>()))
+            if (baseSpacing.TryGetValue(s, out var b) && s.IsVisible) h -= (s.Spacing - b) * Math.Max(0, InnerGaps(s));
+        return h;
+    }
+
+    private double Grown(StackPanel l) => Growable(l).Sum(c => c.Height - baseHeight[c])
+        + Airy(l).Sum(s => (s.Spacing - baseSpacing[s]) * InnerGaps(s));
+
+    // Height without any spare spacing or chart growth added, so repeated passes land on the same answer.
+    private double Natural(StackPanel l) => l.DesiredSize.Height - Gaps(l) * (l.Spacing - gap) - Grown(l);
 
     private double MeasureAll(double colWidth, double s)
     {
@@ -235,12 +312,53 @@ public sealed class FitPanel : Panel
         {
             // Narrower text wraps differently at a new scale, so settle in a few steps.
             for (int i = 0; i < 4 && tallest * s > h + .5; i++) { s = h / tallest; tallest = MeasureAll(col, s); }
+            // Few widgets: grow everything a little (up to 8 %, beyond that labels get cut off)
+            // before the charts and gaps take up the rest.
+            double most = scale * 1.08;
+            for (int i = 0; i < 4 && tallest * s < h - .5 && s < most - .001; i++) { s = Math.Min(most, h / tallest); tallest = MeasureAll(col, s); }
             if (tallest * s > h) s = h / Math.Max(1, tallest);
         }
         foreach (var l in lists)
         {
-            double target = fit ? gap + Math.Min(Math.Max(0, h / s - Natural(l)) / Gaps(l), gap * 2.5) : gap;
-            if (Math.Abs(l.Spacing - target) > .5) { l.Spacing = target; l.Measure(new Size(col / s, double.PositiveInfinity)); }
+            var charts = Growable(l);
+            double spacing = gap, grow = 0;
+            bool airyChanged = false;
+            if (fit)
+            {
+                // Spare height goes first into slightly wider gaps, then into taller charts,
+                // and whatever is left into the gaps again, so every column ends at the bottom.
+                double spare = Math.Max(0, h / s - Natural(l));
+                double toGaps = Math.Min(spare, Gaps(l) * gap * .6);
+                spare -= toGaps;
+                if (charts.Count > 0)
+                {
+                    double room = charts.Sum(c => baseHeight[c] * 2.5);
+                    grow = Math.Min(spare, room);
+                    spare -= grow;
+                }
+                // Then the rows inside the cards breathe. Whatever is still left goes there too,
+                // so the cards themselves fill the column instead of empty gaps between them.
+                var airy = Airy(l);
+                int inner = airy.Sum(InnerGaps);
+                double perInner = inner > 0 ? spare / inner : 0;
+                spare -= perInner * inner;
+                foreach (var a in airy)
+                {
+                    double target = baseSpacing[a] + perInner;
+                    if (Math.Abs(a.Spacing - target) > .5) { a.Spacing = target; airyChanged = true; }
+                }
+                spacing = gap + (toGaps + spare) / Gaps(l);
+            }
+            if (!fit) foreach (var a in Airy(l)) if (a.Spacing != baseSpacing[a]) { a.Spacing = baseSpacing[a]; airyChanged = true; }
+            bool changed = Math.Abs(l.Spacing - spacing) > .5 || airyChanged;
+            if (changed) l.Spacing = spacing;
+            double total = charts.Sum(c => baseHeight[c]);
+            foreach (var c in charts)
+            {
+                double target = baseHeight[c] + (total > 0 ? grow * baseHeight[c] / total : 0);
+                if (Math.Abs(c.Height - target) > .5) { c.Height = target; changed = true; }
+            }
+            if (changed) l.Measure(new Size(col / s, double.PositiveInfinity));
         }
         if (Math.Abs(s - applied) > .001) { applied = s; Fitted?.Invoke(s); }
         return fit ? new Size(w, h) : new Size(w, lists.Max(l => l.DesiredSize.Height) * s);

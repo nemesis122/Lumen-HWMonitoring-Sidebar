@@ -127,6 +127,13 @@ DesktopShot("desktop-two-columns", new Settings
     Widgets = Only(WidgetKind.Clock, WidgetKind.Weather, WidgetKind.Cpu, WidgetKind.Gpu, WidgetKind.Cooling, WidgetKind.Memory,
         WidgetKind.Media, WidgetKind.Power, WidgetKind.Ping, WidgetKind.Volumes, WidgetKind.Network, WidgetKind.DataUsage)
 }, true);
+// The user's own set in two columns: both columns must reach the bottom.
+DesktopShot("desktop-two-columns-user", new Settings
+{
+    Language = "en", Columns = 2, Colors = "#F97316",
+    Widgets = Only(WidgetKind.Cpu, WidgetKind.Gpu, WidgetKind.Cooling, WidgetKind.Memory, WidgetKind.System, WidgetKind.Drives, WidgetKind.Network),
+    ShowIntegratedGpu = false
+}, true);
 // Ring tiles pair up, minimal lines take one slim row each.
 var rings = new Settings
 {

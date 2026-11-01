@@ -40,6 +40,8 @@ public abstract class Card : Border, IWidget
         subtitle = Ui.Text("", 11.5, p.Soft);
         subtitle.IsVisible = false;
         Body = Ui.Stack(m.Gap, Ui.Stack(1, header, subtitle));
+        // FitPanel may widen the row spacing to fill a column exactly.
+        Body.Tag = "elastic";
         Child = Body;
     }
 

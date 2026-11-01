@@ -162,16 +162,37 @@ public sealed class Settings
 
     // Which column each visible widget goes in: pinned ones where they are pinned, the rest
     // in order, each to the column that is currently shorter (ties go left).
-    public List<List<WidgetSlot>> Layout()
+    // weight: measured card heights once the sidebar has been laid out; the estimate before that.
+    public List<List<WidgetSlot>> Layout(Func<WidgetSlot, double>? weight = null)
     {
+        weight ??= Weight;
         var visible = Widgets.Where(w => w.Visible).ToList();
         if (Columns < 2) return new() { visible };
         var cols = new List<List<WidgetSlot>> { new(), new() };
-        double[] height = { visible.Where(w => w.Column == 1).Sum(Weight), visible.Where(w => w.Column == 2).Sum(Weight) };
+        double[] height = { visible.Where(w => w.Column == 1).Sum(weight), visible.Where(w => w.Column == 2).Sum(weight) };
+        // Few enough free widgets: try every split and keep the one whose taller column is
+        // shortest, so neither column has to be stretched much to reach the bottom.
+        var free = visible.Where(w => w.Column == 0).ToList();
+        if (free.Count is > 0 and <= 16)
+        {
+            int best = 0; double bestMax = double.MaxValue;
+            var weights = free.Select(weight).ToArray();
+            for (int mask = 0; mask < 1 << free.Count; mask++)
+            {
+                double a = height[0], b = height[1];
+                for (int i = 0; i < free.Count; i++) if ((mask & (1 << i)) == 0) a += weights[i]; else b += weights[i];
+                double worst = Math.Max(a, b);
+                if (worst < bestMax - .5) { bestMax = worst; best = mask; }
+            }
+            int k = 0;
+            foreach (var w in visible)
+                cols[w.Column > 0 ? w.Column - 1 : (best & (1 << k++)) == 0 ? 0 : 1].Add(w);
+            return cols;
+        }
         foreach (var w in visible)
         {
             int c = w.Column > 0 ? w.Column - 1 : height[0] <= height[1] ? 0 : 1;
-            if (w.Column == 0) height[c] += Weight(w);
+            if (w.Column == 0) height[c] += weight(w);
             cols[c].Add(w);
         }
         return cols;
