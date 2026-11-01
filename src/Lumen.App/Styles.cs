@@ -143,6 +143,112 @@ public static class Summaries
         return Summary.Empty;
     }
 
+    // The history chart a widget can show in the Graph and Minimal styles, by its value key.
+    public static string? ChartKey(WidgetKind kind) => kind switch
+    {
+        WidgetKind.Cpu => "cpu.chart", WidgetKind.Gpu => "gpu.chart", WidgetKind.Network => "net.chart",
+        WidgetKind.Fps => "fps.chart", WidgetKind.Ping => "ping.chart", WidgetKind.Power => "power.chart",
+        _ => null
+    };
+
+    // The single values the compact styles can show as small figures, keyed like the Standard card's.
+    public static readonly Dictionary<WidgetKind, string[]> ExtraKeys = new()
+    {
+        [WidgetKind.Cpu] = new[] { "cpu.power", "cpu.voltage", "cpu.fan" },
+        [WidgetKind.Gpu] = new[] { "gpu.vram", "gpu.power", "gpu.hotspot", "gpu.fan" },
+        [WidgetKind.Memory] = new[] { "mem.free", "mem.total", "mem.peak" },
+        [WidgetKind.Battery] = new[] { "battery.time", "battery.rate", "battery.health" },
+        [WidgetKind.Cooling] = new[] { "cooling.fans", "cooling.board" },
+        [WidgetKind.Network] = new[] { "net.use", "net.peak", "net.address" },
+        [WidgetKind.Fps] = new[] { "fps.frametime" },
+        [WidgetKind.Ping] = new[] { "ping.jitter", "ping.loss", "ping.target" },
+        [WidgetKind.Power] = new[] { "power.cost" },
+        [WidgetKind.Weather] = new[] { "weather.feels", "weather.wind", "weather.humidity" },
+        [WidgetKind.System] = new[] { "system.boot", "system.processes", "system.threads" },
+        [WidgetKind.DataUsage] = new[] { "data.week", "data.month" },
+    };
+
+    // Which of a widget's values a style can show: all of them in Standard; in the others the
+    // small figures, plus the history chart in Graph and Minimal.
+    public static bool Supports(WidgetKind kind, WidgetStyle style, string key) =>
+        style == WidgetStyle.Standard || !Settings.HasStyles(kind)
+        || ExtraKeys.TryGetValue(kind, out var keys) && keys.Contains(key)
+        || style is WidgetStyle.Graph or WidgetStyle.Minimal && key == ChartKey(kind);
+
+    // The small figures for the compact styles: (label, value), only those the user keeps switched on.
+    public static List<(string Label, string Value)> Extras(WidgetKind kind, int index, Snapshot s, History h, Settings set)
+    {
+        var list = new List<(string, string)>();
+        void Add(string key, string label, string value) { if (set.Shows(key)) list.Add((label, value)); }
+        string Tc(double? c) => c is null ? Format.Missing : Format.Temperature(c, set.Fahrenheit) + " " + Format.TemperatureUnit(set.Fahrenheit);
+        double? Peak(string key) { var v = h.Read(key); return v.Length > 0 ? v.Max() : null; }
+        switch (kind)
+        {
+            case WidgetKind.Cpu:
+                Add("cpu.power", T("Power"), Format.Watts(s.Cpu?.PowerW));
+                Add("cpu.voltage", T("Voltage"), Format.Volts(s.Cpu?.Voltage));
+                Add("cpu.fan", T("Fan"), Format.Rpm(s.Cpu?.FanRpm));
+                break;
+            case WidgetKind.Gpu:
+            {
+                var g = GpuGroup.Visible(s, set).ElementAtOrDefault(index);
+                Add("gpu.vram", "VRAM", g?.MemoryUsedMb is double u && g.MemoryTotalMb is double t && t > 0 ? $"{Format.Number(u / 1024, "0.0")}/{Format.Number(t / 1024, "0.#")} GB" : Format.Missing);
+                Add("gpu.power", T("Power"), Format.Watts(g?.PowerW));
+                Add("gpu.hotspot", T("Hot spot"), Tc(g?.HotSpot));
+                Add("gpu.fan", T("Fan"), Format.Rpm(g?.FanRpm));
+                break;
+            }
+            case WidgetKind.Memory:
+                Add("mem.free", T("Available"), Format.Gigabytes(s.Memory?.AvailableGb));
+                Add("mem.total", T("Installed"), Format.Gigabytes(s.Memory?.TotalGb));
+                Add("mem.peak", T("2-min peak"), Format.Percent(Peak("mem.load")));
+                break;
+            case WidgetKind.Battery:
+                Add("battery.time", T("Time left"), s.Battery?.MinutesLeft is double min ? Format.Duration(TimeSpan.FromMinutes(min)) : Format.Missing);
+                Add("battery.rate", T("Rate"), Format.Watts(s.Battery?.PowerW));
+                Add("battery.health", T("Health"), s.Battery?.WearPercent is double w ? Format.Percent(100 - w) : Format.Missing);
+                break;
+            case WidgetKind.Cooling:
+                Add("cooling.fans", T("Fans"), s.Fans.Count == 0 ? Format.Missing : $"{s.Fans.Count(f => f.Rpm > 0)}/{s.Fans.Count}");
+                if (set.Shows("cooling.board")) foreach (var t in s.BoardTemps) list.Add((Names.Temp(t.Name, set), Tc(t.Celsius)));
+                break;
+            case WidgetKind.Network:
+            {
+                var n = s.Network;
+                Add("net.use", T("Link use"), Format.Bits(n?.DownloadBytesPerSecond * 8));
+                Add("net.peak", T("2-min peak"), Format.Rate(Peak("net.down")));
+                Add("net.address", T("Address"), n?.Address ?? Format.Missing);
+                break;
+            }
+            case WidgetKind.Fps:
+                Add("fps.frametime", T("Frame time"), s.Fps is { } f ? Format.Milliseconds(f.FrameTimeMs) : Format.Missing);
+                break;
+            case WidgetKind.Ping:
+                Add("ping.jitter", T("Jitter"), Format.Milliseconds(s.Ping?.JitterMs));
+                Add("ping.loss", T("Loss"), s.Ping is { } pi ? Format.Percent(pi.LossPercent) : Format.Missing);
+                Add("ping.target", T("Target"), s.Ping?.Target ?? set.PingTarget);
+                break;
+            case WidgetKind.Power:
+                Add("power.cost", T("Today"), s.Usage is { } us ? Format.Money(us.KwhToday * set.PricePerKwh, set.Currency) : Format.Missing);
+                break;
+            case WidgetKind.Weather:
+                Add("weather.feels", T("Feels like"), Tc(s.Weather?.FeelsLikeC));
+                Add("weather.wind", T("Wind"), s.Weather?.WindKmh is double wk ? Format.Number(wk) + " km/h" : Format.Missing);
+                Add("weather.humidity", T("Humidity"), Format.Percent(s.Weather?.Humidity));
+                break;
+            case WidgetKind.System:
+                Add("system.boot", T("Started"), s.System is { } sy ? sy.BootTime.ToString("ddd HH:mm", L.Culture) : Format.Missing);
+                Add("system.processes", T("Processes"), s.System is { } sp ? sp.Processes.ToString(L.Culture) : Format.Missing);
+                Add("system.threads", T("Threads"), s.System is { } st ? st.Threads.ToString(L.Culture) : Format.Missing);
+                break;
+            case WidgetKind.DataUsage:
+                Add("data.week", T("This week"), s.Usage is { } dw ? Format.Size(dw.DownWeek) : Format.Missing);
+                Add("data.month", T("This month"), s.Usage is { } dm ? Format.Size(dm.DownMonth) : Format.Missing);
+                break;
+        }
+        return list;
+    }
+
     // "2 d 3 h" → ("2", "d 3 h"); "3 h 12 m" → ("3", "h 12 m").
     private static (string, string) SplitDuration(TimeSpan t)
     {
@@ -202,6 +308,7 @@ public sealed class RingTile : Border, IWidget
 {
     private readonly WidgetKind kind; private readonly int index; private readonly Settings s; private readonly Palette p;
     private readonly RingGauge ring; private readonly TextBlock title, value, unit, caption, name; private readonly Control glyphHost;
+    private readonly ExtrasView extras;
 
     public RingTile(WidgetKind kind, int index, Palette p, Metrics m, Settings s)
     {
@@ -231,7 +338,8 @@ public sealed class RingTile : Border, IWidget
         caption = Ui.Text("", 11.5, p.Soft, numbers: true);
         caption.HorizontalAlignment = HorizontalAlignment.Center;
         caption.Margin = new Thickness(0, -6, 0, 0);
-        Child = Ui.Stack(4, Ui.Stack(0, head, name), gauge, caption);
+        extras = new ExtrasView(p, false) { Margin = new Thickness(0, 2, 0, 0) };
+        Child = Ui.Stack(4, Ui.Stack(0, head, name), gauge, caption, extras);
     }
 
     public void Update(Snapshot snap, History h)
@@ -246,6 +354,7 @@ public sealed class RingTile : Border, IWidget
         unit.Text = sum.Value == Format.Missing ? "" : sum.Unit;
         ring.Animate(sum.Fraction, sum.Color);
         caption.Text = sum.Caption;
+        extras.Set(Summaries.Extras(kind, index, snap, h, s));
     }
 }
 
@@ -254,6 +363,7 @@ public sealed class MinimalRow : Border, IWidget
 {
     private readonly WidgetKind kind; private readonly int index; private readonly Settings s; private readonly Palette p;
     private readonly TextBlock title, caption, name; private readonly Hero hero; private readonly AreaChart spark; private readonly ContentControl glyph = new();
+    private readonly ExtrasView extras;
 
     public MinimalRow(WidgetKind kind, int index, Palette p, Metrics m, Settings s)
     {
@@ -270,7 +380,8 @@ public sealed class MinimalRow : Border, IWidget
         spark = new AreaChart { Height = m.Subtitles ? 30 : 24, LineWidth = 1.4, FillOpacity = .22, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(12, 0, 0, 4) };
         name = Ui.Text("", 11, p.Soft);
         name.Margin = new Thickness(8, 0, 8, 0);
-        Child = Ui.Stack(0, Ui.Columns("Auto,Auto,*,Auto", glyph, title, name, caption), Ui.Columns("Auto,*", hero, spark));
+        extras = new ExtrasView(p, true) { Margin = new Thickness(0, 2, 0, 0) };
+        Child = Ui.Stack(0, Ui.Columns("Auto,Auto,*,Auto", glyph, title, name, caption), Ui.Columns("Auto,*", hero, spark), extras);
         Grid.SetColumn(caption, 3);
     }
 
@@ -283,7 +394,8 @@ public sealed class MinimalRow : Border, IWidget
         name.IsVisible = s.ShowNames && sum.Name.Length > 0;
         caption.Text = sum.Caption;
         hero.Set(sum.Value, sum.Unit, sum.Color);
-        spark.IsVisible = sum.Series.Length > 1;
+        spark.IsVisible = sum.Series.Length > 1 && (Summaries.ChartKey(kind) is not string key || s.Shows(key));
+        extras.Set(Summaries.Extras(kind, index, snap, h, s));
         spark.Max = sum.SeriesMax;
         spark.Set(sum.Series, sum.Color == p.Ink ? p.Cool : sum.Color);
     }

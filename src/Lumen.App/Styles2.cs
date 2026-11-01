@@ -12,6 +12,7 @@ public abstract class SummaryTile : Border, IWidget
     protected readonly WidgetKind Kind; protected readonly int Index; protected readonly Settings S; protected readonly Palette P; protected readonly Metrics M;
     private readonly TextBlock title, name;
     protected readonly TextBlock Caption;
+    protected readonly ExtrasView Extras;
     private readonly ContentControl glyph = new();
 
     protected SummaryTile(WidgetKind kind, int index, Palette p, Metrics m, Settings s, bool half)
@@ -22,6 +23,7 @@ public abstract class SummaryTile : Border, IWidget
         BorderThickness = new Thickness(1);
         CornerRadius = new CornerRadius(m.Radius);
         Padding = half ? new Thickness(12, m.Pad - 6, 12, m.Pad - 4) : new Thickness(m.Pad, m.Pad - 4, m.Pad, m.Pad - 2);
+        Extras = new ExtrasView(p, !half) { Margin = new Thickness(0, half ? 2 : 4, 0, 0) };
         title = Ui.Text("", half ? 11.5 : 12.5, p.Ink, FontWeight.SemiBold);
         title.Margin = new Thickness(7, 0, 0, 0);
         name = Ui.Text("", 10.5, p.Soft);
@@ -42,6 +44,7 @@ public abstract class SummaryTile : Border, IWidget
         name.Text = sum.Name;
         name.IsVisible = S.ShowNames && sum.Name.Length > 0;
         Caption.Text = sum.Caption;
+        Extras.Set(Summaries.Extras(Kind, Index, snap, h, S));
         Show(sum);
     }
 
@@ -63,6 +66,7 @@ public sealed class BarTile : SummaryTile
         body.Children.Add(Head);
         body.Children.Add(hero);
         body.Children.Add(meter);
+        body.Children.Add(Extras);
         Child = body;
     }
 
@@ -87,13 +91,15 @@ public sealed class GraphTile : SummaryTile
         var body = new StackPanel { Spacing = 6, Tag = "elastic" };
         body.Children.Add(Head);
         body.Children.Add(stage);
+        body.Children.Add(Extras);
         Child = body;
     }
 
     protected override void Show(Summary sum)
     {
         hero.Set(sum.Value, sum.Unit, sum.Color);
-        bool series = sum.Series.Length > 1;
+        // The history shows unless the user switched the widget's chart off.
+        bool series = sum.Series.Length > 1 && (Summaries.ChartKey(Kind) is not string key || S.Shows(key));
         // Readings without a history (weather, battery) show their level as a bar under the value.
         chart.Opacity = series ? 1 : 0;
         meter.IsVisible = !series;
@@ -121,6 +127,7 @@ public sealed class NumberTile : SummaryTile
         body.Children.Add(Ui.Row(0, value, unit));
         body.Children.Add(meter);
         body.Children.Add(Caption);
+        body.Children.Add(Extras);
         Child = body;
     }
 
@@ -130,5 +137,56 @@ public sealed class NumberTile : SummaryTile
         value.Foreground = Palette.Brush(sum.Color);
         unit.Text = sum.Value == Format.Missing ? "" : sum.Unit;
         meter.Set(sum.Fraction, Shade(sum));
+    }
+}
+
+// The small figures under a compact widget: side by side in full-width styles, one per line in half-width tiles.
+public sealed class ExtrasView : ContentControl
+{
+    private readonly Palette p; private readonly bool wide;
+    private string shape = "";
+    private readonly List<Stat> stats = new();
+    private readonly List<TextBlock> values = new();
+
+    public ExtrasView(Palette p, bool wide) { this.p = p; this.wide = wide; }
+
+    public void Set(List<(string Label, string Value)> items)
+    {
+        IsVisible = items.Count > 0;
+        // Wide: three per line (like the Standard cards), up to two lines; tiles: three lines,
+        // so the gauge stays the main thing.
+        var shown = items.Take(wide ? 6 : 3).ToList();
+        string now = string.Join("|", shown.Select(i => i.Label));
+        if (now != shape)
+        {
+            shape = now;
+            stats.Clear(); values.Clear();
+            if (wide)
+            {
+                foreach (var (label, _) in shown) stats.Add(new Stat(label, p));
+                var grid = new Avalonia.Controls.Primitives.UniformGrid { Columns = 3 };
+                foreach (var st in stats) { st.Margin = new Thickness(0, 0, 6, 4); grid.Children.Add(st); }
+                Content = shown.Count == 0 ? null : grid;
+            }
+            else
+            {
+                var rows = new StackPanel { Spacing = 1 };
+                foreach (var (label, _) in shown)
+                {
+                    var l = Ui.Text(label, 10.5, p.Faint, FontWeight.Medium);
+                    var v = Ui.Text("", 10.5, p.Ink, FontWeight.Medium, true);
+                    v.HorizontalAlignment = HorizontalAlignment.Right;
+                    values.Add(v);
+                    var row = Ui.Columns("*,Auto", l, v);
+                    rows.Children.Add(row);
+                }
+                Content = rows;
+            }
+        }
+        for (int i = 0; i < shown.Count; i++)
+        {
+            if (wide) stats[i].Value = shown[i].Value;
+            else values[i].Text = shown[i].Value;
+        }
     }
 }

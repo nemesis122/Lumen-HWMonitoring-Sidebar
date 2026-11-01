@@ -342,7 +342,7 @@ public sealed class SettingsWindow : Window
             // Style and column first, then the single values.
             var options = new WrapPanel { Margin = new Thickness(28, 0, 0, 0) };
             if (Settings.HasStyles(slot.Kind))
-                options.Children.Add(Ui.Row(8, Ui.Text(T("Style"), 12.5, p.Soft), Choice(new[] { T("Standard"), T("Ring"), T("Minimal"), T("Bar"), T("Graph"), T("Tile") }, (int)slot.Style, i => slot.Style = (WidgetStyle)i, small: true)));
+                options.Children.Add(Ui.Row(8, Ui.Text(T("Style"), 12.5, p.Soft), Choice(new[] { T("Standard"), T("Ring"), T("Minimal"), T("Bar"), T("Graph"), T("Tile") }, (int)slot.Style, i => slot.Style = (WidgetStyle)i, rebuild: true, small: true)));
             if (s.ColumnsInUse > 1)
                 options.Children.Add(Ui.Row(8, Ui.Text(s.Horizontal ? T("Row") : T("Column"), 12.5, p.Soft), Choice(new[] { T("Automatic") }.Concat(Enumerable.Range(1, s.ColumnsInUse).Select(n => n.ToString())).ToList(), Math.Min(slot.Column, s.ColumnsInUse), i => slot.Column = i, small: true)));
             if (s.Pages > 1)
@@ -350,7 +350,8 @@ public sealed class SettingsWindow : Window
             foreach (var o in options.Children) o.Margin = new Thickness(0, 0, 18, 6);
             if (options.Children.Count > 0) panel.Children.Add(options);
             var wrap = new WrapPanel { Margin = new Thickness(28, 0, 0, 4) };
-            foreach (var (key, label) in Cards.Values(slot.Kind))
+            // Only the values the chosen style can show; the Standard card shows them all.
+            foreach (var (key, label) in Cards.Values(slot.Kind).Where(v => Summaries.Supports(slot.Kind, slot.Style, v.Key)))
             {
                 var c = new CheckBox { Content = label, IsChecked = s.Shows(key), FontSize = 12.5, Margin = new Thickness(0, 0, 14, 0) };
                 c.IsCheckedChanged += (_, _) =>
