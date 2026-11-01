@@ -181,7 +181,29 @@ public sealed class SettingsWindow : Window
         var widgetHelp = Ui.Text(T("Tick what the sidebar shows and order it with the arrows; Customise sets style, column, register and single values."), 12, p.Soft);
         widgetHelp.TextWrapping = TextWrapping.Wrap;
         widgetHelp.TextTrimming = TextTrimming.None;
-        pages.Insert(2, (T("Widgets"), Glyphs.Apps, new Control[] { widgetHelp, Section(T("Widgets"), widgets) }));
+        // One click sets the style of every widget that has styles; each can still be changed below.
+        var allStyles = new WrapPanel();
+        var styleNames = new[] { T("Standard"), T("Ring"), T("Minimal"), T("Bar"), T("Graph"), T("Tile") };
+        for (int i = 0; i < styleNames.Length; i++)
+        {
+            var style = (WidgetStyle)i;
+            var styled = s.Widgets.Where(w => Settings.HasStyles(w.Kind)).ToList();
+            bool on = styled.Count > 0 && styled.All(w => w.Style == style);
+            var b = new Button
+            {
+                Content = styleNames[i], Padding = new Thickness(14, 6), CornerRadius = new CornerRadius(8), Margin = new Thickness(0, 0, 8, 8),
+                Classes = { on ? "accent" : "plain" }
+            };
+            b.Click += (_, _) =>
+            {
+                foreach (var w in s.Widgets.Where(w => Settings.HasStyles(w.Kind))) w.Style = style;
+                changed();
+                Build();
+            };
+            allStyles.Children.Add(b);
+        }
+        var allRow = WideRow(T("Style for all widgets"), allStyles, T("One click sets every widget with styles; each one can still be changed below."));
+        pages.Insert(2, (T("Widgets"), Glyphs.Apps, new Control[] { widgetHelp, Section(T("Style for all widgets"), allRow), Section(T("Widgets"), widgets) }));
 
         var admin = platform.IsAdministrator;
         var accessText = Ui.Text(admin ? T("Running with administrator rights – all sensors are reachable.") : T("Without administrator rights the CPU temperatures are missing."), 12, admin ? p.Calm : p.Soft);
