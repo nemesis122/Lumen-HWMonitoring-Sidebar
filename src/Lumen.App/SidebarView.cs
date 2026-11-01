@@ -22,6 +22,8 @@ public sealed class SidebarView : Border
     private readonly Settings settings;
     private readonly List<IWidget> widgets = new();
     private readonly Border hint;
+    // Shown on a register that has no widgets yet.
+    private readonly TextBlock emptyNote;
     private readonly Ellipse statusDot;
     private readonly TextBlock statusText;
     private readonly List<StackPanel> lists = new();
@@ -123,6 +125,10 @@ public sealed class SidebarView : Border
         shield.VerticalAlignment = VerticalAlignment.Top;
         var hintBody = Ui.Stack(0, hintText, elevate);
         hintBody.Margin = new Thickness(10, 0, 0, 0);
+        emptyNote = Ui.Text(T("Nothing on this register yet – choose its widgets in the settings under Widgets → Customise → Register."), 12.5, p.Soft);
+        emptyNote.TextWrapping = TextWrapping.Wrap;
+        emptyNote.TextTrimming = TextTrimming.None;
+        emptyNote.Margin = new Thickness(6, 4, 6, 0);
         hint = new Border
         {
             Background = Palette.Brush(Palette.Alpha(p.Ramp[2], p.Dark ? .14 : .16)),
@@ -191,7 +197,7 @@ public sealed class SidebarView : Border
             var list = lists[c];
             list.Children.Clear();
             list.Spacing = metrics.Gap;
-            if (c == 0) list.Children.Add(hint);
+            if (c == 0) { list.Children.Add(hint); (emptyNote.Parent as Panel)?.Children.Remove(emptyNote); list.Children.Add(emptyNote); emptyNote.IsVisible = columns.All(col => col.Count == 0); }
             // Each graphics adapter is its own widget, so ring tiles can pair up with anything.
             var items = new List<(WidgetSlot slot, int index)>();
             foreach (var slot in c < columns.Count ? columns[c] : new())
@@ -236,7 +242,13 @@ public sealed class SidebarView : Border
             foreach (var slot in rows[r])
                 for (int i = 0; i < (slot.Kind == WidgetKind.Gpu ? gpuCount : 1); i++) items.Add((slot, i));
             var cells = new List<StackPanel>();
-            if (r == 0) { (hint.Parent as Panel)?.Children.Remove(hint); cells.Add(new StackPanel { Children = { hint } }); }
+            if (r == 0)
+            {
+                (hint.Parent as Panel)?.Children.Remove(hint);
+                (emptyNote.Parent as Panel)?.Children.Remove(emptyNote);
+                emptyNote.IsVisible = rows.All(row => row.Count == 0);
+                cells.Add(new StackPanel { Children = { hint, emptyNote } });
+            }
             for (int i = 0; i < items.Count; i++)
             {
                 var (slot, index) = items[i];
@@ -261,8 +273,11 @@ public sealed class SidebarView : Border
             allCells.Add(cells);
         }
         // Rows with fewer cards keep the same card width as the fullest row, so all line up.
-        int Filled(List<StackPanel> cells) => cells.Count(c => c.Children.Any(x => x != hint));
+        int Filled(List<StackPanel> cells) => cells.Count(c => c.Children.Any(x => x != hint && x != emptyNote));
         int width = allCells.Select(Filled).DefaultIfEmpty(1).Max();
+        // Rows without any widget (fewer widgets on this register than rows) are left out;
+        // the remaining rows share the bar's height.
+        allCells = allCells.Where((c, i) => i == 0 || Filled(c) > 0).ToList();
         for (int r = 0; r < allCells.Count; r++)
         {
             var cells = allCells[r];
@@ -398,7 +413,7 @@ public sealed class FitPanel : Panel
         return a.Count > 0 ? a : lists.Take(1).ToList();
     }
 
-    private double ColumnWidth(double w) { int n = Active().Count; return (w - gap * (n - 1)) / n; }
+    private double ColumnWidth(double w) { int n = Math.Max(1, Active().Count); return (w - gap * (n - 1)) / n; }
 
     private static int Gaps(StackPanel l) => Math.Max(1, l.Children.Count(c => c.IsVisible) - 1);
 
@@ -445,7 +460,8 @@ public sealed class FitPanel : Panel
     private double MeasureAll(double colWidth, double s)
     {
         foreach (var l in lists) l.Measure(new Size(colWidth / s, double.PositiveInfinity));
-        return lists.Max(Natural);
+        // An empty strip (a bar row or register with nothing in it) has no height of its own.
+        return lists.Count == 0 ? 0 : lists.Max(Natural);
     }
 
     protected override Size MeasureOverride(Size available)
@@ -507,7 +523,7 @@ public sealed class FitPanel : Panel
             if (changed) l.Measure(new Size(col / s, double.PositiveInfinity));
         }
         if (Math.Abs(s - applied) > .001) { applied = s; Fitted?.Invoke(s); }
-        return fit ? new Size(w, h) : new Size(w, lists.Max(l => l.DesiredSize.Height) * s);
+        return fit ? new Size(w, h) : new Size(w, lists.Select(l => l.DesiredSize.Height).DefaultIfEmpty(0).Max() * s);
     }
 
     protected override Size ArrangeOverride(Size final)

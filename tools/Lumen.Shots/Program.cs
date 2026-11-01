@@ -218,8 +218,9 @@ foreach (var (bgKey, accent) in new[] { ("black", "#EF4444"), ("aubergine", "#D9
     Sidebar("sidebar-bg-" + bgKey, new Settings { Language = "de", Density = Density.Comfortable, Background = bgKey, Colors = accent, Widgets = Only(WidgetKind.Clock, WidgetKind.Cpu, WidgetKind.Memory) }, true);
 // The bar switched to its second register (regression: crashed in 1.9.2).
 {
-    var paged = new Settings { Language = "de", Edge = Edge.Top, BarHeight = 300, Pages = 2 };
-    foreach (var w in paged.Widgets) { w.Visible = true; w.Page = w.Kind is WidgetKind.Power or WidgetKind.Memory or WidgetKind.Processes or WidgetKind.System or WidgetKind.Drives or WidgetKind.Volumes or WidgetKind.Network or WidgetKind.Ping or WidgetKind.DataUsage or WidgetKind.Notes ? 2 : 1; }
+    // As on the user's PC: two rows, two registers, every widget still on the first one.
+    var paged = new Settings { Language = "de", Edge = Edge.Top, BarHeight = 240, Pages = 2, Columns = 2 };
+    foreach (var w in paged.Widgets) { w.Visible = true; w.Page = 1; }
     try
     {
         var v = View(paged, true, Desktop);

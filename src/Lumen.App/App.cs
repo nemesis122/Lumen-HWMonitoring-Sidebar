@@ -37,7 +37,9 @@ public static class CrashLog
     {
         if (e is null) return;
         string text = $"=== {DateTime.Now:yyyy-MM-dd HH:mm:ss} · Lumen {typeof(CrashLog).Assembly.GetName().Version?.ToString(3)} · {kind}{Environment.NewLine}{e}{Environment.NewLine}{Environment.NewLine}";
-        foreach (var dir in new[] { AppContext.BaseDirectory, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lumen") })
+        // Beside the EXE itself: AppContext.BaseDirectory is the hidden folder the single-file EXE unpacks to.
+        string exeDir = Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory;
+        foreach (var dir in new[] { exeDir, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lumen") })
         {
             try
             {
