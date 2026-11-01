@@ -7,8 +7,10 @@ using Lumen.Core;
 namespace Lumen.App;
 
 // Shared frame for the extra styles: a card with glyph, title, model name and caption on top.
-public abstract class SummaryTile : Border, IWidget
+public abstract class SummaryTile : Border, IWidget, INamed
 {
+    private WidgetSlot? slot;
+    public void Own(WidgetSlot slot, int index) => this.slot = slot;
     protected readonly WidgetKind Kind; protected readonly int Index; protected readonly Settings S; protected readonly Palette P; protected readonly Metrics M;
     private readonly TextBlock title, name;
     protected readonly TextBlock Caption;
@@ -40,9 +42,9 @@ public abstract class SummaryTile : Border, IWidget
     {
         var sum = Summaries.For(Kind, Index, snap, h, S, P);
         if (glyph.Tag as string != sum.Glyph) { glyph.Content = Ui.Glyph(sum.Glyph, P.Soft, 13); glyph.Tag = sum.Glyph; }
-        title.Text = sum.Title;
-        name.Text = sum.Name;
-        name.IsVisible = S.ShowNames && sum.Name.Length > 0;
+        title.Text = Naming.Title(slot, Index, sum.Title);
+        name.Text = Naming.Hardware(slot, Index, sum.Name);
+        name.IsVisible = Naming.ShowHardware(slot, S) && name.Text.Length > 0;
         Caption.Text = sum.Caption;
         Extras.Set(Summaries.Extras(Kind, Index, snap, h, S));
         Show(sum);

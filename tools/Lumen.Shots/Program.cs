@@ -157,6 +157,8 @@ void SettingsPage(string name, bool dark, string language, int index, params Wid
     L.Use(language);
     var s = new Settings { Theme = dark ? ThemeMode.Dark : ThemeMode.Light, Language = language, Pages = 4, Columns = 4, PageNames = new() { "Hardware", "Gaming", "", "", "", "" } };
     if (barSettings) { s.Edge = Edge.Bottom; s.Pages = 1; }
+    var cpuSlot = s.Widgets.First(x => x.Kind == WidgetKind.Cpu);
+    cpuSlot.Name = "Gaming-PC"; cpuSlot.HardwareName = "Ryzen 9 5900X @ PBO";
     foreach (var x in s.Widgets) { if (x.Kind is WidgetKind.Gpu or WidgetKind.Fps) x.Page = 2; if (x.Kind == WidgetKind.Gpu) { x.Column = 2; x.Style = WidgetStyle.Ring; } }
     Application.Current!.RequestedThemeVariant = dark ? Avalonia.Styling.ThemeVariant.Dark : Avalonia.Styling.ThemeVariant.Light;
     var w = new SettingsWindow(s, Palette.For(dark, false), () => { }, () => new[] { L.F("Screen {0}", 1) + " · 2560×1440 (" + L.T("main") + ")", L.F("Screen {0}", 2) + " · 1920×1080" }, new ShotPlatform(), null, null, () => Demo().Item1);
@@ -245,6 +247,14 @@ foreach (var (bgKey, accent) in new[] { ("black", "#EF4444"), ("aubergine", "#D9
         Console.WriteLine("bar-page-2 ok");
     }
     catch (Exception e) { Console.WriteLine("bar-page-2 CRASH " + (e.InnerException ?? e)); }
+}
+// Own title and hardware name, and a widget with both hidden.
+{
+    var named2 = new Settings { Language = "de", Density = Density.Comfortable, Widgets = Only(WidgetKind.Cpu, WidgetKind.Gpu, WidgetKind.Memory) };
+    var c = named2.Widgets.First(w => w.Kind == WidgetKind.Cpu); c.Name = "Gaming-PC"; c.HardwareName = "Ryzen 9 5900X @ PBO";
+    var g = named2.Widgets.First(w => w.Kind == WidgetKind.Gpu); g.Style = WidgetStyle.Ring; g.HardwareName = "RTX 3080 FE";
+    var m = named2.Widgets.First(w => w.Kind == WidgetKind.Memory); m.ShowTitle = false;
+    Sidebar("sidebar-own-names", named2, true);
 }
 // Text size extremes.
 Sidebar("sidebar-text-50", new Settings { Language = "de", Density = Density.Comfortable, TextScale = .5, Widgets = Only(WidgetKind.Clock, WidgetKind.Cpu, WidgetKind.Memory) }, true);

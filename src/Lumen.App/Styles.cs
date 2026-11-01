@@ -326,8 +326,10 @@ public sealed class RingGauge : Control
 }
 
 // Half-width tile: title, ring with the value inside, one caption. Two sit side by side.
-public sealed class RingTile : Border, IWidget
+public sealed class RingTile : Border, IWidget, INamed
 {
+    private WidgetSlot? slot;
+    public void Own(WidgetSlot slot, int index) => this.slot = slot;
     private readonly WidgetKind kind; private readonly int index; private readonly Settings s; private readonly Palette p;
     private readonly RingGauge ring; private readonly TextBlock title, value, unit, caption, name; private readonly Control glyphHost;
     private readonly ExtrasView extras;
@@ -368,9 +370,9 @@ public sealed class RingTile : Border, IWidget
     {
         var sum = Summaries.For(kind, index, snap, h, s, p);
         if (glyphHost is ContentControl cc && cc.Tag as string != sum.Glyph) { cc.Content = Ui.Glyph(sum.Glyph, p.Soft, 13); cc.Tag = sum.Glyph; }
-        title.Text = sum.Title;
-        name.Text = sum.Name;
-        name.IsVisible = s.ShowNames && sum.Name.Length > 0;
+        title.Text = Naming.Title(slot, index, sum.Title);
+        name.Text = Naming.Hardware(slot, index, sum.Name);
+        name.IsVisible = Naming.ShowHardware(slot, s) && name.Text.Length > 0;
         Motion.Text(value, sum.Value);
         value.Foreground = Palette.Brush(sum.Color == p.Ink ? p.Ink : sum.Color);
         unit.Text = sum.Value == Format.Missing ? "" : sum.Unit;
@@ -381,8 +383,10 @@ public sealed class RingTile : Border, IWidget
 }
 
 // One slim line without a box: title and caption, the big value, a sparkline, a hairline below.
-public sealed class MinimalRow : Border, IWidget
+public sealed class MinimalRow : Border, IWidget, INamed
 {
+    private WidgetSlot? slot;
+    public void Own(WidgetSlot slot, int index) => this.slot = slot;
     private readonly WidgetKind kind; private readonly int index; private readonly Settings s; private readonly Palette p;
     private readonly TextBlock title, caption, name; private readonly Hero hero; private readonly AreaChart spark; private readonly ContentControl glyph = new();
     private readonly ExtrasView extras;
@@ -411,9 +415,9 @@ public sealed class MinimalRow : Border, IWidget
     {
         var sum = Summaries.For(kind, index, snap, h, s, p);
         if (glyph.Tag as string != sum.Glyph) { glyph.Content = Ui.Glyph(sum.Glyph, p.Soft, 12); glyph.Tag = sum.Glyph; }
-        title.Text = sum.Title.ToUpper(L.Culture);
-        name.Text = sum.Name;
-        name.IsVisible = s.ShowNames && sum.Name.Length > 0;
+        title.Text = Naming.Title(slot, index, sum.Title).ToUpper(L.Culture);
+        name.Text = Naming.Hardware(slot, index, sum.Name);
+        name.IsVisible = Naming.ShowHardware(slot, s) && name.Text.Length > 0;
         caption.Text = sum.Caption;
         hero.Set(sum.Value, sum.Unit, sum.Color);
         spark.IsVisible = sum.Series.Length > 1 && (Summaries.ChartKey(kind) is not string key || s.Shows(key));

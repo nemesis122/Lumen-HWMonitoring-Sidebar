@@ -322,7 +322,9 @@ public sealed class SettingsWindow : Window
     private Control WidgetRow(int index)
     {
         var slot = s.Widgets[index];
-        var check = new CheckBox { Content = Cards.Name(slot.Kind), IsChecked = slot.Visible, FontSize = 13.5 };
+        // The own title, if any, with the built-in name after it so the widget stays recognisable.
+        string listName = slot.Name.Length > 0 ? $"{slot.Name}  ({Cards.Name(slot.Kind)})" : Cards.Name(slot.Kind);
+        var check = new CheckBox { Content = listName, IsChecked = slot.Visible, FontSize = 13.5 };
         check.IsCheckedChanged += (_, _) => { slot.Visible = check.IsChecked == true; changed(); };
         Button Small(Control body, string tip, bool enabled, Action click)
         {
@@ -345,7 +347,8 @@ public sealed class SettingsWindow : Window
         });
         values.Padding = new Thickness(10, 5);
         // Only offer "Customise" where there is something to choose.
-        values.IsVisible = Settings.HasStyles(slot.Kind) || Cards.Values(slot.Kind).Length > 0 || s.ColumnsInUse > 1 || s.Pages > 1;
+        // Every widget has at least its title and hardware name to customise.
+        values.IsVisible = true;
         // Where the widget lands, so the list reads as the layout without opening every entry.
         var place = new List<string>();
         if (s.Pages > 1) place.Add(s.PageName(Math.Min(slot.Page, s.Pages)));
@@ -361,6 +364,32 @@ public sealed class SettingsWindow : Window
         var panel = Ui.Stack(8, row);
         if (open)
         {
+            // Own title and hardware name, each with a switch to show or hide it.
+            var hwNow = HardwareNameNow(slot.Kind);
+            TextBox NameBox(string text, string watermark, Action<string> set)
+            {
+                var box = new TextBox { Text = text, Watermark = watermark, MinWidth = 0, CornerRadius = new CornerRadius(8), MaxLength = 60 };
+                box.LostFocus += (_, _) => { string v = (box.Text ?? "").Trim(); set(v); changed(); };
+                return box;
+            }
+            CheckBox ShowBox(bool on, Action<bool> set)
+            {
+                var c = new CheckBox { Content = T("Show"), IsChecked = on, FontSize = 12.5, Margin = new Thickness(12, 0, 0, 0) };
+                c.IsCheckedChanged += (_, _) => { set(c.IsChecked == true); changed(); };
+                return c;
+            }
+            Control NameRow(string label, TextBox box, CheckBox show)
+            {
+                var l = Ui.Text(label, 12.5, p.Soft);
+                l.Width = 120;
+                l.VerticalAlignment = VerticalAlignment.Center;
+                return Ui.Columns("Auto,*,Auto", l, box, show);
+            }
+            var names = Ui.Stack(6,
+                NameRow(T("Title"), NameBox(slot.Name, Cards.Name(slot.Kind), v => slot.Name = v), ShowBox(slot.ShowTitle, v => slot.ShowTitle = v)),
+                NameRow(T("Hardware name"), NameBox(slot.HardwareName, hwNow.Length > 0 ? hwNow : T("None"), v => slot.HardwareName = v), ShowBox(slot.ShowHardware, v => slot.ShowHardware = v)));
+            names.Margin = new Thickness(28, 0, 0, 6);
+            panel.Children.Add(names);
             // Style and column first, then the single values.
             var options = new WrapPanel { Margin = new Thickness(28, 0, 0, 0) };
             if (Settings.HasStyles(slot.Kind))
@@ -504,6 +533,22 @@ public sealed class SettingsWindow : Window
             grid.Children.Add(box);
         }
         return grid;
+    }
+
+    // The hardware name a widget shows by default, for the hint in the empty box.
+    private string HardwareNameNow(WidgetKind kind)
+    {
+        var snap = snapshot();
+        if (snap is null) return "";
+        return kind switch
+        {
+            WidgetKind.Cpu => Names.Clean(snap.Cpu?.Name),
+            WidgetKind.Gpu => Names.Clean(snap.Gpus.FirstOrDefault()?.Name),
+            WidgetKind.Cooling => Names.Clean(snap.BoardName),
+            WidgetKind.Network => Names.Clean(snap.Network?.Name),
+            WidgetKind.System => snap.System is { } y ? $"{y.Os} · {y.Build}" : "",
+            _ => ""
+        };
     }
 
     private Control Choice(IReadOnlyList<string> items, int selected, Action<int> set, bool rebuild = false, bool small = false)

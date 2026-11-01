@@ -301,6 +301,10 @@ Asking…|Wird abgerufen…|Demande…|Richiesta…|Consultando…|A consultar�
 Not reachable|Nicht erreichbar|Injoignable|Non raggiungibile|No disponible|Indisponível
 Not fetched yet|Noch nicht abgerufen|Pas encore demandée|Non ancora recuperato|Aún no obtenida|Ainda não obtido
 Asks api.ipify.org once for the public address of this connection.|Fragt api.ipify.org einmal nach der öffentlichen Adresse dieser Verbindung.|Demande une fois à api.ipify.org l'adresse publique de cette connexion.|Chiede una volta ad api.ipify.org l'indirizzo pubblico di questa connessione.|Pregunta una vez a api.ipify.org la dirección pública de esta conexión.|Pergunta uma vez a api.ipify.org o endereço público desta ligação.
+Title|Titel|Titre|Titolo|Título|Título
+Show|Anzeigen|Afficher|Mostra|Mostrar|Mostrar
+None|Keiner|Aucun|Nessuno|Ninguno|Nenhum
+Hardware name|Hardware-Name|Nom du matériel|Nome hardware|Nombre del hardware|Nome do hardware
 Register names|Register-Namen|Noms des pages|Nomi delle pagine|Nombres de páginas|Nomes das páginas
 Shown at the top instead of 1, 2, 3; leave empty for the number.|Steht oben statt 1, 2, 3; leer lassen für die Nummer.|Affiché en haut au lieu de 1, 2, 3 ; vide = numéro.|Mostrato in alto al posto di 1, 2, 3; vuoto = numero.|Se muestra arriba en lugar de 1, 2, 3; vacío = número.|Mostrado no topo em vez de 1, 2, 3; vazio = número.
 Whole screen|Ganzer Bildschirm|Plein écran|Schermo intero|Pantalla completa|Ecrã inteiro

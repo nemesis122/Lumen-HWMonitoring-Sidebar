@@ -24,6 +24,11 @@ public sealed class WidgetSlot
     public int Column { get; set; }
     // Register (tab) the widget is shown on, 1..Pages.
     public int Page { get; set; } = 1;
+    // Own title and hardware name; empty keeps the built-in one. Either can be hidden.
+    public string Name { get; set; } = "";
+    public string HardwareName { get; set; } = "";
+    public bool ShowTitle { get; set; } = true;
+    public bool ShowHardware { get; set; } = true;
 }
 
 public sealed class Settings
@@ -176,6 +181,10 @@ public sealed class Settings
         {
             w.Column = Math.Clamp(w.Column, 0, 6);
             w.Page = Math.Clamp(w.Page, 1, 6);
+            w.Name = (w.Name ?? "").Trim();
+            w.HardwareName = (w.HardwareName ?? "").Trim();
+            if (w.Name.Length > 40) w.Name = w.Name[..40];
+            if (w.HardwareName.Length > 60) w.HardwareName = w.HardwareName[..60];
             if (!Enum.IsDefined(w.Style) || !HasStyles(w.Kind)) w.Style = WidgetStyle.Standard;
         }
         foreach (var kind in Enum.GetValues<WidgetKind>())

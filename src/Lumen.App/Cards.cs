@@ -12,9 +12,27 @@ public interface IWidget
     void Update(Snapshot s, History h);
 }
 
+// Widgets that take the user's own title and hardware name from their slot.
+public interface INamed
+{
+    void Own(WidgetSlot slot, int index);
+}
+
+public static class Naming
+{
+    // Own names apply to the first card of a widget (the first graphics card, say); hiding applies to all.
+    public static string Title(WidgetSlot? slot, int index, string builtIn) =>
+        slot is { ShowTitle: false } ? "" : index == 0 && !string.IsNullOrWhiteSpace(slot?.Name) ? slot!.Name.Trim() : builtIn;
+
+    public static string Hardware(WidgetSlot? slot, int index, string builtIn) =>
+        index == 0 && !string.IsNullOrWhiteSpace(slot?.HardwareName) ? slot!.HardwareName.Trim() : builtIn;
+
+    public static bool ShowHardware(WidgetSlot? slot, Settings s) => s.ShowNames && slot?.ShowHardware != false;
+}
+
 // Every card shares one skeleton: icon, title and one key figure on the right; a quiet
 // subtitle with the model; then the card's own content. Temperature leads wherever there is one.
-public abstract class Card : Border, IWidget
+public abstract class Card : Border, IWidget, INamed
 {
     protected readonly Palette P;
     protected readonly Metrics M;
@@ -32,6 +50,7 @@ public abstract class Card : Border, IWidget
         Padding = new Thickness(m.Pad, m.Pad - 2, m.Pad, m.Pad);
 
         title = Ui.Text(titleText, 12.5, p.Ink, FontWeight.SemiBold);
+        builtInTitle = titleText;
         aside = Ui.Text("", 12, p.Soft, FontWeight.Medium, true);
         aside.HorizontalAlignment = HorizontalAlignment.Right;
         var header = Ui.Columns("Auto,*,Auto", Ui.Glyph(glyph, p.Soft, 14), title, aside);
@@ -45,14 +64,31 @@ public abstract class Card : Border, IWidget
         Child = Body;
     }
 
-    protected string Title { set => title.Text = value; }
+    private WidgetSlot? slot;
+    private int slotIndex;
+    private string builtInTitle = "";
+    private string lastSubtitle = "";
+
+    public void Own(WidgetSlot slot, int index)
+    {
+        this.slot = slot; slotIndex = index;
+        Title = builtInTitle;
+        Subtitle = lastSubtitle;
+    }
+
+    protected string Title { set { builtInTitle = value; title.Text = Naming.Title(slot, slotIndex, value); } }
     protected string Aside { set => aside.Text = value; }
 
     protected string Subtitle
     {
         // Hardware names follow their own switch, not the density, so they never vanish just
         // because the sidebar had to shrink.
-        set { subtitle.Text = Names.Clean(value); subtitle.IsVisible = S.ShowNames && !string.IsNullOrWhiteSpace(value); }
+        set
+        {
+            lastSubtitle = value;
+            subtitle.Text = Naming.Hardware(slot, slotIndex, Names.Clean(value));
+            subtitle.IsVisible = Naming.ShowHardware(slot, S) && !string.IsNullOrWhiteSpace(subtitle.Text);
+        }
     }
 
     protected bool Shows(string key) => S.Shows(key);

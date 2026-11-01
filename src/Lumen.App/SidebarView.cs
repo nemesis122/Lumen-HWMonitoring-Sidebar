@@ -205,14 +205,14 @@ public sealed class SidebarView : Border
             for (int i = 0; i < items.Count; i++)
             {
                 var (slot, index) = items[i];
-                var card = Cards.Create(slot.Kind, slot.Style, index, p, metrics, settings);
+                var card = Make(slot, index);
                 widgets.Add((IWidget)card);
                 Remember(slot.Kind, card);
                 // Two half-width tiles (rings, number tiles) in a row share one line.
                 static bool Half(WidgetSlot w) => Settings.IsHalf(w);
                 if (Half(slot) && card is RingTile or NumberTile && i + 1 < items.Count && Half(items[i + 1].slot))
                 {
-                    var next = Cards.Create(items[i + 1].slot.Kind, items[i + 1].slot.Style, items[i + 1].index, p, metrics, settings);
+                    var next = Make(items[i + 1].slot, items[i + 1].index);
                     widgets.Add((IWidget)next);
                     Remember(items[i + 1].slot.Kind, next);
                     var pair = new Grid { ColumnDefinitions = new ColumnDefinitions($"*,{metrics.Gap},*") };
@@ -252,13 +252,13 @@ public sealed class SidebarView : Border
             for (int i = 0; i < items.Count; i++)
             {
                 var (slot, index) = items[i];
-                var card = Cards.Create(slot.Kind, slot.Style, index, p, metrics, settings);
+                var card = Make(slot, index);
                 widgets.Add((IWidget)card);
                 Remember(slot.Kind, card);
                 Control cell = card;
                 if (Settings.IsHalf(slot) && card is RingTile or NumberTile && i + 1 < items.Count && Settings.IsHalf(items[i + 1].slot))
                 {
-                    var next = Cards.Create(items[i + 1].slot.Kind, items[i + 1].slot.Style, items[i + 1].index, p, metrics, settings);
+                    var next = Make(items[i + 1].slot, items[i + 1].index);
                     widgets.Add((IWidget)next);
                     Remember(items[i + 1].slot.Kind, next);
                     var pair = new Grid { ColumnDefinitions = new ColumnDefinitions($"*,{metrics.Gap},*") };
@@ -292,6 +292,14 @@ public sealed class SidebarView : Border
     }
 
 
+
+    // A card for one widget, with the user's own title and hardware name.
+    private Control Make(WidgetSlot slot, int index)
+    {
+        var card = Cards.Create(slot.Kind, slot.Style, index, p, metrics, settings);
+        (card as INamed)?.Own(slot, index);
+        return card;
+    }
 
     private void BuildTabs()
     {

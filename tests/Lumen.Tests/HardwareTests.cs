@@ -366,3 +366,20 @@ public class BarLayoutTests
         Assert.Contains(visible[0], s.Layout()[1]);
     }
 }
+
+public class NamingTests
+{
+    [Fact]
+    public void OwnNamesAndHiding()
+    {
+        var slot = new WidgetSlot { Kind = WidgetKind.Gpu, Name = " Main card ", HardwareName = "RTX 3080 FE" };
+        Assert.Equal("Main card", Lumen.App.Naming.Title(slot, 0, "Graphics"));
+        Assert.Equal("Graphics", Lumen.App.Naming.Title(slot, 1, "Graphics"));        // second card keeps its own
+        Assert.Equal("RTX 3080 FE", Lumen.App.Naming.Hardware(slot, 0, "NVIDIA GeForce RTX 3080"));
+        slot.ShowTitle = false;
+        Assert.Equal("", Lumen.App.Naming.Title(slot, 0, "Graphics"));
+        slot.ShowHardware = false;
+        Assert.False(Lumen.App.Naming.ShowHardware(slot, new Settings()));
+        Assert.Equal("Graphics", Lumen.App.Naming.Title(null, 0, "Graphics"));
+    }
+}
