@@ -288,6 +288,13 @@ Link speed|Verbindung|Liaison|Collegamento|Enlace|Ligação
 Each drive|Jedes Laufwerk|Chaque disque|Ogni unità|Cada unidad|Cada unidade
 Read|Lesen|Lecture|Lettura|Lectura|Leitura
 Write|Schreiben|Écriture|Scrittura|Escritura|Escrita
+Model name|Modellname|Nom du modèle|Nome modello|Nombre del modelo|Nome do modelo
+Usage bar|Belegungsbalken|Barre d'occupation|Barra di utilizzo|Barra de uso|Barra de uso
+Used in %|Belegt in %|Occupé en %|Usato in %|Usado en %|Usado em %
+Volume name|Laufwerksname|Nom du volume|Nome volume|Nombre del volumen|Nome do volume
+Free space|Freier Platz|Espace libre|Spazio libero|Espacio libre|Espaço livre
+Drives shown|Angezeigte Laufwerke|Disques affichés|Unità mostrate|Unidades mostradas|Unidades mostradas
+Volumes shown|Angezeigte Partitionen|Volumes affichés|Volumi mostrati|Volúmenes mostrados|Volumes mostrados
 Register names|Register-Namen|Noms des pages|Nomi delle pagine|Nombres de páginas|Nomes das páginas
 Shown at the top instead of 1, 2, 3; leave empty for the number.|Steht oben statt 1, 2, 3; leer lassen für die Nummer.|Affiché en haut au lieu de 1, 2, 3 ; vide = numéro.|Mostrato in alto al posto di 1, 2, 3; vuoto = numero.|Se muestra arriba en lugar de 1, 2, 3; vacío = número.|Mostrado no topo em vez de 1, 2, 3; vazio = número.
 Whole screen|Ganzer Bildschirm|Plein écran|Schermo intero|Pantalla completa|Ecrã inteiro

@@ -164,7 +164,7 @@ void SettingsPage(string name, bool dark, string language, int index, params Wid
     var field = typeof(SettingsWindow).GetField("expanded", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
     foreach (var k in open) ((HashSet<WidgetKind>)field.GetValue(w)!).Add(k);
     typeof(SettingsWindow).GetMethod("Build", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.Invoke(w, null);
-    w.Height = 1100;
+    w.Height = 2400;
     w.Show();
     Save(w, name);
 }
@@ -309,7 +309,7 @@ toastContent.VerticalAlignment = VerticalAlignment.Bottom;
 toastContent.Margin = new Thickness(0, 0, 300 + 16, Taskbar + 16);
 DesktopShot("desktop-warning", new Settings { Language = "de" }, true, extra: toastContent);
 
-for (int i = 0; i < 8; i++) SettingsPage($"settings-de-{i}", true, "de", i, WidgetKind.Cpu, WidgetKind.Gpu);
+for (int i = 0; i < 8; i++) SettingsPage($"settings-de-{i}", true, "de", i, WidgetKind.Cpu, WidgetKind.Gpu, WidgetKind.Drives, WidgetKind.Volumes);
 barSettings = true;
 SettingsPage("settings-de-bar-layout", true, "de", 1);
 SettingsPage("settings-en-bar-layout", true, "en", 1);

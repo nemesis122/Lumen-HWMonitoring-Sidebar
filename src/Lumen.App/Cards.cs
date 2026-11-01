@@ -239,8 +239,15 @@ public sealed class DrivesCard : Card
 
     public override void Update(Snapshot s, History h)
     {
-        Aside = $"{s.Disks.Count} {(s.Disks.Count == 1 ? T("drive") : T("drives"))}";
-        foreach (var d in s.Disks)
+        // Drives the user switched off under Customise are left out entirely.
+        var disks = s.Disks.Where(d => S.Shows("drive:" + d.Id)).ToList();
+        Aside = $"{disks.Count} {(disks.Count == 1 ? T("drive") : T("drives"))}";
+        foreach (var gone in map.Keys.Except(disks.Select(d => d.Id)).ToList())
+        {
+            rows.Children.Remove(map[gone].name.Parent!.Parent as Control);
+            map.Remove(gone);
+        }
+        foreach (var d in disks)
         {
             if (!map.TryGetValue(d.Id, out var r))
             {
@@ -267,11 +274,17 @@ public sealed class DrivesCard : Card
                 var write = Rate();
                 var rates = Ui.Columns("Auto,Auto,Auto,Auto", Letter("R", 0), read, Letter("W", 10), write);
                 rates.IsVisible = Shows("drives.io");
-                rows.Children.Add(Ui.Stack(5, Ui.Columns("*,Auto", name, temp), used, Ui.Columns("*,Auto", usedText, rates)));
+                temp.IsVisible = Shows("drives.temp");
+                used.IsVisible = Shows("drives.bar");
+                usedText.IsVisible = Shows("drives.used");
+                var bottom = Ui.Columns("*,Auto", usedText, rates);
+                bottom.IsVisible = usedText.IsVisible || rates.IsVisible;
+                rows.Children.Add(Ui.Stack(5, Ui.Columns("*,Auto", name, temp), used, bottom));
                 map[d.Id] = r = (name, temp, used, usedText, read, write);
             }
             // Two identical models are told apart by their drive letters.
-            r.name.Text = d.Letters.Length > 0 ? $"{ShortName(d.Name)} · {d.Letters}" : ShortName(d.Name);
+            string model = Shows("drives.model") || d.Letters.Length == 0 ? ShortName(d.Name) : "";
+            r.name.Text = d.Letters.Length > 0 ? (model.Length > 0 ? $"{model} · {d.Letters}" : d.Letters) : model;
             Motion.Text(r.temp, TempWithUnit(d.Temperature));
             r.temp.Foreground = Palette.Brush(d.Temperature is null ? P.Faint : HeatColor(d.Temperature + 10));
             double share = Format.Share(d.UsedPercent);
@@ -685,14 +698,14 @@ public static class Cards
         WidgetKind.Cooling => new[] { ("cooling.fans", T("Fans")), ("cooling.board", T("Board temperatures")) },
         WidgetKind.Memory => new[] { ("mem.bar", T("Segment bar")), ("mem.free", T("Available")), ("mem.total", T("Installed")), ("mem.peak", T("2-min peak")) },
         WidgetKind.Processes => new[] { ("proc.memory", "RAM") },
-        WidgetKind.Drives => new[] { ("drives.io", T("Read and write rates")), ("drives.temps", T("Each drive")) },
+        WidgetKind.Drives => new[] { ("drives.model", T("Model name")), ("drives.temp", T("Temperature")), ("drives.bar", T("Usage bar")), ("drives.used", T("Used in %")), ("drives.io", T("Read and write rates")), ("drives.temps", T("Each drive")) },
         WidgetKind.Network => new[] { ("net.link", T("Link speed")), ("net.chart", T("History chart")), ("net.use", T("Link use")), ("net.peak", T("2-min peak")), ("net.address", T("Address")) },
         WidgetKind.Fps => new[] { ("fps.chart", T("History chart")), ("fps.frametime", T("Frame time")) },
         WidgetKind.Ping => new[] { ("ping.chart", T("History chart")), ("ping.jitter", T("Jitter")), ("ping.loss", T("Loss")), ("ping.target", T("Target")) },
         WidgetKind.Power => new[] { ("power.chart", T("History chart")), ("power.cost", T("Costs")), ("power.note", T("Note on the estimate")) },
         WidgetKind.DataUsage => new[] { ("data.week", T("This week")), ("data.month", T("This month")) },
         WidgetKind.System => new[] { ("system.boot", T("Started")), ("system.processes", T("Processes")), ("system.threads", T("Threads")) },
-        WidgetKind.Volumes => new[] { ("volumes.detail", T("Used of total")) },
+        WidgetKind.Volumes => new[] { ("volumes.label", T("Volume name")), ("volumes.free", T("Free space")), ("volumes.bar", T("Usage bar")), ("volumes.detail", T("Used of total")) },
         _ => Array.Empty<(string, string)>()
     };
 }

@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <AvaloniaVersion>11.3.22</AvaloniaVersion>
-    <Version>1.9.7</Version>
+    <Version>1.9.8</Version>
     <Product>Lumen</Product>
     <Company>Lumen</Company>
     <NuGetAudit>false</NuGetAudit>

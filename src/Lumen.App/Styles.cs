@@ -136,8 +136,9 @@ public static class Summaries
             case WidgetKind.Drives:
             {
                 // The hottest drive leads; the caption counts them.
-                var hot = s.Disks.Where(d => d.Temperature != null).OrderByDescending(d => d.Temperature).FirstOrDefault();
-                string count = $"{s.Disks.Count} {(s.Disks.Count == 1 ? T("drive") : T("drives"))}";
+                var shown = s.Disks.Where(d => set.Shows("drive:" + d.Id)).ToList();
+                var hot = shown.Where(d => d.Temperature != null).OrderByDescending(d => d.Temperature).FirstOrDefault();
+                string count = $"{shown.Count} {(shown.Count == 1 ? T("drive") : T("drives"))}";
                 return new(Glyphs.Drive, T("Drives"), T2(hot?.Temperature), U, Heat(hot?.Temperature), Format.Heat(hot?.Temperature),
                     count, Array.Empty<double>(), null);
             }
@@ -234,10 +235,10 @@ public static class Summaries
             case WidgetKind.Drives:
                 // One figure per drive, by its letters (or short name), then the combined rates.
                 if (set.Shows("drives.temps"))
-                    foreach (var d in s.Disks)
+                    foreach (var d in s.Disks.Where(d => set.Shows("drive:" + d.Id)))
                         list.Add((d.Letters.Length > 0 ? d.Letters : Names.Short(d.Name), Tc(d.Temperature)));
-                Add("drives.io", T("Read"), Format.Rate(s.Disks.Sum(d => d.ReadBytesPerSecond ?? 0)));
-                Add("drives.io", T("Write"), Format.Rate(s.Disks.Sum(d => d.WriteBytesPerSecond ?? 0)));
+                Add("drives.io", T("Read"), Format.Rate(s.Disks.Where(d => set.Shows("drive:" + d.Id)).Sum(d => d.ReadBytesPerSecond ?? 0)));
+                Add("drives.io", T("Write"), Format.Rate(s.Disks.Where(d => set.Shows("drive:" + d.Id)).Sum(d => d.WriteBytesPerSecond ?? 0)));
                 break;
             case WidgetKind.Fps:
                 Add("fps.frametime", T("Frame time"), s.Fps is { } f ? Format.Milliseconds(f.FrameTimeMs) : Format.Missing);

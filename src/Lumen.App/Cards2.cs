@@ -129,7 +129,14 @@ public sealed class VolumesCard : Card
 
     public override void Update(Snapshot s, History h)
     {
-        foreach (var v in s.Volumes)
+        // Volumes switched off under Customise are left out.
+        var volumes = s.Volumes.Where(v => S.Shows("volume:" + v.Name)).ToList();
+        foreach (var gone in map.Keys.Except(volumes.Select(v => v.Name)).ToList())
+        {
+            rows.Children.Remove(map[gone].name.Parent!.Parent as Control);
+            map.Remove(gone);
+        }
+        foreach (var v in volumes)
         {
             if (!map.TryGetValue(v.Name, out var r))
             {
@@ -138,10 +145,12 @@ public sealed class VolumesCard : Card
                 var bar = new Meter { Height = 5, Palette = P };
                 var detail = Ui.Text("", 11.5, P.Soft, numbers: true);
                 detail.IsVisible = Shows("volumes.detail");
+                free.IsVisible = Shows("volumes.free");
+                bar.IsVisible = Shows("volumes.bar");
                 rows.Children.Add(Ui.Stack(5, Ui.Columns("*,Auto", name, free), bar, detail));
                 map[v.Name] = r = (name, free, bar, detail);
             }
-            r.name.Text = string.IsNullOrWhiteSpace(v.Label) ? v.Name : $"{v.Name}  {v.Label}";
+            r.name.Text = string.IsNullOrWhiteSpace(v.Label) || !Shows("volumes.label") ? v.Name : $"{v.Name}  {v.Label}";
             Motion.Text(r.free, F("{0} free", Format.Capacity(v.FreeGb)));
             double share = v.UsedPercent / 100;
             var c = share >= .9 ? P.Ramp[^1] : share >= .8 ? P.Ramp[2] : P.Cool;

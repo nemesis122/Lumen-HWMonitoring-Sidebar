@@ -384,6 +384,34 @@ public sealed class SettingsWindow : Window
                 wrap.Children.Add(c);
             }
             panel.Children.Add(wrap);
+            // Which drives or volumes the widget lists, from what this PC has right now.
+            var snap = snapshot();
+            var items = slot.Kind switch
+            {
+                WidgetKind.Drives => snap?.Disks.Select(d => ("drive:" + d.Id, d.Letters.Length > 0 ? $"{Names.Short(d.Name)} · {d.Letters}" : Names.Short(d.Name))).ToList(),
+                WidgetKind.Volumes => snap?.Volumes.Select(v => ("volume:" + v.Name, string.IsNullOrWhiteSpace(v.Label) ? v.Name : $"{v.Name} {v.Label}")).ToList(),
+                _ => null
+            };
+            if (items is { Count: > 0 })
+            {
+                var which = new WrapPanel { Margin = new Thickness(28, 2, 0, 4) };
+                var label = Ui.Text(slot.Kind == WidgetKind.Drives ? T("Drives shown") : T("Volumes shown"), 12.5, p.Soft);
+                label.Margin = new Thickness(0, 0, 0, 4);
+                foreach (var (key, text) in items)
+                {
+                    var c = new CheckBox { Content = text, IsChecked = s.Shows(key), FontSize = 12.5, Margin = new Thickness(0, 0, 14, 0) };
+                    c.IsCheckedChanged += (_, _) =>
+                    {
+                        if (c.IsChecked == true) s.HiddenValues.Remove(key); else if (!s.HiddenValues.Contains(key)) s.HiddenValues.Add(key);
+                        changed();
+                    };
+                    which.Children.Add(c);
+                }
+                var block = Ui.Stack(0, label, which);
+                block.Margin = new Thickness(28, 4, 0, 4);
+                which.Margin = new Thickness(0);
+                panel.Children.Add(block);
+            }
         }
         return new Border
         {
