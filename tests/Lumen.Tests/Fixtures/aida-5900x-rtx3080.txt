@@ -1,0 +1,399 @@
+Lumen 2.0.0 · 2026-11-01 19:33:53
+Windows: Microsoft Windows NT 10.0.26300.0 · administrator: False · LibreHardwareMonitor 0.9.6.0
+
+=== LibreHardwareMonitor ===
+[Motherboard] ASUS ROG STRIX X570-E GAMING  (/motherboard)
+  [EmbeddedController] Embedded Controller  (/lpc/ec)
+      Temperature  Chipset                            0
+      Temperature  CPU                                0
+      Temperature  Motherboard                        0
+      Temperature  T Sensor                           0
+      Temperature  VRM                                0
+      Voltage      CPU Core                           0
+      Fan          Chipset Fan                        0
+      Current      CPU                                0
+[Cpu] AMD Ryzen 9 5900X  (/amdcpu/0)
+    Load         CPU Core #1                        10.08
+    Load         CPU Core #2                        12.4
+    Load         CPU Core #3                        2.33
+    Load         CPU Core #4                        11.63
+    Load         CPU Core #5                        3.88
+    Load         CPU Core #6                        0.78
+    Load         CPU Core #7                        0.78
+    Load         CPU Core #8                        1.55
+    Load         CPU Core #9                        0
+    Load         CPU Core #10                       0.78
+    Load         CPU Core #11                       0
+    Load         CPU Core #12                       0
+    Load         CPU Core #13                       0.78
+    Load         CPU Core #14                       0.78
+    Load         CPU Core #15                       0.78
+    Load         CPU Core #16                       0
+    Load         CPU Core #17                       0
+    Load         CPU Core #18                       0
+    Load         CPU Core #19                       0
+    Load         CPU Core #20                       0
+    Load         CPU Core #21                       0.78
+    Load         CPU Core #22                       0
+    Load         CPU Core #23                       0.77
+    Load         CPU Core #24                       0.77
+    Load         CPU Total                          2.03
+    Load         CPU Core Max                       12.4
+    Power        Package                            0
+    Clock        Cores (Average)                    0
+    Clock        Cores (Average Effective)          0
+    Clock        Core #1                            —
+    Clock        Core #1 (Effective)                0
+    Factor       Core #1                            —
+    Power        Core #1 (SMU)                      0
+    Voltage      Core #1 VID                        1.55
+    Clock        Core #2                            —
+    Clock        Core #2 (Effective)                0
+    Factor       Core #2                            —
+    Power        Core #2 (SMU)                      0
+    Voltage      Core #2 VID                        1.55
+    Clock        Core #3                            —
+    Clock        Core #3 (Effective)                0
+    Factor       Core #3                            —
+    Power        Core #3 (SMU)                      0
+    Voltage      Core #3 VID                        1.55
+    Clock        Core #4                            —
+    Clock        Core #4 (Effective)                0
+    Factor       Core #4                            —
+    Power        Core #4 (SMU)                      0
+    Voltage      Core #4 VID                        1.55
+    Clock        Core #5                            —
+    Clock        Core #5 (Effective)                0
+    Factor       Core #5                            —
+    Power        Core #5 (SMU)                      0
+    Voltage      Core #5 VID                        1.55
+    Clock        Core #6                            —
+    Clock        Core #6 (Effective)                0
+    Factor       Core #6                            —
+    Power        Core #6 (SMU)                      0
+    Voltage      Core #6 VID                        1.55
+    Clock        Core #7                            —
+    Clock        Core #7 (Effective)                0
+    Factor       Core #7                            —
+    Power        Core #7 (SMU)                      0
+    Voltage      Core #7 VID                        1.55
+    Clock        Core #8                            —
+    Clock        Core #8 (Effective)                0
+    Factor       Core #8                            —
+    Power        Core #8 (SMU)                      0
+    Voltage      Core #8 VID                        1.55
+    Clock        Core #9                            —
+    Clock        Core #9 (Effective)                0
+    Factor       Core #9                            —
+    Power        Core #9 (SMU)                      0
+    Voltage      Core #9 VID                        1.55
+    Clock        Core #10                           —
+    Clock        Core #10 (Effective)               0
+    Factor       Core #10                           —
+    Power        Core #10 (SMU)                     0
+    Voltage      Core #10 VID                       1.55
+    Clock        Core #11                           —
+    Clock        Core #11 (Effective)               0
+    Factor       Core #11                           —
+    Power        Core #11 (SMU)                     0
+    Voltage      Core #11 VID                       1.55
+    Clock        Core #12                           —
+    Clock        Core #12 (Effective)               0
+    Factor       Core #12                           —
+    Power        Core #12 (SMU)                     0
+    Voltage      Core #12 VID                       1.55
+    Temperature  Core (Tctl/Tdie)                   0
+    Voltage      Core (SVI2 TFN)                    1.55
+    Voltage      SoC (SVI2 TFN)                     1.55
+[GpuNvidia] NVIDIA GeForce RTX 3080  (/gpu-nvidia/0)
+    Temperature  GPU Core                           44
+    Clock        GPU Core                           210
+    Clock        GPU Memory                         405
+    Fan          GPU Fan 1                          0
+    Fan          GPU Fan 2                          0
+    Control      GPU Fan 1                          0
+    Control      GPU Fan 2                          0
+    Load         GPU Core                           5
+    Load         GPU Memory Controller              16
+    Load         GPU Video Engine                   0
+    Load         GPU Bus                            0
+    Load         GPU Power                          11.697
+    Load         GPU Board Power                    12.211
+    Voltage      GPU Core Voltage                   0.731
+    SmallData    D3D Dedicated Memory Used          1468.035
+    SmallData    D3D Shared Memory Used             61.363
+    Load         D3D 3D                             0.377
+    Load         D3D Overlay                        0
+    Load         D3D Video Decode                   0
+    Load         D3D Copy                           0
+    Load         D3D Copy                           0.004
+    Load         D3D Security                       0
+    Load         D3D Video Encode                   0
+    Load         D3D Optical Flow Accelerator 0     0
+    Load         D3D VR                             0
+    Load         D3D Copy                           0.238
+    Load         D3D Copy                           0
+    Load         D3D Copy                           0
+    Load         D3D Copy                           0
+    Load         D3D Security_1                     0
+    Temperature  GPU Hot Spot                       55.688
+    Temperature  GPU Memory Junction                54
+    SmallData    GPU Memory Total                   10240
+    SmallData    GPU Memory Free                    8593
+    SmallData    GPU Memory Used                    1646
+    Load         GPU Memory                         16.08
+    Power        GPU Package                        39.743
+    Throughput   GPU PCIe Rx                        299008
+    Throughput   GPU PCIe Tx                        299008
+
+=== Open Hardware Monitor (driverless: vendor GPU APIs, SMART) ===
+[GpuNvidia] NVIDIA GeForce RTX 3080  (/gpu-nvidia/0)
+    Temperature  GPU Core                           44
+    Clock        GPU Core                           210
+    Clock        GPU Memory                         405
+    Fan          GPU Fan 1                          0
+    Fan          GPU Fan 2                          0
+    Control      GPU Fan 1                          0
+    Control      GPU Fan 2                          0
+    Load         GPU Core                           1
+    Load         GPU Memory Controller              15
+    Load         GPU Video Engine                   0
+    Load         GPU Bus                            0
+    Load         GPU Power                          11.734
+    Load         GPU Board Power                    12.211
+    SmallData    D3D Dedicated Memory Used          1468.035
+    SmallData    D3D Shared Memory Used             61.363
+    Load         D3D 3D                             0.378
+    Load         D3D Overlay                        0
+    Load         D3D Video Decode                   0
+    Load         D3D Copy                           0
+    Load         D3D Copy                           0.004
+    Load         D3D Security                       0
+    Load         D3D Video Encode                   0
+    Load         D3D OFA_0                          0
+    Load         D3D VR                             0
+    Load         D3D Copy                           0.239
+    Load         D3D Copy                           0
+    Load         D3D Copy                           0
+    Load         D3D Copy                           0
+    Load         D3D Security_1                     0
+    Temperature  GPU Hot Spot                       56.063
+    Temperature  GPU Memory Junction                52
+    SmallData    GPU Memory Total                   10240
+    SmallData    GPU Memory Free                    8593
+    SmallData    GPU Memory Used                    1646
+    Load         GPU Memory                         16.08
+    Power        GPU Package                        39.743
+    Throughput   GPU PCIe Rx                        299008
+    Throughput   GPU PCIe Tx                        349184
+
+=== External source (setting: Aida64) ===
+Reading from AIDA64 – LibreHardwareMonitor and Open Hardware Monitor are paused
+<sys><id>SDATE</id><label>Date</label><value>01.11.2026</value></sys>
+<sys><id>SYEAR</id><label>Year</label><value>2026</value></sys>
+<sys><id>SMONTH</id><label>Month</label><value>11</value></sys>
+<sys><id>SMONTHNAME</id><label>Month Name</label><value>November</value></sys>
+<sys><id>SDAYOFMONTH</id><label>Day of Month</label><value>1</value></sys>
+<sys><id>SDOW</id><label>Day of Week</label><value>7</value></sys>
+<sys><id>SDOWNAME</id><label>Day of Week Name</label><value>Sunday</value></sys>
+<sys><id>SWEEKOFYEAR</id><label>Week of Year</label><value>44</value></sys>
+<sys><id>STIME</id><label>Time</label><value>19:33:51</value></sys>
+<sys><id>STIMENS</id><label>Time (HH:MM)</label><value>19:33</value></sys>
+<sys><id>SHOUR12</id><label>Hour (1-12)</label><value>7</value></sys>
+<sys><id>SHOUR24</id><label>Hour (0-23)</label><value>19</value></sys>
+<sys><id>SMIN</id><label>Minute</label><value>33</value></sys>
+<sys><id>SSEC</id><label>Second</label><value>51</value></sys>
+<sys><id>SUPTIME</id><label>UpTime</label><value>02:28:02</value></sys>
+<sys><id>SUPTIMENS</id><label>UpTime (HH:MM)</label><value>02:28</value></sys>
+<sys><id>SCPUCLK</id><label>CPU Clock</label><value>4791</value></sys>
+<sys><id>SCC-1-1</id><label>CPU Core #1 Clock</label><value>4791</value></sys>
+<sys><id>SCC-1-2</id><label>CPU Core #2 Clock</label><value>3593</value></sys>
+<sys><id>SCC-1-3</id><label>CPU Core #3 Clock</label><value>3593</value></sys>
+<sys><id>SCC-1-4</id><label>CPU Core #4 Clock</label><value>3593</value></sys>
+<sys><id>SCC-1-5</id><label>CPU Core #5 Clock</label><value>3593</value></sys>
+<sys><id>SCC-1-6</id><label>CPU Core #6 Clock</label><value>3813</value></sys>
+<sys><id>SCC-1-7</id><label>CPU Core #7 Clock</label><value>3773</value></sys>
+<sys><id>SCC-1-8</id><label>CPU Core #8 Clock</label><value>3593</value></sys>
+<sys><id>SCC-1-9</id><label>CPU Core #9 Clock</label><value>3593</value></sys>
+<sys><id>SCC-1-10</id><label>CPU Core #10 Clock</label><value>3593</value></sys>
+<sys><id>SCC-1-11</id><label>CPU Core #11 Clock</label><value>3593</value></sys>
+<sys><id>SCC-1-12</id><label>CPU Core #12 Clock</label><value>3593</value></sys>
+<sys><id>SCPUMUL</id><label>CPU Multiplier</label><value>48.0</value></sys>
+<sys><id>SCPUFSB</id><label>CPU FSB</label><value>100</value></sys>
+<sys><id>SNBMUL</id><label>North Bridge Multiplier</label><value>10.67</value></sys>
+<sys><id>SNBCLK</id><label>North Bridge Clock</label><value>1065</value></sys>
+<sys><id>SMEMCLK</id><label>Memory Clock</label><value>1065</value></sys>
+<sys><id>SMEMSPEED</id><label>Memory Speed</label><value>DDR4-2133</value></sys>
+<sys><id>SDRAMFSB</id><label>DRAM:FSB Ratio</label><value>32:3</value></sys>
+<sys><id>SMEMTIM</id><label>Memory Timings</label><value>15-15-15-36 CR2</value></sys>
+<sys><id>SMOBONAME</id><label>Motherboard Name</label><value>Asus ROG Strix X570-E Gaming</value></sys>
+<sys><id>SBIOSVER</id><label>BIOS Version</label><value>5031</value></sys>
+<sys><id>SCPUUTI</id><label>CPU Utilization</label><value>1</value></sys>
+<sys><id>SCPU1UTI</id><label>CPU1 Utilization</label><value>13</value></sys>
+<sys><id>SCPU2UTI</id><label>CPU2 Utilization</label><value>19</value></sys>
+<sys><id>SCPU3UTI</id><label>CPU3 Utilization</label><value>3</value></sys>
+<sys><id>SCPU4UTI</id><label>CPU4 Utilization</label><value>12</value></sys>
+<sys><id>SCPU5UTI</id><label>CPU5 Utilization</label><value>0</value></sys>
+<sys><id>SCPU6UTI</id><label>CPU6 Utilization</label><value>3</value></sys>
+<sys><id>SCPU7UTI</id><label>CPU7 Utilization</label><value>0</value></sys>
+<sys><id>SCPU8UTI</id><label>CPU8 Utilization</label><value>3</value></sys>
+<sys><id>SCPU9UTI</id><label>CPU9 Utilization</label><value>0</value></sys>
+<sys><id>SCPU10UTI</id><label>CPU10 Utilization</label><value>0</value></sys>
+<sys><id>SCPU11UTI</id><label>CPU11 Utilization</label><value>0</value></sys>
+<sys><id>SCPU12UTI</id><label>CPU12 Utilization</label><value>0</value></sys>
+<sys><id>SCPU13UTI</id><label>CPU13 Utilization</label><value>0</value></sys>
+<sys><id>SCPU14UTI</id><label>CPU14 Utilization</label><value>0</value></sys>
+<sys><id>SCPU15UTI</id><label>CPU15 Utilization</label><value>0</value></sys>
+<sys><id>SCPU16UTI</id><label>CPU16 Utilization</label><value>0</value></sys>
+<sys><id>SCPU17UTI</id><label>CPU17 Utilization</label><value>2</value></sys>
+<sys><id>SCPU18UTI</id><label>CPU18 Utilization</label><value>0</value></sys>
+<sys><id>SCPU19UTI</id><label>CPU19 Utilization</label><value>0</value></sys>
+<sys><id>SCPU20UTI</id><label>CPU20 Utilization</label><value>0</value></sys>
+<sys><id>SCPU21UTI</id><label>CPU21 Utilization</label><value>0</value></sys>
+<sys><id>SCPU22UTI</id><label>CPU22 Utilization</label><value>0</value></sys>
+<sys><id>SCPU23UTI</id><label>CPU23 Utilization</label><value>0</value></sys>
+<sys><id>SCPU24UTI</id><label>CPU24 Utilization</label><value>2</value></sys>
+<sys><id>SMEMUTI</id><label>Memory Utilization</label><value>32</value></sys>
+<sys><id>SUSEDMEM</id><label>Used Memory</label><value>10474</value></sys>
+<sys><id>SFREEMEM</id><label>Free Memory</label><value>22205</value></sys>
+<sys><id>SVIRTMEMUTI</id><label>Virtual Memory Utilization</label><value>40</value></sys>
+<sys><id>SUSEDVIRTMEM</id><label>Used Virtual Memory</label><value>14949</value></sys>
+<sys><id>SFREEVIRTMEM</id><label>Free Virtual Memory</label><value>22850</value></sys>
+<sys><id>SPROCESSES</id><label>Processes</label><value>270</value></sys>
+<sys><id>SUSERS</id><label>Users</label><value>1</value></sys>
+<sys><id>SDRVCUTI</id><label>Drive C: Utilization</label><value>37</value></sys>
+<sys><id>SDRVCUSEDSPC</id><label>Drive C: Used Space</label><value>681</value></sys>
+<sys><id>SDRVCFREESPC</id><label>Drive C: Free Space</label><value>1182</value></sys>
+<sys><id>SDRVFUTI</id><label>Drive F: Utilization</label><value>59</value></sys>
+<sys><id>SDRVFUSEDSPC</id><label>Drive F: Used Space</label><value>2208</value></sys>
+<sys><id>SDRVFFREESPC</id><label>Drive F: Free Space</label><value>1518</value></sys>
+<sys><id>SDRVGUTI</id><label>Drive G: Utilization</label><value>69</value></sys>
+<sys><id>SDRVGUSEDSPC</id><label>Drive G: Used Space</label><value>1279</value></sys>
+<sys><id>SDRVGFREESPC</id><label>Drive G: Free Space</label><value>584</value></sys>
+<sys><id>SSMASTA</id><label>SMART Status</label><value>OK</value></sys>
+<sys><id>SDSK1ACT</id><label>Disk 1 Activity</label><value>0</value></sys>
+<sys><id>SDSK1READSPD</id><label>Disk 1 Read Speed</label><value>0.0</value></sys>
+<sys><id>SDSK1WRITESPD</id><label>Disk 1 Write Speed</label><value>0.0</value></sys>
+<sys><id>SDSK2ACT</id><label>Disk 2 Activity</label><value>0</value></sys>
+<sys><id>SDSK2READSPD</id><label>Disk 2 Read Speed</label><value>0.0</value></sys>
+<sys><id>SDSK2WRITESPD</id><label>Disk 2 Write Speed</label><value>0.1</value></sys>
+<sys><id>SDSK3ACT</id><label>Disk 3 Activity</label><value>0</value></sys>
+<sys><id>SDSK3READSPD</id><label>Disk 3 Read Speed</label><value>0.0</value></sys>
+<sys><id>SDSK3WRITESPD</id><label>Disk 3 Write Speed</label><value>0.0</value></sys>
+<sys><id>SGPU1CLK</id><label>GPU Clock</label><value>210</value></sys>
+<sys><id>SGPU1MEMCLK</id><label>GPU Memory Clock</label><value>50</value></sys>
+<sys><id>SGPU1UTI</id><label>GPU Utilization</label><value>0</value></sys>
+<sys><id>SGPU1MCUTI</id><label>GPU MC Utilization</label><value>14</value></sys>
+<sys><id>SGPU1VEUTI</id><label>GPU VE Utilization</label><value>0</value></sys>
+<sys><id>SGPU1BIUTI</id><label>GPU BI Utilization</label><value>0</value></sys>
+<sys><id>SGPU1USEDDEMEM</id><label>GPU Used Dedicated Memory</label><value>1473</value></sys>
+<sys><id>SGPU1USEDDYMEM</id><label>GPU Used Dynamic Memory</label><value>49</value></sys>
+<sys><id>SGPU1BUSTYP</id><label>GPU Bus Type</label><value>PCI-E 4.0 x16 @ 1.1 x16</value></sys>
+<sys><id>SGPU1PERFCAP</id><label>GPU PerfCap Reason</label><value>Utilization</value></sys>
+<sys><id>SVMEMUSAGE</id><label>Video Memory Utilization</label><value>16</value></sys>
+<sys><id>SUSEDVMEM</id><label>Used Video Memory</label><value>1652</value></sys>
+<sys><id>SFREEVMEM</id><label>Free Video Memory</label><value>8588</value></sys>
+<sys><id>SSLISTA</id><label>SLI Status</label><value>Deaktiviert</value></sys>
+<sys><id>SPRIIPADDR</id><label>Primary IP Address</label><value>192.168.0.10</value></sys>
+<sys><id>SEXTIPADDR</id><label>External IP Address</label><value>203.0.113.7</value></sys>
+<sys><id>SNIC1DLRATE</id><label>NIC1 Download Rate</label><value>0.0</value></sys>
+<sys><id>SNIC1ULRATE</id><label>NIC1 Upload Rate</label><value>0.0</value></sys>
+<sys><id>SNIC1TOTDL</id><label>NIC1 Total Download</label><value>0.0</value></sys>
+<sys><id>SNIC1TOTUL</id><label>NIC1 Total Upload</label><value>0.0</value></sys>
+<sys><id>SNIC2DLRATE</id><label>NIC2 Download Rate</label><value>0.3</value></sys>
+<sys><id>SNIC2ULRATE</id><label>NIC2 Upload Rate</label><value>0.4</value></sys>
+<sys><id>SNIC2TOTDL</id><label>NIC2 Total Download</label><value>2092.7</value></sys>
+<sys><id>SNIC2TOTUL</id><label>NIC2 Total Upload</label><value>54004.7</value></sys>
+<sys><id>SNIC2CONNSPD</id><label>NIC2 Connection Speed</label><value>10000</value></sys>
+<sys><id>SNIC3DLRATE</id><label>NIC3 Download Rate</label><value>0.0</value></sys>
+<sys><id>SNIC3ULRATE</id><label>NIC3 Upload Rate</label><value>0.0</value></sys>
+<sys><id>SNIC3TOTDL</id><label>NIC3 Total Download</label><value>0.0</value></sys>
+<sys><id>SNIC3TOTUL</id><label>NIC3 Total Upload</label><value>0.0</value></sys>
+<sys><id>SNIC3CONNSPD</id><label>NIC3 Connection Speed</label><value>1000</value></sys>
+<sys><id>SNIC4DLRATE</id><label>NIC4 Download Rate</label><value>0.0</value></sys>
+<sys><id>SNIC4ULRATE</id><label>NIC4 Upload Rate</label><value>0.0</value></sys>
+<sys><id>SNIC4TOTDL</id><label>NIC4 Total Download</label><value>0.0</value></sys>
+<sys><id>SNIC4TOTUL</id><label>NIC4 Total Upload</label><value>0.0</value></sys>
+<sys><id>SNIC4CONNSPD</id><label>NIC4 Connection Speed</label><value>100</value></sys>
+<sys><id>SNIC5DLRATE</id><label>NIC5 Download Rate</label><value>0.0</value></sys>
+<sys><id>SNIC5ULRATE</id><label>NIC5 Upload Rate</label><value>0.0</value></sys>
+<sys><id>SNIC5TOTDL</id><label>NIC5 Total Download</label><value>0.0</value></sys>
+<sys><id>SNIC5TOTUL</id><label>NIC5 Total Upload</label><value>0.0</value></sys>
+<sys><id>SNIC5CONNSPD</id><label>NIC5 Connection Speed</label><value>100</value></sys>
+<sys><id>SDESKRES</id><label>Desktop Resolution</label><value>1920 x 1080</value></sys>
+<sys><id>SVREFRATE</id><label>Vertical Refresh Rate</label><value>240</value></sys>
+<sys><id>SMASTVOL</id><label>Master Volume</label><value>26</value></sys>
+<sys><id>SBATT</id><label>Battery</label><value>No Battery</value></sys>
+<sys><id>SAIDAFPS</id><label>AIDA FPS</label><value>0</value></sys>
+<sys><id>SRTSSFPS</id><label>RTSS FPS</label><value>0</value></sys>
+<temp><id>TMOBO</id><label>Motherboard</label><value>37</value></temp>
+<temp><id>TCPU</id><label>CPU</label><value>42</value></temp>
+<temp><id>TCPUDIO</id><label>CPU Diode</label><value>54</value></temp>
+<temp><id>TCPUPKG</id><label>CPU Package</label><value>53</value></temp>
+<temp><id>TCCD1</id><label>CCD #1</label><value>43</value></temp>
+<temp><id>TCCD2</id><label>CCD #2</label><value>44</value></temp>
+<temp><id>TCHIP</id><label>Chipset</label><value>68</value></temp>
+<temp><id>TPCHDIO</id><label>PCH Diode</label><value>68</value></temp>
+<temp><id>TVRM</id><label>VRM</label><value>21</value></temp>
+<temp><id>TGPU1</id><label>GPU</label><value>46</value></temp>
+<temp><id>TGPU1HOT</id><label>GPU Hotspot</label><value>58</value></temp>
+<temp><id>TGPU1MEM</id><label>GPU Memory</label><value>52</value></temp>
+<temp><id>THDD1</id><label>Samsung SSD 970 EVO Plus 2TB (S4J4NJ0N100001A)</label><value>58</value></temp>
+<temp><id>THDD1TS2</id><label>Samsung SSD 970 EVO Plus 2TB (S4J4NJ0N100001A) #2</label><value>58</value></temp>
+<temp><id>THDD2</id><label>Samsung SSD 970 EVO Plus 2TB (S4J4NJ0N100002B)</label><value>59</value></temp>
+<temp><id>THDD2TS2</id><label>Samsung SSD 970 EVO Plus 2TB (S4J4NJ0N100002B) #2</label><value>63</value></temp>
+<temp><id>THDD3</id><label>Samsung SSD 870 EVO 4TB</label><value>31</value></temp>
+<fan><id>FCPU</id><label>CPU</label><value>667</value></fan>
+<fan><id>FPCH</id><label>PCH</label><value>3124</value></fan>
+<fan><id>FCHA2</id><label>Chassis #2</label><value>1042</value></fan>
+<fan><id>FGPU1</id><label>GPU</label><value>0</value></fan>
+<fan><id>FGPU1GPU2</id><label>GPU2</label><value>0</value></fan>
+<duty><id>DGPU1</id><label>GPU</label><value>0</value></duty>
+<duty><id>DGPU1GPU2</id><label>GPU2</label><value>0</value></duty>
+<volt><id>VCPU</id><label>CPU Core</label><value>1.224</value></volt>
+<volt><id>VCPUVID</id><label>CPU VID</label><value>1.000</value></volt>
+<volt><id>V33V</id><label>+3.3 V</label><value>3.280</value></volt>
+<volt><id>VP5V</id><label>+5 V</label><value>4.940</value></volt>
+<volt><id>VP12V</id><label>+12 V</label><value>12.076</value></volt>
+<volt><id>V3VSB</id><label>+3.3 V Standby</label><value>3.376</value></volt>
+<volt><id>VBAT</id><label>VBAT Battery</label><value>3.344</value></volt>
+<volt><id>VCPUVDD</id><label>CPU VDD</label><value>1.037</value></volt>
+<volt><id>VCPUVDDNB</id><label>CPU VDDNB</label><value>0.975</value></volt>
+<volt><id>VGPU1</id><label>GPU Core</label><value>0.731</value></volt>
+<volt><id>VGPU1PCIE</id><label>GPU PCIe</label><value>12.260</value></volt>
+<volt><id>VGPU18P1</id><label>GPU 8-pin #1</label><value>12.262</value></volt>
+<volt><id>VGPU18P2</id><label>GPU 8-pin #2</label><value>12.265</value></volt>
+<curr><id>CCPUVDD</id><label>CPU VDD</label><value>17.67</value></curr>
+<curr><id>CCPUVDDNB</id><label>CPU VDDNB</label><value>5.05</value></curr>
+<curr><id>CGPU1PCIE</id><label>GPU PCIe</label><value>0.64</value></curr>
+<curr><id>CGPU18P1</id><label>GPU 8-pin #1</label><value>1.38</value></curr>
+<curr><id>CGPU18P2</id><label>GPU 8-pin #2</label><value>1.28</value></curr>
+<pwr><id>PCPUPKG</id><label>CPU Package</label><value>40.45</value></pwr>
+<pwr><id>PCPUVDD</id><label>CPU VDD</label><value>18.33</value></pwr>
+<pwr><id>PCPUVDDNB</id><label>CPU VDDNB</label><value>4.92</value></pwr>
+<pwr><id>PGPU1</id><label>GPU</label><value>40.35</value></pwr>
+<pwr><id>PGPU1TDPP</id><label>GPU TDP%</label><value>12</value></pwr>
+<pwr><id>PGPU1PCIE</id><label>GPU PCIe</label><value>7.81</value></pwr>
+<pwr><id>PGPU18P1</id><label>GPU 8-pin #1</label><value>16.86</value></pwr>
+<pwr><id>PGPU18P2</id><label>GPU 8-pin #2</label><value>15.67</value></pwr>
+
+
+=== Combined ===
+NVIDIA GeForce RTX 3080: readings from AIDA64
+Samsung SSD 970 EVO Plus 2TB (S4J4NJ0N100001A): only found by AIDA64
+Samsung SSD 970 EVO Plus 2TB (S4J4NJ0N100002B): only found by AIDA64
+Samsung SSD 870 EVO 4TB: only found by AIDA64
+
+=== Shown in the sidebar ===
+Access: Full
+CPU  AMD Ryzen 9 5900X: temp 53 °C, load 1 %, cores 24, clock 4791 MHz, power 40.45 W, voltage 1.22 V, fan 667 rpm
+GPU  NVIDIA GeForce RTX 3080: temp 46 °C, hot spot 58 °C, load 0 %, clock 210 MHz, power 40.35 W, fan 0 rpm, VRAM 1473 MB / 10240 MB
+RAM  10.23 GB of 31.91 GB
+DISK Samsung SSD 970 EVO Plus 2TB (S4J4NJ0N100001A) [C:] (aida/hdd/1): temp 58 °C, used —, read 0 B/s, write 89097.87 B/s
+DISK Samsung SSD 970 EVO Plus 2TB (S4J4NJ0N100002B) [G:] (aida/hdd/2): temp 59 °C, used —, read 0 B/s, write 0 B/s
+DISK Samsung SSD 870 EVO 4TB [no letter] (aida/hdd/3): temp 31 °C, used —, read —, write —
+NET  Intel(R) Ethernet Server Adapter X520-2: down 121.78 B/s, up 0 B/s, link 10000000000 bit/s, 192.168.0.10
+BOARD ASUS ROG STRIX X570-E GAMING: Board 37 °C, Chipset 68 °C
+FAN  CPU: 667 rpm
+FAN  PCH: 3124 rpm
+FAN  Chassis #2: 1042 rpm

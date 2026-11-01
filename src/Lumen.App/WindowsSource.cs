@@ -52,107 +52,59 @@ public sealed class WindowsSource : ISnapshotSource, ISensorReport
 #endif
     }
 
-    // The built-in hardware as last polled, without its readings: names, ids and kinds. While AIDA64
-    // or HWiNFO is connected, LibreHardwareMonitor and Open Hardware Monitor rest, so only one program
-    // talks to the sensor chips; these keep the widgets pointed at the same hardware meanwhile.
-    private List<SensorNode> idNodes = new();
-    private CpuInfo? idCpu;
-    private List<GpuInfo>? idGpus;
-    private List<DiskInfo> idDisks = new();
+    // Puts LibreHardwareMonitor, Open Hardware Monitor and AIDA64/HWiNFO together (see HardwareCombiner).
+    private readonly HardwareCombiner combiner = new();
     public bool Paused { get; private set; }
 
     public Snapshot Read()
     {
         mergeLog.Clear();
         var extRead = external.Read(sourceChoice());
-        Paused = extRead != null && idGpus != null;
-        List<SensorNode> nodes;
-        CpuInfo? cpu;
-        List<GpuInfo> gpus;
-        List<DiskInfo> disks;
-        if (Paused)
+        // While AIDA64 or HWiNFO answers, the built-in libraries rest, so only one program talks to the sensor chips.
+        Paused = extRead != null && combiner.HasIdentity;
+        List<SensorNode>? builtin = null;
+        var ohmNodes = new List<SensorNode>();
+        if (!Paused)
         {
-            nodes = idNodes;
-            cpu = idCpu is null ? null : idCpu with { Load = SystemLoad() };
-            gpus = idGpus!.ToList();
-            disks = idDisks.Select(d => d with { ReadBytesPerSecond = null, WriteBytesPerSecond = null }).ToList();
-        }
-        else
-        {
-            var hardware = new List<IHardware>();
+            builtin = new List<SensorNode>();
             foreach (var h in computer.Hardware)
             {
                 try { h.Update(); foreach (var sub in h.SubHardware) sub.Update(); } catch { }
-                hardware.Add(h);
+                try { builtin.Add(Node(h)); } catch { }
             }
-            nodes = new List<SensorNode>();
-            foreach (var h in hardware) { try { nodes.Add(Node(h)); } catch { } }
-            cpu = SensorPicker.Cpu(nodes, SystemLoad());
-            if (cpu is { Temperature: null } && AcpiTemperature() is double zone) cpu = cpu with { Temperature = zone };
-            gpus = nodes.Where(n => n.IsGpu).Select(SensorPicker.Gpu).ToList();
-            disks = nodes.Where(n => n.Type == "Storage").Select(SensorPicker.Disk).ToList();
 #if WINRT
-            if (ohm != null)
-            {
-                var (og, od) = ReadOhm();
-                gpus = SensorMerge.Gpus(gpus, og, mergeLog);
-                disks = SensorMerge.Disks(disks, od, mergeLog);
-            }
+            if (ohm != null) ohmNodes = ReadOhm();
 #endif
-            // Identity for the next pause: every reading left empty except the space in use.
-            idNodes = nodes.Select(n => n with { Sensors = Array.Empty<Lumen.Core.SensorValue>(), Sub = Array.Empty<SensorNode>() }).ToList();
-            idCpu = cpu is null ? null : new CpuInfo(cpu.Name, null, null, Array.Empty<double>(), null, null, null, null);
-            idGpus = gpus.Select(g => new GpuInfo(g.Id, g.Name, null, null, null, null, null, null, null, g.MemoryTotalMb) { Integrated = g.Integrated }).ToList();
-            idDisks = disks.Where(SensorPicker.HasReadings).Select(d => new DiskInfo(d.Id, d.Name, null, d.UsedPercent, null, null)).ToList();
-            // The external program came up during this poll: rest from the next update on.
-            if (extRead != null) Paused = true;
         }
-        // AIDA64 or HWiNFO, when chosen and running, take precedence wherever they have a reading.
-        IReadOnlyList<FanInfo>? extFans = null;
-        IReadOnlyList<TempReading>? extBoard = null;
-        externalName = null;
-        if (extRead is { } ext)
-        {
-            externalName = ext.Name;
-            var extCpu = SensorPicker.Cpu(ext.Nodes);
-            cpu = SensorMerge.PreferCpu(extCpu, cpu);
-            gpus = SensorMerge.PreferGpus(ext.Nodes.Where(n => n.IsGpu).Select(SensorPicker.Gpu).ToList(), gpus, ext.Name, mergeLog);
-            disks = SensorMerge.PreferDisks(ext.Nodes.Where(n => n.Type == "Storage").Select(SensorPicker.Disk).ToList(), disks, ext.Name, mergeLog);
-            var extBoardNode = ext.Nodes.FirstOrDefault(n => n.IsBoard);
-            if (extBoardNode != null)
-            {
-                var temps = SensorPicker.BoardTemps(extBoardNode);
-                if (temps.Count > 0) extBoard = temps;
-                var fans = ReadFans(ext.Nodes);
-                if (fans.Count > 0) extFans = fans;
-            }
-        }
-        gpus = gpus.OrderBy(g => g.Integrated ? 1 : 0).ToList();
-        var letters = DiskLetters();
-        disks = disks.Where(d => SensorPicker.HasReadings(d) || Paused)
-            .Select(d => DiskNumber(d.Id) is int n && letters.TryGetValue(n, out var l) ? d with { Letters = l } : d).ToList();
-        // While paused, throughput comes from Windows' own disk counters (no access to the sensor chips).
-        if (Paused) disks = disks.Select(d => DiskNumber(d.Id) is int n && DiskRates(n) is var (r, w) ? d with { ReadBytesPerSecond = r, WriteBytesPerSecond = w } : d).ToList();
-        var access = cpu?.Temperature is null ? SensorAccess.Limited : SensorAccess.Full;
-        // AIDA64 or HWiNFO read the hardware with their own driver; Lumen itself then needs no administrator rights.
-        if (!admin && externalName is null) access = SensorAccess.Limited;
-        var board = nodes.FirstOrDefault(n => n.IsBoard);
-        if (Paused && board != null) board = board with { Name = extRead!.Value.Nodes.FirstOrDefault(n => n.IsBoard) is { Name: var bn } && bn != "Mainboard" ? bn : board.Name };
-        IReadOnlyList<ProcessInfo> top;
-        try { top = processes.Sample(); } catch { top = Array.Empty<ProcessInfo>(); }
         // Uptime, process counts and volumes change slowly; every five seconds is plenty.
         if (clock.Elapsed.TotalSeconds - lastSlow > 5 || systemInfo is null)
         {
             lastSlow = clock.Elapsed.TotalSeconds;
             try { systemInfo = SystemReader.Read(); volumes = SystemReader.Volumes(); } catch { }
         }
+        var view = combiner.Combine(new HardwareInput(builtin, ohmNodes,
+            extRead is { } e ? (e.Name, e.Nodes) : null,
+            PhysicalDisks(), DiskLetters(), volumes, SystemLoad(), AcpiTemperature));
+        mergeLog.AddRange(combiner.Log);
+        externalName = extRead?.Name;
+        var cpu = view.Cpu;
+        var gpus = view.Gpus;
+        // Throughput from Windows' own disk counters where no library reported it (always while paused).
+        var disks = view.Disks.Select(d => d.ReadBytesPerSecond is null && d.WriteBytesPerSecond is null && DiskNumber(d.Id) is int n && DiskRates(n) is var (r, w)
+            ? d with { ReadBytesPerSecond = r, WriteBytesPerSecond = w } : d).ToList();
+        var access = cpu?.Temperature is null ? SensorAccess.Limited : SensorAccess.Full;
+        // AIDA64 or HWiNFO read the hardware with their own driver; Lumen itself then needs no administrator rights.
+        if (!admin && externalName is null) access = SensorAccess.Limited;
+        var nodes = view.Nodes.ToList();
+        IReadOnlyList<ProcessInfo> top;
+        try { top = processes.Sample(); } catch { top = Array.Empty<ProcessInfo>(); }
         return new Snapshot(DateTime.Now, cpu, gpus, ReadMemory(), disks, ReadNetwork(), access)
         {
             System = systemInfo is null ? null : systemInfo with { Uptime = TimeSpan.FromMilliseconds(Environment.TickCount64) },
             Volumes = volumes,
-            BoardName = board?.Name,
-            Fans = extFans ?? ReadFans(nodes),
-            BoardTemps = extBoard ?? SensorPicker.BoardTemps(board),
+            BoardName = view.BoardName,
+            Fans = Spinning(view.Fans),
+            BoardTemps = view.BoardTemps,
             Battery = ReadBattery(nodes),
             Processes = top
         };
@@ -166,11 +118,11 @@ public sealed class WindowsSource : ISnapshotSource, ISensorReport
     // Kept for the tests and older callers.
     public static System.Text.RegularExpressions.Regex PerCore => SensorPicker.PerCore;
 
-    private IReadOnlyList<FanInfo> ReadFans(List<SensorNode> hardware)
+    private IReadOnlyList<FanInfo> Spinning(IReadOnlyList<SensorPicker.FanReading> fans)
     {
         var result = new List<FanInfo>();
         // Fans that have ever turned; empty headers stay hidden.
-        foreach (var f in SensorPicker.Fans(hardware))
+        foreach (var f in fans)
         {
             if (f.Rpm > 0) spinning.Add(f.Key);
             if (spinning.Contains(f.Key)) result.Add(new FanInfo(f.Name, f.Rpm, f.Percent));
@@ -272,6 +224,42 @@ public sealed class WindowsSource : ISnapshotSource, ISensorReport
 
     private static int? DiskNumber(string id) => SensorPicker.DiskNumber(id);
 
+    [DllImport("kernel32.dll", SetLastError = true, EntryPoint = "DeviceIoControl")]
+    private static extern bool DeviceIoControlIn(IntPtr device, uint code, byte[] inBuffer, int inSize, byte[] outBuffer, int outSize, out int returned, IntPtr overlapped);
+
+    // Model and serial number of every physical disk (IOCTL_STORAGE_QUERY_PROPERTY, no administrator rights needed); every 60 s.
+    private List<SensorMerge.PhysicalDisk> physical = new();
+    private double physicalAt = -100;
+    private List<SensorMerge.PhysicalDisk> PhysicalDisks()
+    {
+        if (!OperatingSystem.IsWindows() || clock.Elapsed.TotalSeconds - physicalAt < 60) return physical;
+        physicalAt = clock.Elapsed.TotalSeconds;
+        var list = new List<SensorMerge.PhysicalDisk>();
+        for (int n = 0; n < 32; n++)
+        {
+            IntPtr h = CreateFile(@"\\.\PhysicalDrive" + n, 0, 3, IntPtr.Zero, 3, 0, IntPtr.Zero);
+            if (h == new IntPtr(-1)) continue;
+            try
+            {
+                var query = new byte[12]; // StorageDeviceProperty, PropertyStandardQuery
+                var buffer = new byte[1024];
+                if (!DeviceIoControlIn(h, 0x002D1400, query, query.Length, buffer, buffer.Length, out int got, IntPtr.Zero) || got < 32) continue;
+                string Text(int offsetAt)
+                {
+                    int at = BitConverter.ToInt32(buffer, offsetAt);
+                    if (at <= 0 || at >= got) return "";
+                    int end = Array.IndexOf(buffer, (byte)0, at);
+                    return System.Text.Encoding.ASCII.GetString(buffer, at, (end < 0 ? got : end) - at).Trim();
+                }
+                list.Add(new SensorMerge.PhysicalDisk(n, (Text(12) + " " + Text(16)).Trim(), Text(24)));
+            }
+            catch { }
+            finally { CloseHandle(h); }
+        }
+        physical = list;
+        return physical;
+    }
+
     // Bytes read and written per second for one physical disk, from IOCTL_DISK_PERFORMANCE.
     private readonly Dictionary<int, (long read, long write, double at)> diskCounters = new();
     private (double?, double?)? DiskRates(int disk)
@@ -312,18 +300,14 @@ public sealed class WindowsSource : ISnapshotSource, ISensorReport
         h.Sensors.Select(s => new Lumen.Core.SensorValue(s.SensorType.ToString(), s.Name, s.Value is float v && float.IsFinite(v) ? v : null, s.Index, s.Identifier.ToString())).ToList(),
         (h.SubHardware ?? Array.Empty<OpenHardwareMonitor.Hardware.IHardware>()).Select(Node).ToList());
 
-    private (List<GpuInfo>, List<DiskInfo>) ReadOhm()
+    private List<SensorNode> ReadOhm()
     {
-        var gpus = new List<GpuInfo>();
-        var disks = new List<DiskInfo>();
+        var nodes = new List<SensorNode>();
         foreach (var h in ohm!.Hardware)
         {
-            try { h.Update(); } catch { continue; }
-            var node = Node(h);
-            if (node.IsGpu) gpus.Add(SensorPicker.Gpu(node));
-            else if (node.Type == "Storage") disks.Add(SensorPicker.Disk(node));
+            try { h.Update(); nodes.Add(Node(h)); } catch { }
         }
-        return (gpus, disks);
+        return nodes;
     }
 #endif
 

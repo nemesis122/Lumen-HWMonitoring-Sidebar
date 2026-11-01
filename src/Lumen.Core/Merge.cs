@@ -142,8 +142,10 @@ public static class SensorMerge
         var result = new List<DiskInfo>();
         foreach (var p in local)
         {
-            // Identical models are paired one by one, in order.
-            var m = unused.FirstOrDefault(e => SameDrive(e.Name, p.Name));
+            // The same Windows disk number first; then the model, identical models paired one by one.
+            int? number = SensorPicker.DiskNumber(p.Id);
+            var m = unused.FirstOrDefault(e => number != null && SensorPicker.DiskNumber(e.Id) == number)
+                    ?? unused.FirstOrDefault(e => (number is null || SensorPicker.DiskNumber(e.Id) is null) && SameDrive(e.Name, p.Name));
             if (m == null) { result.Add(p); continue; }
             unused.Remove(m);
             var preferred = p with
@@ -163,6 +165,30 @@ public static class SensorMerge
         }
         return result;
     }
+
+    // A physical disk as Windows numbers it, with the model and serial number the drive reports.
+    public sealed record PhysicalDisk(int Number, string Model, string Serial);
+
+    // AIDA64 and HWiNFO name drives "<model> (<serial>)" but number them their own way. The serial number
+    // finds the matching Windows disk (and so its drive letters); identical models without a usable serial
+    // fall back to the first free disk of that model.
+    public static int? MatchPhysical(string name, IReadOnlyList<PhysicalDisk> disks, ICollection<int> taken)
+    {
+        string key = Key(name);
+        foreach (var d in disks.Where(d => !taken.Contains(d.Number)))
+        {
+            string serial = Key(d.Serial);
+            if (serial.Length < 6) continue;
+            // Older Windows versions report SATA serials with each pair of characters swapped.
+            string swapped = new(serial.Chunk(2).SelectMany(c => c.Reverse()).ToArray());
+            if (key.Contains(serial) || key.Contains(swapped)) return d.Number;
+        }
+        string model = WithoutSerial(name);
+        return disks.Where(d => !taken.Contains(d.Number) && SameDrive(d.Model, model)).Select(d => (int?)d.Number).FirstOrDefault();
+    }
+
+    // "Samsung SSD 970 EVO Plus 2TB (S4J4NJ0N808240F)" → "Samsung SSD 970 EVO Plus 2TB"; "(USB)" and the like stay.
+    public static string WithoutSerial(string name) => System.Text.RegularExpressions.Regex.Replace(name, @"\s*\([A-Za-z0-9_.\-]{6,}\)\s*$", "").Trim();
 
     // Names the fields that changed from missing to present, e.g. "temperature, hot spot".
     private static string Filled<T>(T before, T after)

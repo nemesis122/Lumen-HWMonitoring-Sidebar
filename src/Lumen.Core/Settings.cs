@@ -177,7 +177,10 @@ public sealed class Settings
         s.Notes ??= "";
         // Own sensor names are no longer offered; drop any saved by 1.5.0 so nothing stays renamed or hidden.
         s.Labels = new();
-        s.HiddenValues = (s.HiddenValues ?? new()).Where(v => !string.IsNullOrWhiteSpace(v)).Distinct().ToList();
+        s.HiddenValues = (s.HiddenValues ?? new()).Where(v => !string.IsNullOrWhiteSpace(v))
+            // Drives are "/disk/<number>" since 2.1, whichever library found them; hidden ones stay hidden.
+            .Select(v => System.Text.RegularExpressions.Regex.Replace(v, @"^drive:.*?/(nvme|hdd|ssd|ata|storage|scsi|usb)[^/]*/(\d+)$", "drive:/disk/$2"))
+            .Distinct().ToList();
         var seen = new HashSet<WidgetKind>();
         s.Widgets = (s.Widgets ?? new()).Where(w => w != null && Enum.IsDefined(w.Kind) && seen.Add(w.Kind)).ToList();
         foreach (var w in s.Widgets)

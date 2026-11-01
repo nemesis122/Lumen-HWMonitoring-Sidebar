@@ -92,7 +92,7 @@ public static class External
 
         // Drives: AIDA64 labels each drive temperature with the drive's model.
         foreach (var d in items.Where(i => AidaDisk.IsMatch(i.Id) && i.Value is not null))
-            nodes.Add(new SensorNode("Storage", d.Label, "aida/hdd/" + AidaDisk.Match(d.Id).Groups[1].Value,
+            nodes.Add(new SensorNode("Storage", d.Label, "aida/drive/" + AidaDisk.Match(d.Id).Groups[1].Value,
                 new[] { new SensorValue("Temperature", "Temperature", d.Value, 0, "aida/" + d.Id) }, Array.Empty<SensorNode>()));
 
         // Mainboard: its probes and every fan header that is not on a graphics card.
@@ -277,7 +277,7 @@ public static class External
         }
 
         // Drives: "S.M.A.R.T.: <model>" holds the temperature, "Drive: <model>" the throughput.
-        foreach (var drive in groups.Where(g => g.Key.StartsWith("S.M.A.R.T.", I) || g.Key.StartsWith("Drive:", I)).GroupBy(g => HwinfoName(g.Key)))
+        foreach (var drive in groups.Where(g => g.Key.StartsWith("S.M.A.R.T.", I) || g.Key.StartsWith("Drive:", I)).GroupBy(g => DriveName(g.Key)))
         {
             var list = new List<SensorValue>();
             foreach (var r in drive.SelectMany(g => g))
@@ -290,9 +290,9 @@ public static class External
                     8 when r.Label.Equals("Write Rate", I) => ("Throughput", "Write Rate"),
                     _ => null
                 };
-                if (map is { } x) list.Add(new SensorValue(x.type, x.name, Convert(r), list.Count(s => s.Type == x.type), "hwinfo/disk/" + r.Label));
+                if (map is { } x) list.Add(new SensorValue(x.type, x.name, Convert(r), list.Count(s => s.Type == x.type), "hwinfo/drive/" + r.Label));
             }
-            if (list.Count > 0) nodes.Add(new SensorNode("Storage", drive.Key, "hwinfo/disk/" + drive.Key, list, Array.Empty<SensorNode>()));
+            if (list.Count > 0) nodes.Add(new SensorNode("Storage", drive.Key, "hwinfo/drive/" + drive.Key, list, Array.Empty<SensorNode>()));
         }
 
         // Mainboard: the sensor chips and embedded controllers – every remaining block with temperatures or fans.
@@ -306,6 +306,14 @@ public static class External
             nodes.Add(new SensorNode("Motherboard", HwinfoName(boardGroups[0].Key), "hwinfo/board", Array.Empty<SensorValue>(), subs));
         }
         return nodes;
+    }
+
+    // "S.M.A.R.T.: Samsung SSD 970 EVO Plus 1TB (S4EWNX0)" → "Samsung SSD 970 EVO Plus 1TB (S4EWNX0)": the serial stays
+    // so the drive can be matched to its Windows disk; it is dropped from the name afterwards.
+    public static string DriveName(string sensor)
+    {
+        int colon = sensor.IndexOf(": ", StringComparison.Ordinal);
+        return (colon >= 0 ? sensor[(colon + 2)..] : sensor).Trim();
     }
 
     private static string CoreName(string kind, string number)

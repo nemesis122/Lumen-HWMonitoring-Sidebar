@@ -49,7 +49,8 @@ public static class SensorPicker
         var sensors = h.All.ToList();
         var boards = hardware.Where(x => x.IsBoard).SelectMany(x => x.All).ToList();
 
-        double? temp = Find(sensors, "Temperature", "Core (Tctl/Tdie)", "CPU Package", "Package", "Core (Tdie)", "Core (Tctl)",
+        // 0 °C is what the libraries report without the driver – never a real processor temperature.
+        double? temp = Find(sensors.Where(s => s.Value is > 0 and < 125), "Temperature", "Core (Tctl/Tdie)", "CPU Package", "Package", "Core (Tdie)", "Core (Tctl)",
             "Core Max", "Core Average", "Tdie", "Tctl", "CCDs Max (Tdie)", "CCD1 (Tdie)", "CPU Cores", "CPU Core");
         // Unknown naming: the hottest core or die reading the CPU reports (never "Distance to TjMax").
         temp ??= sensors.Where(s => s.Type == "Temperature" && s.Value is > 0 and < 125 && !Contains(s.Name, "Distance", "TjMax", "SoC"))
@@ -199,10 +200,10 @@ public static class SensorPicker
     // A drive with nothing to show (card readers, some USB sticks) only takes up room.
     public static bool HasReadings(DiskInfo d) => d.Temperature != null || d.UsedPercent != null || d.ReadBytesPerSecond != null || d.WriteBytesPerSecond != null;
 
-    // Both libraries name storage devices after the physical disk number: "/nvme/1", "/hdd/0".
+    // Both libraries name storage devices after the physical disk number: "/nvme/1", "/hdd/0"; Lumen's own ids are "/disk/1".
     public static int? DiskNumber(string id)
     {
-        var m = Regex.Match(id, @"/(nvme|hdd|ssd|ata|storage|scsi|usb)[^/]*/(\d+)", RegexOptions.IgnoreCase);
+        var m = Regex.Match(id, @"/(disk|nvme|hdd|ssd|ata|storage|scsi|usb)[^/]*/(\d+)", RegexOptions.IgnoreCase);
         return m.Success && int.TryParse(m.Groups[2].Value, out var n) ? n : null;
     }
 

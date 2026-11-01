@@ -125,7 +125,8 @@ public class ExternalTests
         Assert.Equal(8192, g.MemoryTotalMb);
 
         var d = SensorPicker.Disk(nodes.Single(n => n.Type == "Storage"));
-        Assert.Equal("Samsung SSD 970 EVO Plus 1TB", d.Name);
+        Assert.Equal("Samsung SSD 970 EVO Plus 1TB (S4EWNX0)", d.Name);   // the serial finds the Windows disk
+        Assert.Equal("Samsung SSD 970 EVO Plus 1TB", SensorMerge.WithoutSerial(d.Name));
         Assert.Equal(59, d.Temperature);
         Assert.Equal(2d * 1024 * 1024, d.ReadBytesPerSecond);
 
@@ -176,15 +177,52 @@ public class ExternalTests
         };
         var ext = new List<DiskInfo>
         {
-            new("aida/hdd/1", "Samsung SSD 970 EVO Plus 1TB", 59, null, null, null),
-            new("aida/hdd/2", "Samsung SSD 970 EVO Plus 1TB", 62, null, null, null),
-            new("aida/hdd/3", "Samsung SSD 870 EVO 4TB", 42, null, null, null)
+            new("aida/drive/1", "Samsung SSD 970 EVO Plus 1TB", 59, null, null, null),
+            new("aida/drive/2", "Samsung SSD 970 EVO Plus 1TB", 62, null, null, null),
+            new("aida/drive/3", "Samsung SSD 870 EVO 4TB", 42, null, null, null)
         };
         var m = SensorMerge.PreferDisks(ext, local, "AIDA64");
         Assert.Equal(new[] { 59d, 62d, 42d }, m.Select(d => d.Temperature!.Value));
         Assert.Equal(new[] { "C:", "D:", "E:" }, m.Select(d => d.Letters));
         Assert.Equal(62, m[0].UsedPercent);
         Assert.Equal(100, m[0].ReadBytesPerSecond);
+    }
+
+    [Fact] public void ExternalDrivesFindTheirWindowsDiskBySerial()
+    {
+        // Disk numbers as Windows had them on a real X570 system: the 4 TB SATA SSD first.
+        var physical = new List<SensorMerge.PhysicalDisk>
+        {
+            new(0, "Samsung SSD 870 EVO 4TB", "S6BCNG0R123456A"),
+            new(1, "NVMe Samsung SSD 970 EVO Plus 2TB", "S4J4NJ0N808988T"),
+            new(2, "NVMe Samsung SSD 970 EVO Plus 2TB", "S4J4_NJ0N_8082_40F."),
+        };
+        var taken = new HashSet<int>();
+        int? Match(string name) { var n = SensorMerge.MatchPhysical(name, physical, taken); if (n is int k) taken.Add(k); return n; }
+        Assert.Equal(2, Match("Samsung SSD 970 EVO Plus 2TB (S4J4NJ0N808240F)"));
+        Assert.Equal(1, Match("Samsung SSD 970 EVO Plus 2TB (S4J4NJ0N808988T)"));
+        Assert.Equal(0, Match("Samsung SSD 870 EVO 4TB"));
+        Assert.Null(Match("WDC WD40EFRX"));
+        Assert.Equal("Samsung SSD 970 EVO Plus 2TB", SensorMerge.WithoutSerial("Samsung SSD 970 EVO Plus 2TB (S4J4NJ0N808240F)"));
+    }
+
+    [Fact] public void SwappedSataSerialStillMatches()
+    {
+        var physical = new List<SensorMerge.PhysicalDisk> { new(3, "Samsung SSD 860 EVO 1TB", "4SBCN0R1234567") };
+        Assert.Equal(3, SensorMerge.MatchPhysical("Samsung SSD 860 EVO 1TB (S4CBN0R1234567)", physical, new HashSet<int>()));
+    }
+
+    [Fact] public void SecondDriveProbeIsNotASecondDrive()
+    {
+        var nodes = External.AidaNodes(External.ParseAida(
+            "<temp><id>THDD1</id><label>Samsung SSD 970 EVO Plus 2TB (S4J4NJ0N808240F)</label><value>58</value></temp>" +
+            "<temp><id>THDD1TS2</id><label>Samsung SSD 970 EVO Plus 2TB (S4J4NJ0N808240F) #2</label><value>58</value></temp>" +
+            "<temp><id>TGPU1MEM</id><label>GPU Memory</label><value>52</value></temp>" +
+            "<temp><id>TGPU1HOT</id><label>GPU Hotspot</label><value>58</value></temp>" +
+            "<temp><id>TGPU1</id><label>GPU</label><value>46</value></temp>"));
+        Assert.Single(nodes, n => n.Type == "Storage");
+        var g = SensorPicker.Gpu(nodes.Single(n => n.IsGpu));
+        Assert.Equal((46d, 58d), (g.Temperature!.Value, g.HotSpot!.Value));
     }
 
     [Fact] public void SourceSurvivesSaveAndLoad()
