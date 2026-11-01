@@ -112,7 +112,7 @@ void DesktopShot(string name, Settings settings, bool dark, int screenHeight = S
         // A bar across the whole width, above the taskbar or at the top of the screen.
         var barStrip = new Panel
         {
-            Height = settings.BarHeight,
+            Height = settings.BarHeight * settings.Rows + (settings.Rows - 1) * Metrics.For(settings.Density).Gap,
             VerticalAlignment = settings.Edge == Edge.Top ? VerticalAlignment.Top : VerticalAlignment.Bottom,
             Margin = new Thickness(0, 0, 0, settings.Edge == Edge.Top ? 0 : Taskbar),
             ClipToBounds = true,
@@ -147,6 +147,8 @@ void DesktopShot(string name, Settings settings, bool dark, int screenHeight = S
     Save(new Window { Width = ScreenW, Height = screenHeight, Content = root }, name);
 }
 
+bool barSettings = false;
+
 void SettingsShot(string name, bool dark, string language, params WidgetKind[] open) => SettingsPage(name, dark, language, 0, open);
 
 void SettingsPage(string name, bool dark, string language, int index, params WidgetKind[] open)
@@ -154,6 +156,7 @@ void SettingsPage(string name, bool dark, string language, int index, params Wid
     typeof(SettingsWindow).GetField("pageIndex", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!.SetValue(null, index);
     L.Use(language);
     var s = new Settings { Theme = dark ? ThemeMode.Dark : ThemeMode.Light, Language = language, Pages = 4, Columns = 4, PageNames = new() { "Hardware", "Gaming", "", "", "", "" } };
+    if (barSettings) { s.Edge = Edge.Bottom; s.Pages = 1; }
     foreach (var x in s.Widgets) { if (x.Kind is WidgetKind.Gpu or WidgetKind.Fps) x.Page = 2; if (x.Kind == WidgetKind.Gpu) { x.Column = 2; x.Style = WidgetStyle.Ring; } }
     Application.Current!.RequestedThemeVariant = dark ? Avalonia.Styling.ThemeVariant.Dark : Avalonia.Styling.ThemeVariant.Light;
     var w = new SettingsWindow(s, Palette.For(dark, false), () => { }, () => new[] { L.F("Screen {0}", 1) + " · 2560×1440 (" + L.T("main") + ")", L.F("Screen {0}", 2) + " · 1920×1080" }, new ShotPlatform(), null, null, () => Demo().Item1);
@@ -200,9 +203,13 @@ foreach (var w in bottom.Widgets)
     w.Style = w.Kind switch { WidgetKind.Cpu or WidgetKind.Gpu => WidgetStyle.Ring, WidgetKind.Memory or WidgetKind.Ping => WidgetStyle.Tile, WidgetKind.Power or WidgetKind.Weather => WidgetStyle.Graph, _ => WidgetStyle.Standard };
 }
 DesktopShot("desktop-bar-bottom", bottom, true);
-var top = new Settings { Language = "de", Edge = Edge.Top, BarHeight = 420, Colors = "#06B6D4", Background = "midnight" };
-foreach (var w in top.Widgets) w.Visible = w.Kind is WidgetKind.Clock or WidgetKind.Cpu or WidgetKind.Gpu or WidgetKind.Cooling or WidgetKind.Memory or WidgetKind.Network or WidgetKind.Drives;
+var top = new Settings { Language = "de", Edge = Edge.Top, BarHeight = 340, Columns = 2, Colors = "#06B6D4", Background = "midnight" };
+foreach (var w in top.Widgets) w.Visible = w.Kind is WidgetKind.Clock or WidgetKind.Cpu or WidgetKind.Gpu or WidgetKind.Cooling or WidgetKind.Memory or WidgetKind.Network or WidgetKind.Drives or WidgetKind.Weather or WidgetKind.Ping or WidgetKind.Power or WidgetKind.Fps or WidgetKind.System;
 DesktopShot("desktop-bar-top", top, true);
+var barCols = new Settings { Language = "en", Edge = Edge.Bottom, BarHeight = 300, Columns = 2 };
+foreach (var w in barCols.Widgets) w.Visible = w.Kind is WidgetKind.Clock or WidgetKind.Weather or WidgetKind.Cpu or WidgetKind.Gpu or WidgetKind.Memory or WidgetKind.Ping or WidgetKind.Power or WidgetKind.Network or WidgetKind.Drives or WidgetKind.DataUsage;
+foreach (var w in barCols.Widgets) w.Style = w.Kind is WidgetKind.Memory or WidgetKind.Ping or WidgetKind.Power or WidgetKind.DataUsage ? WidgetStyle.Bar : WidgetStyle.Standard;
+DesktopShot("desktop-bar-columns", barCols, true);
 // The new styles, and some backgrounds and colours.
 var newStyles = new Settings { Language = "de", Density = Density.Comfortable, Widgets = Only(WidgetKind.Cpu, WidgetKind.Gpu, WidgetKind.Memory, WidgetKind.Ping, WidgetKind.Power, WidgetKind.Network, WidgetKind.Weather) };
 foreach (var w in newStyles.Widgets) w.Style = w.Kind switch { WidgetKind.Cpu => WidgetStyle.Graph, WidgetKind.Gpu => WidgetStyle.Bar, WidgetKind.Memory or WidgetKind.Ping => WidgetStyle.Tile, WidgetKind.Power => WidgetStyle.Bar, WidgetKind.Network => WidgetStyle.Graph, _ => WidgetStyle.Tile };
@@ -273,6 +280,10 @@ toastContent.Margin = new Thickness(0, 0, 300 + 16, Taskbar + 16);
 DesktopShot("desktop-warning", new Settings { Language = "de" }, true, extra: toastContent);
 
 for (int i = 0; i < 8; i++) SettingsPage($"settings-de-{i}", true, "de", i, WidgetKind.Cpu);
+barSettings = true;
+SettingsPage("settings-de-bar-layout", true, "de", 1);
+SettingsPage("settings-en-bar-layout", true, "en", 1);
+barSettings = false;
 L.Use("de");
 var demoSnap = Demo().Item1;
 var sensorWin = new SensorsWindow(Palette.For(true, false), () => "=== LibreHardwareMonitor ===\n[Cpu] AMD Ryzen 9 5900X\n    Temperature  Core (Tctl/Tdie)                   57.1\n    Load         CPU Total                          34.2\n    ...\n\n=== Open Hardware Monitor (driverless: vendor GPU APIs, SMART) ===\n[GpuNvidia] NVIDIA GeForce RTX 3080\n    Temperature  GPU Core                           58\n    Temperature  GPU Hot Spot                       71\n\n=== Combined ===\nNVIDIA GeForce RTX 3080: HotSpot from Open Hardware Monitor\n\n=== In der Sidebar angezeigt ===\n" + SnapshotText.Describe(demoSnap), "/tmp");

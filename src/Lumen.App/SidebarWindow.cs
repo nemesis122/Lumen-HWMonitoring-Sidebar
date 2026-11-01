@@ -79,11 +79,12 @@ public sealed class SidebarWindow : Window
         double logical;
         if (s.Horizontal)
         {
-            // A bar across the whole width, at the top or above the taskbar.
-            width = work.Width;
+            // A bar across the whole width (or as wide as its widgets, centred), at the top or above the taskbar.
+            width = s.BarFullWidth ? work.Width : Math.Min(work.Width, (int)Math.Round(SidebarView.WindowWidth(s) * scale));
             logical = width / scale;
-            h = (int)Math.Round(s.BarHeight * scale);
-            x = work.X;
+            // Each row is as tall as the bar height; more rows grow the bar away from its edge.
+            h = Math.Min(work.Height, (int)Math.Round((s.BarHeight * s.Rows + (s.Rows - 1) * Metrics.For(s.Density).Gap) * scale));
+            x = work.X + (work.Width - width) / 2;
             y = s.Edge == Edge.Top ? work.Y : work.Bottom - h;
         }
         else
@@ -104,7 +105,7 @@ public sealed class SidebarWindow : Window
                 {
                     int bx, bw;
                     (bx, y, bw, h) = AppBar.Reserve(handle, s.Edge, b.X, b.Y, b.Right, b.Bottom, h);
-                    x = bx; width = bw; logical = width / scale;
+                    if (s.BarFullWidth) { x = bx; width = bw; logical = width / scale; }
                 }
                 else (x, y, _, h) = AppBar.Reserve(handle, s.Edge, b.X, work.Y, b.Right, work.Bottom, width);
                 reserved = true;

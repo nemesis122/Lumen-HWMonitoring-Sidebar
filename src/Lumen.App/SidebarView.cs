@@ -26,6 +26,8 @@ public sealed class SidebarView : Border
     private readonly TextBlock statusText;
     private readonly List<StackPanel> lists = new();
     private readonly FitPanel fit;
+    // The bar at the top or bottom: one fitted strip of cards per row.
+    private readonly Grid barRows = new();
     private int gpuCount = 1;
     private Metrics metrics;
     private bool compacted, balanced;
@@ -138,7 +140,7 @@ public sealed class SidebarView : Border
         bool fill = settings.Density == Density.Fit || settings.Horizontal;
         fit = new FitPanel(lists, settings.TextScale, fill, m.Gap);
         BuildCards();
-        Control body = fill ? fit : new ScrollViewer
+        Control body = settings.Horizontal ? barRows : fill ? fit : new ScrollViewer
         {
             Content = fit,
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
@@ -158,20 +160,23 @@ public sealed class SidebarView : Border
         root.Children.Add(body);
         Child = root;
 
-        // With many widgets, comfortable sizes squeezed too far read worse than compact ones.
-        if (fill) fit.Fitted += scale =>
-        {
-            if (scale >= .8 || compacted) return;
-            compacted = true;
-            Dispatcher.UIThread.Post(() => { metrics = Metrics.For(Density.Compact); BuildCards(); if (last != null) Update(last, lastHistory!); });
-        };
+        if (fill) fit.Fitted += Squeezed;
+    }
+
+    // With many widgets, comfortable sizes squeezed too far read worse than compact ones.
+    private void Squeezed(double scale)
+    {
+        if (scale >= .8 || compacted) return;
+        compacted = true;
+        Dispatcher.UIThread.Post(() => { metrics = Metrics.For(Density.Compact); BuildCards(); if (last != null) Update(last, lastHistory!); });
     }
 
     // Larger text widens each column by the same factor, so cards keep their layout instead of cutting labels off.
     public static double WindowWidth(Settings s)
     {
+        int n = s.ColumnCount;
         double grow = Math.Max(1, s.TextScale);
-        return (s.Width * s.Columns + (s.Columns - 1) * Metrics.For(s.Density).Gap) * grow;
+        return (s.Width * n + (n - 1) * Metrics.For(s.Density).Gap) * grow;
     }
 
     private void BuildCards()
@@ -179,6 +184,7 @@ public sealed class SidebarView : Border
         widgets.Clear();
         builtCards.Clear();
         BuildTabs();
+        if (settings.Horizontal) { BuildBar(); return; }
         var columns = measured is null ? settings.Layout(page: page) : settings.Layout(w => measured.TryGetValue(w.Kind, out var hgt) ? hgt : Settings.Weight(w) * 150, page);
         for (int c = 0; c < lists.Count; c++)
         {
@@ -215,6 +221,62 @@ public sealed class SidebarView : Border
         }
         fit?.SetGap(metrics.Gap);
     }
+
+    // Each bar row is its own strip: the cards stand side by side and fit the row's height.
+    private void BuildBar()
+    {
+        foreach (var old in barRows.Children.OfType<FitPanel>()) old.Fitted -= Squeezed;
+        barRows.Children.Clear();
+        barRows.RowDefinitions.Clear();
+        var rows = settings.Layout(page: page);
+        var allCells = new List<List<StackPanel>>();
+        for (int r = 0; r < rows.Count; r++)
+        {
+            var items = new List<(WidgetSlot slot, int index)>();
+            foreach (var slot in rows[r])
+                for (int i = 0; i < (slot.Kind == WidgetKind.Gpu ? gpuCount : 1); i++) items.Add((slot, i));
+            var cells = new List<StackPanel>();
+            if (r == 0) { (hint.Parent as Panel)?.Children.Remove(hint); cells.Add(new StackPanel { Children = { hint } }); }
+            for (int i = 0; i < items.Count; i++)
+            {
+                var (slot, index) = items[i];
+                var card = Cards.Create(slot.Kind, slot.Style, index, p, metrics, settings);
+                widgets.Add((IWidget)card);
+                Remember(slot.Kind, card);
+                Control cell = card;
+                if (Settings.IsHalf(slot) && card is RingTile or NumberTile && i + 1 < items.Count && Settings.IsHalf(items[i + 1].slot))
+                {
+                    var next = Cards.Create(items[i + 1].slot.Kind, items[i + 1].slot.Style, items[i + 1].index, p, metrics, settings);
+                    widgets.Add((IWidget)next);
+                    Remember(items[i + 1].slot.Kind, next);
+                    var pair = new Grid { ColumnDefinitions = new ColumnDefinitions($"*,{metrics.Gap},*") };
+                    Grid.SetColumn(next, 2);
+                    pair.Children.Add(card);
+                    pair.Children.Add(next);
+                    cell = pair;
+                    i++;
+                }
+                cells.Add(new StackPanel { Spacing = metrics.Gap, Children = { cell } });
+            }
+            allCells.Add(cells);
+        }
+        // Rows with fewer cards keep the same card width as the fullest row, so all line up.
+        int Filled(List<StackPanel> cells) => cells.Count(c => c.Children.Any(x => x != hint));
+        int width = allCells.Select(Filled).DefaultIfEmpty(1).Max();
+        for (int r = 0; r < allCells.Count; r++)
+        {
+            var cells = allCells[r];
+            for (int k = Filled(cells); k < width; k++) cells.Add(new StackPanel { Children = { new Border { Height = 1, Opacity = 0 } } });
+            if (r > 0) barRows.RowDefinitions.Add(new RowDefinition(metrics.Gap, GridUnitType.Pixel));
+            barRows.RowDefinitions.Add(new RowDefinition(1, GridUnitType.Star));
+            var strip = new FitPanel(cells, settings.TextScale, true, metrics.Gap);
+            strip.Fitted += Squeezed;
+            Grid.SetRow(strip, r * 2);
+            barRows.Children.Add(strip);
+        }
+    }
+
+
 
     private void BuildTabs()
     {
@@ -296,7 +358,7 @@ public sealed class SidebarView : Border
         foreach (var w in widgets) w.Update(s, h);
         // With two columns, place automatic widgets once more by their real heights, so both
         // columns come out about equally tall and nothing has to be stretched to fill.
-        if (settings.Columns >= 2 && !settings.Horizontal && !balanced)
+        if (settings.ColumnsInUse >= 2 && !settings.Horizontal && !balanced)
         {
             balanced = true;
             Dispatcher.UIThread.Post(Rebalance, DispatcherPriority.Background);

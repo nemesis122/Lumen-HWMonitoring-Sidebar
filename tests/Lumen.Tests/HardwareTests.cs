@@ -338,7 +338,7 @@ public class RegisterNameTests
     }
 }
 
-public class DefaultsTests
+public class BarLayoutTests
 {
     [Fact]
     public void DefaultsAreDarkWindowsLanguageHighContrast()
@@ -347,5 +347,22 @@ public class DefaultsTests
         Assert.Equal(ThemeMode.Dark, s.Theme);
         Assert.Equal("auto", s.Language);
         Assert.True(s.HighContrast);
+    }
+
+    [Fact]
+    public void BarRowsWorkLikeColumnsAtTheSide()
+    {
+        var s = new Settings { Edge = Edge.Bottom, Columns = 1 };
+        var visible = s.Widgets.Where(w => w.Visible).ToList();
+        Assert.Single(s.Layout());                            // one row: everything side by side
+        Assert.Equal(visible.Count, s.ColumnCount);
+        s.Columns = 2;
+        var rows = s.Layout();
+        Assert.Equal(2, rows.Count);
+        Assert.Equal(visible, rows.SelectMany(r => r));       // order kept: row 1, then row 2
+        Assert.InRange(rows[0].Count - rows[1].Count, 0, 1);
+        Assert.Equal(2, s.Rows);
+        visible[0].Column = 2;                                // pinned to the second row
+        Assert.Contains(visible[0], s.Layout()[1]);
     }
 }

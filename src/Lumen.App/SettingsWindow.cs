@@ -117,19 +117,40 @@ public sealed class SettingsWindow : Window
             Row(T("Opacity"), Slide(.2, 1, .05, s.Opacity, v => s.Opacity = v, v => $"{v * 100:0} %")),
             Row(T("Text size"), Slide(.5, 2, .05, s.TextScale, v => s.TextScale = v, v => $"{v * 100:0} %"), T("Above 100 % the sidebar grows wider by the same amount."))) }));
 
+        var barHeight = Row(T("Row height"), Slide(160, 700, 10, s.BarHeight, v => s.BarHeight = v, v => $"{v:0} px"), T("Ring, Tile and Bar styles read best in a low bar."));
+        Control? barNote = null;
+        if (s.Horizontal)
+        {
+            var note = Ui.Text(T("Bar at the top or bottom: the widgets sit side by side."), 12, p.Soft);
+            note.TextWrapping = TextWrapping.Wrap;
+            note.TextTrimming = TextTrimming.None;
+            barNote = note;
+        }
         pages.Add((T("Layout"), Glyphs.Columns, new[] { Section(T("Layout"),
-            s.Horizontal ? null : Row(T("Columns"), Choice(new[] { "1", "2", "3", "4", "5", "6" }, s.Columns - 1, i => s.Columns = i + 1, rebuild: true), T("Several columns side by side; each is as wide as set below, everything stays large.")),
+            barNote,
+            Row(s.Horizontal ? T("Rows") : T("Columns"), Choice(new[] { "1", "2", "3", "4", "5", "6" }, s.Columns - 1, i => s.Columns = i + 1, rebuild: true),
+                s.Horizontal ? T("Rows one below the other, like columns at the side; each is as tall as the row height.") : T("Several columns side by side; each is as wide as set below, everything stays large.")),
             Row(T("Registers"), Choice(new[] { "1", "2", "3", "4", "5", "6" }, s.Pages - 1, i => s.Pages = i + 1, rebuild: true), T("Pages at the top; each widget goes on one of them. Switch by click or mouse wheel.")),
             s.Pages > 1 ? WideRow(T("Register names"), PageNameEditor(), T("Shown at the top instead of 1, 2, 3; leave empty for the number.")) : null,
-            s.Horizontal ? null : Row(T("Whole screen"), Toggle(s.FullScreen, v => s.FullScreen = v), T("Covers the whole monitor up to the taskbar; the columns share its width.")),
-            s.Horizontal ? null : Row(T("Density"), Choice(new[] { T("Automatic"), T("Comfortable"), T("Compact") }, (int)s.Density, i => s.Density = (Density)i), T("Automatic fills the height up to the taskbar, without scrolling.")),
-            s.Horizontal ? null : Row(T("Width"), Slide(240, 440, 10, s.Width, v => s.Width = v, v => $"{v:0} px"))) }));
+            s.Horizontal
+                ? Row(T("Whole width"), Toggle(s.BarFullWidth, v => s.BarFullWidth = v, rebuild: true), T("Off: the bar is only as wide as its widgets, centred."))
+                : Row(T("Whole screen"), Toggle(s.FullScreen, v => s.FullScreen = v), T("Covers the whole monitor up to the taskbar; the columns share its width.")),
+            s.Horizontal ? barHeight : null,
+            Row(T("Density"), Choice(new[] { T("Automatic"), T("Comfortable"), T("Compact") }, (int)s.Density, i => s.Density = (Density)i),
+                s.Horizontal ? T("In the bar, Compact makes the widgets smaller and tighter.") : T("Automatic fills the height up to the taskbar, without scrolling.")),
+            s.Horizontal && s.BarFullWidth ? null : Row(s.Horizontal ? T("Widget width") : T("Width"), Slide(240, 440, 10, s.Width, v => s.Width = v, v => $"{v:0} px"))) }));
 
         var names = screens();
         pages.Add((T("Position"), Glyphs.System, new[] { Section(T("Position"),
-            Row(T("Screen edge"), Choice(new[] { T("Right"), T("Left"), T("Top (bar)"), T("Bottom (bar)") }, (int)s.Edge, i => s.Edge = (Edge)i, rebuild: true),
+            Row(T("Screen edge"), Choice(new[] { T("Right"), T("Left"), T("Top (bar)"), T("Bottom (bar)") }, (int)s.Edge, i =>
+            {
+                // Columns at the side become rows in the bar; start with one when switching between them.
+                bool bar = i >= 2;
+                if (bar != s.Horizontal) s.Columns = 1;
+                s.Edge = (Edge)i;
+            }, rebuild: true),
                 s.Horizontal ? T("A bar across the whole width; the widgets sit side by side.") : null),
-            s.Horizontal ? Row(T("Bar height"), Slide(160, 700, 10, s.BarHeight, v => s.BarHeight = v, v => $"{v:0} px"), T("Ring, Tile and Bar styles read best in a low bar.")) : null,
+            s.Horizontal ? Row(T("Row height"), Slide(160, 700, 10, s.BarHeight, v => s.BarHeight = v, v => $"{v:0} px")) : null,
             Row(T("Screen"), Choice(names.Count > 0 ? names : new[] { T("Main screen") }, Math.Min(s.Screen, Math.Max(0, names.Count - 1)), i => s.Screen = i)),
             Row(T("Always on top"), Toggle(s.Topmost, v => s.Topmost = v)),
             Row(T("Reserve space"), Toggle(s.ReserveSpace, v => s.ReserveSpace = v), T("Maximised windows stop before the sidebar.")),
@@ -302,11 +323,11 @@ public sealed class SettingsWindow : Window
         });
         values.Padding = new Thickness(10, 5);
         // Only offer "Customise" where there is something to choose.
-        values.IsVisible = Settings.HasStyles(slot.Kind) || Cards.Values(slot.Kind).Length > 0 || s.Columns > 1 || s.Pages > 1;
+        values.IsVisible = Settings.HasStyles(slot.Kind) || Cards.Values(slot.Kind).Length > 0 || s.ColumnsInUse > 1 || s.Pages > 1;
         // Where the widget lands, so the list reads as the layout without opening every entry.
         var place = new List<string>();
         if (s.Pages > 1) place.Add(s.PageName(Math.Min(slot.Page, s.Pages)));
-        if (s.Columns > 1 && !s.Horizontal && slot.Column > 0) place.Add(F("Column {0}", Math.Min(slot.Column, s.Columns)));
+        if (s.ColumnsInUse > 1 && slot.Column > 0) place.Add(s.Horizontal ? F("Row {0}", Math.Min(slot.Column, s.ColumnsInUse)) : F("Column {0}", Math.Min(slot.Column, s.ColumnsInUse)));
         if (Settings.HasStyles(slot.Kind) && slot.Style != WidgetStyle.Standard) place.Add(T(slot.Style.ToString()));
         var where = Ui.Text(string.Join(" · ", place), 11.5, p.Soft);
         where.VerticalAlignment = VerticalAlignment.Center;
@@ -322,8 +343,8 @@ public sealed class SettingsWindow : Window
             var options = new WrapPanel { Margin = new Thickness(28, 0, 0, 0) };
             if (Settings.HasStyles(slot.Kind))
                 options.Children.Add(Ui.Row(8, Ui.Text(T("Style"), 12.5, p.Soft), Choice(new[] { T("Standard"), T("Ring"), T("Minimal"), T("Bar"), T("Graph"), T("Tile") }, (int)slot.Style, i => slot.Style = (WidgetStyle)i, small: true)));
-            if (s.Columns > 1 && !s.Horizontal)
-                options.Children.Add(Ui.Row(8, Ui.Text(T("Column"), 12.5, p.Soft), Choice(new[] { T("Automatic") }.Concat(Enumerable.Range(1, s.Columns).Select(n => n.ToString())).ToList(), Math.Min(slot.Column, s.Columns), i => slot.Column = i, small: true)));
+            if (s.ColumnsInUse > 1)
+                options.Children.Add(Ui.Row(8, Ui.Text(s.Horizontal ? T("Row") : T("Column"), 12.5, p.Soft), Choice(new[] { T("Automatic") }.Concat(Enumerable.Range(1, s.ColumnsInUse).Select(n => n.ToString())).ToList(), Math.Min(slot.Column, s.ColumnsInUse), i => slot.Column = i, small: true)));
             if (s.Pages > 1)
                 options.Children.Add(Ui.Row(8, Ui.Text(T("Register"), 12.5, p.Soft), Choice(Enumerable.Range(1, s.Pages).Select(s.PageName).ToList(), Math.Min(slot.Page, s.Pages) - 1, i => slot.Page = i + 1, small: true)));
             foreach (var o in options.Children) o.Margin = new Thickness(0, 0, 18, 6);
@@ -405,10 +426,10 @@ public sealed class SettingsWindow : Window
         return panel;
     }
 
-    private Control Toggle(bool value, Action<bool> set, bool notify = true)
+    private Control Toggle(bool value, Action<bool> set, bool notify = true, bool rebuild = false)
     {
         var t = new ToggleSwitch { IsChecked = value, OnContent = "", OffContent = "", MinWidth = 0, Margin = new Thickness(0, 0, -8, 0) };
-        t.IsCheckedChanged += (_, _) => { set(t.IsChecked == true); if (notify) changed(); };
+        t.IsCheckedChanged += (_, _) => { set(t.IsChecked == true); if (notify) changed(); if (rebuild) Avalonia.Threading.Dispatcher.UIThread.Post(Build); };
         return t;
     }
 

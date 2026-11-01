@@ -245,7 +245,7 @@ public class ColumnsAndUsageTests
         var s = new Settings();
         s.Widgets.Single(w => w.Kind == WidgetKind.Clock).Style = WidgetStyle.Ring;
         s.Widgets.Single(w => w.Kind == WidgetKind.Cpu).Style = WidgetStyle.Ring;
-        s.Widgets.Single(w => w.Kind == WidgetKind.Cpu).Column = 9;
+        s.Widgets.Single(w => w.Kind == WidgetKind.Cpu).Column = 15;
         Settings.Normalize(s);
         Assert.Equal(WidgetStyle.Standard, s.Widgets.Single(w => w.Kind == WidgetKind.Clock).Style);
         Assert.Equal(WidgetStyle.Ring, s.Widgets.Single(w => w.Kind == WidgetKind.Cpu).Style);

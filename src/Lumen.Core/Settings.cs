@@ -36,6 +36,12 @@ public sealed class Settings
     // Top or bottom: a bar across the whole screen width; the widgets sit side by side.
     public bool Horizontal => Edge is Edge.Top or Edge.Bottom;
     public double BarHeight { get; set; } = 300;
+    // The bar spans the whole screen width; off, it is as wide as its widgets and centred.
+    public bool BarFullWidth { get; set; } = true;
+    // At the side edges: the number of columns. In the bar at the top or bottom the same
+    // setting is the number of rows, one below the other, each BarHeight tall.
+    public int ColumnsInUse => Columns;
+    public int Rows => Horizontal ? Columns : 1;
     public int Screen { get; set; }
     public double Width { get; set; } = 300;
     public Density Density { get; set; } = Density.Fit;
@@ -208,18 +214,8 @@ public sealed class Settings
     {
         weight ??= Weight;
         var visible = Widgets.Where(w => w.Visible && Math.Min(w.Page, Pages) == page).ToList();
-        if (Horizontal)
-        {
-            // A bar: one widget per column, left to right; two half-width tiles share a column.
-            var row = new List<List<WidgetSlot>>();
-            for (int i = 0; i < visible.Count; i++)
-            {
-                if (IsHalf(visible[i]) && i + 1 < visible.Count && IsHalf(visible[i + 1])) { row.Add(new() { visible[i], visible[i + 1] }); i++; }
-                else row.Add(new() { visible[i] });
-            }
-            return row.Count == 0 ? new() { new() } : row;
-        }
-        int n = Columns;
+        if (Horizontal) return BarRows(visible);
+        int n = ColumnsInUse;
         if (n < 2) return new() { visible };
         int Pinned(WidgetSlot w) => w.Column > 0 ? Math.Min(w.Column, n) - 1 : -1;
         var height = new double[n];
@@ -259,7 +255,43 @@ public sealed class Settings
     public static bool IsHalf(WidgetSlot w) => w.Style is WidgetStyle.Ring or WidgetStyle.Tile && HasStyles(w.Kind);
 
     // Columns the sidebar needs: as set, or for a bar the most any register holds.
-    public int ColumnCount => Horizontal ? Math.Max(1, Enumerable.Range(1, Pages).Max(pg => Layout(page: pg).Count)) : Columns;
+    // Columns of cards: as set at the side; in the bar, the most cards any row holds.
+    public int ColumnCount => Horizontal ? Math.Max(1, Enumerable.Range(1, Pages).SelectMany(pg => Layout(page: pg)).Select(Units).DefaultIfEmpty(1).Max()) : Math.Max(1, Columns);
+
+    // Cards side by side in one bar row: two half-width tiles in a row share one place.
+    public static int Units(List<WidgetSlot> row)
+    {
+        int n = 0;
+        for (int i = 0; i < row.Count; i++) { n++; if (IsHalf(row[i]) && i + 1 < row.Count && IsHalf(row[i + 1])) i++; }
+        return n;
+    }
+
+    // Rows of the bar, top to bottom, each read left to right. Pinned widgets stay in their row
+    // (the widget's "Column" number); the others fill the rows in order, about equally many per row.
+    private List<List<WidgetSlot>> BarRows(List<WidgetSlot> visible)
+    {
+        int n = Math.Max(1, Columns);
+        int Pinned(WidgetSlot w) => w.Column > 0 ? Math.Min(w.Column, n) - 1 : -1;
+        // Units: a widget, or two half-width tiles that share a place.
+        var units = new List<List<WidgetSlot>>();
+        for (int i = 0; i < visible.Count; i++)
+        {
+            if (IsHalf(visible[i]) && i + 1 < visible.Count && IsHalf(visible[i + 1]) && Pinned(visible[i]) == Pinned(visible[i + 1]))
+            { units.Add(new() { visible[i], visible[i + 1] }); i++; }
+            else units.Add(new() { visible[i] });
+        }
+        var rows = Enumerable.Range(0, n).Select(_ => new List<List<WidgetSlot>>()).ToList();
+        foreach (var u in units.Where(u => Pinned(u[0]) >= 0)) rows[Pinned(u[0])].Add(u);
+        int per = (int)Math.Ceiling(units.Count / (double)n);
+        int r = 0;
+        foreach (var u in units.Where(u => Pinned(u[0]) < 0))
+        {
+            while (r < n - 1 && rows[r].Count >= per) r++;
+            rows[r].Add(u);
+        }
+        // Keep the original order inside each row.
+        return rows.Select(row => row.OrderBy(u => visible.IndexOf(u[0])).SelectMany(u => u).ToList()).ToList();
+    }
 
     public static bool IsHexColor(string v) => v.Length == 7 && v[0] == '#' && v[1..].All(Uri.IsHexDigit);
 }
