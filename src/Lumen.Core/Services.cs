@@ -217,3 +217,44 @@ public static class SystemReader
         catch { return ("Windows", Environment.OSVersion.Version.ToString()); }
     }
 }
+
+// The public (external) IP address, asked for only when the user clicks – never in the background.
+// One small HTTPS request to a public "what is my IP" service; the answer stays in memory only.
+public static class ExternalIp
+{
+    private static readonly string[] Services = { "https://api.ipify.org", "https://icanhazip.com", "https://ifconfig.me/ip" };
+
+    public static string? Address { get; private set; }
+    public static DateTime? At { get; private set; }
+    public static bool Busy { get; private set; }
+    public static bool Failed { get; private set; }
+
+    public static event Action? Changed;
+
+    public static async Task FetchAsync()
+    {
+        if (Busy) return;
+        Busy = true; Failed = false;
+        Changed?.Invoke();
+        try
+        {
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(6) };
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("Lumen");
+            foreach (var url in Services)
+            {
+                try
+                {
+                    string text = (await http.GetStringAsync(url)).Trim();
+                    if (IPAddress.TryParse(text, out _)) { Address = text; At = DateTime.Now; return; }
+                }
+                catch { }
+            }
+            Failed = true;
+        }
+        finally
+        {
+            Busy = false;
+            Changed?.Invoke();
+        }
+    }
+}

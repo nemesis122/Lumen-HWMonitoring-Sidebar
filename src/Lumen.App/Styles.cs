@@ -168,7 +168,7 @@ public static class Summaries
         [WidgetKind.Memory] = new[] { "mem.free", "mem.total", "mem.peak" },
         [WidgetKind.Battery] = new[] { "battery.time", "battery.rate", "battery.health" },
         [WidgetKind.Cooling] = new[] { "cooling.fans", "cooling.board" },
-        [WidgetKind.Network] = new[] { "net.link", "net.use", "net.peak", "net.address" },
+        [WidgetKind.Network] = new[] { "net.link", "net.use", "net.peak", "net.address", "net.external" },
         [WidgetKind.Drives] = new[] { "drives.temps", "drives.io" },
         [WidgetKind.Fps] = new[] { "fps.frametime" },
         [WidgetKind.Ping] = new[] { "ping.jitter", "ping.loss", "ping.target" },
@@ -230,6 +230,8 @@ public static class Summaries
                 Add("net.use", T("Link use"), Format.Bits(n?.DownloadBytesPerSecond * 8));
                 Add("net.peak", T("2-min peak"), Format.Rate(Peak("net.down")));
                 Add("net.address", T("Address"), n?.Address ?? Format.Missing);
+                // Compact styles only show what the Standard card's button last fetched.
+                if (ExternalIp.Address is string ext) Add("net.external", T("External IP"), ext);
                 break;
             }
             case WidgetKind.Drives:
