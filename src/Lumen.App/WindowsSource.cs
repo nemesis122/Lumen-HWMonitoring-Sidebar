@@ -70,6 +70,8 @@ public sealed class WindowsSource : ISnapshotSource, ISensorReport
         }
 #endif
         gpus = gpus.OrderBy(g => g.Integrated ? 1 : 0).ToList();
+        var letters = DiskLetters();
+        disks = disks.Select(d => DiskNumber(d.Id) is int n && letters.TryGetValue(n, out var l) ? d with { Letters = l } : d).ToList();
         var access = cpu?.Temperature is null ? SensorAccess.Limited : SensorAccess.Full;
         if (!admin) access = SensorAccess.Limited;
         var board = hardware.FirstOrDefault(h => h.HardwareType == HardwareType.Motherboard);
@@ -161,7 +163,8 @@ public sealed class WindowsSource : ISnapshotSource, ISensorReport
     private static IReadOnlyList<TempReading> ReadBoardTemps(IHardware board)
     {
         var picked = new Dictionary<string, double>();
-        foreach (var s in All(board).Where(s => s.SensorType == SensorType.Temperature && s.Value is > 0 and < 150))
+        // Probes below 22 °C (colder than any working board) or above 115 °C are unconnected or misread.
+        foreach (var s in All(board).Where(s => s.SensorType == SensorType.Temperature && s.Value is >= 22 and <= 115))
         {
             string n = s.Name;
             string? label = n.Contains("Chipset", StringComparison.OrdinalIgnoreCase) || n.Contains("PCH", StringComparison.OrdinalIgnoreCase) ? "Chipset"
@@ -219,6 +222,57 @@ public sealed class WindowsSource : ISnapshotSource, ISensorReport
         Find(h, SensorType.Load, "Used Space"),
         Find(h, SensorType.Throughput, "Read Rate"),
         Find(h, SensorType.Throughput, "Write Rate"));
+
+    // Drive letters per physical disk number, from each volume's disk extents; refreshed every 30 s.
+    private Dictionary<int, string> letters = new();
+    private double lettersAt = -100;
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern IntPtr CreateFile(string name, uint access, uint share, IntPtr security, uint creation, uint flags, IntPtr template);
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool DeviceIoControl(IntPtr device, uint code, IntPtr inBuffer, int inSize, byte[] outBuffer, int outSize, out int returned, IntPtr overlapped);
+    [DllImport("kernel32.dll")] private static extern bool CloseHandle(IntPtr handle);
+
+    private Dictionary<int, string> DiskLetters()
+    {
+        if (clock.Elapsed.TotalSeconds - lettersAt < 30) return letters;
+        lettersAt = clock.Elapsed.TotalSeconds;
+        var map = new Dictionary<int, List<string>>();
+        foreach (var drive in DriveInfo.GetDrives())
+        {
+            try
+            {
+                if (drive.DriveType is not (DriveType.Fixed or DriveType.Removable)) continue;
+                string letter = drive.Name.TrimEnd('\\');
+                IntPtr h = CreateFile(@"\\.\" + letter, 0, 3, IntPtr.Zero, 3, 0, IntPtr.Zero);
+                if (h == new IntPtr(-1)) continue;
+                try
+                {
+                    var buffer = new byte[256];
+                    // IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS: count, then (disk number, offset, length) per extent.
+                    if (!DeviceIoControl(h, 0x00560000, IntPtr.Zero, 0, buffer, buffer.Length, out _, IntPtr.Zero)) continue;
+                    int count = BitConverter.ToInt32(buffer, 0);
+                    for (int i = 0; i < count && 8 + i * 24 + 4 <= buffer.Length; i++)
+                    {
+                        int disk = BitConverter.ToInt32(buffer, 8 + i * 24);
+                        if (!map.TryGetValue(disk, out var list)) map[disk] = list = new();
+                        if (!list.Contains(letter)) list.Add(letter);
+                    }
+                }
+                finally { CloseHandle(h); }
+            }
+            catch { }
+        }
+        letters = map.ToDictionary(kv => kv.Key, kv => string.Join(" ", kv.Value.OrderBy(x => x)));
+        return letters;
+    }
+
+    // Both libraries name storage devices after the physical disk number: "/nvme/1", "/hdd/0".
+    private static int? DiskNumber(string id)
+    {
+        var m = System.Text.RegularExpressions.Regex.Match(id, @"/(nvme|hdd|ssd|ata|storage|scsi|usb)[^/]*/(\d+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        return m.Success && int.TryParse(m.Groups[2].Value, out var n) ? n : null;
+    }
 
     [DllImport("kernel32.dll")] private static extern bool GetSystemTimes(out ulong idle, out ulong kernel, out ulong user);
 

@@ -18,6 +18,27 @@ public sealed record Summary(string Glyph, string Title, string Value, string Un
 
 public static class Names
 {
+    // Full names without trademark clutter: "Intel(R) Ethernet Server Adapter X520-2" → "Intel Ethernet X520-2".
+    public static string Clean(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "";
+        string n = System.Text.RegularExpressions.Regex.Replace(name, @"\((R|TM|tm|r)\)|®|™", "");
+        n = System.Text.RegularExpressions.Regex.Replace(n, @"\s+\d+-Core Processor$|\s+Processor$|\s+CPU\s*@.*$", "");
+        n = n.Replace("Ethernet Server Adapter", "Ethernet").Replace("Ethernet Controller", "Ethernet").Replace("Ethernet Connection", "Ethernet");
+        return System.Text.RegularExpressions.Regex.Replace(n, @"\s{2,}", " ").Trim();
+    }
+
+    // "Fan #2" → "Fan 2", "Chipset Fan" → "Chipset", or whatever the user called it.
+    public static string Fan(string raw, Settings s)
+    {
+        if (s.Label("fan:" + raw) is string own) return own;
+        if (raw.StartsWith("Fan #")) return L.T("Fan") + " " + raw[5..];
+        string n = raw.EndsWith(" Fan", StringComparison.OrdinalIgnoreCase) ? raw[..^4] : raw;
+        return L.T(n);
+    }
+
+    public static string Temp(string raw, Settings s) => s.Label("temp:" + raw) ?? L.T(raw);
+
     // Drops maker names, trademarks and clock suffixes; the model is what tells parts apart.
     public static string Short(string? name)
     {
@@ -52,6 +73,12 @@ public static class Summaries
                 string title = g?.Integrated == true ? T("Integrated") : T("Graphics");
                 return new(Glyphs.Gpu, title, T2(g?.Temperature), U, Heat(g?.Temperature), Format.Heat(g?.Temperature),
                     $"{T("Load")} {Format.Percent(g?.Load)}", g is null ? Array.Empty<double>() : h.Read($"gpu.{g.Id}.load"), 100) { Name = Names.Short(g?.Name) };
+            }
+            case WidgetKind.Fps:
+            {
+                var f = s.Fps;
+                return new(Glyphs.Fps, "FPS", Format.Number(f?.Fps), "fps", FpsCard.Color(f?.Fps, p), Math.Clamp((f?.Fps ?? 0) / 144, 0, 1),
+                    f is null ? T("No game in the foreground.") : f.App, h.Read("fps"), null);
             }
             case WidgetKind.Memory:
             {

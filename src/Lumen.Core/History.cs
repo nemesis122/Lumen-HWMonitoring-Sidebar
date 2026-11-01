@@ -42,6 +42,7 @@ public sealed class History
         Add("net.down", s.Network?.DownloadBytesPerSecond);
         Add("net.up", s.Network?.UploadBytesPerSecond);
         if (s.Ping != null) Add("ping", s.Ping.Ms);
+        Add("fps", s.Fps?.Fps);
         if (s.Usage != null) Add("power", s.Usage.WattsNow);
     }
 }

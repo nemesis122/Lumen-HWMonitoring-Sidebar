@@ -17,6 +17,7 @@
   </PropertyGroup>
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
+    <None Remove="Native\**" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
@@ -29,6 +30,10 @@
     <ProjectReference Include="..\Lumen.Core\Lumen.Core.csproj" />
   </ItemGroup>
   <!-- Second sensor source for the Windows build: driverless Open Hardware Monitor (MPL-2.0). -->
+  <!-- PresentMon 2.3.1 (Intel, MIT) for the FPS widget, unpacked on first use. -->
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x64'">
+    <EmbeddedResource Include="Native\PresentMon.exe" LogicalName="PresentMon.exe" />
+  </ItemGroup>
   <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x64'">
     <ProjectReference Include="..\..\lib\OpenHardwareMonitor.Driverless\OpenHardwareMonitor.Driverless.csproj" />
   </ItemGroup>

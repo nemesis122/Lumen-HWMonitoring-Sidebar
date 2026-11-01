@@ -22,7 +22,11 @@ public sealed record Snapshot(
     public UsageInfo? Usage { get; init; }
     public SystemInfo? System { get; init; }
     public IReadOnlyList<VolumeInfo> Volumes { get; init; } = Array.Empty<VolumeInfo>();
+    public FpsInfo? Fps { get; init; }
 }
+
+// Frames per second of the app in the foreground, from PresentMon. Low1 is the 1 % low over ten seconds.
+public sealed record FpsInfo(string App, double Fps, double FrameTimeMs, double? Low1);
 
 // Round trip in ms to the internet target and to the router; loss over the last minute.
 public sealed record PingInfo(string Target, double? Ms, double? GatewayMs, double? JitterMs, double LossPercent);
@@ -91,7 +95,11 @@ public sealed record DiskInfo(
     double? Temperature,
     double? UsedPercent,
     double? ReadBytesPerSecond,
-    double? WriteBytesPerSecond);
+    double? WriteBytesPerSecond)
+{
+    // Drive letters of the partitions on this disk, e.g. "C:" or "D: E:".
+    public string Letters { get; init; } = "";
+}
 
 public sealed record NetworkInfo(
     string Name,

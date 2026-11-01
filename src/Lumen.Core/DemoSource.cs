@@ -44,8 +44,8 @@ public sealed class DemoSource : ISnapshotSource
         var memory = new MemoryInfo(14.6 + slow * .6, 31.9);
         var disks = new List<DiskInfo>
         {
-            new("nvme0", "Samsung SSD 970 EVO Plus 2TB", 47 + wave, 33, random.NextDouble() < .3 ? random.NextDouble() * 9e7 : 4e4, random.NextDouble() < .25 ? random.NextDouble() * 4e7 : 1.2e5),
-            new("sata0", "Samsung SSD 870 EVO 4TB", 33, 57, random.NextDouble() < .1 ? random.NextDouble() * 2e7 : 0, 0)
+            new("nvme0", "Samsung SSD 970 EVO Plus 2TB", 47 + wave, 33, random.NextDouble() < .3 ? random.NextDouble() * 9e7 : 4e4, random.NextDouble() < .25 ? random.NextDouble() * 4e7 : 1.2e5) { Letters = "C:" },
+            new("sata0", "Samsung SSD 870 EVO 4TB", 33, 57, random.NextDouble() < .1 ? random.NextDouble() * 2e7 : 0, 0) { Letters = "D:" }
         };
         var network = new NetworkInfo("Intel Ethernet X520-2", down, up, 10e9, "192.168.1.42");
         var time = Start.AddSeconds(tick);
@@ -58,6 +58,7 @@ public sealed class DemoSource : ISnapshotSource
                 new FanInfo("Pump", 2350 + wave * 20, null),
                 new FanInfo("Front", 760 + gpuLoad * 3, null),
                 new FanInfo("Rear", 690 + load * 2, null),
+                new FanInfo("Chipset Fan", 3000 + wave * 30, null),
                 new FanInfo("Top", 0, null)
             },
             BoardTemps = new[] { new TempReading("Board", 36 + slow), new TempReading("VRM", 49 + load * .2), new TempReading("Chipset", 58 + wave) },
@@ -76,6 +77,7 @@ public sealed class DemoSource : ISnapshotSource
                 new WeatherDay(time.Date.AddDays(2), 2.8, 8.3, 3),
                 new WeatherDay(time.Date.AddDays(3), 1.0, 10.4, 0)
             }, time),
+            Fps = new FpsInfo("Cyberpunk2077", 118 + wave * 9, 1000 / (118 + wave * 9), 86 + wave * 3),
             Ping = new PingInfo("1.1.1.1", 9 + Math.Abs(wave) * 4 + (tick % 17 == 0 ? 18 : 0), 0.6, 1.8, tick % 40 < 2 ? 3.3 : 0),
             Media = new MediaInfo("Midnight City", "M83", "Spotify", true, 74 + tick % 170, 244, null),
             Usage = new UsageInfo(42 + load * 1.05 + 34 + gpuLoad * 2.6 + 50, 1.84, 9.6, 31.2, 18.4e9, 1.2e9, 96e9, 7.4e9, 412e9, 31e9),

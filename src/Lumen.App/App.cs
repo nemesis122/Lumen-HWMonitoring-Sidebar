@@ -56,6 +56,7 @@ public sealed class Controller
     private readonly UsageMeter usage;
     private readonly IMediaSource? media;
     private PingMonitor? ping;
+    private FpsMonitor? fps;
     private SidebarWindow? window;
     private SettingsWindow? settingsWindow;
     private TrayIcon? tray;
@@ -149,7 +150,11 @@ public sealed class Controller
                 if (wantsPing && ping == null) ping = new PingMonitor(settings.PingTarget);
                 if (!wantsPing && ping != null) { ping.Dispose(); ping = null; }
                 if (ping != null && ping.Target != settings.PingTarget) ping.Target = settings.PingTarget;
-                snapshot = snapshot with { Ping = ping?.Read(), Usage = usage.Record(snapshot, settings.BaseWatts), Media = media?.Read() };
+                // PresentMon only runs while the FPS widget is shown.
+                bool wantsFps = settings.Widgets.Any(w => w.Visible && w.Kind == WidgetKind.Fps) && platform.IsAdministrator;
+                if (wantsFps && fps == null) { fps = new FpsMonitor(); fps.Start(); }
+                if (!wantsFps && fps != null) { fps.Dispose(); fps = null; }
+                snapshot = snapshot with { Ping = ping?.Read(), Usage = usage.Record(snapshot, settings.BaseWatts), Media = media?.Read(), Fps = fps?.Read() };
             }
             history.Record(snapshot);
             last = snapshot;
@@ -189,7 +194,7 @@ public sealed class Controller
     private void OpenSettings()
     {
         if (settingsWindow is { IsVisible: true }) { settingsWindow.Activate(); return; }
-        settingsWindow = new SettingsWindow(settings, CurrentPalette(), Changed, ScreenNames, platform, RefreshWeather, SensorReport);
+        settingsWindow = new SettingsWindow(settings, CurrentPalette(), Changed, ScreenNames, platform, RefreshWeather, SensorReport, () => last);
         settingsWindow.Closed += (_, _) => settingsWindow = null;
         settingsWindow.Show();
     }
@@ -237,6 +242,7 @@ public sealed class Controller
         timer.Stop();
         weatherTimer.Stop();
         ping?.Dispose();
+        fps?.Dispose();
         if (last != null) usage.Save(last.Time);
         window?.Release();
         tray?.Dispose();

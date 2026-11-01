@@ -137,7 +137,7 @@ void SettingsShot(string name, bool dark, string language, params WidgetKind[] o
     L.Use(language);
     var s = new Settings { Theme = dark ? ThemeMode.Dark : ThemeMode.Light, Language = language };
     Application.Current!.RequestedThemeVariant = dark ? Avalonia.Styling.ThemeVariant.Dark : Avalonia.Styling.ThemeVariant.Light;
-    var w = new SettingsWindow(s, Palette.For(dark, false), () => { }, () => new[] { L.F("Screen {0}", 1) + " · 2560×1440 (" + L.T("main") + ")", L.F("Screen {0}", 2) + " · 1920×1080" }, new ShotPlatform());
+    var w = new SettingsWindow(s, Palette.For(dark, false), () => { }, () => new[] { L.F("Screen {0}", 1) + " · 2560×1440 (" + L.T("main") + ")", L.F("Screen {0}", 2) + " · 1920×1080" }, new ShotPlatform(), null, null, () => Demo().Item1);
     // Open the "Values" list of the chosen widgets, as a user would by clicking.
     var field = typeof(SettingsWindow).GetField("expanded", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
     foreach (var k in open) ((HashSet<WidgetKind>)field.GetValue(w)!).Add(k);
@@ -176,6 +176,11 @@ foreach (var w in rings.Widgets)
     w.Style = w.Kind is WidgetKind.Cpu or WidgetKind.Gpu or WidgetKind.Memory or WidgetKind.Ping or WidgetKind.Power or WidgetKind.Weather ? WidgetStyle.Ring
         : w.Kind is WidgetKind.Network or WidgetKind.DataUsage or WidgetKind.System ? WidgetStyle.Minimal : WidgetStyle.Standard;
 Sidebar("sidebar-styles", rings, true);
+Sidebar("sidebar-fps-names", new Settings
+{
+    Language = "de", Density = Density.Comfortable, Widgets = Only(WidgetKind.Fps, WidgetKind.Cooling, WidgetKind.Drives),
+    Labels = new() { ["fan:Pump"] = "AIO-Pumpe", ["fan:Front"] = "Front unten", ["temp:VRM"] = "-" }
+}, true, s => s);
 Sidebar("sidebar-new-1", new Settings { Language = "de", Density = Density.Comfortable, Widgets = Only(WidgetKind.Media, WidgetKind.WorldClocks, WidgetKind.Calendar, WidgetKind.Ping) }, true);
 Sidebar("sidebar-new-2", new Settings
 {

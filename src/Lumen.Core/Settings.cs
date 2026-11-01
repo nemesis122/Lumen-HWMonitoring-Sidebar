@@ -9,7 +9,7 @@ public enum Density { Fit, Comfortable, Compact }
 public enum ThemeMode { System, Dark, Light }
 
 // The order here is the default order in the sidebar.
-public enum WidgetKind { Clock, WorldClocks, Calendar, Weather, Media, Battery, Cpu, Gpu, Cooling, Power, Memory, Processes, System, Drives, Volumes, Network, Ping, DataUsage, Notes }
+public enum WidgetKind { Clock, WorldClocks, Calendar, Weather, Media, Battery, Cpu, Gpu, Fps, Cooling, Power, Memory, Processes, System, Drives, Volumes, Network, Ping, DataUsage, Notes }
 
 // Standard is the full card; Ring is a half-width tile (two sit side by side); Minimal is one slim line.
 public enum WidgetStyle { Standard, Ring, Minimal }
@@ -61,6 +61,10 @@ public sealed class Settings
     public string PingTarget { get; set; } = "1.1.1.1";
     public List<string> WorldClocks { get; set; } = new() { "America/New_York", "Asia/Tokyo" };
     public string Notes { get; set; } = "";
+    public bool ClickThrough { get; set; }
+    // Own names for fans and temperature probes, keyed "fan:<sensor name>" or "temp:<sensor name>".
+    // An entry of "-" hides that reading.
+    public Dictionary<string, string> Labels { get; set; } = new();
 
     // The original hardware set is on by default; everything else is opt-in, so the
     // sidebar never gets crowded by itself.
@@ -68,12 +72,16 @@ public sealed class Settings
         or WidgetKind.Cooling or WidgetKind.Memory or WidgetKind.Drives or WidgetKind.Network;
 
     // Kinds whose reading can be shown as a ring or a slim line.
-    public static bool HasStyles(WidgetKind k) => k is WidgetKind.Cpu or WidgetKind.Gpu or WidgetKind.Memory or WidgetKind.Battery
+    public static bool HasStyles(WidgetKind k) => k is WidgetKind.Cpu or WidgetKind.Gpu or WidgetKind.Fps or WidgetKind.Memory or WidgetKind.Battery
         or WidgetKind.Cooling or WidgetKind.Network or WidgetKind.Ping or WidgetKind.Power or WidgetKind.Weather or WidgetKind.System or WidgetKind.DataUsage;
 
     public static List<WidgetSlot> DefaultWidgets() => Enum.GetValues<WidgetKind>().Select(k => new WidgetSlot { Kind = k, Visible = VisibleByDefault(k) }).ToList();
 
     public bool Shows(string value) => !HiddenValues.Contains(value);
+
+    // The user's own name for a sensor, or null; Hidden(...) when they switched it off.
+    public string? Label(string key) => Labels.TryGetValue(key, out var v) && v != "-" ? v : null;
+    public bool Hidden(string key) => Labels.TryGetValue(key, out var v) && v == "-";
 
     public static readonly JsonSerializerOptions Json = new() { WriteIndented = true, Converters = { new JsonStringEnumConverter() } };
 
@@ -131,6 +139,8 @@ public sealed class Settings
         s.PingTarget = string.IsNullOrWhiteSpace(s.PingTarget) ? "1.1.1.1" : s.PingTarget.Trim();
         s.WorldClocks = (s.WorldClocks ?? new()).Where(z => !string.IsNullOrWhiteSpace(z)).Distinct().Take(4).ToList();
         s.Notes ??= "";
+        s.Labels = (s.Labels ?? new()).Where(kv => !string.IsNullOrWhiteSpace(kv.Key) && !string.IsNullOrWhiteSpace(kv.Value))
+            .ToDictionary(kv => kv.Key, kv => kv.Value.Trim());
         s.HiddenValues = (s.HiddenValues ?? new()).Where(v => !string.IsNullOrWhiteSpace(v)).Distinct().ToList();
         var seen = new HashSet<WidgetKind>();
         s.Widgets = (s.Widgets ?? new()).Where(w => w != null && Enum.IsDefined(w.Kind) && seen.Add(w.Kind)).ToList();

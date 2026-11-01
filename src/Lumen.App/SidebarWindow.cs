@@ -40,7 +40,32 @@ public sealed class SidebarWindow : Window
             ? new[] { WindowTransparencyLevel.AcrylicBlur, WindowTransparencyLevel.Blur, WindowTransparencyLevel.Transparent }
             : new[] { WindowTransparencyLevel.None };
         Place(s);
+        ClickThrough(s.ClickThrough);
     }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern int GetWindowLong(IntPtr hWnd, int index);
+    [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern int SetWindowLong(IntPtr hWnd, int index, int value);
+
+    // Mouse clicks pass through to the windows behind (WS_EX_TRANSPARENT); the sidebar stays visible.
+    private void ClickThrough(bool on)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var handle = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
+        if (handle == IntPtr.Zero) { if (on) Opened += (_, _) => ClickThrough(true); return; }
+        const int ExStyle = -20, Transparent = 0x20, Layered = 0x80000;
+        int style = GetWindowLong(handle, ExStyle);
+        // Clicks only fall through a layered window; fully opaque layering keeps it looking the same.
+        int wanted = on ? style | Transparent | Layered : style & ~Transparent & ~(addedLayered ? Layered : 0);
+        if (wanted == style) return;
+        if (on && (style & Layered) == 0) addedLayered = true;
+        SetWindowLong(handle, ExStyle, wanted);
+        if (on && (wanted & Layered) != 0) SetLayeredWindowAttributes(handle, 0, 255, 2);
+        if (!on) addedLayered = false;
+    }
+
+    private bool addedLayered;
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern bool SetLayeredWindowAttributes(IntPtr hWnd, uint key, byte alpha, uint flags);
 
     private void Place(Settings s)
     {

@@ -361,3 +361,22 @@ public class MotionTests
         Assert.Equal("—", tb.Text);
     }
 }
+
+public class LabelTests
+{
+    [Fact] public void CleansAndNamesSensors()
+    {
+        Lumen.App.L.Use("en");
+        Assert.Equal("Intel Ethernet X520-2", Lumen.App.Names.Clean("Intel(R) Ethernet Server Adapter X520-2"));
+        Assert.Equal("AMD Ryzen 9 5900X", Lumen.App.Names.Clean("AMD Ryzen 9 5900X 12-Core Processor"));
+        var s = new Settings();
+        Assert.Equal("Fan 2", Lumen.App.Names.Fan("Fan #2", s));
+        Assert.Equal("Chipset", Lumen.App.Names.Fan("Chipset Fan", s));
+        s.Labels["fan:Fan #2"] = "Front";
+        s.Labels["temp:VRM"] = "-";
+        Assert.Equal("Front", Lumen.App.Names.Fan("Fan #2", s));
+        Assert.True(s.Hidden("temp:VRM"));
+        Assert.Null(s.Label("temp:VRM"));
+        Assert.Equal(2, Settings.Normalize(s).Labels.Count);
+    }
+}

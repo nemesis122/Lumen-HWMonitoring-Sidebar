@@ -36,6 +36,7 @@ EXE, .NET included, in six languages.
 | Drives: temperature, used space, read and write rates | Data usage per day, week and month |
 | Network: download/upload, throughput in Mbit/s, share of the link, IP | Storage space per drive letter |
 | Battery: charge, time left, rate, health | System uptime, world clocks, calendar, notes, top apps |
+| FPS of the game in the foreground, 1 % low, frame time (PresentMon) | Own names for fans and probes |
 
 <p>
   <img src="docs/images/sidebar-new-1.png" width="250" alt="Now playing, world clocks, calendar, ping">
@@ -93,4 +94,4 @@ and publishes the EXE, the source ZIP and the screenshots under the version in
 `Directory.Build.props`.
 
 Built with Avalonia 11.3 and the Inter typeface. Open Hardware Monitor parts are under MPL-2.0;
-see `lib/OpenHardwareMonitor.Driverless/LICENSE.txt`.
+the bundled PresentMon 2.3.1 (Intel) is under the MIT licence. Both licence texts are in `licenses/`.

@@ -214,6 +214,17 @@ Saved: {0}|Gespeichert: {0}|Enregistré : {0}|Salvato: {0}|Guardado: {0}|Guardad
 Shown in the sidebar|In der Sidebar angezeigt|Affiché dans la barre|Mostrato nella barra|Mostrado en la barra|Mostrado na barra
 Smooth transitions|Sanfte Übergänge|Transitions douces|Transizioni fluide|Transiciones suaves|Transições suaves
 Numbers count, bars glide and charts scroll smoothly.|Zahlen zählen weich, Balken gleiten und Kurven scrollen gleichmässig.|Les chiffres défilent, les barres glissent et les courbes défilent en douceur.|I numeri scorrono, le barre scivolano e i grafici scorrono in modo fluido.|Los números cuentan, las barras se deslizan y las curvas se desplazan con suavidad.|Os números contam, as barras deslizam e os gráficos deslizam suavemente.
+1 % low|1 % Low|1 % bas|1 % minimo|1 % mínimo|1 % mínimo
+Frame time|Frametime|Temps d'image|Tempo frame|Tiempo de fotograma|Tempo de frame
+App|Programm|Application|App|Aplicación|Aplicação
+No game in the foreground.|Kein Spiel im Vordergrund.|Aucun jeu au premier plan.|Nessun gioco in primo piano.|Ningún juego en primer plano.|Nenhum jogo em primeiro plano.
+FPS (games)|FPS (Spiele)|FPS (jeux)|FPS (giochi)|FPS (juegos)|FPS (jogos)
+Click-through|Durchklickbar|Clics traversants|Clic passante|Clic a través|Clique através
+Clicks go to the windows behind the sidebar; open the settings from the tray icon.|Klicks gehen an die Fenster dahinter; Einstellungen dann über das Tray-Symbol öffnen.|Les clics vont aux fenêtres derrière ; ouvrez les paramètres via l'icône de la barre des tâches.|I clic vanno alle finestre dietro; apri le impostazioni dall'icona nella barra.|Los clics pasan a las ventanas de detrás; abre los ajustes desde el icono de la bandeja.|Os cliques vão para as janelas atrás; abra as definições pelo ícone da bandeja.
+Names|Namen|Noms|Nomi|Nombres|Nomes
+Give fans and temperature probes your own names, or switch single readings off.|Gib Lüftern und Temperaturfühlern eigene Namen oder schalte einzelne Werte aus.|Nommez vous-même ventilateurs et sondes, ou masquez certaines valeurs.|Dai nomi propri a ventole e sonde, o disattiva singoli valori.|Pon nombres propios a ventiladores y sondas, o desactiva valores sueltos.|Dê nomes próprios a ventoinhas e sondas, ou desligue valores isolados.
+No fans or probes found yet.|Noch keine Lüfter oder Fühler gefunden.|Aucun ventilateur ni sonde trouvé pour l'instant.|Nessuna ventola o sonda trovata finora.|Aún no se encontraron ventiladores ni sondas.|Ainda não foram encontradas ventoinhas nem sondas.
+FPS need administrator rights.|FPS brauchen Administratorrechte.|Les FPS nécessitent les droits administrateur.|Gli FPS richiedono i diritti di amministratore.|Los FPS requieren derechos de administrador.|Os FPS precisam de direitos de administrador.
 """;
 
     private static readonly Dictionary<string, string[]> Rows = Parse();

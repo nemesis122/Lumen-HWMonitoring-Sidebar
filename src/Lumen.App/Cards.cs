@@ -52,7 +52,7 @@ public abstract class Card : Border, IWidget
     {
         // Hardware names follow their own switch, not the density, so they never vanish just
         // because the sidebar had to shrink.
-        set { subtitle.Text = value; subtitle.IsVisible = S.ShowNames && !string.IsNullOrWhiteSpace(value); }
+        set { subtitle.Text = Names.Clean(value); subtitle.IsVisible = S.ShowNames && !string.IsNullOrWhiteSpace(value); }
     }
 
     protected bool Shows(string key) => S.Shows(key);
@@ -270,7 +270,8 @@ public sealed class DrivesCard : Card
                 rows.Children.Add(Ui.Stack(5, Ui.Columns("*,Auto", name, temp), used, Ui.Columns("*,Auto", usedText, rates)));
                 map[d.Id] = r = (name, temp, used, usedText, read, write);
             }
-            r.name.Text = ShortName(d.Name);
+            // Two identical models are told apart by their drive letters.
+            r.name.Text = d.Letters.Length > 0 ? $"{ShortName(d.Name)} · {d.Letters}" : ShortName(d.Name);
             Motion.Text(r.temp, TempWithUnit(d.Temperature));
             r.temp.Foreground = Palette.Brush(d.Temperature is null ? P.Faint : HeatColor(d.Temperature + 10));
             double share = Format.Share(d.UsedPercent);
@@ -511,49 +512,60 @@ public sealed class CoolingCard : Card
 
     public override void Update(Snapshot s, History h)
     {
-        IsVisible = s.Fans.Count > 0 || s.BoardTemps.Count > 0;
+        // Readings the user switched off are left out everywhere in this card.
+        var fanList = s.Fans.Where(f => !S.Hidden("fan:" + f.Name)).ToList();
+        var tempList = s.BoardTemps.Where(t => !S.Hidden("temp:" + t.Name)).ToList();
+        IsVisible = fanList.Count > 0 || tempList.Count > 0;
         Subtitle = s.BoardName ?? "";
-        var hottest = s.BoardTemps.OrderByDescending(t => t.Celsius).FirstOrDefault();
-        heroName.Text = (hottest is null ? T("Board") : T(hottest.Name)).ToUpper(L.Culture);
+        var hottest = tempList.OrderByDescending(t => t.Celsius).FirstOrDefault();
+        heroName.Text = (hottest is null ? T("Board") : Names.Temp(hottest.Name, S)).ToUpper(L.Culture);
         hero.Set(Temp(hottest?.Celsius), TempUnit, HeatColor(hottest?.Celsius + 5));
-        Motion.Text(active, s.Fans.Count == 0 ? Format.Missing : $"{s.Fans.Count(f => f.Rpm > 0)}/{s.Fans.Count}");
+        Motion.Text(active, fanList.Count == 0 ? Format.Missing : $"{fanList.Count(f => f.Rpm > 0)}/{fanList.Count}");
         Aside = "";
         if (fans != null)
         {
-            double top = Math.Max(1800, s.Fans.Select(f => f.Rpm).DefaultIfEmpty(0).Max() * 1.08);
-            foreach (var f in s.Fans.Take(8))
+            double top = Math.Max(1800, fanList.Select(f => f.Rpm).DefaultIfEmpty(0).Max() * 1.08);
+            foreach (var r in rows.Values) ((Control)r.name.Parent!).IsVisible = false;
+            foreach (var f in fanList.Take(8))
             {
                 if (!rows.TryGetValue(f.Name, out var r))
                 {
                     var name = Ui.Text("", 11.5, P.Soft, FontWeight.Medium);
-                    name.Width = 64;
-                    var bar = new Meter { Height = 4, Palette = P, VerticalAlignment = VerticalAlignment.Center };
+                    name.Width = 92;
+                    name.Margin = new Thickness(0, 0, 10, 0);
+                    var bar = new Meter { Height = 4, Palette = P, VerticalAlignment = VerticalAlignment.Center, MinWidth = 30 };
                     var rpm = Ui.Text("", 11.5, P.Ink, FontWeight.Medium, true);
                     rpm.Width = 72;
                     rpm.TextAlignment = TextAlignment.Right;
+                    // A fixed name width, wide enough for "Front unten", so every bar starts at the same place.
                     fans.Children.Add(Ui.Columns("Auto,*,Auto", name, bar, rpm));
                     rows[f.Name] = r = (name, rpm, bar);
                 }
-                r.name.Text = f.Name.StartsWith("Fan #") ? T("Fan") + " " + f.Name[5..] : T(f.Name);
+                ((Control)r.name.Parent!).IsVisible = true;
+                r.name.Text = Names.Fan(f.Name, S);
                 Motion.Text(r.rpm, f.Rpm > 0 ? Format.Rpm(f.Rpm) : T("Stopped"));
                 r.rpm.Foreground = Palette.Brush(f.Rpm > 0 ? P.Ink : P.Faint);
                 r.bar.Set(f.Rpm / top, P.Cool);
             }
         }
-        if (temps != null && temps.Children.Count != Math.Min(3, s.BoardTemps.Count))
-        {
-            temps.Children.Clear();
-            temps.ColumnDefinitions = ColumnDefinitions.Parse(string.Join(",", s.BoardTemps.Take(3).Select(_ => "*")));
-            int i = 0;
-            foreach (var t in s.BoardTemps.Take(3)) { var st = new Stat(T(t.Name), P) { Tag = t.Name }; Grid.SetColumn(st, i++); temps.Children.Add(st); }
-        }
         if (temps != null)
+        {
+            string key = string.Join("|", tempList.Take(3).Select(t => t.Name + "=" + Names.Temp(t.Name, S)));
+            if (!Equals(temps.Tag, key))
+            {
+                temps.Tag = key;
+                temps.Children.Clear();
+                temps.ColumnDefinitions = ColumnDefinitions.Parse(string.Join(",", tempList.Take(3).Select(_ => "*").DefaultIfEmpty("*")));
+                int i = 0;
+                foreach (var t in tempList.Take(3)) { var st = new Stat(Names.Temp(t.Name, S), P) { Tag = t.Name }; Grid.SetColumn(st, i++); temps.Children.Add(st); }
+            }
             foreach (var st in temps.Children.OfType<Stat>())
             {
-                var t = s.BoardTemps.FirstOrDefault(x => x.Name == (string?)st.Tag);
+                var t = tempList.FirstOrDefault(x => x.Name == (string?)st.Tag);
                 st.Value = TempWithUnit(t?.Celsius);
                 st.Color = t is null ? P.Ink : HeatColor(t.Celsius + 5);
             }
+        }
     }
 }
 
@@ -620,6 +632,7 @@ public static class Cards
             WidgetKind.Battery => new BatteryCard(p, m, s),
             WidgetKind.Cpu => new CpuCard(p, m, s),
             WidgetKind.Gpu => new GpuCard(p, m, s, index),
+            WidgetKind.Fps => new FpsCard(p, m, s),
             WidgetKind.Cooling => new CoolingCard(p, m, s),
             WidgetKind.Power => new PowerCard(p, m, s),
             WidgetKind.Memory => new MemoryCard(p, m, s),
@@ -644,6 +657,7 @@ public static class Cards
         WidgetKind.Battery => T("Battery"),
         WidgetKind.Cpu => T("Processor"),
         WidgetKind.Gpu => T("Graphics card"),
+        WidgetKind.Fps => T("FPS (games)"),
         WidgetKind.Cooling => T("Cooling and mainboard"),
         WidgetKind.Power => T("Power and cost"),
         WidgetKind.Memory => T("Memory"),
@@ -670,6 +684,7 @@ public static class Cards
         WidgetKind.Processes => new[] { ("proc.memory", "RAM") },
         WidgetKind.Drives => new[] { ("drives.io", T("Read and write rates")) },
         WidgetKind.Network => new[] { ("net.chart", T("History chart")), ("net.use", T("Link use")), ("net.peak", T("2-min peak")), ("net.address", T("Address")) },
+        WidgetKind.Fps => new[] { ("fps.chart", T("History chart")), ("fps.frametime", T("Frame time")) },
         WidgetKind.Ping => new[] { ("ping.chart", T("History chart")), ("ping.jitter", T("Jitter")), ("ping.loss", T("Loss")), ("ping.target", T("Target")) },
         WidgetKind.Power => new[] { ("power.chart", T("History chart")), ("power.cost", T("Costs")), ("power.note", T("Note on the estimate")) },
         WidgetKind.DataUsage => new[] { ("data.week", T("This week")), ("data.month", T("This month")) },
