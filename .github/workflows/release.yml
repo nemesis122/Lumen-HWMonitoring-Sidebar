@@ -14,8 +14,8 @@ jobs:
   release:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '8.0.x'
       - name: Version
@@ -45,6 +45,9 @@ jobs:
           $v = "${{ steps.version.outputs.version }}"
           $notes = "docs/release-notes/v$v.md"
           if (-not (Test-Path $notes)) { $notes = $null }
-          if (gh release view "v$v" 2>$null) { gh release upload "v$v" out/* --clobber }
+          if (gh release view "v$v" 2>$null) {
+            gh release upload "v$v" out/* --clobber
+            if ($notes) { gh release edit "v$v" --title "Lumen $v" --notes-file $notes --latest }
+          }
           elseif ($notes) { gh release create "v$v" out/* --title "Lumen $v" --notes-file $notes }
           else { gh release create "v$v" out/* --title "Lumen $v" --generate-notes }
