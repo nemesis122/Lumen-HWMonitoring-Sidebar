@@ -321,3 +321,19 @@ public class HardwareTests
         Assert.Equal(0, SensorPicker.DiskNumber("/hdd/0"));
     }
 }
+
+public class RegisterNameTests
+{
+    [Fact]
+    public void NamesFallBackToNumbers()
+    {
+        var s = new Settings { Pages = 3, PageNames = new() { " Gaming ", "", "A very long register name" } };
+        Settings.Normalize(s);
+        Assert.Equal(6, s.PageNames.Count);
+        Assert.Equal("Gaming", s.PageName(1));
+        Assert.Equal("2", s.PageName(2));
+        Assert.Equal(16, s.PageName(3).Length);
+        Assert.True(s.HasPageNames);
+        Assert.False(new Settings { Pages = 2 }.HasPageNames);
+    }
+}

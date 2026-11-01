@@ -98,7 +98,8 @@ public sealed class SettingsWindow : Window
             Row(T("Opacity"), Slide(.2, 1, .05, s.Opacity, v => s.Opacity = v, v => $"{v * 100:0} %")),
             Row(T("Text size"), Slide(.85, 1.3, .05, s.TextScale, v => s.TextScale = v, v => $"{v * 100:0} %")),
             Row(T("Columns"), Choice(new[] { "1", "2", "3", "4", "5", "6" }, s.Columns - 1, i => s.Columns = i + 1, rebuild: true), T("Several columns side by side; each is as wide as set below, everything stays large.")),
-            Row(T("Registers"), Choice(new[] { "1", "2", "3", "4", "5", "6" }, s.Pages - 1, i => s.Pages = i + 1, rebuild: true), T("Pages 1, 2, 3 … at the top; each widget goes on one of them. Switch by click or mouse wheel.")),
+            Row(T("Registers"), Choice(new[] { "1", "2", "3", "4", "5", "6" }, s.Pages - 1, i => s.Pages = i + 1, rebuild: true), T("Pages at the top; each widget goes on one of them. Switch by click or mouse wheel.")),
+            s.Pages > 1 ? Row(T("Register names"), PageNameEditor(), T("Shown at the top instead of 1, 2, 3; leave empty for the number.")) : null,
             Row(T("Whole screen"), Toggle(s.FullScreen, v => s.FullScreen = v), T("Covers the whole monitor up to the taskbar; the columns share its width.")),
             Row(T("Density"), Choice(new[] { T("Automatic"), T("Comfortable"), T("Compact") }, (int)s.Density, i => s.Density = (Density)i), T("Automatic fills the height up to the taskbar, without scrolling.")),
             Row(T("Width"), Slide(240, 440, 10, s.Width, v => s.Width = v, v => $"{v:0} px"))));
@@ -267,7 +268,7 @@ public sealed class SettingsWindow : Window
             if (s.Columns > 1)
                 options.Children.Add(Ui.Row(8, Ui.Text(T("Column"), 12.5, p.Soft), Choice(new[] { T("Automatic") }.Concat(Enumerable.Range(1, s.Columns).Select(n => n.ToString())).ToList(), Math.Min(slot.Column, s.Columns), i => slot.Column = i, small: true)));
             if (s.Pages > 1)
-                options.Children.Add(Ui.Row(8, Ui.Text(T("Register"), 12.5, p.Soft), Choice(Enumerable.Range(1, s.Pages).Select(n => n.ToString()).ToList(), Math.Min(slot.Page, s.Pages) - 1, i => slot.Page = i + 1, small: true)));
+                options.Children.Add(Ui.Row(8, Ui.Text(T("Register"), 12.5, p.Soft), Choice(Enumerable.Range(1, s.Pages).Select(s.PageName).ToList(), Math.Min(slot.Page, s.Pages) - 1, i => slot.Page = i + 1, small: true)));
             foreach (var o in options.Children) o.Margin = new Thickness(0, 0, 18, 6);
             if (options.Children.Count > 0) panel.Children.Add(options);
             var wrap = new WrapPanel { Margin = new Thickness(28, 0, 0, 4) };
@@ -294,8 +295,9 @@ public sealed class SettingsWindow : Window
         };
     }
 
-    private Control Section(string titleText, params Control[] rows)
+    private Control Section(string titleText, params Control?[] given)
     {
+        var rows = given.Where(r => r != null).Cast<Control>().ToArray();
         var t = Ui.Text(titleText.ToUpper(L.Culture), 11, p.Soft, FontWeight.SemiBold);
         t.LetterSpacing = 1;
         var panel = new StackPanel { Spacing = 14 };
@@ -334,6 +336,27 @@ public sealed class SettingsWindow : Window
         var t = new ToggleSwitch { IsChecked = value, OnContent = "", OffContent = "", MinWidth = 0, Margin = new Thickness(0, 0, -8, 0) };
         t.IsCheckedChanged += (_, _) => { set(t.IsChecked == true); if (notify) changed(); };
         return t;
+    }
+
+    // One small box per register; the change shows in the sidebar as soon as a box loses focus.
+    private Control PageNameEditor()
+    {
+        var wrap = new WrapPanel();
+        for (int i = 0; i < s.Pages; i++)
+        {
+            int n = i;
+            var box = new TextBox { Text = s.PageNames.ElementAtOrDefault(n) ?? "", Watermark = (n + 1).ToString(), Width = 96, MaxLength = 16, CornerRadius = new CornerRadius(8), Margin = new Thickness(0, 0, 6, 6) };
+            box.LostFocus += (_, _) =>
+            {
+                while (s.PageNames.Count < 6) s.PageNames.Add("");
+                string v = (box.Text ?? "").Trim();
+                if (s.PageNames[n] == v) return;
+                s.PageNames[n] = v;
+                changed();
+            };
+            wrap.Children.Add(box);
+        }
+        return wrap;
     }
 
     private Control Choice(IReadOnlyList<string> items, int selected, Action<int> set, bool rebuild = false, bool small = false)

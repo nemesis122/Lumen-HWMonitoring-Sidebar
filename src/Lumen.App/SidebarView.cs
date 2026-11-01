@@ -35,7 +35,7 @@ public sealed class SidebarView : Border
     private Snapshot? last; private History? lastHistory;
     // The register shown, kept across rebuilds (settings changes, theme switches).
     private static int page = 1;
-    private readonly StackPanel tabs = new() { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 2, Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+    private readonly WrapPanel tabs = new() { Orientation = Avalonia.Layout.Orientation.Horizontal, Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
 
     public SidebarView(Settings settings, Palette palette)
     {
@@ -85,7 +85,10 @@ public sealed class SidebarView : Border
         };
         ToolTip.SetTip(gear, T("Settings"));
         gear.Click += (_, _) => SettingsRequested?.Invoke();
-        var bar = Ui.Columns("Auto,Auto,Auto,*,Auto", mark, word, status, tabs, gear);
+        // Numbered registers fit in the top bar; named ones get a row of their own below it.
+        bool namedTabs = settings.Pages > 1 && settings.HasPageNames;
+        var bar = namedTabs ? Ui.Columns("Auto,Auto,Auto,*,Auto", mark, word, status, new Control(), gear) : Ui.Columns("Auto,Auto,Auto,*,Auto", mark, word, status, tabs, gear);
+        if (namedTabs) tabs.Margin = new Thickness(2, 0, 0, 0);
         // Registers: click a number, or turn the mouse wheel anywhere on the top bar.
         page = Math.Clamp(page, 1, settings.Pages);
         bar.PointerWheelChanged += (_, e) =>
@@ -137,6 +140,13 @@ public sealed class SidebarView : Border
         DockPanel.SetDock(bar, Dock.Top);
         bar.Margin = new Thickness(6, 0, 0, m.Gap + 2);
         root.Children.Add(bar);
+        if (namedTabs)
+        {
+            DockPanel.SetDock(tabs, Dock.Top);
+            tabs.Margin = new Thickness(4, -m.Gap * .5, 0, m.Gap + 2);
+            tabs.PointerWheelChanged += (_, e) => { Show(page + (e.Delta.Y < 0 ? 1 : -1)); e.Handled = true; };
+            root.Children.Add(tabs);
+        }
         root.Children.Add(body);
         Child = root;
 
@@ -202,10 +212,11 @@ public sealed class SidebarView : Border
             bool on = n == page;
             var b = new Button
             {
-                Content = Ui.Text(n.ToString(), 11.5, on ? p.Ink : p.Soft, on ? FontWeight.Bold : FontWeight.Medium),
+                Content = Ui.Text(settings.PageName(n), 11.5, on ? p.Ink : p.Soft, on ? FontWeight.Bold : FontWeight.Medium),
+                Margin = new Thickness(0, 0, 2, 2),
                 Background = on ? Palette.Brush(p.Track) : Brushes.Transparent,
                 BorderThickness = new Thickness(0),
-                Padding = new Thickness(8, 2),
+                Padding = new Thickness(settings.HasPageNames ? 10 : 8, settings.HasPageNames ? 3 : 2),
                 MinWidth = 24,
                 CornerRadius = new CornerRadius(8),
                 Cursor = new Cursor(StandardCursorType.Hand),

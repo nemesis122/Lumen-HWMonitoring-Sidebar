@@ -173,6 +173,10 @@ DesktopShot("desktop-two-columns-user", new Settings
     Widgets = Only(WidgetKind.Cpu, WidgetKind.Gpu, WidgetKind.Cooling, WidgetKind.Memory, WidgetKind.System, WidgetKind.Drives, WidgetKind.Network),
     ShowIntegratedGpu = false
 }, true);
+// Named registers in a single sidebar.
+var named = new Settings { Language = "de", Pages = 3, PageNames = new() { "Hardware", "Gaming", "Info", "", "", "" } };
+foreach (var w in named.Widgets) w.Page = w.Kind is WidgetKind.Fps or WidgetKind.Gpu ? 2 : w.Kind is WidgetKind.Weather or WidgetKind.Calendar ? 3 : 1;
+DesktopShot("desktop-named-registers", named, true);
 // Ring tiles pair up, minimal lines take one slim row each.
 var rings = new Settings
 {

@@ -58,6 +58,10 @@ public sealed class Settings
     public List<string> HiddenValues { get; set; } = new();
     public int Columns { get; set; } = 1;
     public int Pages { get; set; } = 1;
+    // Own names for the registers ("Gaming", "System" …); an empty name shows the number.
+    public List<string> PageNames { get; set; } = new();
+    public string PageName(int page) => page >= 1 && page <= PageNames.Count && PageNames[page - 1].Length > 0 ? PageNames[page - 1] : page.ToString();
+    public bool HasPageNames => PageNames.Take(Pages).Any(n => n.Length > 0);
     // Covers the whole screen up to the taskbar instead of a strip at one edge.
     public bool FullScreen { get; set; }
     public double PricePerKwh { get; set; } = .30;
@@ -139,6 +143,8 @@ public sealed class Settings
         s.WeatherPlace ??= "";
         s.Columns = Math.Clamp(s.Columns, 1, 6);
         s.Pages = Math.Clamp(s.Pages, 1, 6);
+        s.PageNames = Enumerable.Range(0, 6).Select(i => (s.PageNames ?? new()).ElementAtOrDefault(i)?.Trim() ?? "")
+            .Select(n => n.Length > 16 ? n[..16] : n).ToList();
         s.PricePerKwh = double.IsFinite(s.PricePerKwh) ? Math.Clamp(s.PricePerKwh, 0, 5) : .30;
         s.BaseWatts = double.IsFinite(s.BaseWatts) ? Math.Clamp(s.BaseWatts, 0, 500) : 50;
         s.Currency = string.IsNullOrWhiteSpace(s.Currency) ? "CHF" : s.Currency.Trim()[..Math.Min(5, s.Currency.Trim().Length)];
