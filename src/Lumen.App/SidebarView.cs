@@ -234,7 +234,7 @@ public sealed class SidebarView : Border
         foreach (var old in barRows.Children.OfType<FitPanel>()) old.Fitted -= Squeezed;
         barRows.Children.Clear();
         barRows.RowDefinitions.Clear();
-        var rows = settings.Layout(page: page);
+        var rows = settings.Layout(page: page, cards: w => w.Kind == WidgetKind.Gpu ? Math.Max(1, gpuCount) : 1);
         var allCells = new List<List<StackPanel>>();
         for (int r = 0; r < rows.Count; r++)
         {
@@ -267,6 +267,13 @@ public sealed class SidebarView : Border
                     pair.Children.Add(next);
                     cell = pair;
                     i++;
+                }
+                else if (Settings.IsHalf(slot) && card is RingTile or NumberTile or DualRingTile)
+                {
+                    // A half-width tile without a partner keeps its half width instead of stretching to double.
+                    var single = new Grid { ColumnDefinitions = new ColumnDefinitions($"*,{metrics.Gap},*") };
+                    single.Children.Add(card);
+                    cell = single;
                 }
                 cells.Add(new StackPanel { Spacing = metrics.Gap, Children = { cell } });
             }

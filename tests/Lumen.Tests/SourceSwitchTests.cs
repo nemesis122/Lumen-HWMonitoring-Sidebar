@@ -197,3 +197,18 @@ public class StyleCoverageTests
         finally { File.Delete(path); }
     }
 }
+
+public class BarRowTests
+{
+    // 19 widgets, the graphics widget showing two adapters: 20 cards in 3 rows become 7, 7, 6.
+    [Fact] public void RowsAreEvenCountingCards()
+    {
+        var s = new Settings { Edge = Edge.Top, Columns = 3 };
+        foreach (var w in s.Widgets) w.Visible = w.Kind != WidgetKind.Notes;
+        int Cards(WidgetSlot w) => w.Kind == WidgetKind.Gpu ? 2 : 1;
+        var rows = s.Layout(cards: Cards);
+        Assert.Equal(new[] { 7, 7, 6 }, rows.Select(r => r.Sum(Cards)));
+        // The order reads left to right, row after row.
+        Assert.Equal(s.Widgets.Where(w => w.Visible).Select(w => w.Kind), rows.SelectMany(r => r).Select(w => w.Kind));
+    }
+}

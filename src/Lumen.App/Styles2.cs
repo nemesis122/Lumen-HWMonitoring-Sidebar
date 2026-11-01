@@ -145,64 +145,38 @@ public sealed class NumberTile : SummaryTile
 }
 
 // The small figures under a compact widget: side by side in full-width styles, one per line in half-width tiles.
+// Side by side means up to three per line, two in a narrow card: the StatPanel decides that while it is
+// measured, so a bar that rescales its cards cannot make it flip back and forth.
 public sealed class ExtrasView : ContentControl
 {
     private readonly Palette p; private readonly bool wide;
     private string shape = "";
-    // Three figures side by side, two in a narrow card (a bar with many widgets), so labels are not cut off.
-    private int columns = 3;
-    private List<(string Label, string Value)> last = new();
     private readonly List<Stat> stats = new();
     private readonly List<TextBlock> values = new();
 
     public ExtrasView(Palette p, bool wide) { this.p = p; this.wide = wide; }
 
-    protected override void OnSizeChanged(SizeChangedEventArgs e)
-    {
-        base.OnSizeChanged(e);
-        // A gap between the two switch points: switching changes the card's height, a bar then
-        // rescales, and without the gap the columns could flip back and forth for ever.
-        double w = e.NewSize.Width;
-        int want = w <= 0 ? columns : columns == 3 ? (w < 240 ? 2 : 3) : (w > 275 ? 3 : 2);
-        if (!wide || want == columns) return;
-        columns = want;
-        Avalonia.Threading.Dispatcher.UIThread.Post(() => Set(last));
-    }
-
     public void Set(List<(string Label, string Value)> items)
     {
-        last = items;
         IsVisible = items.Count > 0;
-        // Wide: three per line (like the Standard cards), up to two lines; tiles: three lines,
-        // so the gauge stays the main thing.
-        var shown = items.Take(wide ? columns * 2 : 3).ToList();
+        // Wide: up to two lines of three; tiles: three lines, so the gauge stays the main thing.
+        var shown = items.Take(wide ? 6 : 3).ToList();
         // Long values (an IP address, a date) get a line of their own instead of being cut off.
         static bool Long(string v) => v.Length > 14 || System.Net.IPAddress.TryParse(v, out _);
-        string now = columns + ":" + string.Join("|", shown.Select(i => i.Label + (Long(i.Value) ? "+" : "")));
+        string now = string.Join("|", shown.Select(i => i.Label + (Long(i.Value) ? "+" : "")));
         if (now != shape)
         {
             shape = now;
             stats.Clear(); values.Clear();
             if (wide)
             {
-                foreach (var (label, _) in shown) stats.Add(new Stat(label, p));
-                // Three equal columns; a long value starts a new line and spans all three.
-                var grid = new Grid { ColumnDefinitions = new ColumnDefinitions(string.Join(",", Enumerable.Repeat("*", columns))) };
-                int row = 0, col = 0;
-                for (int i = 0; i < stats.Count; i++)
-                {
-                    bool span = Long(shown[i].Value);
-                    if (span && col > 0) { row++; col = 0; }
-                    if (grid.RowDefinitions.Count <= row) grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-                    var st = stats[i];
-                    st.Margin = new Thickness(0, 0, 6, 4);
-                    Grid.SetRow(st, row); Grid.SetColumn(st, col);
-                    if (span) Grid.SetColumnSpan(st, columns);
-                    grid.Children.Add(st);
-                    col += span ? columns : 1;
-                    if (col >= columns) { row++; col = 0; }
-                }
-                Content = shown.Count == 0 ? null : grid;
+                foreach (var (label, _) in shown) stats.Add(new Stat(label, p) { Margin = new Thickness(0, 0, 6, 4) });
+                var shortOnes = stats.Where((_, i) => !Long(shown[i].Value)).Cast<Control>().ToArray();
+                var longOnes = stats.Where((_, i) => Long(shown[i].Value)).Cast<Control>().ToArray();
+                var panel = new StackPanel();
+                if (shortOnes.Length > 0) panel.Children.Add(new StatPanel(shortOnes.Select(_ => 1.0).ToArray(), shortOnes) { MaxColumns = 3 });
+                foreach (var l in longOnes) panel.Children.Add(l);
+                Content = shown.Count == 0 ? null : panel;
             }
             else
             {

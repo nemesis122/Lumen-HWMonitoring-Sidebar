@@ -233,11 +233,12 @@ public sealed class Settings
     // the free ones are spread so the tallest column is as short as possible (exactly for two
     // columns, by largest-first otherwise). Within a column the widgets keep their order.
     // weight: measured card heights once the sidebar has been laid out; the estimate before that.
-    public List<List<WidgetSlot>> Layout(Func<WidgetSlot, double>? weight = null, int page = 1)
+    // cards: how many cards a widget makes (each graphics adapter is one), so bar rows come out even.
+    public List<List<WidgetSlot>> Layout(Func<WidgetSlot, double>? weight = null, int page = 1, Func<WidgetSlot, int>? cards = null)
     {
         weight ??= Weight;
         var visible = Widgets.Where(w => w.Visible && Math.Min(w.Page, Pages) == page).ToList();
-        if (Horizontal) return BarRows(visible);
+        if (Horizontal) return BarRows(visible, cards ?? (_ => 1));
         int n = ColumnsInUse;
         if (n < 2) return new() { visible };
         int Pinned(WidgetSlot w) => w.Column > 0 ? Math.Min(w.Column, n) - 1 : -1;
@@ -291,7 +292,7 @@ public sealed class Settings
 
     // Rows of the bar, top to bottom, each read left to right. Pinned widgets stay in their row
     // (the widget's "Column" number); the others fill the rows in order, about equally many per row.
-    private List<List<WidgetSlot>> BarRows(List<WidgetSlot> visible)
+    private List<List<WidgetSlot>> BarRows(List<WidgetSlot> visible, Func<WidgetSlot, int> cards)
     {
         int n = Math.Max(1, Columns);
         int Pinned(WidgetSlot w) => w.Column > 0 ? Math.Min(w.Column, n) - 1 : -1;
@@ -305,12 +306,18 @@ public sealed class Settings
         }
         var rows = Enumerable.Range(0, n).Select(_ => new List<List<WidgetSlot>>()).ToList();
         foreach (var u in units.Where(u => Pinned(u[0]) >= 0)) rows[Pinned(u[0])].Add(u);
-        int per = (int)Math.Ceiling(units.Count / (double)n);
+        // Even rows: counted in cards (a widget with two graphics adapters is two), the rest of the
+        // division going to the first rows – 20 cards in 3 rows become 7, 7, 6.
+        int Size(List<WidgetSlot> u) => u.Count == 2 ? 1 : Math.Max(1, cards(u[0]));
+        int total = units.Sum(Size);
+        var target = Enumerable.Range(0, n).Select(i => total / n + (i < total % n ? 1 : 0)).ToArray();
+        var filled = rows.Select(row => row.Sum(Size)).ToArray();
         int r = 0;
         foreach (var u in units.Where(u => Pinned(u[0]) < 0))
         {
-            while (r < n - 1 && rows[r].Count >= per) r++;
+            while (r < n - 1 && filled[r] + Size(u) > target[r] && filled[r] > 0) r++;
             rows[r].Add(u);
+            filled[r] += Size(u);
         }
         // Keep the original order inside each row.
         return rows.Select(row => row.OrderBy(u => visible.IndexOf(u[0])).SelectMany(u => u).ToList()).ToList();

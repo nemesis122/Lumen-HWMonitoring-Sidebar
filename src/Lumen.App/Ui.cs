@@ -118,8 +118,79 @@ public sealed class Stat : StackPanel
 
 public static class StatGrid
 {
-    public static Grid Of(params Stat[] stats) => Weighted(string.Join(",", stats.Select(_ => "*")), stats);
+    public static Control Of(params Stat[] stats) => Weighted(string.Join(",", stats.Select(_ => "*")), stats);
 
     // Equal columns by default; a wider last column when its value is long, such as an IP address.
-    public static Grid Weighted(string columns, params Stat[] stats) => Ui.Columns(columns, stats);
+    public static Control Weighted(string columns, params Stat[] stats) => new StatPanel(columns.Split(',').Select(c => c.Trim() == "*" ? 1 : double.TryParse(c.Trim().TrimEnd('*'), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var w) ? w : 1).ToArray(), stats);
+}
+
+// Figures side by side; in a narrow card (a bar with many widgets) they wrap into two columns
+// instead of cutting their labels off. Decided inside one measure pass, so it cannot flip back and forth.
+public sealed class StatPanel : Panel
+{
+    private readonly double[] weights;
+    private const double MinColumn = 76;
+    // At most this many side by side; more wrap onto the next line.
+    public int MaxColumns { get; init; } = int.MaxValue;
+
+    public StatPanel(double[] weights, Control[] children)
+    {
+        this.weights = weights;
+        Children.AddRange(children);
+    }
+
+    private int Columns(double width)
+    {
+        int n = Math.Max(1, Children.Count(c => c.IsVisible));
+        if (!double.IsFinite(width)) return Math.Min(n, MaxColumns);
+        int cols = Math.Min(n, MaxColumns);
+        while (cols > 2 && width / cols < MinColumn) cols--;
+        return cols;
+    }
+
+    private double[] Widths(double width, int cols, int n)
+    {
+        var w = new double[n];
+        if (cols == n)
+        {
+            double total = Enumerable.Range(0, n).Sum(i => i < weights.Length ? weights[i] : 1);
+            for (int i = 0; i < n; i++) w[i] = width * (i < weights.Length ? weights[i] : 1) / total;
+        }
+        else for (int i = 0; i < n; i++) w[i] = width / cols;
+        return w;
+    }
+
+    protected override Size MeasureOverride(Size available)
+    {
+        var shown = Children.Where(c => c.IsVisible).ToList();
+        if (shown.Count == 0) return default;
+        double width = double.IsFinite(available.Width) ? available.Width : shown.Count * 90;
+        int cols = Columns(width);
+        var w = Widths(width, cols, shown.Count);
+        double height = 0, row = 0;
+        for (int i = 0; i < shown.Count; i++)
+        {
+            shown[i].Measure(new Size(w[i], double.PositiveInfinity));
+            row = Math.Max(row, shown[i].DesiredSize.Height);
+            if ((i + 1) % cols == 0 || i == shown.Count - 1) { height += row; row = 0; }
+        }
+        return new Size(double.IsFinite(available.Width) ? available.Width : width, height);
+    }
+
+    protected override Size ArrangeOverride(Size final)
+    {
+        var shown = Children.Where(c => c.IsVisible).ToList();
+        if (shown.Count == 0) return final;
+        int cols = Columns(final.Width);
+        var w = Widths(final.Width, cols, shown.Count);
+        double y = 0, x = 0, row = 0;
+        for (int i = 0; i < shown.Count; i++)
+        {
+            row = Math.Max(row, shown[i].DesiredSize.Height);
+            shown[i].Arrange(new Rect(x, y, w[i], shown[i].DesiredSize.Height));
+            x += w[i];
+            if ((i + 1) % cols == 0) { y += row; row = 0; x = 0; }
+        }
+        return final;
+    }
 }

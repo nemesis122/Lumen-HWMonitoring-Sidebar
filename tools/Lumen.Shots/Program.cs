@@ -292,7 +292,7 @@ foreach (var st in new[] { WidgetStyle.Standard, WidgetStyle.Ring, WidgetStyle.M
 StyleShots();
 void StyleShots()
 {
-foreach (var st in Enum.GetValues<WidgetStyle>())
+foreach (var st in Enum.GetValues<WidgetStyle>().Where(x => Environment.GetEnvironmentVariable("LUMEN_SHOT_ONLY") is not string only || only == x.ToString()))
 {
     try
     {

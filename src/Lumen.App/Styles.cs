@@ -421,9 +421,9 @@ public sealed class RingTile : Border, IWidget, INamed
         unit.Margin = new Thickness(1, 0, 0, size * .05);
         unit.VerticalAlignment = VerticalAlignment.Bottom;
         var center = Ui.Row(0, value, unit);
-        center.HorizontalAlignment = HorizontalAlignment.Center;
-        center.VerticalAlignment = VerticalAlignment.Center;
-        var gauge = new Panel { Width = size, Height = size, HorizontalAlignment = HorizontalAlignment.Center, Children = { ring, center } };
+        // A long value (a time, 28.3 %) shrinks to stay inside the ring instead of crossing it.
+        var fitted = new Viewbox { Child = center, StretchDirection = StretchDirection.DownOnly, MaxWidth = size * .72, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        var gauge = new Panel { Width = size, Height = size, HorizontalAlignment = HorizontalAlignment.Center, Children = { ring, fitted } };
         caption = Ui.Text("", 11.5, p.Soft, numbers: true);
         caption.HorizontalAlignment = HorizontalAlignment.Center;
         caption.Margin = new Thickness(0, -6, 0, 0);
@@ -467,9 +467,17 @@ public sealed class MinimalRow : Border, IWidget, INamed
         title.Margin = new Thickness(6, 0, 0, 0);
         caption = Ui.Text("", 11.5, p.Soft, numbers: true);
         caption.HorizontalAlignment = HorizontalAlignment.Right;
+        caption.TextTrimming = TextTrimming.CharacterEllipsis;
+        caption.MaxWidth = 100;
+        caption.Margin = new Thickness(8, 0, 0, 0);
+        // Title and caption share the line; each gets a limit so they never run into each other.
+        title.TextTrimming = TextTrimming.CharacterEllipsis;
+        title.MaxWidth = 110;
         hero = new Hero(m.Subtitles ? 28 : 24, p);
-        spark = new AreaChart { Height = m.Subtitles ? 30 : 24, LineWidth = 1.4, FillOpacity = .22, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(12, 0, 0, 4) };
+        // In the bar the line stays a line: its sparkline does not grow with the row height.
+        spark = new AreaChart { Height = m.Subtitles ? 30 : 24, LineWidth = 1.4, FillOpacity = .22, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(12, 0, 0, 4), Tag = s.Horizontal ? "fixed" : null };
         name = Ui.Text("", 11, p.Soft);
+        name.TextTrimming = TextTrimming.CharacterEllipsis;
         name.Margin = new Thickness(8, 0, 8, 0);
         extras = new ExtrasView(p, true) { Margin = new Thickness(0, 2, 0, 0) };
         Child = Ui.Stack(0, Ui.Columns("Auto,Auto,*,Auto", glyph, title, name, caption), Ui.Columns("Auto,*", hero, spark), extras);

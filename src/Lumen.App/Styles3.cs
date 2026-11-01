@@ -42,7 +42,8 @@ public sealed class CompactRow : SummaryTile
         bool now = w <= 0 ? narrow : narrow ? w < 305 : w < 275;
         if (now == narrow) return;
         narrow = now;
-        Caption.IsVisible = !narrow;
+        // Only faded out, not removed: the card keeps its size, so the bar's rescaling cannot feed back.
+        Caption.Opacity = narrow ? 0 : 1;
         hero.Margin = narrow ? new Thickness(8, 0, 8, 0) : new Thickness(12, 0, 14, 0);
     }
 
@@ -94,7 +95,7 @@ public sealed class StatusRow : Border, IWidget, INamed
     {
         base.OnSizeChanged(e);
         double w = e.NewSize.Width;
-        if (w > 0) caption.IsVisible = caption.IsVisible ? w >= 235 : w >= 255;
+        if (w > 0) caption.Opacity = caption.Opacity > 0 ? (w >= 235 ? 1 : 0) : (w >= 255 ? 1 : 0);
     }
 
     public void Update(Snapshot snap, History h)
@@ -235,10 +236,13 @@ public sealed class SegmentTile : SummaryTile
         }
         var row1 = Line("", out firstLabel, out first, out firstValue);
         secondRow = Line(L.T("Load"), out secondLabel, out second, out secondValue);
+        // Head and bars stay together; spare height in a bar row opens up between them and the figures.
+        var top = Ui.Stack(8, Head, row1, secondRow);
         var body = new StackPanel { Spacing = 8, Tag = "elastic" };
-        body.Children.Add(Head);
-        body.Children.Add(row1);
-        body.Children.Add(secondRow);
+        body.Children.Add(top);
+        // An empty spacer: with or without figures the card can open up to the row's height,
+        // the bars staying under the head and the figures (if any) going to the bottom.
+        body.Children.Add(new Border { Height = 0 });
         body.Children.Add(Extras);
         Child = body;
     }
