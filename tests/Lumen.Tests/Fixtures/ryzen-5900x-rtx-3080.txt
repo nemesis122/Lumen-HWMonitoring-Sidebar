@@ -1,0 +1,249 @@
+=== LibreHardwareMonitor ===
+[Motherboard] ASUS ROG STRIX X570-E GAMING
+  [SuperIO] Nuvoton NCT6798D
+      Control      Fan #1                             90.588
+      Control      Fan #2                             65.098
+      Control      Fan #3                             90.588
+      Control      Fan #4                             90.588
+      Control      Fan #5                             100
+      Control      Fan #6                             100
+      Control      Fan #7                             100
+      Voltage      Vcore                              1.376
+      Voltage      Voltage #2                         0.984
+      Voltage      AVCC                               3.376
+      Voltage      +3.3V                              3.28
+      Voltage      Voltage #5                         1.008
+      Voltage      Voltage #6                         0.816
+      Voltage      Voltage #7                         0.336
+      Voltage      +3V Standby                        3.376
+      Voltage      CMOS Battery                       3.344
+      Voltage      CPU Termination                    0.896
+      Voltage      Voltage #11                        0.408
+      Voltage      Voltage #12                        0.488
+      Voltage      Voltage #13                        1.032
+      Voltage      Voltage #14                        0.4
+      Voltage      Voltage #15                        0.376
+      Temperature  Temperature #1                     45.5
+      Temperature  Temperature #2                     36
+      Temperature  Temperature #3                     76
+      Temperature  Temperature #4                     36
+      Temperature  Temperature #5                     27
+      Temperature  Temperature #6                     81
+      Fan          Fan #1                             0
+      Fan          Fan #2                             897.606
+      Fan          Fan #3                             1036.866
+      Fan          Fan #4                             0
+      Fan          Fan #5                             0
+      Fan          Fan #6                             0
+      Fan          Fan #7                             0
+  [EmbeddedController] Embedded Controller
+      Temperature  Chipset                            67
+      Temperature  CPU                                61
+      Temperature  Motherboard                        36
+      Temperature  T Sensor                           —
+      Temperature  VRM                                20
+      Voltage      CPU Core                           1.375
+      Fan          Chipset Fan                        3068
+      Current      CPU                                51
+[Cpu] AMD Ryzen 9 5900X
+    Load         CPU Core #1                        33.33
+    Load         CPU Core #2                        64.8
+    Load         CPU Core #3                        36.76
+    Load         CPU Core #4                        58.88
+    Load         CPU Core #5                        17.45
+    Load         CPU Core #6                        15.26
+    Load         CPU Core #7                        32.4
+    Load         CPU Core #8                        22.74
+    Load         CPU Core #9                        12.46
+    Load         CPU Core #10                       9.66
+    Load         CPU Core #11                       6.87
+    Load         CPU Core #12                       7.17
+    Load         CPU Core #13                       2.49
+    Load         CPU Core #14                       2.8
+    Load         CPU Core #15                       2.8
+    Load         CPU Core #16                       0.31
+    Load         CPU Core #17                       0
+    Load         CPU Core #18                       0
+    Load         CPU Core #19                       0.93
+    Load         CPU Core #20                       0
+    Load         CPU Core #21                       0
+    Load         CPU Core #22                       0.93
+    Load         CPU Core #23                       13.52
+    Load         CPU Core #24                       4.69
+    Load         CPU Total                          14.43
+    Load         CPU Core Max                       64.8
+    Power        Package                            88.211
+    Clock        Cores (Average)                    3862
+    Clock        Cores (Average Effective)          681
+    Clock        Core #1                            4766
+    Clock        Core #1 (Effective)                2257
+    Factor       Core #1                            47.75
+    Power        Core #1 (SMU)                      10.175
+    Voltage      Core #1 VID                        1.425
+    Clock        Core #2                            4766
+    Clock        Core #2 (Effective)                2201.5
+    Factor       Core #2                            47.75
+    Power        Core #2 (SMU)                      10.875
+    Voltage      Core #2 VID                        1.425
+    Clock        Core #3                            3813
+    Clock        Core #3 (Effective)                824
+    Factor       Core #3                            38.2
+    Power        Core #3 (SMU)                      5.111
+    Voltage      Core #3 VID                        1.425
+    Clock        Core #4                            3813
+    Clock        Core #4 (Effective)                1342
+    Factor       Core #4                            38.2
+    Power        Core #4 (SMU)                      6.779
+    Voltage      Core #4 VID                        1.425
+    Clock        Core #5                            3813
+    Clock        Core #5 (Effective)                497
+    Factor       Core #5                            38.2
+    Power        Core #5 (SMU)                      3.809
+    Voltage      Core #5 VID                        1.425
+    Clock        Core #6                            3813
+    Clock        Core #6 (Effective)                266
+    Factor       Core #6                            38.2
+    Power        Core #6 (SMU)                      2.777
+    Voltage      Core #6 VID                        1.425
+    Clock        Core #7                            3593
+    Clock        Core #7 (Effective)                157
+    Factor       Core #7                            36
+    Power        Core #7 (SMU)                      1.727
+    Voltage      Core #7 VID                        1.425
+    Clock        Core #8                            3593
+    Clock        Core #8 (Effective)                90
+    Factor       Core #8                            36
+    Power        Core #8 (SMU)                      1.182
+    Voltage      Core #8 VID                        1.425
+    Clock        Core #9                            3593
+    Clock        Core #9 (Effective)                16.5
+    Factor       Core #9                            36
+    Power        Core #9 (SMU)                      0.249
+    Voltage      Core #9 VID                        1.425
+    Clock        Core #10                           3593
+    Clock        Core #10 (Effective)               23.5
+    Factor       Core #10                           36
+    Power        Core #10 (SMU)                     0.361
+    Voltage      Core #10 VID                       1.425
+    Clock        Core #11                           3593
+    Clock        Core #11 (Effective)               63
+    Factor       Core #11                           36
+    Power        Core #11 (SMU)                     1.976
+    Voltage      Core #11 VID                       1.425
+    Clock        Core #12                           3593
+    Clock        Core #12 (Effective)               431.5
+    Factor       Core #12                           36
+    Power        Core #12 (SMU)                     3.216
+    Voltage      Core #12 VID                       1.425
+    Temperature  Core (Tctl/Tdie)                   75.125
+    Temperature  CCD1 (Tdie)                        76
+    Temperature  CCD2 (Tdie)                        50.75
+    Temperature  CCDs Max (Tdie)                    76
+    Temperature  CCDs Average (Tdie)                63.375
+    Voltage      Core (SVI2 TFN)                    1.425
+    Voltage      SoC (SVI2 TFN)                     0.975
+    Clock        Bus Speed                          99.817
+    Current      TDC                                46.582
+    Clock        Fabric                             1067
+    Clock        Uncore                             1067
+    Clock        Memory                             1067
+    Temperature  SoC                                43.623
+[GpuNvidia] NVIDIA GeForce RTX 3080
+    Temperature  GPU Core                           46
+    Clock        GPU Core                           1155
+    Clock        GPU Memory                         5001.986
+    Fan          GPU Fan 1                          0
+    Fan          GPU Fan 2                          0
+    Control      GPU Fan 1                          0
+    Control      GPU Fan 2                          0
+    Load         GPU Core                           9
+    Load         GPU Memory Controller              2
+    Load         GPU Video Engine                   4
+    Load         GPU Bus                            0
+    Load         GPU Power                          22.412
+    Load         GPU Board Power                    24.455
+    Voltage      GPU Core Voltage                   0.725
+    SmallData    D3D Dedicated Memory Used          991.988
+    SmallData    D3D Shared Memory Used             90.469
+    Load         D3D 3D                             6.927
+    Load         D3D Overlay                        0
+    Load         D3D Video Decode                   4.983
+    Load         D3D Copy                           0
+    Load         D3D Copy                           0.078
+    Load         D3D Security                       0
+    Load         D3D Video Encode                   0
+    Load         D3D Optical Flow Accelerator 0     0
+    Load         D3D VR                             0
+    Load         D3D Copy                           0.512
+    Load         D3D Copy                           0
+    Load         D3D Copy                           0
+    Load         D3D Copy                           0
+    Load         D3D Security_1                     0
+    Temperature  GPU Hot Spot                       63.063
+    Temperature  GPU Memory Junction                56
+    SmallData    GPU Memory Total                   10240
+    SmallData    GPU Memory Free                    9068
+    SmallData    GPU Memory Used                    1171
+    Load         GPU Memory                         11.438
+    Power        GPU Package                        68.673
+    Throughput   GPU PCIe Rx                        4499456
+    Throughput   GPU PCIe Tx                        3649536
+[Storage] Samsung SSD 970 EVO Plus 2TB
+    Temperature  Composite Temperature              58
+    Temperature  Temperature #1                     57.85
+    Temperature  Temperature #2                     61.85
+    Temperature  Warning Temperature                84
+    Temperature  Critical Temperature               84
+    Level        Life                               92
+    Data         Data Read                          183346
+    Data         Data Written                       186716
+    Factor       Power On Count                     2667
+    Factor       Power On Hours                     11075
+    Load         Used Space                         33.301
+    Data         Free Space                         1334.25
+    Data         Total Space                        2000.399
+    Load         Read Activity                      0.115
+    Load         Write Activity                     1.075
+    Load         Total Activity                     1.461
+    Throughput   Read Rate                          140157.7
+    Throughput   Write Rate                         17672620
+    Level        Available Spare                    100
+    Level        Available Spare Threshold          10
+    Level        Percentage Used                    8
+[Storage] Samsung SSD 970 EVO Plus 2TB
+    Temperature  Composite Temperature              58
+    Temperature  Temperature #1                     57.85
+    Temperature  Temperature #2                     56.85
+    Temperature  Warning Temperature                84
+    Temperature  Critical Temperature               84
+    Level        Life                               97
+    Data         Data Read                          91159
+    Data         Data Written                       63383
+    Factor       Power On Count                     2667
+    Factor       Power On Hours                     11003
+    Load         Used Space                         68.781
+    Data         Free Space                         624.496
+    Data         Total Space                        2000.399
+    Load         Read Activity                      0
+    Load         Write Activity                     0
+    Load         Total Activity                     0
+    Throughput   Read Rate                          0
+    Throughput   Write Rate                         0
+    Level        Available Spare                    100
+    Level        Available Spare Threshold          10
+    Level        Percentage Used                    3
+[Storage] Samsung SSD 870 EVO 4TB 
+    Temperature  Temperature                        30
+    Level        Life                               99
+    Data         Data Written                       49498
+    Factor       Power On Count                     1379
+    Factor       Power On Hours                     6313
+    Load         Used Space                         57.905
+    Data         Free Space                         1684.125
+    Data         Total Space                        4000.787
+    Load         Read Activity                      0
+    Load         Write Activity                     0
+    Load         Total Activity                     0.004
+    Throughput   Read Rate                          0
+    Throughput   Write Rate                         0
+

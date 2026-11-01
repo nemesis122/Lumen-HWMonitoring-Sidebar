@@ -55,6 +55,14 @@ Stopped|Steht|Arrêté|Ferma|Parado|Parada
 Fans|Lüfter|Ventilateurs|Ventole|Ventiladores|Ventoinhas
 Board|Mainboard|Carte mère|Scheda madre|Placa base|Placa-mãe
 Chipset|Chipsatz|Chipset|Chipset|Chipset|Chipset
+Coolant|Kühlmittel|Liquide|Liquido|Líquido|Líquido
+Chassis|Gehäuse|Boîtier|Case|Caja|Gabinete
+Pump|Pumpe|Pompe|Pompa|Bomba|Bomba
+AIO Pump|AIO-Pumpe|Pompe AIO|Pompa AIO|Bomba AIO|Bomba AIO
+Water Pump|Wasserpumpe|Pompe à eau|Pompa acqua|Bomba de agua|Bomba de água
+Auxiliary|Zusatz|Auxiliaire|Ausiliaria|Auxiliar|Auxiliar
+CPU Opt|CPU Opt|CPU Opt|CPU Opt|CPU Opt|CPU Opt
+Power Fan|Netzteil-Lüfter|Ventilateur alim.|Ventola alim.|Ventilador PSU|Ventoinha PSU
 Feels like|Gefühlt|Ressenti|Percepita|Sensación|Sensação
 Wind|Wind|Vent|Vento|Viento|Vento
 Humidity|Feuchte|Humidité|Umidità|Humedad|Humidade

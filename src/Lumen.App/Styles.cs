@@ -28,13 +28,13 @@ public static class Names
         return System.Text.RegularExpressions.Regex.Replace(n, @"\s{2,}", " ").Trim();
     }
 
-    // "Fan #2" → "Fan 2", "Chipset Fan" → "Chipset", or whatever the user called it.
+    // "Fan #2" → "Fan 2", "System Fan #1" → "System 1", "Chipset Fan" → "Chipset", "AIO Pump" → "AIO Pump".
     public static string Fan(string raw, Settings s)
     {
         if (s.Label("fan:" + raw) is string own) return own;
-        if (raw.StartsWith("Fan #")) return L.T("Fan") + " " + raw[5..];
-        string n = raw.EndsWith(" Fan", StringComparison.OrdinalIgnoreCase) ? raw[..^4] : raw;
-        return L.T(n);
+        var (word, number) = SensorPicker.FanName(raw);
+        string w = L.T(word);
+        return number.Length > 0 ? w + " " + number : w;
     }
 
     public static string Temp(string raw, Settings s) => s.Label("temp:" + raw) ?? L.T(raw);
