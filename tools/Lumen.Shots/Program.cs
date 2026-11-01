@@ -325,7 +325,7 @@ toastContent.VerticalAlignment = VerticalAlignment.Bottom;
 toastContent.Margin = new Thickness(0, 0, 300 + 16, Taskbar + 16);
 DesktopShot("desktop-warning", new Settings { Language = "de" }, true, extra: toastContent);
 
-for (int i = 0; i < 8; i++) SettingsPage($"settings-de-{i}", true, "de", i, WidgetKind.Cpu, WidgetKind.Gpu, WidgetKind.Drives, WidgetKind.Volumes);
+for (int i = 0; i < 8; i++) SettingsPage($"settings-de-{i}", true, "de", i, WidgetKind.Cpu, WidgetKind.Gpu, WidgetKind.Drives, WidgetKind.Volumes, WidgetKind.Network);
 barSettings = true;
 SettingsPage("settings-de-bar-layout", true, "de", 1);
 SettingsPage("settings-en-bar-layout", true, "en", 1);

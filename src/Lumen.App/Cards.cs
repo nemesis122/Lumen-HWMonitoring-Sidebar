@@ -370,21 +370,13 @@ public sealed class NetworkCard : Card
         if (stats.Count > 0) Body.Children.Add(StatGrid.Weighted(string.Join(",", stats.Keys.Select(k => k == "net.address" ? "1.35*" : "*")), stats.Values.ToArray()));
         // How full the link is, as a thin bar under the figures.
         if (stats.ContainsKey("net.use")) { linkBar = new Meter { Height = 3, Palette = p, Margin = new Thickness(0, -4, 0, 0) }; Body.Children.Add(linkBar); }
-        // The external address is fetched only when the button is clicked, never on its own.
+        // The external address, once fetched from the settings (Widgets → Network → Customise).
+        // The sidebar itself has no button and never asks on its own.
         if (Shows("net.external"))
         {
             externalValue = Ui.Text("", 12.5, p.Ink, FontWeight.Medium, true);
-            var fetch = new Button
-            {
-                Content = Ui.Text(T("Get"), 11.5, p.Ink, FontWeight.SemiBold),
-                Padding = new Thickness(10, 3), CornerRadius = new CornerRadius(7), VerticalAlignment = VerticalAlignment.Center,
-                Background = Palette.Brush(p.Track), BorderThickness = new Thickness(0), Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
-            };
-            ToolTip.SetTip(fetch, T("Asks api.ipify.org once for the public address of this connection."));
-            fetch.Click += async (_, _) => await ExternalIp.FetchAsync();
-            externalButton = fetch;
-            var label = Label(T("External IP"), p);
-            Body.Children.Add(Ui.Columns("*,Auto", Ui.Stack(1, label, externalValue), fetch));
+            externalRow = Ui.Stack(1, Label(T("External IP"), p), externalValue);
+            Body.Children.Add(externalRow);
             ShowExternal();
             ExternalIp.Changed += OnExternal;
             DetachedFromVisualTree += (_, _) => ExternalIp.Changed -= OnExternal;
@@ -393,21 +385,20 @@ public sealed class NetworkCard : Card
 
     private readonly Meter? linkBar;
     private readonly TextBlock? externalValue;
-    private readonly Button? externalButton;
+    private readonly Control? externalRow;
 
     private void OnExternal() => Avalonia.Threading.Dispatcher.UIThread.Post(ShowExternal);
 
     private void ShowExternal()
     {
-        if (externalValue is null) return;
+        if (externalValue is null || externalRow is null) return;
+        // Shown only once there is something to show.
+        externalRow.IsVisible = ExternalIp.Busy || ExternalIp.Address != null || ExternalIp.Failed;
         externalValue.Text = ExternalIp.Busy ? T("Asking…")
             : ExternalIp.Address is string a ? $"{a}  ·  {ExternalIp.At:HH:mm}"
-            : ExternalIp.Failed ? T("Not reachable")
-            : T("Not fetched yet");
+            : T("Not reachable");
         externalValue.Foreground = Palette.Brush(ExternalIp.Address is null ? P.Soft : P.Ink);
-        if (externalButton != null) externalButton.IsEnabled = !ExternalIp.Busy;
     }
-
     public override void Update(Snapshot s, History h)
     {
         var n = s.Network;

@@ -441,6 +441,33 @@ public sealed class SettingsWindow : Window
                 which.Margin = new Thickness(0);
                 panel.Children.Add(block);
             }
+            // The external IP is fetched only here, on request – one HTTPS request, never in the background.
+            if (slot.Kind == WidgetKind.Network)
+            {
+                var value = Ui.Text("", 12.5, p.Ink, FontWeight.Medium, true);
+                value.VerticalAlignment = VerticalAlignment.Center;
+                var fetch = new Button { Content = T("Get"), Padding = new Thickness(14, 5), CornerRadius = new CornerRadius(8), Margin = new Thickness(12, 0, 0, 0) };
+                ToolTip.SetTip(fetch, T("Asks api.ipify.org once for the public address of this connection."));
+                void Show()
+                {
+                    value.Text = ExternalIp.Busy ? T("Asking…")
+                        : ExternalIp.Address is string a ? $"{a}  ·  {ExternalIp.At:HH:mm}"
+                        : ExternalIp.Failed ? T("Not reachable") : T("Not fetched yet");
+                    value.Foreground = Palette.Brush(ExternalIp.Address is null ? p.Soft : p.Ink);
+                    fetch.IsEnabled = !ExternalIp.Busy;
+                }
+                void OnChanged() => Avalonia.Threading.Dispatcher.UIThread.Post(Show);
+                ExternalIp.Changed += OnChanged;
+                fetch.DetachedFromVisualTree += (_, _) => ExternalIp.Changed -= OnChanged;
+                fetch.Click += async (_, _) => await ExternalIp.FetchAsync();
+                Show();
+                var l = Ui.Text(T("External IP"), 12.5, p.Soft);
+                l.Width = 120;
+                l.VerticalAlignment = VerticalAlignment.Center;
+                var ipRow = Ui.Columns("Auto,*,Auto", l, value, fetch);
+                ipRow.Margin = new Thickness(28, 6, 0, 4);
+                panel.Children.Add(ipRow);
+            }
         }
         return new Border
         {
