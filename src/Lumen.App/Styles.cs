@@ -12,6 +12,9 @@ public sealed record Summary(string Glyph, string Title, string Value, string Un
 {
     // The hardware's model name, shortened to fit a tile: "Ryzen 9 5900X", "RTX 3080".
     public string Name { get; init; } = "";
+    // A second reading for the styles that show two (Dual ring, Segments, Compact): the load, 0 to 1.
+    public double? Second { get; init; }
+    public string SecondLabel { get; init; } = "";
 
     public static readonly Summary Empty = new(Glyphs.Cpu, "", Format.Missing, "", Colors.Gray, 0, "", Array.Empty<double>(), null);
 }
@@ -65,14 +68,14 @@ public static class Summaries
             {
                 var c = s.Cpu;
                 return new(Glyphs.Cpu, T("Processor"), T2(c?.Temperature), U, Heat(c?.Temperature), Format.Heat(c?.Temperature),
-                    $"{T("Load")} {Format.Percent(c?.Load)}", h.Read("cpu.load"), 100) { Name = Names.Short(c?.Name) };
+                    $"{T("Load")} {Format.Percent(c?.Load)}", h.Read("cpu.load"), 100) { Name = Names.Short(c?.Name), Second = c?.Load / 100, SecondLabel = Format.Percent(c?.Load) };
             }
             case WidgetKind.Gpu:
             {
                 var g = GpuGroup.Visible(s, set).ElementAtOrDefault(index);
                 string title = g?.Integrated == true ? T("Integrated") : T("Graphics");
                 return new(Glyphs.Gpu, title, T2(g?.Temperature), U, Heat(g?.Temperature), Format.Heat(g?.Temperature),
-                    $"{T("Load")} {Format.Percent(g?.Load)}", g is null ? Array.Empty<double>() : h.Read($"gpu.{g.Id}.load"), 100) { Name = Names.Short(g?.Name) };
+                    $"{T("Load")} {Format.Percent(g?.Load)}", g is null ? Array.Empty<double>() : h.Read($"gpu.{g.Id}.load"), 100) { Name = Names.Short(g?.Name), Second = g?.Load / 100, SecondLabel = Format.Percent(g?.Load) };
             }
             case WidgetKind.Fps:
             {
@@ -152,6 +155,48 @@ public static class Summaries
                 return new(Glyphs.Volume, T("Storage space"), Format.Number(full?.UsedPercent), "%", color, share,
                     full is null ? "" : $"{full.Name} {F("{0} free", Format.Capacity(full.FreeGb))}", Array.Empty<double>(), null);
             }
+            case WidgetKind.Clock:
+            {
+                var now = s.Time;
+                double day = now.TimeOfDay.TotalHours / 24;
+                return new(Glyphs.Clock, T("Today"), now.ToString("HH:mm", L.Culture), now.ToString("ss", L.Culture), p.Ink, day,
+                    now.ToString("ddd d. MMM", L.Culture), Array.Empty<double>(), null);
+            }
+            case WidgetKind.WorldClocks:
+            {
+                // The first city chosen; the caption tells how far it is ahead or behind.
+                string? zone = set.WorldClocks.FirstOrDefault();
+                TimeZoneInfo? tz = null;
+                try { if (zone != null) tz = TimeZoneInfo.FindSystemTimeZoneById(zone); } catch { }
+                if (tz is null) return new(Glyphs.Globe, T("World clocks"), Format.Missing, "", p.Faint, 0, T("Up to four cities."), Array.Empty<double>(), null);
+                var there = TimeZoneInfo.ConvertTime(s.Time, tz);
+                double diff = (there - s.Time).TotalHours;
+                return new(Glyphs.Globe, WorldClocksCard.City(zone!), there.ToString("HH:mm", L.Culture), "", p.Ink, there.TimeOfDay.TotalHours / 24,
+                    $"{(diff >= 0 ? "+" : "−")}{Math.Abs(diff):0.#} h" + (set.WorldClocks.Count > 1 ? $" · +{set.WorldClocks.Count - 1}" : ""), Array.Empty<double>(), null);
+            }
+            case WidgetKind.Calendar:
+            {
+                var d = s.Time.Date;
+                int days = DateTime.DaysInMonth(d.Year, d.Month);
+                return new(Glyphs.Calendar, d.ToString("MMMM yyyy", L.Culture), d.Day.ToString(L.Culture), d.ToString("MMM", L.Culture), p.Ink, (double)d.Day / days,
+                    $"{d.ToString("dddd", L.Culture)} · {T("Week")} {System.Globalization.ISOWeek.GetWeekOfYear(d)}", Array.Empty<double>(), null);
+            }
+            case WidgetKind.Media:
+            {
+                var m = s.Media;
+                if (m is null) return new(Glyphs.Music, T("Now playing"), Format.Missing, "", p.Faint, 0, T("Nothing is playing."), Array.Empty<double>(), null);
+                double share = m.PositionSeconds is double pos && m.DurationSeconds is double dur && dur > 0 ? pos / dur : 0;
+                string time = m.PositionSeconds is double ps ? TimeSpan.FromSeconds(ps).ToString(ps >= 3600 ? @"h\:mm\:ss" : @"m\:ss") : Format.Missing;
+                return new(Glyphs.Music, m.Artist.Length > 0 ? m.Artist : T("Now playing"), time, "", m.Playing ? p.Cool : p.Soft, share,
+                    m.Title, Array.Empty<double>(), null) { Name = m.App };
+            }
+            case WidgetKind.Processes:
+            {
+                // The busiest program leads.
+                var top = s.Processes.OrderByDescending(x => x.CpuPercent).FirstOrDefault();
+                return new(Glyphs.Apps, T("Top apps"), Format.Number(top?.CpuPercent, "0.#"), "%", p.At(Math.Clamp((top?.CpuPercent ?? 0) / 100, 0, 1)), Math.Clamp((top?.CpuPercent ?? 0) / 100, 0, 1),
+                    top is null ? "" : $"{top.Name} · {Format.Number(top.MemoryMb / 1024, "0.0")} GB", Array.Empty<double>(), null);
+            }
             case WidgetKind.DataUsage:
             {
                 var u = s.Usage;
@@ -194,6 +239,9 @@ public static class Summaries
     public static bool Supports(WidgetKind kind, WidgetStyle style, string key) =>
         // The Standard drives card always lists every drive; this switch is for the compact styles.
         style == WidgetStyle.Standard || !Settings.HasStyles(kind) ? key is not ("drives.temps" or "volumes.each")
+        // The one-line styles show no extra figures; Compact keeps its sparkline.
+        : style is WidgetStyle.Status ? false
+        : style is WidgetStyle.Compact ? key == ChartKey(kind)
         : ExtraKeys.TryGetValue(kind, out var keys) && keys.Contains(key)
         || style is WidgetStyle.Graph or WidgetStyle.Minimal && key == ChartKey(kind);
 

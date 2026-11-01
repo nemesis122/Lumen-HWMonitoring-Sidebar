@@ -86,12 +86,14 @@ public sealed class GraphTile : SummaryTile
 
     public GraphTile(WidgetKind kind, int index, Palette p, Metrics m, Settings s) : base(kind, index, p, m, s, false)
     {
-        hero = new Hero(m.Hero * .8, p) { VerticalAlignment = VerticalAlignment.Top };
+        hero = new Hero(m.Hero * .8, p);
         chart = new AreaChart { Height = m.Chart * 1.5, LineWidth = 1.8, FillOpacity = .28 };
         meter = new Meter { Height = 6, Palette = p, VerticalAlignment = VerticalAlignment.Bottom, IsVisible = false };
-        var stage = new Panel { Children = { chart, meter, hero } };
+        // The chart starts just under the number, never through it, and may reach up beside the unit.
+        var stage = new Panel { Children = { chart, meter }, Margin = new Thickness(0, -m.Hero * .2, 0, 0) };
         var body = new StackPanel { Spacing = 6, Tag = "elastic" };
         body.Children.Add(Head);
+        body.Children.Add(hero);
         body.Children.Add(stage);
         body.Children.Add(Extras);
         Child = body;
@@ -147,20 +149,36 @@ public sealed class ExtrasView : ContentControl
 {
     private readonly Palette p; private readonly bool wide;
     private string shape = "";
+    // Three figures side by side, two in a narrow card (a bar with many widgets), so labels are not cut off.
+    private int columns = 3;
+    private List<(string Label, string Value)> last = new();
     private readonly List<Stat> stats = new();
     private readonly List<TextBlock> values = new();
 
     public ExtrasView(Palette p, bool wide) { this.p = p; this.wide = wide; }
 
+    protected override void OnSizeChanged(SizeChangedEventArgs e)
+    {
+        base.OnSizeChanged(e);
+        // A gap between the two switch points: switching changes the card's height, a bar then
+        // rescales, and without the gap the columns could flip back and forth for ever.
+        double w = e.NewSize.Width;
+        int want = w <= 0 ? columns : columns == 3 ? (w < 240 ? 2 : 3) : (w > 275 ? 3 : 2);
+        if (!wide || want == columns) return;
+        columns = want;
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => Set(last));
+    }
+
     public void Set(List<(string Label, string Value)> items)
     {
+        last = items;
         IsVisible = items.Count > 0;
         // Wide: three per line (like the Standard cards), up to two lines; tiles: three lines,
         // so the gauge stays the main thing.
-        var shown = items.Take(wide ? 6 : 3).ToList();
+        var shown = items.Take(wide ? columns * 2 : 3).ToList();
         // Long values (an IP address, a date) get a line of their own instead of being cut off.
         static bool Long(string v) => v.Length > 14 || System.Net.IPAddress.TryParse(v, out _);
-        string now = string.Join("|", shown.Select(i => i.Label + (Long(i.Value) ? "+" : "")));
+        string now = columns + ":" + string.Join("|", shown.Select(i => i.Label + (Long(i.Value) ? "+" : "")));
         if (now != shape)
         {
             shape = now;
@@ -169,7 +187,7 @@ public sealed class ExtrasView : ContentControl
             {
                 foreach (var (label, _) in shown) stats.Add(new Stat(label, p));
                 // Three equal columns; a long value starts a new line and spans all three.
-                var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*,*") };
+                var grid = new Grid { ColumnDefinitions = new ColumnDefinitions(string.Join(",", Enumerable.Repeat("*", columns))) };
                 int row = 0, col = 0;
                 for (int i = 0; i < stats.Count; i++)
                 {
@@ -179,10 +197,10 @@ public sealed class ExtrasView : ContentControl
                     var st = stats[i];
                     st.Margin = new Thickness(0, 0, 6, 4);
                     Grid.SetRow(st, row); Grid.SetColumn(st, col);
-                    if (span) Grid.SetColumnSpan(st, 3);
+                    if (span) Grid.SetColumnSpan(st, columns);
                     grid.Children.Add(st);
-                    col += span ? 3 : 1;
-                    if (col >= 3) { row++; col = 0; }
+                    col += span ? columns : 1;
+                    if (col >= columns) { row++; col = 0; }
                 }
                 Content = shown.Count == 0 ? null : grid;
             }

@@ -22,6 +22,11 @@ const int ScreenW = 2560, ScreenH = 1440, Taskbar = 48;
 // Still pictures show the final values, not a frame mid-transition.
 Motion.Enabled = false;
 
+bool barSettings = false;
+// "--styles": only the pictures of every style, as bar and side (quick check while working on styles).
+if (args.Contains("--styles")) { StyleShots(); return; }
+if (args.Contains("--settings")) { SettingsPage("settings-de-0", true, "de", 0, WidgetKind.Clock, WidgetKind.Media); SettingsPage("settings-de-1", true, "de", 1); return; }
+
 // "--anim": frames of the sidebar while it updates, to check the transitions.
 if (args.Contains("--anim"))
 {
@@ -150,7 +155,6 @@ void DesktopShot(string name, Settings settings, bool dark, int screenHeight = S
     Save(new Window { Width = ScreenW, Height = screenHeight, Content = root }, name);
 }
 
-bool barSettings = false;
 
 void SettingsShot(string name, bool dark, string language, params WidgetKind[] open) => SettingsPage(name, dark, language, 0, open);
 
@@ -283,6 +287,32 @@ foreach (var st in new[] { WidgetStyle.Standard, WidgetStyle.Ring, WidgetStyle.M
         Console.WriteLine($"bar3 {st} ok");
     }
     catch (Exception e) { Console.WriteLine($"bar3 {st} CRASH " + (e.InnerException ?? e)); }
+}
+// Every style with every widget: as a bar across the top (3 rows) and down the side.
+StyleShots();
+void StyleShots()
+{
+foreach (var st in Enum.GetValues<WidgetStyle>())
+{
+    try
+    {
+        double rowH = st switch { WidgetStyle.Status => 44, WidgetStyle.Compact => 72, WidgetStyle.Gauge or WidgetStyle.Segments or WidgetStyle.DualRing => 150, _ => 220 };
+        var bs = new Settings { Language = "de", Edge = Edge.Top, BarHeight = rowH, Columns = 3 };
+        foreach (var w in bs.Widgets) { w.Visible = w.Kind != WidgetKind.Notes; if (Settings.HasStyles(w.Kind)) w.Style = st; }
+        var vb = View(bs, true, Desktop);
+        var hb = new Window { Width = 1920, Height = (int)(rowH * 3 + 2 * 10 + 56), Content = vb };
+        hb.Show();
+        var (snb, hib) = Demo();
+        for (int k = 0; k < 4; k++) { Dispatcher.UIThread.RunJobs(); vb.Update(snb, hib); hb.CaptureRenderedFrame(); }
+        hb.CaptureRenderedFrame()!.Save(Path.Combine(outDir, $"style-bar-{st}.png"));
+        hb.Close();
+        var ss = new Settings { Language = "de" };
+        foreach (var w in ss.Widgets) { w.Visible = w.Kind is not (WidgetKind.Notes or WidgetKind.Battery or WidgetKind.Volumes or WidgetKind.DataUsage); if (Settings.HasStyles(w.Kind)) w.Style = st; }
+        Sidebar($"style-side-{st}", ss, true);
+        Console.WriteLine($"style {st} ok");
+    }
+    catch (Exception e) { Console.WriteLine($"style {st} CRASH " + (e.InnerException ?? e)); }
+}
 }
 // Text size extremes.
 Sidebar("sidebar-text-50", new Settings { Language = "de", Density = Density.Comfortable, TextScale = .5, Widgets = Only(WidgetKind.Clock, WidgetKind.Cpu, WidgetKind.Memory) }, true);

@@ -340,6 +340,7 @@ public sealed class SettingsWindow : Window
 
         // One click sets the style of every widget that has styles; each can still be changed below.
         var allStyles = new Avalonia.Controls.Primitives.UniformGrid { Columns = 6 };
+        // Two rows of style pictures: the six cards and the five compact styles.
         foreach (var style in Enum.GetValues<WidgetStyle>())
         {
             var styled = s.Widgets.Where(w => Settings.HasStyles(w.Kind)).ToList();
@@ -348,7 +349,7 @@ public sealed class SettingsWindow : Window
             {
                 Content = Ui.Stack(6, StyleThumb(style), Ui.Text(StyleName(style), 12, on ? p.Ink : p.Soft, on ? FontWeight.SemiBold : FontWeight.Medium)),
                 HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Center,
-                Padding = new Thickness(6, 10, 6, 8), Margin = new Thickness(0, 0, 8, 0), CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(6, 10, 6, 8), Margin = new Thickness(0, 0, 8, 8), CornerRadius = new CornerRadius(10),
                 Background = Palette.Brush(p.Dark ? Color.Parse("#191E26") : Colors.White),
                 BorderBrush = Palette.Brush(on ? p.Cool : p.Stroke), BorderThickness = new Thickness(on ? 2 : 1),
                 Cursor = new Cursor(StandardCursorType.Hand)
@@ -443,6 +444,35 @@ public sealed class SettingsWindow : Window
                 break;
             case WidgetStyle.Tile:
                 Rect(2, 2, 28, 30, tile, 4); Rect(34, 2, 28, 30, tile, 4); Rect(8, 12, 16, 10, calm); Rect(40, 12, 16, 10, cool);
+                break;
+            case WidgetStyle.Compact:
+                Rect(2, 8, 14, 4, soft, 1); Rect(2, 15, 10, 3, track, 1); Rect(20, 7, 14, 12, calm); Rect(40, 8, 22, 3, track, 1.5); Rect(40, 8, 9, 3, cool, 1.5);
+                c.Children.Add(Line("M40,20 L45,18 L50,19 L55,15 L62,17", cool));
+                Rect(2, 25, 60, 1, track, 0);
+                break;
+            case WidgetStyle.Status:
+                Rect(0, 12, 64, 12, tile, 6);
+                var sdot = new Ellipse { Width = 5, Height = 5, Fill = calm }; Canvas.SetLeft(sdot, 5); Canvas.SetTop(sdot, 15.5); c.Children.Add(sdot);
+                Rect(13, 16, 12, 4, soft, 1); Rect(28, 15, 10, 6, calm, 1); Rect(42, 17, 16, 2, cool, 1);
+                break;
+            case WidgetStyle.Gauge:
+                c.Children.Add(Line("M8,30 A15,15 0 0 1 38,30", track));
+                if (c.Children[^1] is Shape g1) g1.StrokeThickness = 5;
+                c.Children.Add(Line("M8,30 A15,15 0 0 1 28,16", calm));
+                if (c.Children[^1] is Shape g2) g2.StrokeThickness = 5;
+                Rect(44, 10, 18, 4, soft, 1); Rect(44, 18, 14, 3, track, 1); Rect(44, 24, 16, 3, track, 1);
+                break;
+            case WidgetStyle.Segments:
+                for (int i = 0; i < 10; i++) { Rect(2 + i * 6.2, 8, 5, 7, i < 6 ? (i < 5 ? calm : Palette.Brush(p.Ramp[2])) : track, 1); Rect(2 + i * 6.2, 20, 5, 7, i < 3 ? cool : track, 1); }
+                break;
+            case WidgetStyle.DualRing:
+                var o = new Ellipse { Width = 28, Height = 28, Stroke = track, StrokeThickness = 3 }; Canvas.SetLeft(o, 4); Canvas.SetTop(o, 3); c.Children.Add(o);
+                c.Children.Add(Line("M18,3 A14,14 0 0 1 31,22", cool));
+                if (c.Children[^1] is Shape d1) d1.StrokeThickness = 3;
+                var i2 = new Ellipse { Width = 18, Height = 18, Stroke = track, StrokeThickness = 3 }; Canvas.SetLeft(i2, 9); Canvas.SetTop(i2, 8); c.Children.Add(i2);
+                c.Children.Add(Line("M18,8 A9,9 0 1 1 10,21", calm));
+                if (c.Children[^1] is Shape d2) d2.StrokeThickness = 3;
+                Rect(40, 10, 20, 9, calm); Rect(40, 22, 14, 3, soft, 1);
                 break;
         }
         return c;
@@ -840,7 +870,7 @@ public sealed class SettingsWindow : Window
                 s.Horizontal
                     ? Row(T("Whole width"), Toggle(s.BarFullWidth, v => s.BarFullWidth = v, rebuild: true), T("Off: the bar is only as wide as its widgets, centred."), nameof(Settings.BarFullWidth))
                     : Row(T("Whole screen"), Toggle(s.FullScreen, v => s.FullScreen = v, rebuild: true), T("Covers the whole monitor up to the taskbar; the columns share its width."), nameof(Settings.FullScreen)),
-                s.Horizontal ? Row(T("Row height"), Slide(160, 700, 10, s.BarHeight, v => s.BarHeight = v, v => $"{v:0} px"), T("Ring, Tile and Bar styles read best in a low bar."), nameof(Settings.BarHeight)) : null,
+                s.Horizontal ? Row(T("Row height"), Slide(40, 700, 4, s.BarHeight, v => s.BarHeight = v, v => $"{v:0} px"), T("Status fits from 40 px, Compact from 64 px; Ring, Tile and Bar read best in a low bar."), nameof(Settings.BarHeight)) : null,
                 Row(T("Density"), Choice(new[] { T("Automatic"), T("Comfortable"), T("Compact") }, (int)s.Density, i => s.Density = (Density)i, rebuild: true),
                     s.Horizontal ? T("In the bar, Compact makes the widgets smaller and tighter.") : T("Automatic fills the height up to the taskbar, without scrolling."), nameof(Settings.Density)),
                 s.Horizontal && s.BarFullWidth ? null : Row(s.Horizontal ? T("Widget width") : T("Width"), Slide(240, 440, 10, s.Width, v => s.Width = v, v => $"{v:0} px"), null, nameof(Settings.Width)))

@@ -243,11 +243,13 @@ public class ColumnsAndUsageTests
     [Fact] public void NormalizeKeepsStylesOnlyWhereSupported()
     {
         var s = new Settings();
-        s.Widgets.Single(w => w.Kind == WidgetKind.Clock).Style = WidgetStyle.Ring;
+        s.Widgets.Single(w => w.Kind == WidgetKind.Notes).Style = WidgetStyle.Ring;
+        s.Widgets.Single(w => w.Kind == WidgetKind.Clock).Style = WidgetStyle.Compact;
         s.Widgets.Single(w => w.Kind == WidgetKind.Cpu).Style = WidgetStyle.Ring;
         s.Widgets.Single(w => w.Kind == WidgetKind.Cpu).Column = 15;
         Settings.Normalize(s);
-        Assert.Equal(WidgetStyle.Standard, s.Widgets.Single(w => w.Kind == WidgetKind.Clock).Style);
+        Assert.Equal(WidgetStyle.Standard, s.Widgets.Single(w => w.Kind == WidgetKind.Notes).Style);   // a text field has no styles
+        Assert.Equal(WidgetStyle.Compact, s.Widgets.Single(w => w.Kind == WidgetKind.Clock).Style);
         Assert.Equal(WidgetStyle.Ring, s.Widgets.Single(w => w.Kind == WidgetKind.Cpu).Style);
         Assert.Equal(6, s.Widgets.Single(w => w.Kind == WidgetKind.Cpu).Column);
         Assert.False(s.Widgets.Single(w => w.Kind == WidgetKind.Media).Visible);

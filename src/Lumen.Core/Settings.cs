@@ -13,7 +13,7 @@ public enum WidgetKind { Clock, WorldClocks, Calendar, Weather, Media, Battery, 
 
 // Standard is the full card; Ring is a half-width tile (two sit side by side); Minimal is one slim line.
 // Ring and Tile are half width: two of them share a line.
-public enum WidgetStyle { Standard, Ring, Minimal, Bar, Graph, Tile }
+public enum WidgetStyle { Standard, Ring, Minimal, Bar, Graph, Tile, Compact, Status, Gauge, Segments, DualRing }
 
 public sealed class WidgetSlot
 {
@@ -102,7 +102,8 @@ public sealed class Settings
     // Kinds whose reading can be shown as a ring or a slim line.
     public static bool HasStyles(WidgetKind k) => k is WidgetKind.Cpu or WidgetKind.Gpu or WidgetKind.Fps or WidgetKind.Memory or WidgetKind.Battery
         or WidgetKind.Cooling or WidgetKind.Network or WidgetKind.Ping or WidgetKind.Power or WidgetKind.Weather or WidgetKind.System or WidgetKind.DataUsage
-        or WidgetKind.Drives or WidgetKind.Volumes;
+        or WidgetKind.Drives or WidgetKind.Volumes
+        or WidgetKind.Clock or WidgetKind.WorldClocks or WidgetKind.Calendar or WidgetKind.Media or WidgetKind.Processes;
 
     public static List<WidgetSlot> DefaultWidgets() => Enum.GetValues<WidgetKind>().Select(k => new WidgetSlot { Kind = k, Visible = VisibleByDefault(k) }).ToList();
 
@@ -166,7 +167,8 @@ public sealed class Settings
         s.Pages = Math.Clamp(s.Pages, 1, 6);
         if (!Enum.IsDefined(s.Edge)) s.Edge = Edge.Right;
         if (!Enum.IsDefined(s.SensorSource)) s.SensorSource = SensorSource.Builtin;
-        s.BarHeight = double.IsFinite(s.BarHeight) ? Math.Clamp(s.BarHeight, 160, 700) : 300;
+        // Down to 40 px: the Status and Compact styles fit a slim bar.
+        s.BarHeight = double.IsFinite(s.BarHeight) ? Math.Clamp(s.BarHeight, 40, 700) : 300;
         s.PageNames = Enumerable.Range(0, 6).Select(i => (s.PageNames ?? new()).ElementAtOrDefault(i)?.Trim() ?? "")
             .Select(n => n.Length > 16 ? n[..16] : n).ToList();
         s.PricePerKwh = double.IsFinite(s.PricePerKwh) ? Math.Clamp(s.PricePerKwh, 0, 5) : .30;
@@ -211,6 +213,11 @@ public sealed class Settings
         WidgetStyle.Minimal => .35,
         WidgetStyle.Bar => .45,
         WidgetStyle.Graph => .7,
+        WidgetStyle.Compact => .32,
+        WidgetStyle.Status => .18,
+        WidgetStyle.Gauge => .55,
+        WidgetStyle.Segments => .55,
+        WidgetStyle.DualRing => .5,
         _ => 1
     } * w.Kind switch
     {
@@ -268,7 +275,7 @@ public sealed class Settings
         return cols;
     }
 
-    public static bool IsHalf(WidgetSlot w) => w.Style is WidgetStyle.Ring or WidgetStyle.Tile && HasStyles(w.Kind);
+    public static bool IsHalf(WidgetSlot w) => w.Style is WidgetStyle.Ring or WidgetStyle.Tile or WidgetStyle.DualRing && HasStyles(w.Kind);
 
     // Columns the sidebar needs: as set, or for a bar the most any register holds.
     // Columns of cards: as set at the side; in the bar, the most cards any row holds.

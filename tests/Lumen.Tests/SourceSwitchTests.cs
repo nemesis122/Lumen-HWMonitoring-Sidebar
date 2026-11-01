@@ -168,3 +168,32 @@ public class SourceSwitchTests
         Assert.Equal(new[] { "drive:/disk/1", "drive:/disk/0", "drive:/disk/2", "gpu:x" }, s.HiddenValues);
     }
 }
+
+public class StyleCoverageTests
+{
+    // Every widget except the notes offers every style, and every style has a card for every such widget.
+    [Fact] public void EveryWidgetButNotesHasEveryStyle()
+    {
+        var without = Enum.GetValues<WidgetKind>().Where(k => !Settings.HasStyles(k)).ToArray();
+        Assert.Equal(new[] { WidgetKind.Notes }, without);
+    }
+
+    [Fact] public void OldStyleNamesStillLoad()
+    {
+        string path = Path.Combine(Path.GetTempPath(), "lumen-style-" + Guid.NewGuid() + ".json");
+        try
+        {
+            var s = new Settings();
+            s.Widgets.Single(w => w.Kind == WidgetKind.Cpu).Style = WidgetStyle.DualRing;
+            s.Widgets.Single(w => w.Kind == WidgetKind.Gpu).Style = WidgetStyle.Graph;
+            s.BarHeight = 44;
+            s.Save(path);
+            var back = Settings.Load(path);
+            Assert.Equal(WidgetStyle.DualRing, back.Widgets.Single(w => w.Kind == WidgetKind.Cpu).Style);
+            Assert.Equal(WidgetStyle.Graph, back.Widgets.Single(w => w.Kind == WidgetKind.Gpu).Style);
+            Assert.Equal(44, back.BarHeight);
+            Assert.True(Settings.IsHalf(back.Widgets.Single(w => w.Kind == WidgetKind.Cpu)));
+        }
+        finally { File.Delete(path); }
+    }
+}

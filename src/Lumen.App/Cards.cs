@@ -699,6 +699,11 @@ public static class Cards
         if (style == WidgetStyle.Bar && Settings.HasStyles(kind)) return new BarTile(kind, index, p, m, s);
         if (style == WidgetStyle.Graph && Settings.HasStyles(kind)) return new GraphTile(kind, index, p, m, s);
         if (style == WidgetStyle.Tile && Settings.HasStyles(kind)) return new NumberTile(kind, index, p, m, s);
+        if (style == WidgetStyle.Compact && Settings.HasStyles(kind)) return new CompactRow(kind, index, p, m, s);
+        if (style == WidgetStyle.Status && Settings.HasStyles(kind)) return new StatusRow(kind, index, p, m, s);
+        if (style == WidgetStyle.Gauge && Settings.HasStyles(kind)) return new GaugeTile(kind, index, p, m, s);
+        if (style == WidgetStyle.Segments && Settings.HasStyles(kind)) return new SegmentTile(kind, index, p, m, s);
+        if (style == WidgetStyle.DualRing && Settings.HasStyles(kind)) return new DualRingTile(kind, index, p, m, s);
         return kind switch
         {
             WidgetKind.Clock => new ClockCard(p, m, s),

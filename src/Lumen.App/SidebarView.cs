@@ -210,7 +210,7 @@ public sealed class SidebarView : Border
                 Remember(slot.Kind, card);
                 // Two half-width tiles (rings, number tiles) in a row share one line.
                 static bool Half(WidgetSlot w) => Settings.IsHalf(w);
-                if (Half(slot) && card is RingTile or NumberTile && i + 1 < items.Count && Half(items[i + 1].slot))
+                if (Half(slot) && card is RingTile or NumberTile or DualRingTile && i + 1 < items.Count && Half(items[i + 1].slot))
                 {
                     var next = Make(items[i + 1].slot, items[i + 1].index);
                     widgets.Add((IWidget)next);
@@ -256,7 +256,7 @@ public sealed class SidebarView : Border
                 widgets.Add((IWidget)card);
                 Remember(slot.Kind, card);
                 Control cell = card;
-                if (Settings.IsHalf(slot) && card is RingTile or NumberTile && i + 1 < items.Count && Settings.IsHalf(items[i + 1].slot))
+                if (Settings.IsHalf(slot) && card is RingTile or NumberTile or DualRingTile && i + 1 < items.Count && Settings.IsHalf(items[i + 1].slot))
                 {
                     var next = Make(items[i + 1].slot, items[i + 1].index);
                     widgets.Add((IWidget)next);
@@ -436,7 +436,7 @@ public sealed class FitPanel : Panel
     private List<Control> Growable(StackPanel l)
     {
         var list = l.GetLogicalDescendants().OfType<Control>()
-            .Where(c => c is AreaChart or MirrorChart && c.IsVisible && c.GetLogicalAncestors().OfType<Control>().All(a => a.IsVisible)).ToList();
+            .Where(c => c is AreaChart or MirrorChart && c.Tag as string != "fixed" && c.IsVisible && c.GetLogicalAncestors().OfType<Control>().All(a => a.IsVisible)).ToList();
         foreach (var c in list) if (!baseHeight.ContainsKey(c) && double.IsFinite(c.Height)) baseHeight[c] = c.Height;
         return list.Where(baseHeight.ContainsKey).ToList();
     }
@@ -525,7 +525,10 @@ public sealed class FitPanel : Panel
                     double target = baseSpacing[a] + perInner;
                     if (Math.Abs(a.Spacing - target) > .5) { a.Spacing = target; airyChanged = true; }
                 }
-                spacing = gap + (toGaps + spare) / Gaps(l);
+                // A column of slim one-line styles (Status, Compact) stays packed; its free space stays below.
+                bool slim = l.Children.Count(c => c.IsVisible) > 1 && l.GetLogicalDescendants().OfType<IWidget>().Any()
+                    && l.GetLogicalDescendants().OfType<IWidget>().All(x => x is StatusRow or CompactRow);
+                spacing = slim ? gap : gap + (toGaps + spare) / Gaps(l);
             }
             if (!fit) foreach (var a in Airy(l)) if (a.Spacing != baseSpacing[a]) { a.Spacing = baseSpacing[a]; airyChanged = true; }
             bool changed = Math.Abs(l.Spacing - spacing) > .5 || airyChanged;
