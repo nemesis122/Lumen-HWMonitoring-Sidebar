@@ -139,8 +139,8 @@ public sealed class Settings
         s.PingTarget = string.IsNullOrWhiteSpace(s.PingTarget) ? "1.1.1.1" : s.PingTarget.Trim();
         s.WorldClocks = (s.WorldClocks ?? new()).Where(z => !string.IsNullOrWhiteSpace(z)).Distinct().Take(4).ToList();
         s.Notes ??= "";
-        s.Labels = (s.Labels ?? new()).Where(kv => !string.IsNullOrWhiteSpace(kv.Key) && !string.IsNullOrWhiteSpace(kv.Value))
-            .ToDictionary(kv => kv.Key, kv => kv.Value.Trim());
+        // Own sensor names are no longer offered; drop any saved by 1.5.0 so nothing stays renamed or hidden.
+        s.Labels = new();
         s.HiddenValues = (s.HiddenValues ?? new()).Where(v => !string.IsNullOrWhiteSpace(v)).Distinct().ToList();
         var seen = new HashSet<WidgetKind>();
         s.Widgets = (s.Widgets ?? new()).Where(w => w != null && Enum.IsDefined(w.Kind) && seen.Add(w.Kind)).ToList();

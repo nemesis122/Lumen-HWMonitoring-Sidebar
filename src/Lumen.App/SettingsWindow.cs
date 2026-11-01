@@ -130,8 +130,6 @@ public sealed class SettingsWindow : Window
         content.Children.Add(Section("Ping", Row(T("Target"), target, T("A server on the internet, e.g. 1.1.1.1 or google.com."))));
         content.Children.Add(Section(T("World clocks"), WorldClockPicker()));
 
-        content.Children.Add(Section(T("Names"), NameEditor()));
-
         var widgets = new StackPanel { Spacing = 6 };
         for (int i = 0; i < s.Widgets.Count; i++) widgets.Children.Add(WidgetRow(i));
         content.Children.Add(Section(T("Widgets"), widgets));
@@ -151,54 +149,6 @@ public sealed class SettingsWindow : Window
             Row(T("Sensors"), sensors, T("Lists everything LibreHardwareMonitor and Open Hardware Monitor found."))));
 
         content.Children.Add(Ui.Text($"Lumen {typeof(SettingsWindow).Assembly.GetName().Version?.ToString(3)} · {F("Settings stored in {0}", Path.GetFileName(platform.SettingsPath))}", 11, p.Faint));
-    }
-
-    // One row per fan and temperature probe the PC reports: switch it off, or give it a name.
-    private Control NameEditor()
-    {
-        var panel = new StackPanel { Spacing = 8 };
-        var lead = Ui.Text(T("Give fans and temperature probes your own names, or switch single readings off."), 11.5, p.Soft);
-        lead.TextWrapping = TextWrapping.Wrap;
-        lead.TextTrimming = TextTrimming.None;
-        panel.Children.Add(lead);
-        var snap = snapshot();
-        var items = new List<(string key, string shown)>();
-        if (snap != null)
-        {
-            items.AddRange(snap.Fans.Select(f => ("fan:" + f.Name, Names.Fan(f.Name, new Settings()))));
-            items.AddRange(snap.BoardTemps.Select(t => ("temp:" + t.Name, Names.Temp(t.Name, new Settings()))));
-        }
-        if (items.Count == 0) panel.Children.Add(Ui.Text(T("No fans or probes found yet."), 12, p.Soft));
-        string group = "";
-        foreach (var (key, shown) in items)
-        {
-            // A small heading where fans end and temperature probes begin.
-            string kind = key.StartsWith("fan:") ? T("Fans") : T("Board temperatures");
-            if (kind != group)
-            {
-                group = kind;
-                var head = Ui.Text(kind.ToUpper(L.Culture), 10.5, p.Soft, FontWeight.SemiBold);
-                head.Margin = new Thickness(0, 6, 0, 0);
-                panel.Children.Add(head);
-            }
-            var on = new CheckBox { IsChecked = !s.Hidden(key), MinWidth = 0, Margin = new Thickness(0, 0, 6, 0) };
-            var label = Ui.Text(shown, 12.5, p.Ink, FontWeight.Medium);
-            label.Width = 110;
-            var box = new TextBox { Text = s.Label(key) ?? "", Watermark = shown, CornerRadius = new CornerRadius(8), MinWidth = 0 };
-            void Save()
-            {
-                if (on.IsChecked != true) s.Labels[key] = "-";
-                else if (string.IsNullOrWhiteSpace(box.Text)) s.Labels.Remove(key);
-                else s.Labels[key] = box.Text.Trim();
-                box.IsEnabled = on.IsChecked == true;
-                changed();
-            }
-            box.IsEnabled = on.IsChecked == true;
-            on.IsCheckedChanged += (_, _) => Save();
-            box.LostFocus += (_, _) => Save();
-            panel.Children.Add(Ui.Columns("Auto,Auto,*", on, label, box));
-        }
-        return panel;
     }
 
     private Control WeatherEditor()

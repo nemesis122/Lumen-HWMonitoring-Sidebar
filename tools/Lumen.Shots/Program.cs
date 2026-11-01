@@ -178,8 +178,7 @@ foreach (var w in rings.Widgets)
 Sidebar("sidebar-styles", rings, true);
 Sidebar("sidebar-fps-names", new Settings
 {
-    Language = "de", Density = Density.Comfortable, Widgets = Only(WidgetKind.Fps, WidgetKind.Cooling, WidgetKind.Drives),
-    Labels = new() { ["fan:Pump"] = "AIO-Pumpe", ["fan:Front"] = "Front unten", ["temp:VRM"] = "-" }
+    Language = "de", Density = Density.Comfortable, Widgets = Only(WidgetKind.Fps, WidgetKind.Cooling, WidgetKind.Drives)
 }, true, s => s);
 Sidebar("sidebar-new-1", new Settings { Language = "de", Density = Density.Comfortable, Widgets = Only(WidgetKind.Media, WidgetKind.WorldClocks, WidgetKind.Calendar, WidgetKind.Ping) }, true);
 Sidebar("sidebar-new-2", new Settings

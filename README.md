@@ -36,7 +36,7 @@ EXE, .NET included, in six languages.
 | Drives: temperature, used space, read and write rates | Data usage per day, week and month |
 | Network: download/upload, throughput in Mbit/s, share of the link, IP | Storage space per drive letter |
 | Battery: charge, time left, rate, health | System uptime, world clocks, calendar, notes, top apps |
-| FPS of the game in the foreground, 1 % low, frame time (PresentMon) | Own names for fans and probes |
+| FPS of the game in the foreground, 1 % low, frame time (PresentMon) | |
 
 <p>
   <img src="docs/images/sidebar-new-1.png" width="250" alt="Now playing, world clocks, calendar, ping">

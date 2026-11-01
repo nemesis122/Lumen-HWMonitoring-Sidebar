@@ -377,6 +377,6 @@ public class LabelTests
         Assert.Equal("Front", Lumen.App.Names.Fan("Fan #2", s));
         Assert.True(s.Hidden("temp:VRM"));
         Assert.Null(s.Label("temp:VRM"));
-        Assert.Equal(2, Settings.Normalize(s).Labels.Count);
+        Assert.Empty(Settings.Normalize(s).Labels);
     }
 }
