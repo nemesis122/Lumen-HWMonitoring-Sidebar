@@ -14,6 +14,8 @@ using Lumen.Core;
 string outDir = args.Length > 0 ? args[0] : "shots";
 string assets = Path.Combine(AppContext.BaseDirectory, "Assets");
 Directory.CreateDirectory(outDir);
+// LUMEN_SHOT_LANG=en renders every screenshot in one language (for the README).
+string? shotLang = Environment.GetEnvironmentVariable("LUMEN_SHOT_LANG");
 AppBuilder.Configure<ShotsApp>().UseSkia().UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false }).WithInterFont().SetupWithoutStarting();
 
 const int ScreenW = 2560, ScreenH = 1440, Taskbar = 48;
@@ -69,6 +71,7 @@ Palette PaletteFor(Settings s, bool dark) => Palette.For(dark, s.Glass, s.Opacit
 
 SidebarView View(Settings settings, bool dark, Func<Snapshot, Snapshot> tweak)
 {
+    if (shotLang != null) settings.Language = shotLang;
     L.Use(settings.Language);
     var (snap, hist) = Demo();
     var view = new SidebarView(settings, PaletteFor(settings, dark));
@@ -154,6 +157,7 @@ void SettingsShot(string name, bool dark, string language, params WidgetKind[] o
 void SettingsPage(string name, bool dark, string language, int index, params WidgetKind[] open)
 {
     typeof(SettingsWindow).GetField("pageIndex", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!.SetValue(null, index);
+    if (shotLang != null) language = shotLang;
     L.Use(language);
     var s = new Settings { Theme = dark ? ThemeMode.Dark : ThemeMode.Light, Language = language, Pages = 4, Columns = 4, PageNames = new() { "Hardware", "Gaming", "", "", "", "" } };
     if (barSettings) { s.Edge = Edge.Bottom; s.Pages = 1; }
@@ -166,7 +170,7 @@ void SettingsPage(string name, bool dark, string language, int index, params Wid
     var field = typeof(SettingsWindow).GetField("expanded", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
     foreach (var k in open) ((HashSet<WidgetKind>)field.GetValue(w)!).Add(k);
     typeof(SettingsWindow).GetMethod("Build", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.Invoke(w, null);
-    w.Height = 2400;
+    w.Height = 860;
     w.Show();
     Save(w, name);
 }
@@ -198,11 +202,11 @@ DesktopShot("desktop-two-columns-user", new Settings
     ShowIntegratedGpu = false
 }, true);
 // A bar at the bottom: rings, tiles and bars side by side.
-var bottom = new Settings { Language = "de", Edge = Edge.Bottom, BarHeight = 300 };
+var bottom = new Settings { Language = "de", Edge = Edge.Bottom, BarHeight = 260, Columns = 2 };
 foreach (var w in bottom.Widgets)
 {
-    w.Visible = w.Kind is WidgetKind.Clock or WidgetKind.Cpu or WidgetKind.Gpu or WidgetKind.Memory or WidgetKind.Ping or WidgetKind.Power or WidgetKind.Network or WidgetKind.Drives or WidgetKind.Weather;
-    w.Style = w.Kind switch { WidgetKind.Cpu or WidgetKind.Gpu => WidgetStyle.Ring, WidgetKind.Memory or WidgetKind.Ping => WidgetStyle.Tile, WidgetKind.Power or WidgetKind.Weather => WidgetStyle.Graph, _ => WidgetStyle.Standard };
+    w.Visible = w.Kind is WidgetKind.Clock or WidgetKind.Cpu or WidgetKind.Gpu or WidgetKind.Memory or WidgetKind.Ping or WidgetKind.Power or WidgetKind.Network or WidgetKind.Drives or WidgetKind.Weather or WidgetKind.Volumes or WidgetKind.System or WidgetKind.DataUsage or WidgetKind.Cooling;
+    w.Style = w.Kind switch { WidgetKind.Cpu or WidgetKind.Gpu => WidgetStyle.Ring, WidgetKind.Memory or WidgetKind.Ping => WidgetStyle.Tile, WidgetKind.Power or WidgetKind.Weather => WidgetStyle.Graph, WidgetKind.Volumes or WidgetKind.Drives => WidgetStyle.Bar, WidgetKind.System or WidgetKind.DataUsage => WidgetStyle.Minimal, _ => WidgetStyle.Standard };
 }
 DesktopShot("desktop-bar-bottom", bottom, true);
 var top = new Settings { Language = "de", Edge = Edge.Top, BarHeight = 340, Columns = 2, Colors = "#06B6D4", Background = "midnight" };
