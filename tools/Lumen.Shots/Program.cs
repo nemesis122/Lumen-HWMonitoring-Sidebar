@@ -347,11 +347,11 @@ toastContent.VerticalAlignment = VerticalAlignment.Bottom;
 toastContent.Margin = new Thickness(0, 0, 300 + 16, Taskbar + 16);
 DesktopShot("desktop-warning", new Settings { Language = "de" }, true, extra: toastContent);
 
-for (int i = 0; i < 8; i++) SettingsPage($"settings-de-{i}", true, "de", i, WidgetKind.Cpu, WidgetKind.Gpu, WidgetKind.Drives, WidgetKind.Volumes, WidgetKind.Network);
+for (int i = 0; i < 6; i++) SettingsPage($"settings-de-{i}", true, "de", i, WidgetKind.Cpu);
 barSettings = true;
-SettingsPage("settings-de-bar-layout", true, "de", 1);
-SettingsPage("settings-de-bar-position", true, "de", 3);
-SettingsPage("settings-en-bar-layout", true, "en", 1);
+SettingsPage("settings-de-bar-layout", true, "de", 2);
+SettingsPage("settings-de-bar-position", true, "de", 2);
+SettingsPage("settings-en-bar-layout", true, "en", 2);
 barSettings = false;
 L.Use("de");
 var demoSnap = Demo().Item1;
@@ -359,6 +359,16 @@ var sensorWin = new SensorsWindow(Palette.For(true, false), () => "=== LibreHard
 sensorWin.Show();
 Save(sensorWin, "sensors-window");
 SettingsShot("settings-en-light", false, "en");
+// The search: typing lists every matching setting across all topics.
+{
+    L.Use("de");
+    Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+    var sw = new SettingsWindow(new Settings { Language = "de" }, Palette.For(true, false), () => { }, () => new[] { "Bildschirm 1" }, new ShotPlatform(), null, null, () => Demo().Item1);
+    ((TextBox)typeof(SettingsWindow).GetField("search", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(sw)!).Text = "temp";
+    sw.Height = 860;
+    sw.Show();
+    Save(sw, "settings-de-search");
+}
 
 sealed class ShotsApp : Application
 {

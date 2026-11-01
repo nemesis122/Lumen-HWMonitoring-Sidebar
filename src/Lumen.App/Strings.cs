@@ -93,7 +93,7 @@ Widgets|Widgets|Widgets|Widget|Widgets|Widgets
 System|System|Système|Sistema|Sistema|Sistema
 Language|Sprache|Langue|Lingua|Idioma|Idioma
 Automatic (Windows)|Automatisch (Windows)|Automatique (Windows)|Automatica (Windows)|Automático (Windows)|Automático (Windows)
-Theme|Farbschema|Thème|Tema|Tema|Tema
+Theme|Modus|Thème|Tema|Tema|Tema
 Like Windows|Wie Windows|Comme Windows|Come Windows|Como Windows|Como o Windows
 Dark|Dunkel|Sombre|Scuro|Oscuro|Escuro
 Light|Hell|Clair|Chiaro|Claro|Claro
@@ -144,6 +144,29 @@ In AIDA64: Preferences → Hardware Monitoring → External Applications → Ena
 In HWiNFO: Settings → Shared Memory Support (the free version turns it off after 12 hours).|In HWiNFO: Einstellungen → Shared Memory Support (die Gratisversion schaltet es nach 12 Stunden ab).|Dans HWiNFO : Paramètres → Shared Memory Support (la version gratuite le coupe après 12 heures).|In HWiNFO: Impostazioni → Shared Memory Support (la versione gratuita lo disattiva dopo 12 ore).|En HWiNFO: Ajustes → Shared Memory Support (la versión gratuita lo desactiva tras 12 horas).|No HWiNFO: Definições → Shared Memory Support (a versão gratuita desliga-o após 12 horas).
 Uses AIDA64 if it is running, otherwise HWiNFO, otherwise the built-in sensors.|Nimmt AIDA64, wenn es läuft, sonst HWiNFO, sonst die eingebauten Sensoren.|Utilise AIDA64 s'il tourne, sinon HWiNFO, sinon les capteurs intégrés.|Usa AIDA64 se è in esecuzione, altrimenti HWiNFO, altrimenti i sensori integrati.|Usa AIDA64 si está en marcha, si no HWiNFO, si no los sensores integrados.|Usa o AIDA64 se estiver a correr, senão o HWiNFO, senão os sensores integrados.
 Connected to {0}. Readings it does not have come from the built-in sensors.|Verbunden mit {0}. Was dort fehlt, kommt von den eingebauten Sensoren.|Connecté à {0}. Ce qui y manque vient des capteurs intégrés.|Connesso a {0}. Ciò che manca proviene dai sensori integrati.|Conectado a {0}. Lo que falte viene de los sensores integrados.|Ligado a {0}. O que faltar vem dos sensores integrados.
+Changed from the default|Vom Standard geändert|Modifié par rapport au standard|Modificato rispetto al predefinito|Cambiado respecto al estándar|Alterado em relação ao padrão
+Changed – click to reset|Geändert – klicken setzt zurück|Modifié – cliquer pour rétablir|Modificato – clic per ripristinare|Cambiado – clic para restablecer|Alterado – clique para repor
+Colour scheme|Farbschema|Palette de couleurs|Schema colori|Esquema de colores|Esquema de cores
+Drag to sort|Ziehen zum Sortieren|Glisser pour trier|Trascina per ordinare|Arrastrar para ordenar|Arrastar para ordenar
+Effects|Effekte|Effets|Effetti|Efectos|Efeitos
+Extras|Extras|Extras|Extra|Extras|Extras
+Hardware|Hardware|Matériel|Hardware|Hardware|Hardware
+Hidden|Ausgeblendet|Masqués|Nascosti|Ocultos|Ocultos
+Info|Infos|Infos|Info|Información|Informação
+Live preview|Live-Vorschau|Aperçu en direct|Anteprima dal vivo|Vista previa en vivo|Pré-visualização ao vivo
+No setting found.|Keine Einstellung gefunden.|Aucun réglage trouvé.|Nessuna impostazione trovata.|No se encontró ningún ajuste.|Nenhuma definição encontrada.
+Only with the glass effect.|Nur mit Glas-Effekt.|Uniquement avec l'effet verre.|Solo con l'effetto vetro.|Solo con el efecto cristal.|Apenas com o efeito vidro.
+Placement|Platzierung|Placement|Posizionamento|Ubicación|Posicionamento
+Reset all …|Alles zurücksetzen …|Tout réinitialiser …|Ripristina tutto …|Restablecer todo …|Repor tudo …
+Reset this page|Diese Seite zurücksetzen|Réinitialiser cette page|Ripristina questa pagina|Restablecer esta página|Repor esta página
+Results for “{0}”|Treffer für „{0}“|Résultats pour « {0} »|Risultati per «{0}»|Resultados para «{0}»|Resultados para «{0}»
+Search settings…|Einstellung suchen …|Rechercher un réglage…|Cerca impostazione…|Buscar ajuste…|Procurar definição…
+Shows at once how colours, glass and text size look – without looking at the sidebar.|Zeigt sofort, wie Farben, Glas und Textgröße wirken – ohne zur Sidebar zu schauen.|Montre aussitôt l'effet des couleurs, du verre et de la taille du texte – sans regarder la barre.|Mostra subito l'effetto di colori, vetro e dimensione del testo – senza guardare la barra.|Muestra al instante cómo quedan colores, cristal y tamaño de texto – sin mirar la barra.|Mostra logo como ficam cores, vidro e tamanho do texto – sem olhar para a barra.
+Sure? Click again|Sicher? Nochmal klicken|Sûr ? Cliquer encore|Sicuro? Clicca di nuovo|¿Seguro? Pulsa otra vez|Tem a certeza? Clique outra vez
+Text|Text|Texte|Testo|Texto|Texto
+Tick to show|Haken setzen zum Anzeigen|Cocher pour afficher|Spunta per mostrare|Marca para mostrar|Marque para mostrar
+Tick what the sidebar shows; drag by the handle or use the arrows to sort. “Customise” opens style, column, register and single values.|Haken setzen, was die Sidebar zeigt; am Griff ziehen oder mit den Pfeilen sortieren. „Anpassen“ öffnet Stil, Spalte, Register und einzelne Werte.|Cochez ce que la barre affiche ; triez par la poignée ou avec les flèches. « Personnaliser » ouvre style, colonne, onglet et valeurs.|Spunta ciò che la barra mostra; ordina con la maniglia o con le frecce. «Personalizza» apre stile, colonna, scheda e singoli valori.|Marca lo que muestra la barra; ordena con el asa o las flechas. «Personalizar» abre estilo, columna, pestaña y valores.|Marque o que a barra mostra; ordene pela pega ou com as setas. «Personalizar» abre estilo, coluna, separador e valores.
+{0} shown|{0} sichtbar|{0} affichés|{0} visibili|{0} visibles|{0} visíveis
 Not reachable – the program is not running or its shared memory is off. The built-in sensors are shown meanwhile.|Nicht erreichbar – das Programm läuft nicht oder Shared Memory ist aus. Solange werden die eingebauten Sensoren gezeigt.|Injoignable – le programme ne tourne pas ou sa mémoire partagée est désactivée. Les capteurs intégrés sont affichés en attendant.|Non raggiungibile – il programma non è in esecuzione o la memoria condivisa è disattivata. Nel frattempo si vedono i sensori integrati.|No disponible – el programa no está en marcha o su memoria compartida está desactivada. Mientras tanto se muestran los sensores integrados.|Indisponível – o programa não está a correr ou a memória partilhada está desligada. Entretanto são mostrados os sensores integrados.
 Readings it does not have come from the built-in sensors.|Was dort fehlt, kommt von den eingebauten Sensoren.|Ce qui y manque vient des capteurs intégrés.|Ciò che manca proviene dai sensori integrati.|Lo que falte viene de los sensores integrados.|O que faltar vem dos sensores integrados.
 Clock and date|Uhr und Datum|Horloge et date|Orologio e data|Reloj y fecha|Relógio e data
