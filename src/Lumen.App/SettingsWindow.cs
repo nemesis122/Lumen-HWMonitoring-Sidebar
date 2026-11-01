@@ -161,7 +161,8 @@ public sealed class SettingsWindow : Window
             Row(T("Temperature"), Choice(new[] { T("Celsius (°C)"), T("Fahrenheit (°F)") }, s.Fahrenheit ? 1 : 0, i => s.Fahrenheit = i == 1)),
             Row(T("Warn from"), Slide(50, 110, 1, s.TemperatureWarning, v => s.TemperatureWarning = v, v => $"{v:0} °C"), T("Above this the temperature turns red.")),
             Row(T("Warning pop-up"), Toggle(s.WarningPopup, v => s.WarningPopup = v), T("Shows a notice when a temperature crosses the limit.")),
-            Row(T("Integrated graphics"), Toggle(s.ShowIntegratedGpu, v => s.ShowIntegratedGpu = v), T("Also show the graphics built into the processor."))) }));
+            Row(T("Integrated graphics"), Toggle(s.ShowIntegratedGpu, v => s.ShowIntegratedGpu = v), T("Also show the graphics built into the processor.")),
+            Row(T("Sensor source"), Choice(new[] { T("Built-in"), T("Automatic"), "AIDA64", "HWiNFO" }, (int)s.SensorSource, i => s.SensorSource = (SensorSource)i, rebuild: true), SourceHelp(s.SensorSource))) }));
 
         pages.Add((T("Weather and clocks"), Glyphs.Cloud, new[] { Section(T("Weather"), WeatherEditor()), Section(T("World clocks"), WorldClockPicker()) }));
 
@@ -576,6 +577,27 @@ public sealed class SettingsWindow : Window
             WidgetKind.System => snap.System is { } y ? $"{y.Os} · {y.Build}" : "",
             _ => ""
         };
+    }
+
+    // What the chosen source needs, and whether Lumen reached it on the last update.
+    private static string SourceHelp(SensorSource source)
+    {
+        if (source == SensorSource.Builtin) return T("LibreHardwareMonitor and Open Hardware Monitor, built into Lumen.");
+        string status = ExternalSensors.Status;
+        string how = source switch
+        {
+            SensorSource.Aida64 => T("In AIDA64: Preferences → Hardware Monitoring → External Applications → Enable shared memory."),
+            SensorSource.HwInfo => T("In HWiNFO: Settings → Shared Memory Support (the free version turns it off after 12 hours)."),
+            _ => T("Uses AIDA64 if it is running, otherwise HWiNFO, otherwise the built-in sensors.")
+        };
+        if (status.StartsWith("connected:"))
+        {
+            string name = status.EndsWith(nameof(SensorSource.Aida64)) ? "AIDA64" : "HWiNFO";
+            return L.F("Connected to {0}. Readings it does not have come from the built-in sensors.", name) + " " + how;
+        }
+        if (status.StartsWith("missing:"))
+            return T("Not reachable – the program is not running or its shared memory is off. The built-in sensors are shown meanwhile.") + " " + how;
+        return T("Readings it does not have come from the built-in sensors.") + " " + how;
     }
 
     private Control Choice(IReadOnlyList<string> items, int selected, Action<int> set, bool rebuild = false, bool small = false)

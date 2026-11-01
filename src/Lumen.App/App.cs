@@ -101,7 +101,7 @@ public sealed class Controller
         this.demo = demo || !OperatingSystem.IsWindows();
         settings = Settings.Load(platform.SettingsPath);
         L.Use(settings.Language);
-        source = this.demo ? new DemoSource() : new WindowsSource(platform.IsAdministrator);
+        source = this.demo ? new DemoSource() : new WindowsSource(platform.IsAdministrator, () => settings.SensorSource);
         usage = new UsageMeter(this.demo ? null : Path.Combine(Path.GetDirectoryName(platform.SettingsPath) ?? ".", "lumen-usage.json"));
 #if WINRT
         if (!this.demo) media = new WindowsMedia();

@@ -70,6 +70,100 @@ public static class SensorMerge
         return result;
     }
 
+    // --- AIDA64 / HWiNFO -----------------------------------------------------------------------------
+    // The chosen external program wins wherever it has a reading; names, ids and drive letters stay
+    // the built-in ones, so widgets keep pointing at the same hardware when the source changes.
+
+    public static CpuInfo? PreferCpu(CpuInfo? ext, CpuInfo? local)
+    {
+        if (ext is null) return local;
+        if (local is null) return ext;
+        return local with
+        {
+            Temperature = ext.Temperature ?? local.Temperature,
+            Load = ext.Load ?? local.Load,
+            CoreLoads = ext.CoreLoads.Count > 0 ? ext.CoreLoads : local.CoreLoads,
+            ClockMhz = ext.ClockMhz ?? local.ClockMhz,
+            PowerW = ext.PowerW ?? local.PowerW,
+            Voltage = ext.Voltage ?? local.Voltage,
+            FanRpm = ext.FanRpm ?? local.FanRpm
+        };
+    }
+
+    // A card with its own fan, power or hot spot reading is a dedicated one.
+    private static int Dedicated(GpuInfo g) => g.Integrated ? 0 : (g.FanRpm != null ? 1 : 0) + (g.PowerW != null ? 1 : 0) + (g.HotSpot != null ? 1 : 0) + (g.MemoryUsedMb > 1024 ? 1 : 0);
+
+    public static List<GpuInfo> PreferGpus(IReadOnlyList<GpuInfo> ext, IReadOnlyList<GpuInfo> local, string source, List<string>? log = null)
+    {
+        var unused = ext.ToList();
+        var result = new List<GpuInfo>();
+        foreach (var p in local)
+        {
+            var m = unused.FirstOrDefault(e => Key(e.Name) == Key(p.Name));
+            // AIDA64 does not name its cards: pair them by kind and order, dedicated cards first.
+            m ??= p.Integrated
+                ? unused.FirstOrDefault(e => e.Integrated) ?? (local.Count(x => !x.Integrated) == 0 ? unused.FirstOrDefault() : null)
+                : unused.Where(e => !e.Integrated).OrderByDescending(Dedicated).FirstOrDefault();
+            if (m == null) { result.Add(p); continue; }
+            unused.Remove(m);
+            var preferred = p with
+            {
+                Temperature = m.Temperature ?? p.Temperature,
+                HotSpot = m.HotSpot ?? p.HotSpot,
+                Load = m.Load ?? p.Load,
+                ClockMhz = m.ClockMhz ?? p.ClockMhz,
+                PowerW = m.PowerW ?? p.PowerW,
+                FanRpm = m.FanRpm ?? p.FanRpm,
+                MemoryUsedMb = m.MemoryUsedMb ?? p.MemoryUsedMb,
+                MemoryTotalMb = m.MemoryTotalMb ?? p.MemoryTotalMb
+            };
+            log?.Add($"{p.Name}: readings from {source}");
+            result.Add(preferred);
+        }
+        // Cards the built-in libraries missed entirely.
+        foreach (var e in unused.Where(e => e.Temperature != null || e.Load != null))
+        {
+            log?.Add($"{e.Name}: only found by {source}");
+            result.Add(e);
+        }
+        return result;
+    }
+
+    // "Samsung SSD 970 EVO Plus 1TB" matches "Samsung SSD 970 EVO Plus 1TB NVMe" and the like.
+    private static bool SameDrive(string a, string b)
+    {
+        string x = Key(a), y = Key(b);
+        return x.Length >= 6 && y.Length >= 6 && (x.Contains(y) || y.Contains(x));
+    }
+
+    public static List<DiskInfo> PreferDisks(IReadOnlyList<DiskInfo> ext, IReadOnlyList<DiskInfo> local, string source, List<string>? log = null)
+    {
+        var unused = ext.ToList();
+        var result = new List<DiskInfo>();
+        foreach (var p in local)
+        {
+            // Identical models are paired one by one, in order.
+            var m = unused.FirstOrDefault(e => SameDrive(e.Name, p.Name));
+            if (m == null) { result.Add(p); continue; }
+            unused.Remove(m);
+            var preferred = p with
+            {
+                Temperature = m.Temperature ?? p.Temperature,
+                UsedPercent = p.UsedPercent ?? m.UsedPercent,
+                ReadBytesPerSecond = m.ReadBytesPerSecond ?? p.ReadBytesPerSecond,
+                WriteBytesPerSecond = m.WriteBytesPerSecond ?? p.WriteBytesPerSecond
+            };
+            log?.Add($"{p.Name}: readings from {source}");
+            result.Add(preferred);
+        }
+        foreach (var e in unused.Where(e => e.Temperature != null))
+        {
+            log?.Add($"{e.Name}: only found by {source}");
+            result.Add(e);
+        }
+        return result;
+    }
+
     // Names the fields that changed from missing to present, e.g. "temperature, hot spot".
     private static string Filled<T>(T before, T after)
     {

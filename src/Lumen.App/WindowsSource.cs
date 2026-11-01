@@ -36,10 +36,14 @@ public sealed class WindowsSource : ISnapshotSource, ISensorReport
     private SystemInfo? systemInfo;
     private IReadOnlyList<VolumeInfo> volumes = Array.Empty<VolumeInfo>();
     private readonly HashSet<string> spinning = new();
+    private readonly Func<SensorSource> sourceChoice;
+    private readonly ExternalSensors external = new();
+    private string? externalName;
 
-    public WindowsSource(bool admin)
+    public WindowsSource(bool admin, Func<SensorSource>? sourceChoice = null)
     {
         this.admin = admin;
+        this.sourceChoice = sourceChoice ?? (() => SensorSource.Builtin);
         computer = new Computer { IsCpuEnabled = true, IsGpuEnabled = true, IsStorageEnabled = true, IsMotherboardEnabled = true, IsBatteryEnabled = true, IsControllerEnabled = true };
         try { computer.Open(); } catch { /* without the driver some groups stay empty */ }
 #if WINRT
@@ -71,6 +75,26 @@ public sealed class WindowsSource : ISnapshotSource, ISensorReport
             disks = SensorMerge.Disks(disks, od, mergeLog);
         }
 #endif
+        // AIDA64 or HWiNFO, when chosen and running, take precedence wherever they have a reading.
+        IReadOnlyList<FanInfo>? extFans = null;
+        IReadOnlyList<TempReading>? extBoard = null;
+        externalName = null;
+        if (external.Read(sourceChoice()) is { } ext)
+        {
+            externalName = ext.Name;
+            var extCpu = SensorPicker.Cpu(ext.Nodes);
+            cpu = SensorMerge.PreferCpu(extCpu, cpu);
+            gpus = SensorMerge.PreferGpus(ext.Nodes.Where(n => n.IsGpu).Select(SensorPicker.Gpu).ToList(), gpus, ext.Name, mergeLog);
+            disks = SensorMerge.PreferDisks(ext.Nodes.Where(n => n.Type == "Storage").Select(SensorPicker.Disk).ToList(), disks, ext.Name, mergeLog);
+            var extBoardNode = ext.Nodes.FirstOrDefault(n => n.IsBoard);
+            if (extBoardNode != null)
+            {
+                var temps = SensorPicker.BoardTemps(extBoardNode);
+                if (temps.Count > 0) extBoard = temps;
+                var fans = ReadFans(ext.Nodes);
+                if (fans.Count > 0) extFans = fans;
+            }
+        }
         gpus = gpus.OrderBy(g => g.Integrated ? 1 : 0).ToList();
         var letters = DiskLetters();
         disks = disks.Where(SensorPicker.HasReadings)
@@ -91,8 +115,8 @@ public sealed class WindowsSource : ISnapshotSource, ISensorReport
             System = systemInfo is null ? null : systemInfo with { Uptime = TimeSpan.FromMilliseconds(Environment.TickCount64) },
             Volumes = volumes,
             BoardName = board?.Name,
-            Fans = ReadFans(nodes),
-            BoardTemps = SensorPicker.BoardTemps(board),
+            Fans = extFans ?? ReadFans(nodes),
+            BoardTemps = extBoard ?? SensorPicker.BoardTemps(board),
             Battery = ReadBattery(nodes),
             Processes = top
         };
@@ -279,8 +303,17 @@ public sealed class WindowsSource : ISnapshotSource, ISensorReport
         }
 #endif
         b.AppendLine();
+        b.AppendLine($"=== External source (setting: {sourceChoice()}) ===");
+        if (sourceChoice() == SensorSource.Builtin) b.AppendLine("Not used.");
+        else if (externalName == null) b.AppendLine("Not reachable – AIDA64/HWiNFO not running or shared memory switched off; built-in readings are shown.");
+        else
+        {
+            b.AppendLine("Reading from " + externalName);
+            if (external.LastText is { } raw) b.AppendLine(System.Text.RegularExpressions.Regex.Replace(raw, @"(</(sys|temp|fan|duty|volt|curr|pwr)>)", "$1" + Environment.NewLine));
+        }
+        b.AppendLine();
         b.AppendLine("=== Combined ===");
-        if (mergeLog.Count == 0) b.AppendLine("Nothing needed from Open Hardware Monitor.");
+        if (mergeLog.Count == 0) b.AppendLine("Nothing needed from Open Hardware Monitor or an external source.");
         foreach (var line in mergeLog) b.AppendLine(line);
         return b.ToString();
     }

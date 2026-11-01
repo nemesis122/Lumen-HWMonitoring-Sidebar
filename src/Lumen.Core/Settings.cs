@@ -68,6 +68,8 @@ public sealed class Settings
     public double TemperatureWarning { get; set; } = 85;
     public bool WarningPopup { get; set; } = true;
     public bool ShowIntegratedGpu { get; set; } = true;
+    // Built-in libraries, or AIDA64 / HWiNFO first where they run (see SensorSource).
+    public SensorSource SensorSource { get; set; } = SensorSource.Builtin;
     public string WeatherPlace { get; set; } = "";
     public double? WeatherLatitude { get; set; }
     public double? WeatherLongitude { get; set; }
@@ -163,6 +165,7 @@ public sealed class Settings
         s.Columns = Math.Clamp(s.Columns, 1, 6);
         s.Pages = Math.Clamp(s.Pages, 1, 6);
         if (!Enum.IsDefined(s.Edge)) s.Edge = Edge.Right;
+        if (!Enum.IsDefined(s.SensorSource)) s.SensorSource = SensorSource.Builtin;
         s.BarHeight = double.IsFinite(s.BarHeight) ? Math.Clamp(s.BarHeight, 160, 700) : 300;
         s.PageNames = Enumerable.Range(0, 6).Select(i => (s.PageNames ?? new()).ElementAtOrDefault(i)?.Trim() ?? "")
             .Select(n => n.Length > 16 ? n[..16] : n).ToList();
