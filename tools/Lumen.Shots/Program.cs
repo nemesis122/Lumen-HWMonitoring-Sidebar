@@ -216,6 +216,35 @@ foreach (var w in newStyles.Widgets) w.Style = w.Kind switch { WidgetKind.Cpu =>
 Sidebar("sidebar-new-styles", newStyles, true);
 foreach (var (bgKey, accent) in new[] { ("black", "#EF4444"), ("aubergine", "#D946EF"), ("forest", "#84CC16"), ("mocha", "#EAB308") })
     Sidebar("sidebar-bg-" + bgKey, new Settings { Language = "de", Density = Density.Comfortable, Background = bgKey, Colors = accent, Widgets = Only(WidgetKind.Clock, WidgetKind.Cpu, WidgetKind.Memory) }, true);
+// The bar switched to its second register (regression: crashed in 1.9.2).
+{
+    var paged = new Settings { Language = "de", Edge = Edge.Top, BarHeight = 300, Pages = 2 };
+    foreach (var w in paged.Widgets) { w.Visible = true; w.Page = w.Kind is WidgetKind.Power or WidgetKind.Memory or WidgetKind.Processes or WidgetKind.System or WidgetKind.Drives or WidgetKind.Volumes or WidgetKind.Network or WidgetKind.Ping or WidgetKind.DataUsage or WidgetKind.Notes ? 2 : 1; }
+    try
+    {
+        var v = View(paged, true, Desktop);
+        var host = new Window { Width = 1920, Height = 490, Content = v };
+        host.Show();
+        Dispatcher.UIThread.RunJobs();
+        var show = typeof(SidebarView).GetMethod("Show", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        var (snap2, hist2) = Demo();
+        for (int round = 0; round < 3; round++)
+        {
+            show.Invoke(v, new object[] { 2 });
+            for (int k = 0; k < 5; k++) { Dispatcher.UIThread.RunJobs(); v.Update(snap2, hist2); host.CaptureRenderedFrame(); }
+            show.Invoke(v, new object[] { 1 });
+            for (int k = 0; k < 5; k++) { Dispatcher.UIThread.RunJobs(); v.Update(snap2, hist2); host.CaptureRenderedFrame(); }
+        }
+        show.Invoke(v, new object[] { 2 });
+        Dispatcher.UIThread.RunJobs();
+        host.CaptureRenderedFrame()!.Save(Path.Combine(outDir, "bar-page-2.png"));
+        typeof(SidebarView).GetMethod("Show", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.Invoke(v, new object[] { 1 });
+        Dispatcher.UIThread.RunJobs();
+        host.Close();
+        Console.WriteLine("bar-page-2 ok");
+    }
+    catch (Exception e) { Console.WriteLine("bar-page-2 CRASH " + (e.InnerException ?? e)); }
+}
 // Text size extremes.
 Sidebar("sidebar-text-50", new Settings { Language = "de", Density = Density.Comfortable, TextScale = .5, Widgets = Only(WidgetKind.Clock, WidgetKind.Cpu, WidgetKind.Memory) }, true);
 Sidebar("sidebar-text-200", new Settings { Language = "de", Density = Density.Comfortable, TextScale = 2, Widgets = Only(WidgetKind.Clock, WidgetKind.Cpu, WidgetKind.Memory) }, true);

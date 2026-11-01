@@ -19,10 +19,37 @@ public static class Program
         // One sidebar per user session.
         using var single = new Mutex(true, @"Local\Lumen.Sidebar", out bool first);
         if (!first && !args.Contains("--elevated")) return 0;
+        AppDomain.CurrentDomain.UnhandledException += (_, e) => CrashLog.Write(e.ExceptionObject as Exception, "fatal");
+        TaskScheduler.UnobservedTaskException += (_, e) => { CrashLog.Write(e.Exception, "task"); e.SetObserved(); };
         return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args, ShutdownMode.OnExplicitShutdown);
     }
 
     public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<LumenApp>().UsePlatformDetect().WithInterFont();
+}
+
+// Errors are written to lumen-crash.log (beside the EXE, or in %LocalAppData%\Lumen),
+// so a problem on one PC can be traced; errors in the interface keep the sidebar running.
+public static class CrashLog
+{
+    public static string? LastPath { get; private set; }
+
+    public static void Write(Exception? e, string kind)
+    {
+        if (e is null) return;
+        string text = $"=== {DateTime.Now:yyyy-MM-dd HH:mm:ss} · Lumen {typeof(CrashLog).Assembly.GetName().Version?.ToString(3)} · {kind}{Environment.NewLine}{e}{Environment.NewLine}{Environment.NewLine}";
+        foreach (var dir in new[] { AppContext.BaseDirectory, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Lumen") })
+        {
+            try
+            {
+                Directory.CreateDirectory(dir);
+                string path = Path.Combine(dir, "lumen-crash.log");
+                File.AppendAllText(path, text);
+                LastPath = path;
+                return;
+            }
+            catch { }
+        }
+    }
 }
 
 public sealed class LumenApp : Application
@@ -35,6 +62,7 @@ public sealed class LumenApp : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        Dispatcher.UIThread.UnhandledException += (_, e) => { CrashLog.Write(e.Exception, "ui"); e.Handled = true; };
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             new Controller(desktop, desktop.Args?.Contains("--demo") == true).Start();
         base.OnFrameworkInitializationCompleted();

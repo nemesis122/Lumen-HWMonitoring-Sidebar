@@ -310,8 +310,12 @@ public sealed class SidebarView : Border
         page = target;
         balanced = false;
         rebalanceTries = 0;
-        BuildCards();
-        if (last != null) Update(last, lastHistory!);
+        try
+        {
+            BuildCards();
+            if (last != null) Update(last, lastHistory!);
+        }
+        catch (Exception e) { CrashLog.Write(e, $"register {target}, {(settings.Horizontal ? "bar" : "side")}"); }
     }
 
     private void Remember(WidgetKind kind, Control card)
