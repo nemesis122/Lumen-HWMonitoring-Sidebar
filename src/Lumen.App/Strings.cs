@@ -237,6 +237,11 @@ Several columns side by side; each is as wide as set below, everything stays lar
 Registers|Register|Onglets|Schede|Pestañas|Separadores
 Register|Register|Onglet|Scheda|Pestaña|Separador
 Pages at the top; each widget goes on one of them. Switch by click or mouse wheel.|Seiten oben; jedes Widget liegt auf einer davon. Umschalten per Klick oder Mausrad.|Pages en haut ; chaque widget est sur l'une d'elles. Changez par clic ou molette.|Pagine in alto; ogni widget sta su una di esse. Cambia con clic o rotella.|Páginas arriba; cada widget va en una. Cambia con clic o rueda del ratón.|Páginas no topo; cada widget fica numa delas. Mude com clique ou roda do rato.
+Layout|Anordnung|Disposition|Disposizione|Disposición|Disposição
+Weather and clocks|Wetter und Uhren|Météo et horloges|Meteo e orologi|Tiempo y relojes|Tempo e relógios
+Power and ping|Strom und Ping|Énergie et ping|Energia e ping|Energía y ping|Energia e ping
+Tick what the sidebar shows and order it with the arrows; Customise sets style, column, register and single values.|Anhaken, was die Sidebar zeigt, mit den Pfeilen sortieren; „Anpassen“ legt Stil, Spalte, Register und einzelne Werte fest.|Cochez ce que la barre affiche, triez avec les flèches ; « Personnaliser » règle style, colonne, page et valeurs.|Spunta ciò che la barra mostra, ordina con le frecce; «Personalizza» imposta stile, colonna, pagina e valori.|Marca lo que muestra la barra y ordénalo con las flechas; «Personalizar» define estilo, columna, página y valores.|Marque o que a barra mostra e ordene com as setas; «Personalizar» define estilo, coluna, página e valores.
+Column {0}|Spalte {0}|Colonne {0}|Colonna {0}|Columna {0}|Coluna {0}
 Register names|Register-Namen|Noms des pages|Nomi delle pagine|Nombres de páginas|Nomes das páginas
 Shown at the top instead of 1, 2, 3; leave empty for the number.|Steht oben statt 1, 2, 3; leer lassen für die Nummer.|Affiché en haut au lieu de 1, 2, 3 ; vide = numéro.|Mostrato in alto al posto di 1, 2, 3; vuoto = numero.|Se muestra arriba en lugar de 1, 2, 3; vacío = número.|Mostrado no topo em vez de 1, 2, 3; vazio = número.
 Whole screen|Ganzer Bildschirm|Plein écran|Schermo intero|Pantalla completa|Ecrã inteiro

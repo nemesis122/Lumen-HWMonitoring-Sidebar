@@ -16,7 +16,11 @@ public sealed class SettingsWindow : Window
     private readonly Func<IReadOnlyList<string>> screens;
     private readonly Platform platform;
     private readonly Palette p;
-    private readonly StackPanel content = new() { Spacing = 22, Margin = new Thickness(28, 8, 28, 24) };
+    private readonly StackPanel content = new() { Spacing = 22, Margin = new Thickness(28, 20, 32, 28) };
+    private readonly StackPanel nav = new() { Spacing = 2, Margin = new Thickness(14, 4, 10, 14) };
+    private readonly ScrollViewer scroller = new();
+    // The page shown, kept across rebuilds and reopening.
+    private static int pageIndex;
     private readonly TextBlock title, lead;
     private readonly Button reset, done;
     private readonly HashSet<WidgetKind> expanded = new();
@@ -30,7 +34,7 @@ public sealed class SettingsWindow : Window
         this.report = report;
         this.snapshot = snapshot ?? (() => null);
         s = settings; p = palette; changed = onChanged; screens = screenNames; this.platform = platform; weatherChanged = onWeather ?? (() => { });
-        Width = 540; Height = 760; MinWidth = 480; MinHeight = 480;
+        Width = 940; Height = 780; MinWidth = 760; MinHeight = 520;
         FontFamily = Ui.Font;
         Background = Palette.Brush(p.Dark ? Color.Parse("#14181F") : Color.Parse("#F3F5F8"));
         RequestedThemeVariant = p.Dark ? Avalonia.Styling.ThemeVariant.Dark : Avalonia.Styling.ThemeVariant.Light;
@@ -51,13 +55,26 @@ public sealed class SettingsWindow : Window
         title = Ui.Text("", 22, p.Ink, FontWeight.SemiBold);
         lead = Ui.Text("", 12.5, p.Soft);
         var head = Ui.Stack(2, title, lead);
-        head.Margin = new Thickness(28, 24, 28, 6);
-        var dock = new DockPanel();
+        head.Margin = new Thickness(26, 24, 16, 18);
+        // Left: the topics; right: the settings of the chosen topic.
+        var side = new DockPanel { Width = 220 };
         DockPanel.SetDock(head, Dock.Top);
+        side.Children.Add(head);
+        side.Children.Add(new ScrollViewer { Content = nav });
+        var sideBorder = new Border
+        {
+            Background = Palette.Brush(p.Dark ? Color.Parse("#10141A") : Color.Parse("#E9EDF2")),
+            BorderBrush = Palette.Brush(p.Stroke),
+            BorderThickness = new Thickness(0, 0, 1, 0),
+            Child = side
+        };
+        scroller.Content = content;
+        var dock = new DockPanel();
+        DockPanel.SetDock(sideBorder, Dock.Left);
         DockPanel.SetDock(footer, Dock.Bottom);
-        dock.Children.Add(head);
+        dock.Children.Add(sideBorder);
         dock.Children.Add(footer);
-        dock.Children.Add(new ScrollViewer { Content = content });
+        dock.Children.Add(scroller);
         Content = dock;
         Build();
     }
@@ -79,6 +96,7 @@ public sealed class SettingsWindow : Window
         reset.Content = T("Reset all");
         done.Content = T("Done");
         content.Children.Clear();
+        var pages = new List<(string Name, string Glyph, Control[] Body)>();
 
         var languages = new List<string> { T("Automatic (Windows)") };
         languages.AddRange(L.Choices.Select(c => c.Name));
@@ -87,7 +105,7 @@ public sealed class SettingsWindow : Window
         var colorNames = new List<string> { T("By state (blue to red)"), T("Windows accent colour") };
         colorNames.AddRange(Palette.Presets.Select(x => T(x.Name)));
         int colorIndex = s.Colors == Settings.StateColors ? 0 : s.Colors == Settings.WindowsAccent ? 1 : Math.Max(0, Array.FindIndex(Palette.Presets, x => x.Hex.Equals(s.Colors, StringComparison.OrdinalIgnoreCase)) + 2);
-        content.Children.Add(Section(T("Appearance"),
+        pages.Add((T("Appearance"), Glyphs.Gear, new[] { Section(T("Appearance"),
             Row(T("Language"), Choice(languages, langIndex, i => s.Language = i == 0 ? "auto" : L.Choices[i - 1].Code, rebuild: true)),
             Row(T("Theme"), Choice(new[] { T("Like Windows"), T("Dark"), T("Light") }, (int)s.Theme, i => s.Theme = (ThemeMode)i)),
             Row(T("Colours"), Choice(colorNames, colorIndex, i => s.Colors = i == 0 ? Settings.StateColors : i == 1 ? Settings.WindowsAccent : Palette.Presets[i - 2].Hex), colorIndex == 0 ? null : T("Hot readings still turn amber and red.")),
@@ -96,30 +114,32 @@ public sealed class SettingsWindow : Window
             Row(T("High contrast"), Toggle(s.HighContrast, v => s.HighContrast = v), T("All labels in full brightness.")),
             Row(T("Glass effect"), Toggle(s.Glass, v => s.Glass = v), T("Translucent background with blur")),
             Row(T("Opacity"), Slide(.2, 1, .05, s.Opacity, v => s.Opacity = v, v => $"{v * 100:0} %")),
-            Row(T("Text size"), Slide(.85, 1.3, .05, s.TextScale, v => s.TextScale = v, v => $"{v * 100:0} %")),
+            Row(T("Text size"), Slide(.85, 1.3, .05, s.TextScale, v => s.TextScale = v, v => $"{v * 100:0} %"))) }));
+
+        pages.Add((T("Layout"), Glyphs.Columns, new[] { Section(T("Layout"),
             Row(T("Columns"), Choice(new[] { "1", "2", "3", "4", "5", "6" }, s.Columns - 1, i => s.Columns = i + 1, rebuild: true), T("Several columns side by side; each is as wide as set below, everything stays large.")),
             Row(T("Registers"), Choice(new[] { "1", "2", "3", "4", "5", "6" }, s.Pages - 1, i => s.Pages = i + 1, rebuild: true), T("Pages at the top; each widget goes on one of them. Switch by click or mouse wheel.")),
-            s.Pages > 1 ? Row(T("Register names"), PageNameEditor(), T("Shown at the top instead of 1, 2, 3; leave empty for the number.")) : null,
+            s.Pages > 1 ? WideRow(T("Register names"), PageNameEditor(), T("Shown at the top instead of 1, 2, 3; leave empty for the number.")) : null,
             Row(T("Whole screen"), Toggle(s.FullScreen, v => s.FullScreen = v), T("Covers the whole monitor up to the taskbar; the columns share its width.")),
             Row(T("Density"), Choice(new[] { T("Automatic"), T("Comfortable"), T("Compact") }, (int)s.Density, i => s.Density = (Density)i), T("Automatic fills the height up to the taskbar, without scrolling.")),
-            Row(T("Width"), Slide(240, 440, 10, s.Width, v => s.Width = v, v => $"{v:0} px"))));
+            Row(T("Width"), Slide(240, 440, 10, s.Width, v => s.Width = v, v => $"{v:0} px"))) }));
 
         var names = screens();
-        content.Children.Add(Section(T("Position"),
+        pages.Add((T("Position"), Glyphs.System, new[] { Section(T("Position"),
             Row(T("Screen edge"), Choice(new[] { T("Right"), T("Left") }, (int)s.Edge, i => s.Edge = (Edge)i)),
             Row(T("Screen"), Choice(names.Count > 0 ? names : new[] { T("Main screen") }, Math.Min(s.Screen, Math.Max(0, names.Count - 1)), i => s.Screen = i)),
             Row(T("Always on top"), Toggle(s.Topmost, v => s.Topmost = v)),
             Row(T("Reserve space"), Toggle(s.ReserveSpace, v => s.ReserveSpace = v), T("Maximised windows stop before the sidebar.")),
-            Row(T("Click-through"), Toggle(s.ClickThrough, v => s.ClickThrough = v), T("Clicks go to the windows behind the sidebar; open the settings from the tray icon."))));
+            Row(T("Click-through"), Toggle(s.ClickThrough, v => s.ClickThrough = v), T("Clicks go to the windows behind the sidebar; open the settings from the tray icon."))) }));
 
-        content.Children.Add(Section(T("Readings"),
+        pages.Add((T("Readings"), Glyphs.Cpu, new[] { Section(T("Readings"),
             Row(T("Update interval"), Slide(.5, 5, .5, s.IntervalMs / 1000.0, v => s.IntervalMs = (int)Math.Round(v * 1000), v => v.ToString("0.0", L.Culture) + " s")),
             Row(T("Temperature"), Choice(new[] { T("Celsius (°C)"), T("Fahrenheit (°F)") }, s.Fahrenheit ? 1 : 0, i => s.Fahrenheit = i == 1)),
             Row(T("Warn from"), Slide(50, 110, 1, s.TemperatureWarning, v => s.TemperatureWarning = v, v => $"{v:0} °C"), T("Above this the temperature turns red.")),
             Row(T("Warning pop-up"), Toggle(s.WarningPopup, v => s.WarningPopup = v), T("Shows a notice when a temperature crosses the limit.")),
-            Row(T("Integrated graphics"), Toggle(s.ShowIntegratedGpu, v => s.ShowIntegratedGpu = v), T("Also show the graphics built into the processor."))));
+            Row(T("Integrated graphics"), Toggle(s.ShowIntegratedGpu, v => s.ShowIntegratedGpu = v), T("Also show the graphics built into the processor."))) }));
 
-        content.Children.Add(Section(T("Weather"), WeatherEditor()));
+        pages.Add((T("Weather and clocks"), Glyphs.Cloud, new[] { Section(T("Weather"), WeatherEditor()), Section(T("World clocks"), WorldClockPicker()) }));
 
         var price = new NumericUpDown { Value = (decimal)s.PricePerKwh, Minimum = 0, Maximum = 5, Increment = 0.01m, FormatString = "0.00", Width = 130, CornerRadius = new CornerRadius(8) };
         price.ValueChanged += (_, _) => { s.PricePerKwh = (double)(price.Value ?? 0); changed(); };
@@ -127,15 +147,17 @@ public sealed class SettingsWindow : Window
         currency.LostFocus += (_, _) => { s.Currency = currency.Text ?? "CHF"; changed(); };
         var target = new TextBox { Text = s.PingTarget, Width = 170, CornerRadius = new CornerRadius(8) };
         target.LostFocus += (_, _) => { s.PingTarget = target.Text ?? "1.1.1.1"; changed(); };
-        content.Children.Add(Section(T("Power and cost"),
+        pages.Add((T("Power and ping"), Glyphs.Power, new[] { Section(T("Power and cost"),
             Row(T("Price per kWh"), Ui.Row(8, price, currency)),
-            Row(T("Rest of the PC"), Slide(0, 300, 5, s.BaseWatts, v => s.BaseWatts = v, v => $"{v:0} W"), T("Screen, board, drives and fans are not measured; this estimate is added."))));
-        content.Children.Add(Section("Ping", Row(T("Target"), target, T("A server on the internet, e.g. 1.1.1.1 or google.com."))));
-        content.Children.Add(Section(T("World clocks"), WorldClockPicker()));
+            Row(T("Rest of the PC"), Slide(0, 300, 5, s.BaseWatts, v => s.BaseWatts = v, v => $"{v:0} W"), T("Screen, board, drives and fans are not measured; this estimate is added."))),
+            Section("Ping", Row(T("Target"), target, T("A server on the internet, e.g. 1.1.1.1 or google.com."))) }));
 
         var widgets = new StackPanel { Spacing = 6 };
         for (int i = 0; i < s.Widgets.Count; i++) widgets.Children.Add(WidgetRow(i));
-        content.Children.Add(Section(T("Widgets"), widgets));
+        var widgetHelp = Ui.Text(T("Tick what the sidebar shows and order it with the arrows; Customise sets style, column, register and single values."), 12, p.Soft);
+        widgetHelp.TextWrapping = TextWrapping.Wrap;
+        widgetHelp.TextTrimming = TextTrimming.None;
+        pages.Insert(2, (T("Widgets"), Glyphs.Apps, new Control[] { widgetHelp, Section(T("Widgets"), widgets) }));
 
         var admin = platform.IsAdministrator;
         var accessText = Ui.Text(admin ? T("Running with administrator rights – all sensors are reachable.") : T("Without administrator rights the CPU temperatures are missing."), 12, admin ? p.Calm : p.Soft);
@@ -146,12 +168,35 @@ public sealed class SettingsWindow : Window
         var autostart = Toggle(platform.AutostartEnabled, v => { if (!platform.SetAutostart(v)) Build(); }, notify: false);
         var sensors = new Button { Content = T("Show all sensors"), Padding = new Thickness(12, 6), CornerRadius = new CornerRadius(8) };
         sensors.Click += (_, _) => new SensorsWindow(p, report ?? (() => ""), Path.GetDirectoryName(platform.SettingsPath) ?? ".").Show();
-        content.Children.Add(Section(T("System"),
+        pages.Add((T("System"), Glyphs.Shield, new[] { Section(T("System"),
             Row(T("Start with Windows"), autostart, T("Starts with administrator rights, without a prompt.")),
             Ui.Stack(0, accessText, elevate),
-            Row(T("Sensors"), sensors, T("Lists everything LibreHardwareMonitor and Open Hardware Monitor found."))));
+            Row(T("Sensors"), sensors, T("Lists everything LibreHardwareMonitor and Open Hardware Monitor found."))),
+            Ui.Text($"Lumen {typeof(SettingsWindow).Assembly.GetName().Version?.ToString(3)} · {F("Settings stored in {0}", Path.GetFileName(platform.SettingsPath))}", 11, p.Faint) }));
 
-        content.Children.Add(Ui.Text($"Lumen {typeof(SettingsWindow).Assembly.GetName().Version?.ToString(3)} · {F("Settings stored in {0}", Path.GetFileName(platform.SettingsPath))}", 11, p.Faint));
+        // Navigation on the left, the chosen page on the right.
+        pageIndex = Math.Clamp(pageIndex, 0, pages.Count - 1);
+        nav.Children.Clear();
+        for (int i = 0; i < pages.Count; i++)
+        {
+            int n = i;
+            bool on = n == pageIndex;
+            var item = new Button
+            {
+                Content = Ui.Row(11, Ui.Glyph(pages[n].Glyph, on ? p.Ink : p.Soft, 15), Ui.Text(pages[n].Name, 13.5, on ? p.Ink : p.Soft, on ? FontWeight.SemiBold : FontWeight.Medium)),
+                Background = on ? Palette.Brush(p.Dark ? Color.Parse("#222A35") : Colors.White) : Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Left,
+                Padding = new Thickness(12, 9),
+                CornerRadius = new CornerRadius(8),
+                Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
+            };
+            item.Click += (_, _) => { pageIndex = n; scroller.Offset = default; Build(); };
+            nav.Children.Add(item);
+        }
+        // The section title already names the page; the page itself starts right away.
+        foreach (var c in pages[pageIndex].Body) content.Children.Add(c);
     }
 
     private Control WeatherEditor()
@@ -255,7 +300,16 @@ public sealed class SettingsWindow : Window
         values.Padding = new Thickness(10, 5);
         // Only offer "Customise" where there is something to choose.
         values.IsVisible = Settings.HasStyles(slot.Kind) || Cards.Values(slot.Kind).Length > 0 || s.Columns > 1 || s.Pages > 1;
-        var row = Ui.Columns("*,Auto,Auto,Auto", check, values,
+        // Where the widget lands, so the list reads as the layout without opening every entry.
+        var place = new List<string>();
+        if (s.Pages > 1) place.Add(s.PageName(Math.Min(slot.Page, s.Pages)));
+        if (s.Columns > 1 && slot.Column > 0) place.Add(F("Column {0}", Math.Min(slot.Column, s.Columns)));
+        if (Settings.HasStyles(slot.Kind) && slot.Style != WidgetStyle.Standard) place.Add(T(slot.Style.ToString()));
+        var where = Ui.Text(string.Join(" · ", place), 11.5, p.Soft);
+        where.VerticalAlignment = VerticalAlignment.Center;
+        where.Margin = new Thickness(0, 0, 10, 0);
+        where.IsVisible = place.Count > 0 && slot.Visible;
+        var row = Ui.Columns("*,Auto,Auto,Auto,Auto", check, where, values,
             Small(Ui.Glyph("M3,10 L8,5 L13,10", p.Soft, 12), T("Move up"), index > 0, () => Move(-1)),
             Small(Ui.Glyph("M3,6 L8,11 L13,6", p.Soft, 12), T("Move down"), index < s.Widgets.Count - 1, () => Move(1)));
         var panel = Ui.Stack(8, row);
@@ -331,6 +385,23 @@ public sealed class SettingsWindow : Window
         return Ui.Columns("*,Auto", left, editor);
     }
 
+    // Label and help on top, the editor across the full width below (for editors wider than a dropdown).
+    private Control WideRow(string label, Control editor, string? help = null)
+    {
+        var panel = new StackPanel { Spacing = 2 };
+        panel.Children.Add(Ui.Text(label, 13.5, p.Ink, FontWeight.Medium));
+        if (help != null)
+        {
+            var h = Ui.Text(help, 11.5, p.Soft);
+            h.TextWrapping = TextWrapping.Wrap;
+            h.TextTrimming = TextTrimming.None;
+            panel.Children.Add(h);
+        }
+        editor.Margin = new Thickness(0, 8, 0, 0);
+        panel.Children.Add(editor);
+        return panel;
+    }
+
     private Control Toggle(bool value, Action<bool> set, bool notify = true)
     {
         var t = new ToggleSwitch { IsChecked = value, OnContent = "", OffContent = "", MinWidth = 0, Margin = new Thickness(0, 0, -8, 0) };
@@ -341,11 +412,12 @@ public sealed class SettingsWindow : Window
     // One small box per register; the change shows in the sidebar as soon as a box loses focus.
     private Control PageNameEditor()
     {
-        var wrap = new WrapPanel();
+        // Three boxes per line, each a third of the width, so all six fit any window size.
+        var grid = new Avalonia.Controls.Primitives.UniformGrid { Columns = Math.Min(3, s.Pages) };
         for (int i = 0; i < s.Pages; i++)
         {
             int n = i;
-            var box = new TextBox { Text = s.PageNames.ElementAtOrDefault(n) ?? "", Watermark = (n + 1).ToString(), Width = 96, MaxLength = 16, CornerRadius = new CornerRadius(8), Margin = new Thickness(0, 0, 6, 6) };
+            var box = new TextBox { Text = s.PageNames.ElementAtOrDefault(n) ?? "", Watermark = $"{T("Register")} {n + 1}", MaxLength = 16, CornerRadius = new CornerRadius(8), Margin = new Thickness(0, 0, 6, 6), MinWidth = 0 };
             box.LostFocus += (_, _) =>
             {
                 while (s.PageNames.Count < 6) s.PageNames.Add("");
@@ -354,9 +426,9 @@ public sealed class SettingsWindow : Window
                 s.PageNames[n] = v;
                 changed();
             };
-            wrap.Children.Add(box);
+            grid.Children.Add(box);
         }
-        return wrap;
+        return grid;
     }
 
     private Control Choice(IReadOnlyList<string> items, int selected, Action<int> set, bool rebuild = false, bool small = false)

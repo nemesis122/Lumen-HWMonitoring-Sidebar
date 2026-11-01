@@ -132,17 +132,21 @@ void DesktopShot(string name, Settings settings, bool dark, int screenHeight = S
     Save(new Window { Width = ScreenW, Height = screenHeight, Content = root }, name);
 }
 
-void SettingsShot(string name, bool dark, string language, params WidgetKind[] open)
+void SettingsShot(string name, bool dark, string language, params WidgetKind[] open) => SettingsPage(name, dark, language, 0, open);
+
+void SettingsPage(string name, bool dark, string language, int index, params WidgetKind[] open)
 {
+    typeof(SettingsWindow).GetField("pageIndex", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!.SetValue(null, index);
     L.Use(language);
-    var s = new Settings { Theme = dark ? ThemeMode.Dark : ThemeMode.Light, Language = language };
+    var s = new Settings { Theme = dark ? ThemeMode.Dark : ThemeMode.Light, Language = language, Pages = 4, Columns = 4, PageNames = new() { "Hardware", "Gaming", "", "", "", "" } };
+    foreach (var x in s.Widgets) { if (x.Kind is WidgetKind.Gpu or WidgetKind.Fps) x.Page = 2; if (x.Kind == WidgetKind.Gpu) { x.Column = 2; x.Style = WidgetStyle.Ring; } }
     Application.Current!.RequestedThemeVariant = dark ? Avalonia.Styling.ThemeVariant.Dark : Avalonia.Styling.ThemeVariant.Light;
     var w = new SettingsWindow(s, Palette.For(dark, false), () => { }, () => new[] { L.F("Screen {0}", 1) + " · 2560×1440 (" + L.T("main") + ")", L.F("Screen {0}", 2) + " · 1920×1080" }, new ShotPlatform(), null, null, () => Demo().Item1);
     // Open the "Values" list of the chosen widgets, as a user would by clicking.
     var field = typeof(SettingsWindow).GetField("expanded", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
     foreach (var k in open) ((HashSet<WidgetKind>)field.GetValue(w)!).Add(k);
     typeof(SettingsWindow).GetMethod("Build", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.Invoke(w, null);
-    w.Height = 3300;
+    w.Height = 1100;
     w.Show();
     Save(w, name);
 }
@@ -233,7 +237,7 @@ toastContent.VerticalAlignment = VerticalAlignment.Bottom;
 toastContent.Margin = new Thickness(0, 0, 300 + 16, Taskbar + 16);
 DesktopShot("desktop-warning", new Settings { Language = "de" }, true, extra: toastContent);
 
-SettingsShot("settings-de", true, "de", WidgetKind.Cpu);
+for (int i = 0; i < 8; i++) SettingsPage($"settings-de-{i}", true, "de", i, WidgetKind.Cpu);
 L.Use("de");
 var demoSnap = Demo().Item1;
 var sensorWin = new SensorsWindow(Palette.For(true, false), () => "=== LibreHardwareMonitor ===\n[Cpu] AMD Ryzen 9 5900X\n    Temperature  Core (Tctl/Tdie)                   57.1\n    Load         CPU Total                          34.2\n    ...\n\n=== Open Hardware Monitor (driverless: vendor GPU APIs, SMART) ===\n[GpuNvidia] NVIDIA GeForce RTX 3080\n    Temperature  GPU Core                           58\n    Temperature  GPU Hot Spot                       71\n\n=== Combined ===\nNVIDIA GeForce RTX 3080: HotSpot from Open Hardware Monitor\n\n=== In der Sidebar angezeigt ===\n" + SnapshotText.Describe(demoSnap), "/tmp");

@@ -120,5 +120,6 @@ public static class Glyphs
     public const string Music = "M6,12 V3 L13,1.8 V10.5 M6,12 A2,2 0 1 1 5.99,12 Z M13,10.5 A2,2 0 1 1 12.99,10.5 Z";
     public const string Volume = "M2,4 H14 V12 H2 Z M4.5,8 H8 M11.5,8 h0.01";
     public const string Fps = "M2,12 A6,6 0 0 1 14,12 M8,12 L11,7.5 M4.2,8.6 L5,9.3 M11.8,8.6 L11,9.3 M8,6 V7";
+    public const string Columns = "M2,2.5 H6.5 V13.5 H2 Z M9.5,2.5 H14 V13.5 H9.5 Z";
     public const string Shield = "M8,1.5 L13.5,3.5 V7.5 C13.5,11 11,13.5 8,14.5 C5,13.5 2.5,11 2.5,7.5 V3.5 Z M8,5 V8.5 M8,10.5 V11";
 }
