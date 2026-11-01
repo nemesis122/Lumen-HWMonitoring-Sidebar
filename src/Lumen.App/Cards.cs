@@ -229,7 +229,7 @@ public sealed class MemoryCard : Card
 public sealed class DrivesCard : Card
 {
     private readonly StackPanel rows = new();
-    private readonly Dictionary<string, (TextBlock name, TextBlock temp, Meter used, TextBlock usedText, TextBlock io)> map = new();
+    private readonly Dictionary<string, (TextBlock name, TextBlock temp, Meter used, TextBlock usedText, TextBlock read, TextBlock write)> map = new();
 
     public DrivesCard(Palette p, Metrics m, Settings s) : base(p, m, s, Glyphs.Drive, T("Drives"))
     {
@@ -248,11 +248,20 @@ public sealed class DrivesCard : Card
                 var temp = Ui.Text("", 12, P.Ink, FontWeight.SemiBold, true);
                 var used = new Meter { Height = 5, Palette = P };
                 var usedText = Ui.Text("", 11.5, P.Soft, numbers: true);
-                var io = Ui.Text("", 11.5, P.Soft, numbers: true);
-                io.HorizontalAlignment = HorizontalAlignment.Right;
-                io.IsVisible = Shows("drives.io");
-                rows.Children.Add(Ui.Stack(5, Ui.Columns("*,Auto", name, temp), used, Ui.Columns("Auto,*", usedText, io)));
-                map[d.Id] = r = (name, temp, used, usedText, io);
+                // Read and write sit in fixed, right-aligned columns, so a changing rate never
+                // pushes the other one sideways.
+                TextBlock Rate()
+                {
+                    var tb = Ui.Text("", 11.5, P.Soft, numbers: true);
+                    tb.Width = 78;
+                    tb.TextAlignment = TextAlignment.Right;
+                    tb.IsVisible = Shows("drives.io");
+                    return tb;
+                }
+                var read = Rate();
+                var write = Rate();
+                rows.Children.Add(Ui.Stack(5, Ui.Columns("*,Auto", name, temp), used, Ui.Columns("*,Auto,Auto", usedText, read, write)));
+                map[d.Id] = r = (name, temp, used, usedText, read, write);
             }
             r.name.Text = ShortName(d.Name);
             Motion.Text(r.temp, TempWithUnit(d.Temperature));
@@ -260,7 +269,8 @@ public sealed class DrivesCard : Card
             double share = Format.Share(d.UsedPercent);
             r.used.Set(share, share >= .9 ? P.Ramp[^1] : share >= .8 ? P.Ramp[2] : P.Cool);
             r.usedText.Text = d.UsedPercent is null ? "" : $"{Format.Percent(d.UsedPercent)} {T("used")}";
-            r.io.Text = $"R {Format.Rate(d.ReadBytesPerSecond)}   W {Format.Rate(d.WriteBytesPerSecond)}";
+            r.read.Text = "R " + Format.Rate(d.ReadBytesPerSecond);
+            r.write.Text = "W " + Format.Rate(d.WriteBytesPerSecond);
         }
     }
 
