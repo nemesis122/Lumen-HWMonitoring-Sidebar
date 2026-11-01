@@ -95,7 +95,7 @@ public static class SnapshotText
             b.AppendLine($"GPU  {g.Name}{(g.Integrated ? " (integrated)" : "")}: temp {N(g.Temperature, " °C")}, hot spot {N(g.HotSpot, " °C")}, load {N(g.Load, " %")}, clock {N(g.ClockMhz, " MHz")}, power {N(g.PowerW, " W")}, fan {N(g.FanRpm, " rpm")}, VRAM {N(g.MemoryUsedMb, " MB")} / {N(g.MemoryTotalMb, " MB")}");
         if (s.Gpus.Count == 0) b.AppendLine("GPU  not found");
         if (s.Memory is { } m) b.AppendLine($"RAM  {N(m.UsedGb, " GB")} of {N(m.TotalGb, " GB")}");
-        foreach (var d in s.Disks) b.AppendLine($"DISK {d.Name}: temp {N(d.Temperature, " °C")}, used {N(d.UsedPercent, " %")}, read {N(d.ReadBytesPerSecond, " B/s")}, write {N(d.WriteBytesPerSecond, " B/s")}");
+        foreach (var d in s.Disks) b.AppendLine($"DISK {d.Name}{(d.Letters.Length > 0 ? " [" + d.Letters + "]" : " [no letter]")} ({d.Id}): temp {N(d.Temperature, " °C")}, used {N(d.UsedPercent, " %")}, read {N(d.ReadBytesPerSecond, " B/s")}, write {N(d.WriteBytesPerSecond, " B/s")}");
         if (s.Network is { } n) b.AppendLine($"NET  {n.Name}: down {N(n.DownloadBytesPerSecond, " B/s")}, up {N(n.UploadBytesPerSecond, " B/s")}, link {N(n.LinkBitsPerSecond, " bit/s")}, {n.Address}");
         if (s.BoardName != null) b.AppendLine($"BOARD {s.BoardName}: " + string.Join(", ", s.BoardTemps.Select(t => $"{t.Name} {N(t.Celsius, " °C")}")));
         foreach (var f in s.Fans) b.AppendLine($"FAN  {f.Name}: {N(f.Rpm, " rpm")}");

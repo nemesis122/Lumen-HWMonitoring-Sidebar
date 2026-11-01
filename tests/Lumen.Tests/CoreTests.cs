@@ -398,3 +398,14 @@ public class PagesTests
         Assert.Empty(s.Layout(page: 3).SelectMany(c => c));
     }
 }
+
+public class SensorNameTests
+{
+    // Names as LibreHardwareMonitor reports them on AMD, Intel and hybrid Intel CPUs.
+    [Theory]
+    [InlineData("Core #1", true)] [InlineData("Core #12", true)] [InlineData("CPU Core #3", true)]
+    [InlineData("P-Core #1", true)] [InlineData("E-Core #8", true)]
+    [InlineData("Core #1 (Effective)", false)] [InlineData("Cores (Average)", false)] [InlineData("CPU Core Max", false)]
+    [InlineData("CPU Core #1 Thread #2", false)] [InlineData("CPU Total", false)] [InlineData("Core #1 VID", false)]
+    public void PerCoreNames(string name, bool match) => Assert.Equal(match, Lumen.App.WindowsSource.PerCore.IsMatch(name));
+}

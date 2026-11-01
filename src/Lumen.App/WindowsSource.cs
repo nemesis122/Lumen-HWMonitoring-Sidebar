@@ -108,12 +108,15 @@ public sealed class WindowsSource : ISnapshotSource, ISensorReport
         return null;
     }
 
+    // One sensor per core: "Core #3", "CPU Core #3", "P-Core #3", "E-Core #3" – not "(Effective)", "Max" or "Thread".
+    public static readonly System.Text.RegularExpressions.Regex PerCore = new(@"^(CPU |P-|E-)?Core #\d+$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
     private CpuInfo? ReadCpu(List<IHardware> hardware)
     {
         var h = hardware.FirstOrDefault(x => x.HardwareType == HardwareType.Cpu);
         if (h is null) return null;
         var sensors = All(h).ToList();
-        double? temp = Find(h, SensorType.Temperature, "Core (Tctl/Tdie)", "CPU Package", "Package", "Core (Tctl)", "Core Max", "Core Average", "Tdie", "Tctl", "CCD1 (Tdie)", "CPU Cores");
+        double? temp = Find(h, SensorType.Temperature, "Core (Tctl/Tdie)", "CPU Package", "Package", "Core (Tdie)", "Core (Tctl)", "Core Max", "Core Average", "Tdie", "Tctl", "CCDs Max (Tdie)", "CCD1 (Tdie)", "CPU Cores");
         // Unknown naming: the hottest core or die reading the CPU reports.
         temp ??= sensors.Where(s => s.SensorType == SensorType.Temperature && s.Value is > 0 and < 125
                 && !s.Name.Contains("Distance", StringComparison.OrdinalIgnoreCase) && !s.Name.Contains("TjMax", StringComparison.OrdinalIgnoreCase))
@@ -125,9 +128,12 @@ public sealed class WindowsSource : ISnapshotSource, ISensorReport
         double? load = Find(h, SensorType.Load, "CPU Total") ?? SystemLoad();
         // One bar per logical processor where the library reports threads, otherwise per core.
         var threads = sensors.Where(s => s.SensorType == SensorType.Load && s.Name.Contains("Thread #") && s.Value.HasValue).ToList();
-        var coreSensors = threads.Count > 0 ? threads : sensors.Where(s => s.SensorType == SensorType.Load && s.Name.StartsWith("CPU Core #") && s.Value.HasValue).ToList();
+        var coreSensors = threads.Count > 0 ? threads : sensors.Where(s => s.SensorType == SensorType.Load && PerCore.IsMatch(s.Name) && s.Value.HasValue).ToList();
         var cores = coreSensors.OrderBy(s => s.Index).Select(s => (double)s.Value!.Value).ToArray();
-        var clocks = sensors.Where(s => s.SensorType == SensorType.Clock && s.Name.StartsWith("Core #") && s.Value > 0).Select(s => (double)s.Value!.Value).ToList();
+        // Per-core clocks only, never the "(Effective)" ones (time-averaged, far lower at idle).
+        // AMD names them "Core #1", Intel "CPU Core #1", hybrid Intel "P-Core #1" / "E-Core #1".
+        var clocks = sensors.Where(s => s.SensorType == SensorType.Clock && PerCore.IsMatch(s.Name) && s.Value > 0).Select(s => (double)s.Value!.Value).ToList();
+        double? clock = Find(h, SensorType.Clock, "Cores (Average)") ?? (clocks.Count > 0 ? clocks.Average() : null);
         double? power = Find(h, SensorType.Power, "Package", "CPU Package") ?? sensors.Where(s => s.SensorType == SensorType.Power && s.Value > 0).Select(s => (double?)s.Value).FirstOrDefault();
         double? volts = Find(h, SensorType.Voltage, "Core (SVI2 TFN)", "Core (SVI3 TFN)", "CPU Core", "Core #1", "Core")
             ?? hardware.Where(x => x.HardwareType == HardwareType.Motherboard).SelectMany(All)
@@ -140,7 +146,7 @@ public sealed class WindowsSource : ISnapshotSource, ISensorReport
             var cpuFan = fans.FirstOrDefault(s => s.Name.Contains("CPU", StringComparison.OrdinalIgnoreCase)) ?? fans.FirstOrDefault();
             if (cpuFan != null) { fan = cpuFan.Value; break; }
         }
-        return new CpuInfo(h.Name, temp, load, cores, clocks.Count > 0 ? clocks.Average() : null, power, volts, fan);
+        return new CpuInfo(h.Name.Trim(), temp, load, cores, clock, power, volts, fan);
     }
 
     // Fans on the mainboard that have ever turned; empty headers stay hidden.
@@ -204,7 +210,7 @@ public sealed class WindowsSource : ISnapshotSource, ISensorReport
     private static GpuInfo ReadGpu(IHardware h)
     {
         double? fan = All(h).Where(s => s.SensorType == SensorType.Fan && s.Value.HasValue).Select(s => (double?)s.Value).FirstOrDefault();
-        return new GpuInfo(h.Identifier.ToString(), h.Name,
+        return new GpuInfo(h.Identifier.ToString(), h.Name.Trim(),
             Find(h, SensorType.Temperature, "GPU Core", "GPU Temperature", "GPU VR SoC")
                 ?? All(h).Where(s => s.SensorType == SensorType.Temperature && s.Value is > 0 and < 125 && !s.Name.Contains("Hot", StringComparison.OrdinalIgnoreCase)).Select(s => (double?)s.Value).FirstOrDefault(),
             Find(h, SensorType.Temperature, "GPU Hot Spot", "GPU Hotspot", "GPU Junction"),
@@ -217,8 +223,10 @@ public sealed class WindowsSource : ISnapshotSource, ISensorReport
             Find(h, SensorType.SmallData, "GPU Memory Total", "D3D Dedicated Memory Total")) { Integrated = IsIntegrated(h) };
     }
 
-    private static DiskInfo ReadDisk(IHardware h) => new(h.Identifier.ToString(), h.Name,
-        All(h).Where(s => s.SensorType == SensorType.Temperature && s.Value > 0).Select(s => (double?)s.Value).FirstOrDefault(),
+    // "Warning/Critical Temperature" are the drive's limits, not readings.
+    private static DiskInfo ReadDisk(IHardware h) => new(h.Identifier.ToString(), h.Name.Trim(),
+        Find(h, SensorType.Temperature, "Composite Temperature", "Temperature")
+            ?? All(h).Where(s => s.SensorType == SensorType.Temperature && s.Value is > 0 and < 100 && !s.Name.Contains("Warning") && !s.Name.Contains("Critical")).Select(s => (double?)s.Value).FirstOrDefault(),
         Find(h, SensorType.Load, "Used Space"),
         Find(h, SensorType.Throughput, "Read Rate"),
         Find(h, SensorType.Throughput, "Write Rate"));
@@ -341,7 +349,7 @@ public sealed class WindowsSource : ISnapshotSource, ISensorReport
         {
             void Dump(IHardware x, string indent)
             {
-                b.AppendLine($"{indent}[{x.HardwareType}] {x.Name}");
+                b.AppendLine($"{indent}[{x.HardwareType}] {x.Name}  ({x.Identifier})");
                 foreach (var s in x.Sensors) b.AppendLine($"{indent}    {s.SensorType,-12} {s.Name,-34} {(s.Value is float v ? v.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) : "—")}");
                 foreach (var sub in x.SubHardware) Dump(sub, indent + "  ");
             }
@@ -356,7 +364,7 @@ public sealed class WindowsSource : ISnapshotSource, ISensorReport
             foreach (var d in ohm.Diagnostics) b.AppendLine("Note: " + d);
             foreach (var h in ohm.Hardware)
             {
-                b.AppendLine($"[{h.HardwareType}] {h.Name}");
+                b.AppendLine($"[{h.HardwareType}] {h.Name}  ({h.Identifier})");
                 foreach (var s in h.Sensors) b.AppendLine($"    {s.SensorType,-12} {s.Name,-34} {(s.Value is float v ? v.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) : "—")}");
             }
         }
