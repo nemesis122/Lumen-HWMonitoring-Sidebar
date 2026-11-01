@@ -15,8 +15,28 @@ installation. All screenshots use demo data.
 - **Registers (pages) 1–6** with your own names, switched by click or mouse wheel.
 - **Text size 50–200 %** – above 100 % the sidebar widens by the same factor.
 
+**Right edge – top – bottom** (whole screen, demo data):
+
+<p>
+  <img src="docs/images/desktop-right.png" width="285" alt="Sidebar at the right edge">
+  <img src="docs/images/desktop-top.png" width="285" alt="Bar at the top">
+  <img src="docs/images/desktop-bottom.png" width="285" alt="Bar at the bottom">
+</p>
+
+**Bar at the top**, two rows:
+
 <img src="docs/images/bar-top.png" width="860" alt="Bar at the top, two rows">
+
+**Bar at the bottom**, two rows with mixed styles:
+
 <img src="docs/images/bar-bottom.png" width="860" alt="Bar at the bottom with mixed styles">
+
+**Settings for the bar** – edge and row height, rows and layout:
+
+<p>
+  <img src="docs/images/settings-bar-position.png" width="420" alt="Settings: bar position">
+  <img src="docs/images/settings-bar-layout.png" width="420" alt="Settings: bar layout">
+</p>
 
 <p>
   <img src="docs/images/two-columns.png" width="420" alt="Two columns">
