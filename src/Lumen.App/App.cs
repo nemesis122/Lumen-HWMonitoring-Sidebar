@@ -117,7 +117,7 @@ public sealed class Controller
     private void Rebuild()
     {
         var palette = CurrentPalette();
-        Motion.Enabled = settings.Smooth;
+        Motion.Enabled = settings.SmoothTransitions;
         // Charts scroll for most of each update interval, so they move continuously.
         Motion.ScrollDuration = Math.Min(900, settings.IntervalMs * .9);
         Motion.Duration = Math.Min(450, settings.IntervalMs * .6);

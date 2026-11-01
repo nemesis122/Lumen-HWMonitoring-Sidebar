@@ -89,7 +89,7 @@ public sealed class SettingsWindow : Window
             Row(T("Language"), Choice(languages, langIndex, i => s.Language = i == 0 ? "auto" : L.Choices[i - 1].Code, rebuild: true)),
             Row(T("Theme"), Choice(new[] { T("Like Windows"), T("Dark"), T("Light") }, (int)s.Theme, i => s.Theme = (ThemeMode)i)),
             Row(T("Colours"), Choice(colorNames, colorIndex, i => s.Colors = i == 0 ? Settings.StateColors : i == 1 ? Settings.WindowsAccent : Palette.Presets[i - 2].Hex), colorIndex == 0 ? null : T("Hot readings still turn amber and red.")),
-            Row(T("Smooth transitions"), Toggle(s.Smooth, v => s.Smooth = v), T("Numbers count, bars glide and charts scroll smoothly.")),
+            Row(T("Smooth transitions"), Toggle(s.SmoothTransitions, v => s.SmoothTransitions = v), T("Numbers count, bars glide and charts scroll smoothly.")),
             Row(T("Hardware names"), Toggle(s.ShowNames, v => s.ShowNames = v), T("Model names under the titles, e.g. Ryzen 9 5900X.")),
             Row(T("High contrast"), Toggle(s.HighContrast, v => s.HighContrast = v), T("All labels in full brightness.")),
             Row(T("Glass effect"), Toggle(s.Glass, v => s.Glass = v), T("Translucent background with blur")),

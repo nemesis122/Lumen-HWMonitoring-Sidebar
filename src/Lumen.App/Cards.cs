@@ -183,7 +183,7 @@ public sealed class GpuCard : Card
         }
         Put(stats, "gpu.power", Format.Watts(g?.PowerW));
         Put(stats, "gpu.hotspot", TempWithUnit(g?.HotSpot), g?.HotSpot is null ? P.Ink : HeatColor(g.HotSpot - 10));
-        Put(stats, "gpu.fan", g?.FanRpm is 0 ? T("Idle") : Format.Rpm(g?.FanRpm));
+        Put(stats, "gpu.fan", Format.Rpm(g?.FanRpm));
     }
 }
 
