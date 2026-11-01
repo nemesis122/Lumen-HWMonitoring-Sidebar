@@ -248,19 +248,26 @@ public sealed class DrivesCard : Card
                 var temp = Ui.Text("", 12, P.Ink, FontWeight.SemiBold, true);
                 var used = new Meter { Height = 5, Palette = P };
                 var usedText = Ui.Text("", 11.5, P.Soft, numbers: true);
-                // Read and write sit in fixed, right-aligned columns, so a changing rate never
-                // pushes the other one sideways.
+                // "R" and "W" stand still; only the figure beside each changes, right-aligned in a
+                // fixed width, so nothing in the row moves sideways.
                 TextBlock Rate()
                 {
                     var tb = Ui.Text("", 11.5, P.Soft, numbers: true);
-                    tb.Width = 78;
+                    tb.Width = 64;
                     tb.TextAlignment = TextAlignment.Right;
-                    tb.IsVisible = Shows("drives.io");
                     return tb;
+                }
+                TextBlock Letter(string text, double left)
+                {
+                    var l = Ui.Text(text, 11.5, P.Faint, FontWeight.SemiBold);
+                    l.Margin = new Thickness(left, 0, 4, 0);
+                    return l;
                 }
                 var read = Rate();
                 var write = Rate();
-                rows.Children.Add(Ui.Stack(5, Ui.Columns("*,Auto", name, temp), used, Ui.Columns("*,Auto,Auto", usedText, read, write)));
+                var rates = Ui.Columns("Auto,Auto,Auto,Auto", Letter("R", 0), read, Letter("W", 10), write);
+                rates.IsVisible = Shows("drives.io");
+                rows.Children.Add(Ui.Stack(5, Ui.Columns("*,Auto", name, temp), used, Ui.Columns("*,Auto", usedText, rates)));
                 map[d.Id] = r = (name, temp, used, usedText, read, write);
             }
             r.name.Text = ShortName(d.Name);
@@ -269,9 +276,16 @@ public sealed class DrivesCard : Card
             double share = Format.Share(d.UsedPercent);
             r.used.Set(share, share >= .9 ? P.Ramp[^1] : share >= .8 ? P.Ramp[2] : P.Cool);
             r.usedText.Text = d.UsedPercent is null ? "" : $"{Format.Percent(d.UsedPercent)} {T("used")}";
-            r.read.Text = "R " + Format.Rate(d.ReadBytesPerSecond);
-            r.write.Text = "W " + Format.Rate(d.WriteBytesPerSecond);
+            // Disk activity comes in short bursts; the mean of the last three seconds reads calmly.
+            r.read.Text = Format.Rate(Recent(h.Read($"disk.{d.Id}.read"), d.ReadBytesPerSecond));
+            r.write.Text = Format.Rate(Recent(h.Read($"disk.{d.Id}.write"), d.WriteBytesPerSecond));
         }
+    }
+
+    private static double? Recent(double[] series, double? current)
+    {
+        var last = series.Skip(Math.Max(0, series.Length - 3)).Where(double.IsFinite).ToArray();
+        return last.Length > 0 ? last.Average() : current;
     }
 
     // "Samsung SSD 970 EVO Plus 2TB" → "970 EVO Plus 2TB": the maker is rarely what tells drives apart.
