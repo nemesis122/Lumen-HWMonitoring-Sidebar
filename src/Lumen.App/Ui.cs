@@ -9,13 +9,35 @@ namespace Lumen.App;
 // Small builders so every card uses the same type scale and spacing.
 public static class Ui
 {
-    public static readonly FontFamily Font = new("fonts:Inter#Inter, $Default");
+    public static readonly FontFamily Inter = new("fonts:Inter#Inter, $Default");
+    // The sidebar's typeface (Settings.Font). Windows fonts fall back to the built-in Inter where missing.
+    public static FontFamily Font { get; private set; } = Inter;
+    public static FontStretch FontWidth { get; private set; } = FontStretch.Normal;
+    public static string FontKey { get; private set; } = "inter";
+
+    public static FontFamily FamilyFor(string key) => key switch
+    {
+        "segoe" => new FontFamily("Segoe UI, fonts:Inter#Inter, $Default"),
+        "segoe-variable" => new FontFamily("Segoe UI Variable Text, Segoe UI Variable, Segoe UI, fonts:Inter#Inter, $Default"),
+        "bahnschrift" => new FontFamily("Bahnschrift, fonts:Inter#Inter, $Default"),
+        "bahnschrift-narrow" => new FontFamily("Bahnschrift SemiCondensed, Bahnschrift, fonts:Inter#Inter, $Default"),
+        "mono" => new FontFamily("Cascadia Mono, Consolas, fonts:Inter#Inter, $Default"),
+        _ => Inter
+    };
+
+    public static void UseFont(string key)
+    {
+        FontKey = Lumen.Core.Settings.Fonts.Contains(key) ? key : "inter";
+        Font = FamilyFor(FontKey);
+        FontWidth = FontKey == "bahnschrift-narrow" ? FontStretch.SemiCondensed : FontStretch.Normal;
+    }
     private static readonly FontFeatureCollection Tabular = new() { FontFeature.Parse("tnum"), FontFeature.Parse("cv11") };
 
     public static TextBlock Text(string text, double size, Color color, FontWeight weight = FontWeight.Normal, bool numbers = false) => new()
     {
         Text = text,
         FontFamily = Font,
+        FontStretch = FontWidth,
         FontSize = size,
         FontWeight = weight,
         Foreground = Palette.Brush(color),

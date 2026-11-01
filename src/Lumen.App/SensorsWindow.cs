@@ -12,7 +12,7 @@ public sealed class SensorsWindow : Window
     {
         Title = "Lumen – " + T("Sensors");
         Width = 760; Height = 720; MinWidth = 520; MinHeight = 400;
-        FontFamily = Ui.Font;
+        FontFamily = Ui.Inter;
         Background = Palette.Brush(p.Dark ? Color.Parse("#14181F") : Color.Parse("#F3F5F8"));
         RequestedThemeVariant = p.Dark ? Avalonia.Styling.ThemeVariant.Dark : Avalonia.Styling.ThemeVariant.Light;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;

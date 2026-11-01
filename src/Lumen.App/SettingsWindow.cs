@@ -1,3 +1,4 @@
+using Avalonia.Platform.Storage;
 using System.Reflection;
 using System.Text.Json;
 using Avalonia;
@@ -54,7 +55,7 @@ public sealed class SettingsWindow : Window
         this.snapshot = snapshot ?? (() => null);
         s = settings; p = palette; changed = onChanged; screens = screenNames; this.platform = platform; weatherChanged = onWeather ?? (() => { });
         Width = 940; Height = 780; MinWidth = 760; MinHeight = 520;
-        FontFamily = Ui.Font;
+        FontFamily = Ui.Inter;
         Background = Palette.Brush(p.Dark ? Color.Parse("#14181F") : Color.Parse("#F3F5F8"));
         RequestedThemeVariant = p.Dark ? Avalonia.Styling.ThemeVariant.Dark : Avalonia.Styling.ThemeVariant.Light;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -171,7 +172,16 @@ public sealed class SettingsWindow : Window
 
     // --- The pages -------------------------------------------------------------------------------
 
+    // The settings themselves always read in the built-in typeface; only the preview shows the chosen one.
     private void Build()
+    {
+        var keep = Ui.FontKey;
+        Ui.UseFont("inter");
+        try { BuildPages(); }
+        finally { Ui.UseFont(keep); }
+    }
+
+    private void BuildPages()
     {
         Title = "Lumen – " + T("Settings");
         title.Text = T("Settings");
@@ -242,11 +252,24 @@ public sealed class SettingsWindow : Window
         var autostart = Toggle(platform.AutostartEnabled, v => { if (!platform.SetAutostart(v)) Build(); }, notify: false);
         var sensors = new Button { Content = T("Show all sensors"), Padding = new Thickness(12, 6), CornerRadius = new CornerRadius(8) };
         sensors.Click += (_, _) => new SensorsWindow(p, report ?? (() => ""), System.IO.Path.GetDirectoryName(platform.SettingsPath) ?? ".").Show();
+        var makeReport = new Button { Content = T("Create error report"), Padding = new Thickness(12, 6), CornerRadius = new CornerRadius(8) };
+        makeReport.Click += (_, _) =>
+        {
+            try
+            {
+                string zip = ErrorReport.Create(s, report?.Invoke() ?? "", screens());
+                reportMessage = F("Saved on the desktop: {0}", System.IO.Path.GetFileName(zip));
+                ErrorReport.Reveal(zip);
+            }
+            catch (Exception e) { reportMessage = T("The file could not be read or written.") + " " + e.Message; }
+            Build();
+        };
         pages.Add((T("System"), Glyphs.Shield, new[] { Section(T("System"),
             Row(T("Language"), Choice(languages, langIndex, i => s.Language = i == 0 ? "auto" : L.Choices[i - 1].Code, rebuild: true), null, nameof(Settings.Language)),
             Row(T("Start with Windows"), autostart, T("Starts with administrator rights, without a prompt.")),
             Ui.Stack(0, accessText, elevate),
-            Row(T("Sensors"), sensors, T("Lists everything LibreHardwareMonitor and Open Hardware Monitor found."))),
+            Row(T("Sensors"), sensors, T("Lists everything LibreHardwareMonitor and Open Hardware Monitor found.")),
+            Row(T("Error report"), makeReport, reportMessage.Length > 0 ? reportMessage : T("One ZIP file with error log, sensor lists and settings – without notes, places or own names. Nothing is sent."))),
             Ui.Text($"Lumen {typeof(SettingsWindow).Assembly.GetName().Version?.ToString(3)} · {F("Settings stored in {0}", System.IO.Path.GetFileName(platform.SettingsPath))}", 11, p.Faint) }));
 
         // Navigation on the left, the chosen page (or the search results) on the right.
@@ -786,13 +809,81 @@ public sealed class SettingsWindow : Window
                 Row(T("Smooth transitions"), Toggle(s.SmoothTransitions, v => s.SmoothTransitions = v, rebuild: true), T("Numbers count, bars glide and charts scroll smoothly."), nameof(Settings.SmoothTransitions))),
             Section(T("Text"),
                 Row(T("Text size"), Slide(.5, 2, .05, s.TextScale, v => { s.TextScale = v; RefreshPreview(); }, v => $"{v * 100:0} %"), T("Above 100 % the sidebar grows wider by the same amount."), nameof(Settings.TextScale)),
+                Row(T("Typeface"), Choice(FontNames(), Math.Max(0, Array.IndexOf(Settings.Fonts, s.Font)), i => s.Font = Settings.Fonts[i], rebuild: true), T("Narrow fonts fit more values into the bar."), nameof(Settings.Font)),
                 Row(T("High contrast"), Toggle(s.HighContrast, v => s.HighContrast = v, rebuild: true), T("All labels in full brightness."), nameof(Settings.HighContrast)),
-                Row(T("Hardware names"), Toggle(s.ShowNames, v => s.ShowNames = v, rebuild: true), T("Model names under the titles, e.g. Ryzen 9 5900X."), nameof(Settings.ShowNames)))
+                Row(T("Hardware names"), Toggle(s.ShowNames, v => s.ShowNames = v, rebuild: true), T("Model names under the titles, e.g. Ryzen 9 5900X."), nameof(Settings.ShowNames))),
+            ThemeSection()
         };
+    }
+
+    private static string[] FontNames() => new[] { T("Inter (built in)"), "Segoe UI", "Segoe UI Variable", "Bahnschrift", T("Bahnschrift narrow"), T("Monospace (Cascadia, Consolas)") };
+
+    // Themes as files: the whole look in one *.lumentheme file to keep, swap or pass on.
+    private string themeMessage = "", reportMessage = "";
+    private static readonly FilePickerFileType ThemeType = new("Lumen theme") { Patterns = new[] { "*" + ThemeFile.Extension } };
+
+    private Control ThemeSection()
+    {
+        Button Action(string text, Func<Task> run)
+        {
+            var b = new Button { Content = text, Padding = new Thickness(12, 6), CornerRadius = new CornerRadius(8) };
+            b.Click += async (_, _) =>
+            {
+                try { await run(); }
+                catch (Exception e) { themeMessage = T("The file could not be read or written.") + " " + e.Message; Build(); }
+            };
+            return b;
+        }
+        var buttons = Ui.Row(8, Action(T("Save theme …"), SaveTheme), Action(T("Load theme …"), LoadTheme));
+        var help = T("Colours, background, glass, text size and typeface – no layout and no personal data.");
+        return Section(T("Themes"), Row(T("Theme file"), buttons, themeMessage.Length > 0 ? themeMessage : help));
+    }
+
+    private async Task SaveTheme()
+    {
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = T("Save theme …"), SuggestedFileName = "Lumen" + ThemeFile.Extension, DefaultExtension = ThemeFile.Extension.TrimStart('.'),
+            FileTypeChoices = new[] { ThemeType }, ShowOverwritePrompt = true
+        });
+        if (file is null) return;
+        string name = System.IO.Path.GetFileNameWithoutExtension(file.Name);
+        await using (var stream = await file.OpenWriteAsync())
+        {
+            stream.SetLength(0);
+            await using var w = new System.IO.StreamWriter(stream, new System.Text.UTF8Encoding(false));
+            await w.WriteAsync(ThemeFile.From(s, name).ToJson());
+        }
+        themeMessage = F("Saved as {0}.", file.Name);
+        Build();
+    }
+
+    private async Task LoadTheme()
+    {
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = T("Load theme …"), AllowMultiple = false, FileTypeFilter = new[] { ThemeType, FilePickerFileTypes.All } });
+        if (files.Count == 0) return;
+        string text;
+        await using (var stream = await files[0].OpenReadAsync())
+        using (var r = new System.IO.StreamReader(stream))
+            text = await r.ReadToEndAsync();
+        if (ThemeFile.Parse(text) is not { } theme) { themeMessage = T("This is not a Lumen theme file."); Build(); return; }
+        theme.ApplyTo(s);
+        themeMessage = F("Theme “{0}” applied.", theme.Name.Length > 0 ? theme.Name : System.IO.Path.GetFileNameWithoutExtension(files[0].Name));
+        changed();
+        RefreshPreview();
+        Build();
     }
 
     // A processor card drawn with the colours, glass and text size as they are set right now.
     private void RefreshPreview()
+    {
+        var keep = Ui.FontKey;
+        Ui.UseFont(s.Font);
+        try { DrawPreview(); }
+        finally { Ui.UseFont(keep); }
+    }
+
+    private void DrawPreview()
     {
         bool dark = s.Theme switch { ThemeMode.Dark => true, ThemeMode.Light => false, _ => Application.Current?.ActualThemeVariant != Avalonia.Styling.ThemeVariant.Light };
         Color? accent = s.Colors switch

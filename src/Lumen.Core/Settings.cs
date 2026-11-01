@@ -61,6 +61,9 @@ public sealed class Settings
     // Tone of the sidebar and card backgrounds: graphite, black, midnight, ocean, forest, aubergine, wine, mocha, slate.
     public string Background { get; set; } = "graphite";
     public string Language { get; set; } = "auto";
+    // Typeface of the sidebar: inter (built in), segoe, segoe-variable, bahnschrift, bahnschrift-narrow, mono.
+    public string Font { get; set; } = "inter";
+    public static readonly string[] Fonts = { "inter", "segoe", "segoe-variable", "bahnschrift", "bahnschrift-narrow", "mono" };
     public bool Topmost { get; set; }
     public bool ReserveSpace { get; set; }
     public bool Fahrenheit { get; set; }
@@ -162,6 +165,7 @@ public sealed class Settings
         s.Background = string.IsNullOrWhiteSpace(s.Background) ? "graphite" : s.Background.Trim().ToLowerInvariant();
         if (s.Colors is not (StateColors or WindowsAccent) && !IsHexColor(s.Colors)) s.Colors = StateColors;
         s.Language = Languages.Contains(s.Language) ? s.Language : "auto";
+        s.Font = Fonts.Contains(s.Font?.Trim().ToLowerInvariant()) ? s.Font!.Trim().ToLowerInvariant() : "inter";
         s.WeatherPlace ??= "";
         s.Columns = Math.Clamp(s.Columns, 1, 6);
         s.Pages = Math.Clamp(s.Pages, 1, 6);

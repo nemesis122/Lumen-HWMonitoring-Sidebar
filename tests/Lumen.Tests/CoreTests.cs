@@ -353,7 +353,8 @@ public class MergeTests
 
 public class MotionTests
 {
-    [Fact] public void TextWithoutMotionIsReplacedAtOnce()
+    // On the interface thread: once the UI tests have started Avalonia, controls belong to that thread.
+    [Fact] public void TextWithoutMotionIsReplacedAtOnce() => UiHost.Run(() =>
     {
         Lumen.App.Motion.Enabled = false;
         var tb = new Avalonia.Controls.TextBlock { Text = "57 °C" };
@@ -361,7 +362,8 @@ public class MotionTests
         Assert.Equal("61 °C", tb.Text);
         Lumen.App.Motion.Text(tb, "—");
         Assert.Equal("—", tb.Text);
-    }
+        return 0;
+    });
 }
 
 public class LabelTests

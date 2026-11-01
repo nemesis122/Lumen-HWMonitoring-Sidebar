@@ -55,6 +55,9 @@ public sealed class WindowsSource : ISnapshotSource, ISensorReport
     // Puts LibreHardwareMonitor, Open Hardware Monitor and AIDA64/HWiNFO together (see HardwareCombiner).
     private readonly HardwareCombiner combiner = new();
     public bool Paused { get; private set; }
+    // Set by the controller: enumerating every process only pays off while a widget shows the result.
+    public bool WantsProcesses { get; set; } = true;
+    public bool WantsSystem { get; set; } = true;
 
     public Snapshot Read()
     {
@@ -80,7 +83,8 @@ public sealed class WindowsSource : ISnapshotSource, ISensorReport
         if (clock.Elapsed.TotalSeconds - lastSlow > 5 || systemInfo is null)
         {
             lastSlow = clock.Elapsed.TotalSeconds;
-            try { systemInfo = SystemReader.Read(); volumes = SystemReader.Volumes(); } catch { }
+            try { if (WantsSystem || systemInfo is null) systemInfo = SystemReader.Read(); } catch { }
+            try { volumes = SystemReader.Volumes(); } catch { }
         }
         var view = combiner.Combine(new HardwareInput(builtin, ohmNodes,
             extRead is { } e ? (e.Name, e.Nodes) : null,
@@ -97,7 +101,7 @@ public sealed class WindowsSource : ISnapshotSource, ISensorReport
         if (!admin && externalName is null) access = SensorAccess.Limited;
         var nodes = view.Nodes.ToList();
         IReadOnlyList<ProcessInfo> top;
-        try { top = processes.Sample(); } catch { top = Array.Empty<ProcessInfo>(); }
+        try { top = WantsProcesses ? processes.Sample() : Array.Empty<ProcessInfo>(); } catch { top = Array.Empty<ProcessInfo>(); }
         return new Snapshot(DateTime.Now, cpu, gpus, ReadMemory(), disks, ReadNetwork(), access)
         {
             System = systemInfo is null ? null : systemInfo with { Uptime = TimeSpan.FromMilliseconds(Environment.TickCount64) },

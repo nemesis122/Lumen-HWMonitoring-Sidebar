@@ -18,6 +18,12 @@ public static class Program
     {
         // One sidebar per user session.
         using var single = new Mutex(true, @"Local\Lumen.Sidebar", out bool first);
+        // After a freeze the old Lumen ends right after starting this one: wait for it.
+        if (!first && args.Contains("--restarted"))
+        {
+            try { first = single.WaitOne(TimeSpan.FromSeconds(20)); }
+            catch (AbandonedMutexException) { first = true; }
+        }
         if (!first && !args.Contains("--elevated")) return 0;
         AppDomain.CurrentDomain.UnhandledException += (_, e) => CrashLog.Write(e.ExceptionObject as Exception, "fatal");
         TaskScheduler.UnobservedTaskException += (_, e) => { CrashLog.Write(e.Exception, "task"); e.SetObserved(); };
@@ -94,6 +100,9 @@ public sealed class Controller
     private WeatherInfo? weather;
     private bool reading;
     private string trayLanguage = "";
+    private FreezeWatch? freezeWatch;
+    // While the sidebar is hidden nobody sees it: read seldom and draw nothing.
+    private const int HiddenIntervalMs = 5000;
 
     public Controller(IClassicDesktopStyleApplicationLifetime desktop, bool demo)
     {
@@ -119,11 +128,15 @@ public sealed class Controller
             app.ActualThemeVariantChanged += (_, _) => { if (settings.Theme == ThemeMode.System) Rebuild(); };
             if (app.PlatformSettings is { } ps) ps.ColorValuesChanged += (_, _) => { if (settings.Colors == Settings.WindowsAccent) Rebuild(); };
         }
+        freezeWatch = new FreezeWatch(FreezeWatch.RestartNow, Path.Combine(Path.GetDirectoryName(platform.SettingsPath) ?? ".", "lumen-restarts.txt"));
+        freezeWatch.Start();
         timer.Tick += (_, _) => Tick();
         timer.Interval = TimeSpan.FromMilliseconds(settings.IntervalMs);
         timer.Start();
         weatherTimer.Tick += (_, _) => RefreshWeather();
         weatherTimer.Start();
+        // The sensor libraries allocate a lot once while they start; give that memory back afterwards.
+        DispatcherTimer.RunOnce(Compact, TimeSpan.FromSeconds(45));
         RefreshWeather();
         Tick();
     }
@@ -148,6 +161,7 @@ public sealed class Controller
     private void Rebuild()
     {
         var palette = CurrentPalette();
+        Ui.UseFont(settings.Font);
         Motion.Enabled = settings.SmoothTransitions;
         // Charts scroll for most of each update interval, so they move continuously.
         Motion.ScrollDuration = Math.Min(900, settings.IntervalMs * .9);
@@ -171,6 +185,15 @@ public sealed class Controller
         reading = true;
         try
         {
+            bool shown = window is { IsVisible: true };
+            var interval = TimeSpan.FromMilliseconds(shown ? settings.IntervalMs : Math.Max(settings.IntervalMs, HiddenIntervalMs));
+            if (timer.Interval != interval) timer.Interval = interval;
+            // Only what a visible widget shows is read; the rest costs nothing.
+            if (source is WindowsSource ws)
+            {
+                ws.WantsProcesses = shown && settings.Widgets.Any(w => w.Visible && w.Kind == WidgetKind.Processes);
+                ws.WantsSystem = shown && settings.Widgets.Any(w => w.Visible && w.Kind == WidgetKind.System);
+            }
             var snapshot = await Task.Run(source.Read);
             // Demo data brings its own weather until a real place is set.
             if (!demo || weather != null) snapshot = snapshot with { Weather = weather };
@@ -188,7 +211,7 @@ public sealed class Controller
             }
             history.Record(snapshot);
             last = snapshot;
-            window?.View?.Update(snapshot, history);
+            if (shown) window?.View?.Update(snapshot, history);
             if (settings.WarningPopup && window is { IsVisible: true })
                 foreach (var w in warnings.Check(snapshot, settings.TemperatureWarning))
                     new Toast(CurrentPalette(), L.T("Temperature warning"),
@@ -250,10 +273,13 @@ public sealed class Controller
         show.Click += (_, _) => { if (window == null) return; if (window.IsVisible) window.Hide(); else { window.Show(); Rebuild(); } };
         var open = new NativeMenuItem(L.T("Settings"));
         open.Click += (_, _) => OpenSettings();
+        var report = new NativeMenuItem(L.T("Create error report"));
+        report.Click += (_, _) => CreateReport();
         var quit = new NativeMenuItem(L.T("Quit"));
         quit.Click += (_, _) => Quit();
         menu.Items.Add(show);
         menu.Items.Add(open);
+        menu.Items.Add(report);
         menu.Items.Add(new NativeMenuItemSeparator());
         menu.Items.Add(quit);
         tray?.Dispose();
@@ -267,8 +293,21 @@ public sealed class Controller
         TrayIcon.SetIcons(Application.Current!, new TrayIcons { tray });
     }
 
+    private static void Compact()
+    {
+        System.Runtime.GCSettings.LargeObjectHeapCompactionMode = System.Runtime.GCLargeObjectHeapCompactionMode.CompactOnce;
+        GC.Collect(2, GCCollectionMode.Aggressive, true, true);
+    }
+
+    private void CreateReport()
+    {
+        try { ErrorReport.Reveal(ErrorReport.Create(settings, SensorReport(), ScreenNames())); }
+        catch (Exception e) { CrashLog.Write(e, "report"); }
+    }
+
     private void Quit()
     {
+        freezeWatch?.Dispose();
         timer.Stop();
         weatherTimer.Stop();
         ping?.Dispose();

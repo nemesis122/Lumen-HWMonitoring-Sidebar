@@ -7,6 +7,9 @@
     <ApplicationIcon>Assets\lumen.ico</ApplicationIcon>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <NoWarn>$(NoWarn);CA1416</NoWarn>
+    <!-- A small, mostly idle app: no background GC thread, and memory handed back to Windows sooner. -->
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <TieredPGO>true</TieredPGO>
   </PropertyGroup>
   <!-- The Windows build also reaches the media controls ("now playing"); every other build,
        including the headless screenshot tool, stays plain net8.0. -->

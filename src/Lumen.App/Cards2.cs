@@ -306,6 +306,7 @@ public sealed class NotesCard : Card
             MinHeight = 64,
             MaxHeight = 220,
             FontFamily = Ui.Font,
+            FontStretch = Ui.FontWidth,
             FontSize = 12.5,
             Foreground = Palette.Brush(p.Ink),
             Background = Palette.Brush(p.Track),

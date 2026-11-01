@@ -348,6 +348,24 @@ Register names|Register-Namen|Noms des pages|Nomi delle pagine|Nombres de págin
 Shown at the top instead of 1, 2, 3; leave empty for the number.|Steht oben statt 1, 2, 3; leer lassen für die Nummer.|Affiché en haut au lieu de 1, 2, 3 ; vide = numéro.|Mostrato in alto al posto di 1, 2, 3; vuoto = numero.|Se muestra arriba en lugar de 1, 2, 3; vacío = número.|Mostrado no topo em vez de 1, 2, 3; vazio = número.
 Whole screen|Ganzer Bildschirm|Plein écran|Schermo intero|Pantalla completa|Ecrã inteiro
 Covers the whole monitor up to the taskbar; the columns share its width.|Füllt den ganzen Monitor bis zur Taskleiste; die Spalten teilen sich die Breite.|Couvre tout l'écran jusqu'à la barre des tâches ; les colonnes se partagent la largeur.|Copre tutto il monitor fino alla barra delle applicazioni; le colonne si dividono la larghezza.|Cubre todo el monitor hasta la barra de tareas; las columnas se reparten el ancho.|Cobre todo o monitor até à barra de tarefas; as colunas partilham a largura.
+The file could not be read or written.|Die Datei konnte nicht gelesen oder geschrieben werden.|Impossible de lire ou d'écrire le fichier.|Impossibile leggere o scrivere il file.|No se pudo leer ni escribir el archivo.|Não foi possível ler nem gravar o ficheiro.
+One ZIP file with error log, sensor lists and settings – without notes, places or own names. Nothing is sent.|Eine ZIP-Datei mit Fehlerprotokoll, Sensorlisten und Einstellungen – ohne Notizen, Orte und eigene Namen. Es wird nichts verschickt.|Un fichier ZIP avec journal d'erreurs, listes de capteurs et réglages – sans notes, lieux ni noms personnels. Rien n'est envoyé.|Un file ZIP con registro errori, elenchi dei sensori e impostazioni – senza note, luoghi o nomi propri. Non viene inviato nulla.|Un archivo ZIP con registro de errores, listas de sensores y ajustes – sin notas, lugares ni nombres propios. No se envía nada.|Um ficheiro ZIP com registo de erros, listas de sensores e definições – sem notas, locais ou nomes próprios. Nada é enviado.
+Narrow fonts fit more values into the bar.|Schmale Schriften bringen mehr Werte in die Leiste.|Les polices étroites placent plus de valeurs dans la barre.|I caratteri stretti fanno stare più valori nella barra.|Las fuentes estrechas caben más valores en la barra.|Fontes estreitas cabem mais valores na barra.
+Saved as {0}.|Gespeichert als {0}.|Enregistré sous {0}.|Salvato come {0}.|Guardado como {0}.|Guardado como {0}.
+Theme file|Theme-Datei|Fichier de thème|File del tema|Archivo de tema|Ficheiro de tema
+Bahnschrift narrow|Bahnschrift schmal|Bahnschrift étroite|Bahnschrift stretta|Bahnschrift estrecha|Bahnschrift estreita
+Inter (built in)|Inter (eingebaut)|Inter (intégrée)|Inter (integrato)|Inter (integrada)|Inter (integrada)
+Themes|Themes|Thèmes|Temi|Temas|Temas
+Create error report|Fehlerbericht erstellen|Créer un rapport d'erreur|Crea rapporto errori|Crear informe de errores|Criar relatório de erros
+Error report|Fehlerbericht|Rapport d'erreur|Rapporto errori|Informe de errores|Relatório de erros
+Colours, background, glass, text size and typeface – no layout and no personal data.|Farben, Hintergrund, Glas, Textgrösse und Schrift – kein Layout und keine persönlichen Daten.|Couleurs, fond, verre, taille du texte et police – sans disposition ni données personnelles.|Colori, sfondo, vetro, dimensione del testo e carattere – niente layout e niente dati personali.|Colores, fondo, cristal, tamaño de texto y fuente – sin diseño ni datos personales.|Cores, fundo, vidro, tamanho do texto e fonte – sem disposição nem dados pessoais.
+Theme “{0}” applied.|Theme „{0}“ übernommen.|Thème « {0} » appliqué.|Tema «{0}» applicato.|Tema «{0}» aplicado.|Tema «{0}» aplicado.
+Typeface|Schrift|Police|Carattere|Fuente|Fonte
+This is not a Lumen theme file.|Das ist keine Lumen-Theme-Datei.|Ce n'est pas un fichier de thème Lumen.|Questo non è un file di tema Lumen.|Esto no es un archivo de tema de Lumen.|Isto não é um ficheiro de tema do Lumen.
+Saved on the desktop: {0}|Auf dem Desktop gespeichert: {0}|Enregistré sur le bureau : {0}|Salvato sul desktop: {0}|Guardado en el escritorio: {0}|Guardado no ambiente de trabalho: {0}
+Save theme …|Theme speichern …|Enregistrer le thème …|Salva tema …|Guardar tema …|Guardar tema …
+Monospace (Cascadia, Consolas)|Festbreite (Cascadia, Consolas)|Chasse fixe (Cascadia, Consolas)|Monospazio (Cascadia, Consolas)|Monoespaciada (Cascadia, Consolas)|Monoespaçada (Cascadia, Consolas)
+Load theme …|Theme laden …|Charger un thème …|Carica tema …|Cargar tema …|Carregar tema …
 """;
 
     private static readonly Dictionary<string, string[]> Rows = Parse();

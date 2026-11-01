@@ -25,7 +25,7 @@ Motion.Enabled = false;
 bool barSettings = false;
 // "--styles": only the pictures of every style, as bar and side (quick check while working on styles).
 if (args.Contains("--styles")) { StyleShots(); return; }
-if (args.Contains("--settings")) { SettingsPage("settings-de-0", true, "de", 0, WidgetKind.Clock, WidgetKind.Media); SettingsPage("settings-de-1", true, "de", 1); return; }
+if (args.Contains("--settings")) { for (int i = 0; i < 6; i++) SettingsPage($"settings-de-{i}", true, "de", i); return; }
 
 // "--anim": frames of the sidebar while it updates, to check the transitions.
 if (args.Contains("--anim"))
@@ -174,7 +174,8 @@ void SettingsPage(string name, bool dark, string language, int index, params Wid
     var field = typeof(SettingsWindow).GetField("expanded", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
     foreach (var k in open) ((HashSet<WidgetKind>)field.GetValue(w)!).Add(k);
     typeof(SettingsWindow).GetMethod("Build", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.Invoke(w, null);
-    w.Height = 860;
+    // LUMEN_SHOT_HEIGHT shows a whole long page at once.
+    w.Height = double.TryParse(Environment.GetEnvironmentVariable("LUMEN_SHOT_HEIGHT"), out var tall) ? tall : 860;
     w.Show();
     Save(w, name);
 }
