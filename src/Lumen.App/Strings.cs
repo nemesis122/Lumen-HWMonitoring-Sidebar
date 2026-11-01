@@ -242,6 +242,34 @@ Weather and clocks|Wetter und Uhren|Météo et horloges|Meteo e orologi|Tiempo y
 Power and ping|Strom und Ping|Énergie et ping|Energia e ping|Energía y ping|Energia e ping
 Tick what the sidebar shows and order it with the arrows; Customise sets style, column, register and single values.|Anhaken, was die Sidebar zeigt, mit den Pfeilen sortieren; „Anpassen“ legt Stil, Spalte, Register und einzelne Werte fest.|Cochez ce que la barre affiche, triez avec les flèches ; « Personnaliser » règle style, colonne, page et valeurs.|Spunta ciò che la barra mostra, ordina con le frecce; «Personalizza» imposta stile, colonna, pagina e valori.|Marca lo que muestra la barra y ordénalo con las flechas; «Personalizar» define estilo, columna, página y valores.|Marque o que a barra mostra e ordene com as setas; «Personalizar» define estilo, coluna, página e valores.
 Column {0}|Spalte {0}|Colonne {0}|Colonna {0}|Columna {0}|Coluna {0}
+Cyan|Cyan|Cyan|Ciano|Cian|Ciano
+Teal|Petrol|Sarcelle|Verde acqua|Verde azulado|Verde-azulado
+Lime|Limette|Citron vert|Lime|Lima|Lima
+Gold|Gold|Or|Oro|Oro|Ouro
+Red|Rot|Rouge|Rosso|Rojo|Vermelho
+Rose|Rosé|Rose|Rosa antico|Rosa palo|Rosé
+Magenta|Magenta|Magenta|Magenta|Magenta|Magenta
+Indigo|Indigo|Indigo|Indaco|Índigo|Índigo
+Silver|Silber|Argent|Argento|Plata|Prata
+Background|Hintergrund|Arrière-plan|Sfondo|Fondo|Fundo
+Tone of the sidebar and the cards.|Farbton der Sidebar und der Karten.|Teinte de la barre et des cartes.|Tonalità della barra e delle schede.|Tono de la barra y las tarjetas.|Tom da barra e dos cartões.
+Graphite|Graphit|Graphite|Grafite|Grafito|Grafite
+Black (OLED)|Schwarz (OLED)|Noir (OLED)|Nero (OLED)|Negro (OLED)|Preto (OLED)
+Midnight blue|Nachtblau|Bleu nuit|Blu notte|Azul noche|Azul-noite
+Deep sea|Tiefsee|Grand bleu|Abisso|Mar profundo|Mar profundo
+Forest|Wald|Forêt|Foresta|Bosque|Floresta
+Aubergine|Aubergine|Aubergine|Melanzana|Berenjena|Beringela
+Burgundy|Bordeaux|Bordeaux|Bordeaux|Burdeos|Bordô
+Mocha|Mokka|Moka|Moka|Moca|Moca
+Slate|Schiefer|Ardoise|Ardesia|Pizarra|Ardósia
+Bar|Balken|Barre|Barra|Barra|Barra
+Graph|Kurve|Courbe|Grafico|Gráfica|Gráfico
+Tile|Kachel|Tuile|Riquadro|Mosaico|Mosaico
+Top (bar)|Oben (Leiste)|En haut (barre)|In alto (barra)|Arriba (barra)|Em cima (barra)
+Bottom (bar)|Unten (Leiste)|En bas (barre)|In basso (barra)|Abajo (barra)|Em baixo (barra)
+A bar across the whole width; the widgets sit side by side.|Eine Leiste über die ganze Breite; die Widgets stehen nebeneinander.|Une barre sur toute la largeur ; les widgets côte à côte.|Una barra su tutta la larghezza; i widget affiancati.|Una barra a todo el ancho; los widgets uno al lado del otro.|Uma barra em toda a largura; os widgets lado a lado.
+Bar height|Leistenhöhe|Hauteur de la barre|Altezza barra|Altura de la barra|Altura da barra
+Ring, Tile and Bar styles read best in a low bar.|In einer niedrigen Leiste lesen sich die Stile Ring, Kachel und Balken am besten.|Dans une barre basse, les styles Anneau, Tuile et Barre se lisent le mieux.|In una barra bassa si leggono meglio Anello, Riquadro e Barra.|En una barra baja se leen mejor Anillo, Mosaico y Barra.|Numa barra baixa leem-se melhor Anel, Mosaico e Barra.
 Register names|Register-Namen|Noms des pages|Nomi delle pagine|Nombres de páginas|Nomes das páginas
 Shown at the top instead of 1, 2, 3; leave empty for the number.|Steht oben statt 1, 2, 3; leer lassen für die Nummer.|Affiché en haut au lieu de 1, 2, 3 ; vide = numéro.|Mostrato in alto al posto di 1, 2, 3; vuoto = numero.|Se muestra arriba en lugar de 1, 2, 3; vacío = número.|Mostrado no topo em vez de 1, 2, 3; vazio = número.
 Whole screen|Ganzer Bildschirm|Plein écran|Schermo intero|Pantalla completa|Ecrã inteiro

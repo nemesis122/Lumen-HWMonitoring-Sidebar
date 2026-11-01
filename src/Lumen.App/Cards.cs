@@ -622,6 +622,9 @@ public static class Cards
     {
         if (style == WidgetStyle.Ring && Settings.HasStyles(kind)) return new RingTile(kind, index, p, m, s);
         if (style == WidgetStyle.Minimal && Settings.HasStyles(kind)) return new MinimalRow(kind, index, p, m, s);
+        if (style == WidgetStyle.Bar && Settings.HasStyles(kind)) return new BarTile(kind, index, p, m, s);
+        if (style == WidgetStyle.Graph && Settings.HasStyles(kind)) return new GraphTile(kind, index, p, m, s);
+        if (style == WidgetStyle.Tile && Settings.HasStyles(kind)) return new NumberTile(kind, index, p, m, s);
         return kind switch
         {
             WidgetKind.Clock => new ClockCard(p, m, s),

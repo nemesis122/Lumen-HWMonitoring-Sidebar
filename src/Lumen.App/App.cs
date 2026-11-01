@@ -112,7 +112,7 @@ public sealed class Controller
             Settings.WindowsAccent => Application.Current?.PlatformSettings?.GetColorValues().AccentColor1,
             var hex => Color.Parse(hex)
         };
-        return Palette.For(dark, settings.Glass, settings.Opacity, accent, settings.HighContrast);
+        return Palette.For(dark, settings.Glass, settings.Opacity, accent, settings.HighContrast, settings.Background);
     }
 
     private void Rebuild()

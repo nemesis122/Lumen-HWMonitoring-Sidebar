@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Lumen.Core;
 
-public enum Edge { Right, Left }
+public enum Edge { Right, Left, Top, Bottom }
 // Fit scales the cards so they fill the height between the screen top and the taskbar exactly.
 public enum Density { Fit, Comfortable, Compact }
 public enum ThemeMode { System, Dark, Light }
@@ -12,7 +12,8 @@ public enum ThemeMode { System, Dark, Light }
 public enum WidgetKind { Clock, WorldClocks, Calendar, Weather, Media, Battery, Cpu, Gpu, Fps, Cooling, Power, Memory, Processes, System, Drives, Volumes, Network, Ping, DataUsage, Notes }
 
 // Standard is the full card; Ring is a half-width tile (two sit side by side); Minimal is one slim line.
-public enum WidgetStyle { Standard, Ring, Minimal }
+// Ring and Tile are half width: two of them share a line.
+public enum WidgetStyle { Standard, Ring, Minimal, Bar, Graph, Tile }
 
 public sealed class WidgetSlot
 {
@@ -32,6 +33,9 @@ public sealed class Settings
     public static readonly string[] Languages = { "de", "en", "fr", "it", "es", "pt" };
 
     public Edge Edge { get; set; } = Edge.Right;
+    // Top or bottom: a bar across the whole screen width; the widgets sit side by side.
+    public bool Horizontal => Edge is Edge.Top or Edge.Bottom;
+    public double BarHeight { get; set; } = 300;
     public int Screen { get; set; }
     public double Width { get; set; } = 300;
     public Density Density { get; set; } = Density.Fit;
@@ -43,6 +47,8 @@ public sealed class Settings
     public double Opacity { get; set; } = .55;
     public double TextScale { get; set; } = 1;
     public string Colors { get; set; } = StateColors;
+    // Tone of the sidebar and card backgrounds: graphite, black, midnight, ocean, forest, aubergine, wine, mocha, slate.
+    public string Background { get; set; } = "graphite";
     public string Language { get; set; } = "auto";
     public bool Topmost { get; set; }
     public bool ReserveSpace { get; set; }
@@ -138,11 +144,14 @@ public sealed class Settings
         s.TextScale = double.IsFinite(s.TextScale) ? Math.Clamp(s.TextScale, .85, 1.3) : 1;
         s.Screen = Math.Max(0, s.Screen);
         s.Colors = string.IsNullOrWhiteSpace(s.Colors) ? StateColors : s.Colors.Trim();
+        s.Background = string.IsNullOrWhiteSpace(s.Background) ? "graphite" : s.Background.Trim().ToLowerInvariant();
         if (s.Colors is not (StateColors or WindowsAccent) && !IsHexColor(s.Colors)) s.Colors = StateColors;
         s.Language = Languages.Contains(s.Language) ? s.Language : "auto";
         s.WeatherPlace ??= "";
         s.Columns = Math.Clamp(s.Columns, 1, 6);
         s.Pages = Math.Clamp(s.Pages, 1, 6);
+        if (!Enum.IsDefined(s.Edge)) s.Edge = Edge.Right;
+        s.BarHeight = double.IsFinite(s.BarHeight) ? Math.Clamp(s.BarHeight, 160, 700) : 300;
         s.PageNames = Enumerable.Range(0, 6).Select(i => (s.PageNames ?? new()).ElementAtOrDefault(i)?.Trim() ?? "")
             .Select(n => n.Length > 16 ? n[..16] : n).ToList();
         s.PricePerKwh = double.IsFinite(s.PricePerKwh) ? Math.Clamp(s.PricePerKwh, 0, 5) : .30;
@@ -174,7 +183,14 @@ public sealed class Settings
     }
 
     // Rough card heights, so automatic placement balances the columns by height, not by count.
-    public static double Weight(WidgetSlot w) => (w.Style == WidgetStyle.Ring ? .5 : w.Style == WidgetStyle.Minimal ? .35 : 1) * w.Kind switch
+    public static double Weight(WidgetSlot w) => w.Style switch
+    {
+        WidgetStyle.Ring or WidgetStyle.Tile => .5,
+        WidgetStyle.Minimal => .35,
+        WidgetStyle.Bar => .45,
+        WidgetStyle.Graph => .7,
+        _ => 1
+    } * w.Kind switch
     {
         WidgetKind.Cpu or WidgetKind.Gpu => 2,
         WidgetKind.Cooling or WidgetKind.Network or WidgetKind.Calendar => 1.7,
@@ -192,6 +208,17 @@ public sealed class Settings
     {
         weight ??= Weight;
         var visible = Widgets.Where(w => w.Visible && Math.Min(w.Page, Pages) == page).ToList();
+        if (Horizontal)
+        {
+            // A bar: one widget per column, left to right; two half-width tiles share a column.
+            var row = new List<List<WidgetSlot>>();
+            for (int i = 0; i < visible.Count; i++)
+            {
+                if (IsHalf(visible[i]) && i + 1 < visible.Count && IsHalf(visible[i + 1])) { row.Add(new() { visible[i], visible[i + 1] }); i++; }
+                else row.Add(new() { visible[i] });
+            }
+            return row.Count == 0 ? new() { new() } : row;
+        }
         int n = Columns;
         if (n < 2) return new() { visible };
         int Pinned(WidgetSlot w) => w.Column > 0 ? Math.Min(w.Column, n) - 1 : -1;
@@ -228,6 +255,11 @@ public sealed class Settings
             cols = cols.OrderBy(c => c.Count == 0 ? int.MaxValue : visible.IndexOf(c[0])).ToList();
         return cols;
     }
+
+    public static bool IsHalf(WidgetSlot w) => w.Style is WidgetStyle.Ring or WidgetStyle.Tile && HasStyles(w.Kind);
+
+    // Columns the sidebar needs: as set, or for a bar the most any register holds.
+    public int ColumnCount => Horizontal ? Math.Max(1, Enumerable.Range(1, Pages).Max(pg => Layout(page: pg).Count)) : Columns;
 
     public static bool IsHexColor(string v) => v.Length == 7 && v[0] == '#' && v[1..].All(Uri.IsHexDigit);
 }

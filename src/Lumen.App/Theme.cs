@@ -28,8 +28,27 @@ public sealed class Palette
     // amber and red stay, so a hot part still stands out in any colour scheme.
     // Secondary text is kept bright enough to read on glass over any wallpaper;
     // high contrast lifts every label close to the main text colour.
-    public static Palette For(bool dark, bool glass, double opacity, Color? accent, bool highContrast)
+    public static Palette For(bool dark, bool glass, double opacity, Color? accent, bool highContrast) => For(dark, glass, opacity, accent, highContrast, "graphite");
+
+    // Background tones: (dark surface, dark card, light surface, light card).
+    public static readonly (string Key, string Name, string DarkSurface, string DarkCard, string LightSurface, string LightCard)[] Backgrounds =
     {
+        ("graphite", "Graphite", "#0B0E14", "#171C25", "#ECEFF4", "#FFFFFF"),
+        ("black", "Black (OLED)", "#000000", "#0E0F12", "#E9E9EB", "#FFFFFF"),
+        ("midnight", "Midnight blue", "#060E26", "#10203F", "#E6ECF7", "#FBFCFF"),
+        ("ocean", "Deep sea", "#031A22", "#0B2A35", "#E3F0F2", "#FBFEFF"),
+        ("forest", "Forest", "#06180E", "#10261A", "#E6F0EA", "#FBFEFC"),
+        ("aubergine", "Aubergine", "#170A24", "#251536", "#EEE8F4", "#FEFCFF"),
+        ("wine", "Burgundy", "#1C070D", "#2E111A", "#F3E8EA", "#FFFCFC"),
+        ("mocha", "Mocha", "#1A120A", "#2A1F14", "#F1ECE6", "#FFFDFA"),
+        ("slate", "Slate", "#151A21", "#202833", "#E4E8EE", "#F8FAFC"),
+    };
+
+    public static Palette For(bool dark, bool glass, double opacity, Color? accent, bool highContrast, string background)
+    {
+        var bg = Backgrounds.FirstOrDefault(b => b.Key == background);
+        if (bg.Key is null) bg = Backgrounds[0];
+        Color Base(string hex, double a) { var c = Color.Parse(hex); return Color.FromArgb(glass ? (byte)Math.Round(Math.Clamp(a, 0, 1) * 255) : (byte)0xFF, c.R, c.G, c.B); }
         byte A(double a) => glass ? (byte)Math.Round(Math.Clamp(a, 0, 1) * 255) : (byte)0xFF;
         var ramp = dark
             ? new[] { Color.Parse("#4FB3FF"), Color.Parse("#45D3A8"), Color.Parse("#F5B544"), Color.Parse("#FF5D5D") }
@@ -44,8 +63,8 @@ public sealed class Palette
             ? new Palette
             {
                 Dark = true,
-                Surface = Color.FromArgb(A(opacity), 0x0B, 0x0E, 0x14),
-                Card = Color.FromArgb(A(opacity * .98), 0x17, 0x1C, 0x25),
+                Surface = Base(bg.DarkSurface, opacity),
+                Card = Base(bg.DarkCard, opacity * .98),
                 Stroke = Color.FromArgb(0x1C, 0xFF, 0xFF, 0xFF),
                 Ink = Color.Parse("#EEF2F7"),
                 Soft = Color.Parse(highContrast ? "#E1E7EF" : "#BAC4D1"),
@@ -56,8 +75,8 @@ public sealed class Palette
             : new Palette
             {
                 Dark = false,
-                Surface = Color.FromArgb(A(opacity), 0xEC, 0xEF, 0xF4),
-                Card = Color.FromArgb(A(opacity + .22), 0xFF, 0xFF, 0xFF),
+                Surface = Base(bg.LightSurface, opacity),
+                Card = Base(bg.LightCard, opacity + .22),
                 Stroke = Color.FromArgb(0x16, 0x10, 0x18, 0x28),
                 Ink = Color.Parse("#12161C"),
                 Soft = Color.Parse(highContrast ? "#1E252E" : "#46505E"),
@@ -68,7 +87,11 @@ public sealed class Palette
     }
 
     public static readonly (string Hex, string Name)[] Presets =
-        { ("#3B82F6", "Blue"), ("#8B5CF6", "Violet"), ("#10B981", "Green"), ("#F97316", "Orange"), ("#EC4899", "Pink") };
+    {
+        ("#3B82F6", "Blue"), ("#06B6D4", "Cyan"), ("#14B8A6", "Teal"), ("#10B981", "Green"), ("#84CC16", "Lime"),
+        ("#EAB308", "Gold"), ("#F97316", "Orange"), ("#EF4444", "Red"), ("#F43F5E", "Rose"), ("#EC4899", "Pink"),
+        ("#D946EF", "Magenta"), ("#8B5CF6", "Violet"), ("#6366F1", "Indigo"), ("#94A3B8", "Silver")
+    };
 
     // 0 → blue, .5 → mint, .75 → amber, 1 → red.
     public Color At(double t)

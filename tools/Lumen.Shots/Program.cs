@@ -65,7 +65,7 @@ Snapshot Desktop(Snapshot s) => s with { Battery = null };
 Bitmap Wall(bool dark, bool blur) => new(Path.Combine(assets, $"wall-{(dark ? "dark" : "light")}{(blur ? "-blur" : "")}.jpg"));
 
 Palette PaletteFor(Settings s, bool dark) => Palette.For(dark, s.Glass, s.Opacity,
-    s.Colors == Settings.StateColors ? null : s.Colors == Settings.WindowsAccent ? Color.Parse("#0078D4") : Color.Parse(s.Colors), s.HighContrast);
+    s.Colors == Settings.StateColors ? null : s.Colors == Settings.WindowsAccent ? Color.Parse("#0078D4") : Color.Parse(s.Colors), s.HighContrast, s.Background);
 
 SidebarView View(Settings settings, bool dark, Func<Snapshot, Snapshot> tweak)
 {
@@ -107,6 +107,21 @@ void Sidebar(string name, Settings settings, bool dark, Func<Snapshot, Snapshot>
 void DesktopShot(string name, Settings settings, bool dark, int screenHeight = ScreenH, Control? extra = null)
 {
     var view = View(settings, dark, Desktop);
+    if (settings.Horizontal)
+    {
+        // A bar across the whole width, above the taskbar or at the top of the screen.
+        var barStrip = new Panel
+        {
+            Height = settings.BarHeight,
+            VerticalAlignment = settings.Edge == Edge.Top ? VerticalAlignment.Top : VerticalAlignment.Bottom,
+            Margin = new Thickness(0, 0, 0, settings.Edge == Edge.Top ? 0 : Taskbar),
+            ClipToBounds = true,
+            Children = { new Image { Source = Wall(dark, true), Stretch = Stretch.UniformToFill }, view }
+        };
+        var taskbar = new Border { Height = Taskbar, VerticalAlignment = VerticalAlignment.Bottom, Background = new SolidColorBrush(dark ? Color.FromArgb(0xE6, 0x1C, 0x1F, 0x26) : Color.FromArgb(0xE6, 0xF3, 0xF3, 0xF3)) };
+        Save(new Window { Width = ScreenW, Height = screenHeight, Content = new Panel { Children = { new Image { Source = Wall(dark, false), Stretch = Stretch.UniformToFill }, barStrip, taskbar } } }, name);
+        return;
+    }
     var strip = new Panel
     {
         Width = settings.FullScreen ? ScreenW : SidebarView.WindowWidth(settings),
@@ -177,6 +192,23 @@ DesktopShot("desktop-two-columns-user", new Settings
     Widgets = Only(WidgetKind.Cpu, WidgetKind.Gpu, WidgetKind.Cooling, WidgetKind.Memory, WidgetKind.System, WidgetKind.Drives, WidgetKind.Network),
     ShowIntegratedGpu = false
 }, true);
+// A bar at the bottom: rings, tiles and bars side by side.
+var bottom = new Settings { Language = "de", Edge = Edge.Bottom, BarHeight = 300 };
+foreach (var w in bottom.Widgets)
+{
+    w.Visible = w.Kind is WidgetKind.Clock or WidgetKind.Cpu or WidgetKind.Gpu or WidgetKind.Memory or WidgetKind.Ping or WidgetKind.Power or WidgetKind.Network or WidgetKind.Drives or WidgetKind.Weather;
+    w.Style = w.Kind switch { WidgetKind.Cpu or WidgetKind.Gpu => WidgetStyle.Ring, WidgetKind.Memory or WidgetKind.Ping => WidgetStyle.Tile, WidgetKind.Power or WidgetKind.Weather => WidgetStyle.Graph, _ => WidgetStyle.Standard };
+}
+DesktopShot("desktop-bar-bottom", bottom, true);
+var top = new Settings { Language = "de", Edge = Edge.Top, BarHeight = 420, Colors = "#06B6D4", Background = "midnight" };
+foreach (var w in top.Widgets) w.Visible = w.Kind is WidgetKind.Clock or WidgetKind.Cpu or WidgetKind.Gpu or WidgetKind.Cooling or WidgetKind.Memory or WidgetKind.Network or WidgetKind.Drives;
+DesktopShot("desktop-bar-top", top, true);
+// The new styles, and some backgrounds and colours.
+var newStyles = new Settings { Language = "de", Density = Density.Comfortable, Widgets = Only(WidgetKind.Cpu, WidgetKind.Gpu, WidgetKind.Memory, WidgetKind.Ping, WidgetKind.Power, WidgetKind.Network, WidgetKind.Weather) };
+foreach (var w in newStyles.Widgets) w.Style = w.Kind switch { WidgetKind.Cpu => WidgetStyle.Graph, WidgetKind.Gpu => WidgetStyle.Bar, WidgetKind.Memory or WidgetKind.Ping => WidgetStyle.Tile, WidgetKind.Power => WidgetStyle.Bar, WidgetKind.Network => WidgetStyle.Graph, _ => WidgetStyle.Tile };
+Sidebar("sidebar-new-styles", newStyles, true);
+foreach (var (bgKey, accent) in new[] { ("black", "#EF4444"), ("aubergine", "#D946EF"), ("forest", "#84CC16"), ("mocha", "#EAB308") })
+    Sidebar("sidebar-bg-" + bgKey, new Settings { Language = "de", Density = Density.Comfortable, Background = bgKey, Colors = accent, Widgets = Only(WidgetKind.Clock, WidgetKind.Cpu, WidgetKind.Memory) }, true);
 // Named registers in a single sidebar.
 var named = new Settings { Language = "de", Pages = 3, PageNames = new() { "Hardware", "Gaming", "Info", "", "", "" } };
 foreach (var w in named.Widgets) w.Page = w.Kind is WidgetKind.Fps or WidgetKind.Gpu ? 2 : w.Kind is WidgetKind.Weather or WidgetKind.Calendar ? 3 : 1;

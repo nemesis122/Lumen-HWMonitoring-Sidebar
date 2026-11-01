@@ -45,7 +45,14 @@ public sealed class SidebarView : Border
         var m = metrics;
         Background = Palette.Brush(p.Surface);
         BorderBrush = Palette.Brush(p.Stroke);
-        BorderThickness = settings.FullScreen ? new Thickness(0) : settings.Edge == Edge.Right ? new Thickness(1, 0, 0, 0) : new Thickness(0, 0, 1, 0);
+        BorderThickness = settings.Edge switch
+        {
+            _ when settings.FullScreen && !settings.Horizontal => new Thickness(0),
+            Edge.Right => new Thickness(1, 0, 0, 0),
+            Edge.Top => new Thickness(0, 0, 0, 1),
+            Edge.Bottom => new Thickness(0, 1, 0, 0),
+            _ => new Thickness(0, 0, 1, 0)
+        };
 
         // Top bar: wordmark, live state, settings.
         var mark = new Avalonia.Controls.Shapes.Path
@@ -125,9 +132,10 @@ public sealed class SidebarView : Border
             Child = Ui.Columns("Auto,*", shield, hintBody)
         };
 
-        for (int i = 0; i < settings.Columns; i++) lists.Add(new StackPanel());
+        for (int i = 0; i < settings.ColumnCount; i++) lists.Add(new StackPanel());
         // "Automatic" fills the height exactly; the other densities scroll when there is too much.
-        bool fill = settings.Density == Density.Fit;
+        // A bar always fits its height.
+        bool fill = settings.Density == Density.Fit || settings.Horizontal;
         fit = new FitPanel(lists, settings.TextScale, fill, m.Gap);
         BuildCards();
         Control body = fill ? fit : new ScrollViewer
@@ -183,10 +191,11 @@ public sealed class SidebarView : Border
                 var card = Cards.Create(slot.Kind, slot.Style, index, p, metrics, settings);
                 widgets.Add((IWidget)card);
                 Remember(slot.Kind, card);
-                // Two ring tiles in a row share one line.
-                if (slot.Style == WidgetStyle.Ring && card is RingTile && i + 1 < items.Count && items[i + 1].slot.Style == WidgetStyle.Ring && Settings.HasStyles(items[i + 1].slot.Kind))
+                // Two half-width tiles (rings, number tiles) in a row share one line.
+                static bool Half(WidgetSlot w) => Settings.IsHalf(w);
+                if (Half(slot) && card is RingTile or NumberTile && i + 1 < items.Count && Half(items[i + 1].slot))
                 {
-                    var next = Cards.Create(items[i + 1].slot.Kind, WidgetStyle.Ring, items[i + 1].index, p, metrics, settings);
+                    var next = Cards.Create(items[i + 1].slot.Kind, items[i + 1].slot.Style, items[i + 1].index, p, metrics, settings);
                     widgets.Add((IWidget)next);
                     Remember(items[i + 1].slot.Kind, next);
                     var pair = new Grid { ColumnDefinitions = new ColumnDefinitions($"*,{metrics.Gap},*") };
@@ -282,7 +291,7 @@ public sealed class SidebarView : Border
         foreach (var w in widgets) w.Update(s, h);
         // With two columns, place automatic widgets once more by their real heights, so both
         // columns come out about equally tall and nothing has to be stretched to fill.
-        if (settings.Columns >= 2 && !balanced)
+        if (settings.Columns >= 2 && !settings.Horizontal && !balanced)
         {
             balanced = true;
             Dispatcher.UIThread.Post(Rebalance, DispatcherPriority.Background);
@@ -311,7 +320,14 @@ public sealed class FitPanel : Panel
 
     public void SetGap(double value) { gap = value; InvalidateMeasure(); }
 
-    private double ColumnWidth(double w) => (w - gap * (lists.Count - 1)) / lists.Count;
+    // Columns with something in them; a bar's register with fewer widgets leaves the rest empty.
+    private List<StackPanel> Active()
+    {
+        var a = lists.Where(l => l.Children.Any(c => c.IsVisible)).ToList();
+        return a.Count > 0 ? a : lists.Take(1).ToList();
+    }
+
+    private double ColumnWidth(double w) { int n = Active().Count; return (w - gap * (n - 1)) / n; }
 
     private static int Gaps(StackPanel l) => Math.Max(1, l.Children.Count(c => c.IsVisible) - 1);
 
@@ -426,9 +442,11 @@ public sealed class FitPanel : Panel
     protected override Size ArrangeOverride(Size final)
     {
         double col = ColumnWidth(final.Width);
-        for (int i = 0; i < lists.Count; i++)
+        var active = Active();
+        foreach (var l in lists.Except(active)) l.Arrange(new Rect(0, 0, 0, 0));
+        for (int i = 0; i < active.Count; i++)
         {
-            var l = lists[i];
+            var l = active[i];
             l.RenderTransformOrigin = new RelativePoint(0, 0, RelativeUnit.Absolute);
             l.RenderTransform = new ScaleTransform(applied, applied);
             l.Arrange(new Rect(i * (col + gap), 0, col / applied, l.DesiredSize.Height));

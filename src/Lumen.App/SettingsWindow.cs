@@ -109,6 +109,7 @@ public sealed class SettingsWindow : Window
             Row(T("Language"), Choice(languages, langIndex, i => s.Language = i == 0 ? "auto" : L.Choices[i - 1].Code, rebuild: true)),
             Row(T("Theme"), Choice(new[] { T("Like Windows"), T("Dark"), T("Light") }, (int)s.Theme, i => s.Theme = (ThemeMode)i)),
             Row(T("Colours"), Choice(colorNames, colorIndex, i => s.Colors = i == 0 ? Settings.StateColors : i == 1 ? Settings.WindowsAccent : Palette.Presets[i - 2].Hex), colorIndex == 0 ? null : T("Hot readings still turn amber and red.")),
+            Row(T("Background"), Choice(Palette.Backgrounds.Select(b => T(b.Name)).ToList(), Math.Max(0, Array.FindIndex(Palette.Backgrounds, b => b.Key == s.Background)), i => s.Background = Palette.Backgrounds[i].Key), T("Tone of the sidebar and the cards.")),
             Row(T("Smooth transitions"), Toggle(s.SmoothTransitions, v => s.SmoothTransitions = v), T("Numbers count, bars glide and charts scroll smoothly.")),
             Row(T("Hardware names"), Toggle(s.ShowNames, v => s.ShowNames = v), T("Model names under the titles, e.g. Ryzen 9 5900X.")),
             Row(T("High contrast"), Toggle(s.HighContrast, v => s.HighContrast = v), T("All labels in full brightness.")),
@@ -117,16 +118,18 @@ public sealed class SettingsWindow : Window
             Row(T("Text size"), Slide(.85, 1.3, .05, s.TextScale, v => s.TextScale = v, v => $"{v * 100:0} %"))) }));
 
         pages.Add((T("Layout"), Glyphs.Columns, new[] { Section(T("Layout"),
-            Row(T("Columns"), Choice(new[] { "1", "2", "3", "4", "5", "6" }, s.Columns - 1, i => s.Columns = i + 1, rebuild: true), T("Several columns side by side; each is as wide as set below, everything stays large.")),
+            s.Horizontal ? null : Row(T("Columns"), Choice(new[] { "1", "2", "3", "4", "5", "6" }, s.Columns - 1, i => s.Columns = i + 1, rebuild: true), T("Several columns side by side; each is as wide as set below, everything stays large.")),
             Row(T("Registers"), Choice(new[] { "1", "2", "3", "4", "5", "6" }, s.Pages - 1, i => s.Pages = i + 1, rebuild: true), T("Pages at the top; each widget goes on one of them. Switch by click or mouse wheel.")),
             s.Pages > 1 ? WideRow(T("Register names"), PageNameEditor(), T("Shown at the top instead of 1, 2, 3; leave empty for the number.")) : null,
-            Row(T("Whole screen"), Toggle(s.FullScreen, v => s.FullScreen = v), T("Covers the whole monitor up to the taskbar; the columns share its width.")),
-            Row(T("Density"), Choice(new[] { T("Automatic"), T("Comfortable"), T("Compact") }, (int)s.Density, i => s.Density = (Density)i), T("Automatic fills the height up to the taskbar, without scrolling.")),
-            Row(T("Width"), Slide(240, 440, 10, s.Width, v => s.Width = v, v => $"{v:0} px"))) }));
+            s.Horizontal ? null : Row(T("Whole screen"), Toggle(s.FullScreen, v => s.FullScreen = v), T("Covers the whole monitor up to the taskbar; the columns share its width.")),
+            s.Horizontal ? null : Row(T("Density"), Choice(new[] { T("Automatic"), T("Comfortable"), T("Compact") }, (int)s.Density, i => s.Density = (Density)i), T("Automatic fills the height up to the taskbar, without scrolling.")),
+            s.Horizontal ? null : Row(T("Width"), Slide(240, 440, 10, s.Width, v => s.Width = v, v => $"{v:0} px"))) }));
 
         var names = screens();
         pages.Add((T("Position"), Glyphs.System, new[] { Section(T("Position"),
-            Row(T("Screen edge"), Choice(new[] { T("Right"), T("Left") }, (int)s.Edge, i => s.Edge = (Edge)i)),
+            Row(T("Screen edge"), Choice(new[] { T("Right"), T("Left"), T("Top (bar)"), T("Bottom (bar)") }, (int)s.Edge, i => s.Edge = (Edge)i, rebuild: true),
+                s.Horizontal ? T("A bar across the whole width; the widgets sit side by side.") : null),
+            s.Horizontal ? Row(T("Bar height"), Slide(160, 700, 10, s.BarHeight, v => s.BarHeight = v, v => $"{v:0} px"), T("Ring, Tile and Bar styles read best in a low bar.")) : null,
             Row(T("Screen"), Choice(names.Count > 0 ? names : new[] { T("Main screen") }, Math.Min(s.Screen, Math.Max(0, names.Count - 1)), i => s.Screen = i)),
             Row(T("Always on top"), Toggle(s.Topmost, v => s.Topmost = v)),
             Row(T("Reserve space"), Toggle(s.ReserveSpace, v => s.ReserveSpace = v), T("Maximised windows stop before the sidebar.")),
@@ -303,7 +306,7 @@ public sealed class SettingsWindow : Window
         // Where the widget lands, so the list reads as the layout without opening every entry.
         var place = new List<string>();
         if (s.Pages > 1) place.Add(s.PageName(Math.Min(slot.Page, s.Pages)));
-        if (s.Columns > 1 && slot.Column > 0) place.Add(F("Column {0}", Math.Min(slot.Column, s.Columns)));
+        if (s.Columns > 1 && !s.Horizontal && slot.Column > 0) place.Add(F("Column {0}", Math.Min(slot.Column, s.Columns)));
         if (Settings.HasStyles(slot.Kind) && slot.Style != WidgetStyle.Standard) place.Add(T(slot.Style.ToString()));
         var where = Ui.Text(string.Join(" · ", place), 11.5, p.Soft);
         where.VerticalAlignment = VerticalAlignment.Center;
@@ -318,8 +321,8 @@ public sealed class SettingsWindow : Window
             // Style and column first, then the single values.
             var options = new WrapPanel { Margin = new Thickness(28, 0, 0, 0) };
             if (Settings.HasStyles(slot.Kind))
-                options.Children.Add(Ui.Row(8, Ui.Text(T("Style"), 12.5, p.Soft), Choice(new[] { T("Standard"), T("Ring"), T("Minimal") }, (int)slot.Style, i => slot.Style = (WidgetStyle)i, small: true)));
-            if (s.Columns > 1)
+                options.Children.Add(Ui.Row(8, Ui.Text(T("Style"), 12.5, p.Soft), Choice(new[] { T("Standard"), T("Ring"), T("Minimal"), T("Bar"), T("Graph"), T("Tile") }, (int)slot.Style, i => slot.Style = (WidgetStyle)i, small: true)));
+            if (s.Columns > 1 && !s.Horizontal)
                 options.Children.Add(Ui.Row(8, Ui.Text(T("Column"), 12.5, p.Soft), Choice(new[] { T("Automatic") }.Concat(Enumerable.Range(1, s.Columns).Select(n => n.ToString())).ToList(), Math.Min(slot.Column, s.Columns), i => slot.Column = i, small: true)));
             if (s.Pages > 1)
                 options.Children.Add(Ui.Row(8, Ui.Text(T("Register"), 12.5, p.Soft), Choice(Enumerable.Range(1, s.Pages).Select(s.PageName).ToList(), Math.Min(slot.Page, s.Pages) - 1, i => slot.Page = i + 1, small: true)));

@@ -79,13 +79,26 @@ public static class AppBar
     private static readonly HashSet<IntPtr> registered = new();
 
     // Returns the strip actually granted (in physical pixels), which may differ from the request.
-    public static (int X, int Y, int W, int H) Reserve(IntPtr hwnd, bool right, int left, int top, int rightEdge, int bottom, int width)
+    // size is the strip's width at the left or right edge, its height at the top or bottom.
+    public static (int X, int Y, int W, int H) Reserve(IntPtr hwnd, Lumen.Core.Edge edge, int left, int top, int rightEdge, int bottom, int size)
     {
-        var d = new Data { cbSize = Marshal.SizeOf<Data>(), hWnd = hwnd, uEdge = right ? 2u : 0u };
+        uint side = edge switch { Lumen.Core.Edge.Left => 0u, Lumen.Core.Edge.Top => 1u, Lumen.Core.Edge.Right => 2u, _ => 3u };
+        var d = new Data { cbSize = Marshal.SizeOf<Data>(), hWnd = hwnd, uEdge = side };
         if (registered.Add(hwnd)) { d.uCallbackMessage = RegisterWindowMessage("LumenAppBar"); SHAppBarMessage(New, ref d); }
-        d.rc = new Rect { Top = top, Bottom = bottom, Left = right ? rightEdge - width : left, Right = right ? rightEdge : left + width };
+        d.rc = new Rect { Left = left, Top = top, Right = rightEdge, Bottom = bottom };
+        void Fit()
+        {
+            switch (side)
+            {
+                case 0: d.rc.Right = d.rc.Left + size; break;
+                case 1: d.rc.Bottom = d.rc.Top + size; break;
+                case 2: d.rc.Left = d.rc.Right - size; break;
+                default: d.rc.Top = d.rc.Bottom - size; break;
+            }
+        }
+        Fit();
         SHAppBarMessage(QueryPos, ref d);
-        if (right) d.rc.Left = d.rc.Right - width; else d.rc.Right = d.rc.Left + width;
+        Fit();
         SHAppBarMessage(SetPos, ref d);
         return (d.rc.Left, d.rc.Top, d.rc.Right - d.rc.Left, d.rc.Bottom - d.rc.Top);
     }

@@ -74,19 +74,39 @@ public sealed class SidebarWindow : Window
         var screen = all[Math.Clamp(s.Screen, 0, all.Count - 1)];
         double scale = screen.Scaling;
         var work = screen.WorkingArea;
-        // Full screen: the whole working area, from the left edge to the right, top to taskbar.
-        double logical = s.FullScreen ? work.Width / scale : SidebarView.WindowWidth(s);
-        int width = s.FullScreen ? work.Width : (int)Math.Round(logical * scale);
-        bool right = s.Edge == Edge.Right;
-        int x = s.FullScreen ? work.X : right ? work.Right - width : work.X, y = work.Y, h = work.Height;
         var handle = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
+        int x, y, width, h;
+        double logical;
+        if (s.Horizontal)
+        {
+            // A bar across the whole width, at the top or above the taskbar.
+            width = work.Width;
+            logical = width / scale;
+            h = (int)Math.Round(s.BarHeight * scale);
+            x = work.X;
+            y = s.Edge == Edge.Top ? work.Y : work.Bottom - h;
+        }
+        else
+        {
+            // Full screen: the whole working area, from the left edge to the right, top to taskbar.
+            logical = s.FullScreen ? work.Width / scale : SidebarView.WindowWidth(s);
+            width = s.FullScreen ? work.Width : (int)Math.Round(logical * scale);
+            x = s.FullScreen ? work.X : s.Edge == Edge.Right ? work.Right - width : work.X;
+            y = work.Y; h = work.Height;
+        }
         if (OperatingSystem.IsWindows() && handle != IntPtr.Zero)
         {
-            if (s.ReserveSpace && !s.FullScreen)
+            if (s.ReserveSpace && !(s.FullScreen && !s.Horizontal))
             {
                 // The work area already excludes our own strip once reserved, so ask against the full bounds.
                 var b = screen.Bounds;
-                (x, y, _, h) = AppBar.Reserve(handle, right, b.X, work.Y, b.Right, work.Bottom, width);
+                if (s.Horizontal)
+                {
+                    int bx, bw;
+                    (bx, y, bw, h) = AppBar.Reserve(handle, s.Edge, b.X, b.Y, b.Right, b.Bottom, h);
+                    x = bx; width = bw; logical = width / scale;
+                }
+                else (x, y, _, h) = AppBar.Reserve(handle, s.Edge, b.X, work.Y, b.Right, work.Bottom, width);
                 reserved = true;
             }
             else if (reserved) { AppBar.Release(handle); reserved = false; }
