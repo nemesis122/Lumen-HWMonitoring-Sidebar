@@ -329,7 +329,7 @@ public sealed class NetworkCard : Card
     {
         var n = s.Network;
         Subtitle = n?.Name ?? "";
-        Aside = Format.Link(n?.LinkBitsPerSecond);
+        Aside = Shows("net.link") ? Format.Link(n?.LinkBitsPerSecond) : "";
         var (dn, du) = Format.Split(Format.Rate(n?.DownloadBytesPerSecond));
         var (un, uu) = Format.Split(Format.Rate(n?.UploadBytesPerSecond));
         down.Set(dn, du, P.Ink);
@@ -685,8 +685,8 @@ public static class Cards
         WidgetKind.Cooling => new[] { ("cooling.fans", T("Fans")), ("cooling.board", T("Board temperatures")) },
         WidgetKind.Memory => new[] { ("mem.bar", T("Segment bar")), ("mem.free", T("Available")), ("mem.total", T("Installed")), ("mem.peak", T("2-min peak")) },
         WidgetKind.Processes => new[] { ("proc.memory", "RAM") },
-        WidgetKind.Drives => new[] { ("drives.io", T("Read and write rates")) },
-        WidgetKind.Network => new[] { ("net.chart", T("History chart")), ("net.use", T("Link use")), ("net.peak", T("2-min peak")), ("net.address", T("Address")) },
+        WidgetKind.Drives => new[] { ("drives.io", T("Read and write rates")), ("drives.temps", T("Each drive")) },
+        WidgetKind.Network => new[] { ("net.link", T("Link speed")), ("net.chart", T("History chart")), ("net.use", T("Link use")), ("net.peak", T("2-min peak")), ("net.address", T("Address")) },
         WidgetKind.Fps => new[] { ("fps.chart", T("History chart")), ("fps.frametime", T("Frame time")) },
         WidgetKind.Ping => new[] { ("ping.chart", T("History chart")), ("ping.jitter", T("Jitter")), ("ping.loss", T("Loss")), ("ping.target", T("Target")) },
         WidgetKind.Power => new[] { ("power.chart", T("History chart")), ("power.cost", T("Costs")), ("power.note", T("Note on the estimate")) },

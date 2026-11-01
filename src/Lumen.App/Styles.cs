@@ -133,6 +133,14 @@ public static class Summaries
                 return new(Glyphs.System, T("Uptime"), num, unit, p.Ink, Math.Clamp((y?.Uptime.TotalDays ?? 0) / 7, 0, 1),
                     y?.Os ?? "", Array.Empty<double>(), null);
             }
+            case WidgetKind.Drives:
+            {
+                // The hottest drive leads; the caption counts them.
+                var hot = s.Disks.Where(d => d.Temperature != null).OrderByDescending(d => d.Temperature).FirstOrDefault();
+                string count = $"{s.Disks.Count} {(s.Disks.Count == 1 ? T("drive") : T("drives"))}";
+                return new(Glyphs.Drive, T("Drives"), T2(hot?.Temperature), U, Heat(hot?.Temperature), Format.Heat(hot?.Temperature),
+                    count, Array.Empty<double>(), null);
+            }
             case WidgetKind.DataUsage:
             {
                 var u = s.Usage;
@@ -159,7 +167,8 @@ public static class Summaries
         [WidgetKind.Memory] = new[] { "mem.free", "mem.total", "mem.peak" },
         [WidgetKind.Battery] = new[] { "battery.time", "battery.rate", "battery.health" },
         [WidgetKind.Cooling] = new[] { "cooling.fans", "cooling.board" },
-        [WidgetKind.Network] = new[] { "net.use", "net.peak", "net.address" },
+        [WidgetKind.Network] = new[] { "net.link", "net.use", "net.peak", "net.address" },
+        [WidgetKind.Drives] = new[] { "drives.temps", "drives.io" },
         [WidgetKind.Fps] = new[] { "fps.frametime" },
         [WidgetKind.Ping] = new[] { "ping.jitter", "ping.loss", "ping.target" },
         [WidgetKind.Power] = new[] { "power.cost" },
@@ -171,8 +180,9 @@ public static class Summaries
     // Which of a widget's values a style can show: all of them in Standard; in the others the
     // small figures, plus the history chart in Graph and Minimal.
     public static bool Supports(WidgetKind kind, WidgetStyle style, string key) =>
-        style == WidgetStyle.Standard || !Settings.HasStyles(kind)
-        || ExtraKeys.TryGetValue(kind, out var keys) && keys.Contains(key)
+        // The Standard drives card always lists every drive; this switch is for the compact styles.
+        style == WidgetStyle.Standard || !Settings.HasStyles(kind) ? key != "drives.temps"
+        : ExtraKeys.TryGetValue(kind, out var keys) && keys.Contains(key)
         || style is WidgetStyle.Graph or WidgetStyle.Minimal && key == ChartKey(kind);
 
     // The small figures for the compact styles: (label, value), only those the user keeps switched on.
@@ -215,11 +225,20 @@ public static class Summaries
             case WidgetKind.Network:
             {
                 var n = s.Network;
+                Add("net.link", T("Link speed"), Format.Link(n?.LinkBitsPerSecond));
                 Add("net.use", T("Link use"), Format.Bits(n?.DownloadBytesPerSecond * 8));
                 Add("net.peak", T("2-min peak"), Format.Rate(Peak("net.down")));
                 Add("net.address", T("Address"), n?.Address ?? Format.Missing);
                 break;
             }
+            case WidgetKind.Drives:
+                // One figure per drive, by its letters (or short name), then the combined rates.
+                if (set.Shows("drives.temps"))
+                    foreach (var d in s.Disks)
+                        list.Add((d.Letters.Length > 0 ? d.Letters : Names.Short(d.Name), Tc(d.Temperature)));
+                Add("drives.io", T("Read"), Format.Rate(s.Disks.Sum(d => d.ReadBytesPerSecond ?? 0)));
+                Add("drives.io", T("Write"), Format.Rate(s.Disks.Sum(d => d.WriteBytesPerSecond ?? 0)));
+                break;
             case WidgetKind.Fps:
                 Add("fps.frametime", T("Frame time"), s.Fps is { } f ? Format.Milliseconds(f.FrameTimeMs) : Format.Missing);
                 break;

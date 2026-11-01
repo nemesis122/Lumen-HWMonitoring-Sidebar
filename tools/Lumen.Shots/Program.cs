@@ -211,8 +211,8 @@ foreach (var w in barCols.Widgets) w.Visible = w.Kind is WidgetKind.Clock or Wid
 foreach (var w in barCols.Widgets) w.Style = w.Kind is WidgetKind.Memory or WidgetKind.Ping or WidgetKind.Power or WidgetKind.DataUsage ? WidgetStyle.Bar : WidgetStyle.Standard;
 DesktopShot("desktop-bar-columns", barCols, true);
 // The new styles, and some backgrounds and colours.
-var newStyles = new Settings { Language = "de", Density = Density.Comfortable, Widgets = Only(WidgetKind.Cpu, WidgetKind.Gpu, WidgetKind.Memory, WidgetKind.Ping, WidgetKind.Power, WidgetKind.Network, WidgetKind.Weather) };
-foreach (var w in newStyles.Widgets) w.Style = w.Kind switch { WidgetKind.Cpu => WidgetStyle.Graph, WidgetKind.Gpu => WidgetStyle.Bar, WidgetKind.Memory or WidgetKind.Ping => WidgetStyle.Tile, WidgetKind.Power => WidgetStyle.Bar, WidgetKind.Network => WidgetStyle.Graph, _ => WidgetStyle.Tile };
+var newStyles = new Settings { Language = "de", Density = Density.Comfortable, Widgets = Only(WidgetKind.Cpu, WidgetKind.Gpu, WidgetKind.Memory, WidgetKind.Ping, WidgetKind.Network, WidgetKind.Drives, WidgetKind.Power) };
+foreach (var w in newStyles.Widgets) w.Style = w.Kind switch { WidgetKind.Cpu => WidgetStyle.Graph, WidgetKind.Gpu => WidgetStyle.Bar, WidgetKind.Memory or WidgetKind.Ping => WidgetStyle.Tile, WidgetKind.Power => WidgetStyle.Tile, WidgetKind.Drives => WidgetStyle.Bar, WidgetKind.Network => WidgetStyle.Graph, _ => WidgetStyle.Tile };
 Sidebar("sidebar-new-styles", newStyles, true);
 foreach (var (bgKey, accent) in new[] { ("black", "#EF4444"), ("aubergine", "#D946EF"), ("forest", "#84CC16"), ("mocha", "#EAB308") })
     Sidebar("sidebar-bg-" + bgKey, new Settings { Language = "de", Density = Density.Comfortable, Background = bgKey, Colors = accent, Widgets = Only(WidgetKind.Clock, WidgetKind.Cpu, WidgetKind.Memory) }, true);

@@ -284,6 +284,10 @@ Above 100 % the sidebar grows wider by the same amount.|Über 100 % wird die Sid
 Nothing on this register yet – choose its widgets in the settings under Widgets → Customise → Register.|Noch nichts auf diesem Register – Widgets dafür in den Einstellungen unter Widgets → Anpassen → Register wählen.|Rien sur cette page pour l'instant – choisissez ses widgets dans les réglages sous Widgets → Personnaliser → Page.|Ancora niente in questa pagina – scegli i widget nelle impostazioni in Widget → Personalizza → Pagina.|Aún no hay nada en esta página – elige sus widgets en los ajustes, en Widgets → Personalizar → Página.|Ainda nada nesta página – escolha os widgets nas definições em Widgets → Personalizar → Página.
 Style for all widgets|Stil für alle Widgets|Style pour tous les widgets|Stile per tutti i widget|Estilo para todos los widgets|Estilo para todos os widgets
 One click sets every widget with styles; each one can still be changed below.|Ein Klick stellt alle Widgets mit Stilen um; jedes lässt sich unten weiterhin einzeln ändern.|Un clic règle tous les widgets à styles ; chacun reste modifiable ci-dessous.|Un clic imposta tutti i widget con stili; ognuno resta modificabile qui sotto.|Un clic cambia todos los widgets con estilos; cada uno se puede cambiar abajo.|Um clique muda todos os widgets com estilos; cada um pode ser alterado abaixo.
+Link speed|Verbindung|Liaison|Collegamento|Enlace|Ligação
+Each drive|Jedes Laufwerk|Chaque disque|Ogni unità|Cada unidad|Cada unidade
+Read|Lesen|Lecture|Lettura|Lectura|Leitura
+Write|Schreiben|Écriture|Scrittura|Escritura|Escrita
 Register names|Register-Namen|Noms des pages|Nomi delle pagine|Nombres de páginas|Nomes das páginas
 Shown at the top instead of 1, 2, 3; leave empty for the number.|Steht oben statt 1, 2, 3; leer lassen für die Nummer.|Affiché en haut au lieu de 1, 2, 3 ; vide = numéro.|Mostrato in alto al posto di 1, 2, 3; vuoto = numero.|Se muestra arriba en lugar de 1, 2, 3; vacío = número.|Mostrado no topo em vez de 1, 2, 3; vazio = número.
 Whole screen|Ganzer Bildschirm|Plein écran|Schermo intero|Pantalla completa|Ecrã inteiro
