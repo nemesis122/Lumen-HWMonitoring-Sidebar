@@ -421,7 +421,12 @@ public sealed class FitPanel : Panel
         return a.Count > 0 ? a : lists.Take(1).ToList();
     }
 
-    private double ColumnWidth(double w) { int n = Math.Max(1, Active().Count); return (w - gap * (n - 1)) / n; }
+    private double ColumnWidth(double w)
+    {
+        int n = Math.Max(1, Active().Count);
+        double col = (w - gap * (n - 1)) / n;
+        return double.IsFinite(col) ? Math.Max(1, col) : 1;
+    }
 
     private static int Gaps(StackPanel l) => Math.Max(1, l.Children.Count(c => c.IsVisible) - 1);
 
@@ -487,6 +492,9 @@ public sealed class FitPanel : Panel
             double most = scale * 1.08;
             for (int i = 0; i < 4 && tallest * s < h - .5 && s < most - .001; i++) { s = Math.Min(most, h / tallest); tallest = MeasureAll(col, s); }
             if (tallest * s > h) s = h / Math.Max(1, tallest);
+            // A strip with (almost) no height – a bar row squeezed by the window – must not reach
+            // a zero or broken scale: that makes every width infinite and the layout fails.
+            if (!double.IsFinite(s) || s < .05) s = .05;
         }
         foreach (var l in lists)
         {
@@ -544,7 +552,9 @@ public sealed class FitPanel : Panel
             var l = active[i];
             l.RenderTransformOrigin = new RelativePoint(0, 0, RelativeUnit.Absolute);
             l.RenderTransform = new ScaleTransform(applied, applied);
-            l.Arrange(new Rect(i * (col + gap), 0, col / applied, l.DesiredSize.Height));
+            double scale = double.IsFinite(applied) && applied > .01 ? applied : 1;
+            double height = double.IsFinite(l.DesiredSize.Height) ? Math.Max(0, l.DesiredSize.Height) : 0;
+            l.Arrange(new Rect(i * (col + gap), 0, col / scale, height));
         }
         return final;
     }

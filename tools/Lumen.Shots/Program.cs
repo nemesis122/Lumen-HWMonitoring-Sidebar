@@ -262,6 +262,24 @@ foreach (var (bgKey, accent) in new[] { ("black", "#EF4444"), ("aubergine", "#D9
     var m = named2.Widgets.First(w => w.Kind == WidgetKind.Memory); m.ShowTitle = false;
     Sidebar("sidebar-own-names", named2, true);
 }
+// Regression: bar at the top, three rows, every style for all widgets.
+foreach (var st in new[] { WidgetStyle.Standard, WidgetStyle.Ring, WidgetStyle.Minimal, WidgetStyle.Bar, WidgetStyle.Graph, WidgetStyle.Tile })
+{
+    try
+    {
+        var b3 = new Settings { Language = "de", Edge = Edge.Top, BarHeight = 240, Columns = 3, Pages = 2 };
+        foreach (var w in b3.Widgets) { w.Visible = true; w.Page = 1; if (Settings.HasStyles(w.Kind)) w.Style = st; }
+        var v3 = View(b3, true, Desktop);
+        var host3 = new Window { Width = 1920, Height = 760, Content = v3 };
+        host3.Show();
+        var (sn3, hi3) = Demo();
+        for (int k = 0; k < 4; k++) { Dispatcher.UIThread.RunJobs(); v3.Update(sn3, hi3); host3.CaptureRenderedFrame(); }
+        host3.CaptureRenderedFrame()!.Save(Path.Combine(outDir, $"bar3-{st}.png"));
+        host3.Close();
+        Console.WriteLine($"bar3 {st} ok");
+    }
+    catch (Exception e) { Console.WriteLine($"bar3 {st} CRASH " + (e.InnerException ?? e)); }
+}
 // Text size extremes.
 Sidebar("sidebar-text-50", new Settings { Language = "de", Density = Density.Comfortable, TextScale = .5, Widgets = Only(WidgetKind.Clock, WidgetKind.Cpu, WidgetKind.Memory) }, true);
 Sidebar("sidebar-text-200", new Settings { Language = "de", Density = Density.Comfortable, TextScale = 2, Widgets = Only(WidgetKind.Clock, WidgetKind.Cpu, WidgetKind.Memory) }, true);
