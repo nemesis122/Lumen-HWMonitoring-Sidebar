@@ -39,9 +39,9 @@ public sealed class Settings
     public int Screen { get; set; }
     public double Width { get; set; } = 300;
     public Density Density { get; set; } = Density.Fit;
-    public ThemeMode Theme { get; set; } = ThemeMode.System;
+    public ThemeMode Theme { get; set; } = ThemeMode.Dark;
     public bool Glass { get; set; } = true;
-    public bool HighContrast { get; set; }
+    public bool HighContrast { get; set; } = true;
     public bool ShowNames { get; set; } = true;
     public bool SmoothTransitions { get; set; }
     public double Opacity { get; set; } = .55;
@@ -141,7 +141,7 @@ public sealed class Settings
         s.IntervalMs = Math.Clamp(s.IntervalMs, 500, 5000);
         s.TemperatureWarning = double.IsFinite(s.TemperatureWarning) ? Math.Clamp(s.TemperatureWarning, 50, 110) : 85;
         s.Opacity = double.IsFinite(s.Opacity) ? Math.Clamp(s.Opacity, .2, 1) : .55;
-        s.TextScale = double.IsFinite(s.TextScale) ? Math.Clamp(s.TextScale, .85, 1.3) : 1;
+        s.TextScale = double.IsFinite(s.TextScale) ? Math.Clamp(s.TextScale, .5, 2) : 1;
         s.Screen = Math.Max(0, s.Screen);
         s.Colors = string.IsNullOrWhiteSpace(s.Colors) ? StateColors : s.Colors.Trim();
         s.Background = string.IsNullOrWhiteSpace(s.Background) ? "graphite" : s.Background.Trim().ToLowerInvariant();

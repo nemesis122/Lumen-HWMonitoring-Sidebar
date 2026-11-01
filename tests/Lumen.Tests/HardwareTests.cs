@@ -337,3 +337,15 @@ public class RegisterNameTests
         Assert.False(new Settings { Pages = 2 }.HasPageNames);
     }
 }
+
+public class DefaultsTests
+{
+    [Fact]
+    public void DefaultsAreDarkWindowsLanguageHighContrast()
+    {
+        var s = new Settings();
+        Assert.Equal(ThemeMode.Dark, s.Theme);
+        Assert.Equal("auto", s.Language);
+        Assert.True(s.HighContrast);
+    }
+}

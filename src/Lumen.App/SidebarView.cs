@@ -167,7 +167,12 @@ public sealed class SidebarView : Border
         };
     }
 
-    public static double WindowWidth(Settings s) => s.Width * s.Columns + (s.Columns - 1) * Metrics.For(s.Density).Gap;
+    // Larger text widens each column by the same factor, so cards keep their layout instead of cutting labels off.
+    public static double WindowWidth(Settings s)
+    {
+        double grow = Math.Max(1, s.TextScale);
+        return (s.Width * s.Columns + (s.Columns - 1) * Metrics.For(s.Density).Gap) * grow;
+    }
 
     private void BuildCards()
     {

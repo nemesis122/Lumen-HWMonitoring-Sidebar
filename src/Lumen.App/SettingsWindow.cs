@@ -115,7 +115,7 @@ public sealed class SettingsWindow : Window
             Row(T("High contrast"), Toggle(s.HighContrast, v => s.HighContrast = v), T("All labels in full brightness.")),
             Row(T("Glass effect"), Toggle(s.Glass, v => s.Glass = v), T("Translucent background with blur")),
             Row(T("Opacity"), Slide(.2, 1, .05, s.Opacity, v => s.Opacity = v, v => $"{v * 100:0} %")),
-            Row(T("Text size"), Slide(.85, 1.3, .05, s.TextScale, v => s.TextScale = v, v => $"{v * 100:0} %"))) }));
+            Row(T("Text size"), Slide(.5, 2, .05, s.TextScale, v => s.TextScale = v, v => $"{v * 100:0} %"), T("Above 100 % the sidebar grows wider by the same amount."))) }));
 
         pages.Add((T("Layout"), Glyphs.Columns, new[] { Section(T("Layout"),
             s.Horizontal ? null : Row(T("Columns"), Choice(new[] { "1", "2", "3", "4", "5", "6" }, s.Columns - 1, i => s.Columns = i + 1, rebuild: true), T("Several columns side by side; each is as wide as set below, everything stays large.")),

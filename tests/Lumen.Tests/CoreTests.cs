@@ -154,7 +154,7 @@ public class NewFeatureTests
         Assert.Equal(Settings.StateColors, s.Colors);
         Assert.Equal("auto", s.Language);
         Assert.Equal(1, s.Opacity);
-        Assert.Equal(.85, s.TextScale);
+        Assert.Equal(.5, s.TextScale);
         Assert.Equal(new[] { "cpu.fan" }, s.HiddenValues);
         Assert.Equal("#8B5CF6", Settings.Normalize(new Settings { Colors = "#8B5CF6" }).Colors);
         Assert.Equal(Density.Fit, new Settings().Density);

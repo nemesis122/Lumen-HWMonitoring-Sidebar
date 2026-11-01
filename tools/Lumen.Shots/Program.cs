@@ -209,6 +209,9 @@ foreach (var w in newStyles.Widgets) w.Style = w.Kind switch { WidgetKind.Cpu =>
 Sidebar("sidebar-new-styles", newStyles, true);
 foreach (var (bgKey, accent) in new[] { ("black", "#EF4444"), ("aubergine", "#D946EF"), ("forest", "#84CC16"), ("mocha", "#EAB308") })
     Sidebar("sidebar-bg-" + bgKey, new Settings { Language = "de", Density = Density.Comfortable, Background = bgKey, Colors = accent, Widgets = Only(WidgetKind.Clock, WidgetKind.Cpu, WidgetKind.Memory) }, true);
+// Text size extremes.
+Sidebar("sidebar-text-50", new Settings { Language = "de", Density = Density.Comfortable, TextScale = .5, Widgets = Only(WidgetKind.Clock, WidgetKind.Cpu, WidgetKind.Memory) }, true);
+Sidebar("sidebar-text-200", new Settings { Language = "de", Density = Density.Comfortable, TextScale = 2, Widgets = Only(WidgetKind.Clock, WidgetKind.Cpu, WidgetKind.Memory) }, true);
 // Named registers in a single sidebar.
 var named = new Settings { Language = "de", Pages = 3, PageNames = new() { "Hardware", "Gaming", "Info", "", "", "" } };
 foreach (var w in named.Widgets) w.Page = w.Kind is WidgetKind.Fps or WidgetKind.Gpu ? 2 : w.Kind is WidgetKind.Weather or WidgetKind.Calendar ? 3 : 1;
