@@ -42,6 +42,7 @@ public static class External
 
     private static readonly Regex AidaGpu = new(@"^[A-Z]GPU(\d+)", RegexOptions.IgnoreCase);
     private static readonly Regex AidaCore = new(@"^SCPU(\d+)UTI$", RegexOptions.IgnoreCase);
+    private static readonly Regex AidaCoreClock = new(@"^SCC-\d+-\d+$", RegexOptions.IgnoreCase);
     private static readonly Regex AidaDisk = new(@"^THDD(\d+)$", RegexOptions.IgnoreCase);
 
     // AIDA64's sensor ids become the same nodes LibreHardwareMonitor produces, named so that
@@ -65,7 +66,9 @@ public static class External
         foreach (var core in items.Select(i => (i, m: AidaCore.Match(i.Id))).Where(x => x.m.Success && x.i.Value is not null)
                      .OrderBy(x => int.Parse(x.m.Groups[1].Value, CultureInfo.InvariantCulture)))
             Add(cpu, "Load", "Core #" + core.m.Groups[1].Value, core.i.Value, int.Parse(core.m.Groups[1].Value, CultureInfo.InvariantCulture));
-        Add(cpu, "Clock", "Cores (Average)", V("SCPUCLK"));
+        // "CPU Clock" is only the first core; the per-core clocks (SCC-<cpu>-<core>) give the average like the built-in sensors.
+        var coreClocks = items.Where(i => AidaCoreClock.IsMatch(i.Id) && i.Value is > 50 and < 10000).Select(i => i.Value!.Value).ToList();
+        Add(cpu, "Clock", "Cores (Average)", coreClocks.Count > 0 ? Math.Round(coreClocks.Average()) : V("SCPUCLK"));
         Add(cpu, "Power", "Package", V("PCPUPKG", "PCPU"));
         Add(cpu, "Voltage", "Vcore", V("VCPU"));
         if (cpu.Count > 0) nodes.Add(new SensorNode("Cpu", "CPU", "aida/cpu", cpu, Array.Empty<SensorNode>()));

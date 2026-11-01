@@ -66,8 +66,9 @@ public class SourceSwitchTests
         var v = new HardwareCombiner().Combine(Input(Libre, ext: ("AIDA64", Aida)));
         var c = v.Cpu!;
         Assert.Equal("AMD Ryzen 9 5900X", c.Name);
-        Assert.Equal((53d, 1d, 4791d, 40.45, 1.224, 667d), (c.Temperature!.Value, c.Load!.Value, c.ClockMhz!.Value, c.PowerW!.Value, c.Voltage!.Value, c.FanRpm!.Value));
+        Assert.Equal((53d, 1d, 3726d, 40.45, 1.224, 667d), (c.Temperature!.Value, c.Load!.Value, c.ClockMhz!.Value, c.PowerW!.Value, c.Voltage!.Value, c.FanRpm!.Value));
         Assert.Equal(24, c.CoreLoads.Count);
+        // Average of AIDA64's twelve per-core clocks, not its "CPU Clock" (core 1 only, 4791 MHz).
 
         var g = Assert.Single(v.Gpus);
         Assert.Equal("/gpu-nvidia/0", g.Id);
