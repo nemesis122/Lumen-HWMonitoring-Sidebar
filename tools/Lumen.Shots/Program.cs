@@ -213,8 +213,8 @@ foreach (var w in barCols.Widgets) w.Visible = w.Kind is WidgetKind.Clock or Wid
 foreach (var w in barCols.Widgets) w.Style = w.Kind is WidgetKind.Memory or WidgetKind.Ping or WidgetKind.Power or WidgetKind.DataUsage ? WidgetStyle.Bar : WidgetStyle.Standard;
 DesktopShot("desktop-bar-columns", barCols, true);
 // The new styles, and some backgrounds and colours.
-var newStyles = new Settings { Language = "de", Density = Density.Comfortable, Widgets = Only(WidgetKind.Cpu, WidgetKind.Gpu, WidgetKind.Memory, WidgetKind.Ping, WidgetKind.Network, WidgetKind.Drives, WidgetKind.Power) };
-foreach (var w in newStyles.Widgets) w.Style = w.Kind switch { WidgetKind.Cpu => WidgetStyle.Graph, WidgetKind.Gpu => WidgetStyle.Bar, WidgetKind.Memory or WidgetKind.Ping => WidgetStyle.Tile, WidgetKind.Power => WidgetStyle.Tile, WidgetKind.Drives => WidgetStyle.Bar, WidgetKind.Network => WidgetStyle.Graph, _ => WidgetStyle.Tile };
+var newStyles = new Settings { Language = "de", Density = Density.Comfortable, Widgets = Only(WidgetKind.Cpu, WidgetKind.Gpu, WidgetKind.Memory, WidgetKind.Ping, WidgetKind.Network, WidgetKind.Drives, WidgetKind.Volumes, WidgetKind.Power) };
+foreach (var w in newStyles.Widgets) w.Style = w.Kind switch { WidgetKind.Cpu => WidgetStyle.Graph, WidgetKind.Gpu => WidgetStyle.Bar, WidgetKind.Memory or WidgetKind.Ping => WidgetStyle.Tile, WidgetKind.Power => WidgetStyle.Tile, WidgetKind.Drives => WidgetStyle.Bar, WidgetKind.Volumes => WidgetStyle.Bar, WidgetKind.Network => WidgetStyle.Graph, _ => WidgetStyle.Tile };
 Sidebar("sidebar-new-styles", newStyles, true);
 foreach (var (bgKey, accent) in new[] { ("black", "#EF4444"), ("aubergine", "#D946EF"), ("forest", "#84CC16"), ("mocha", "#EAB308") })
     Sidebar("sidebar-bg-" + bgKey, new Settings { Language = "de", Density = Density.Comfortable, Background = bgKey, Colors = accent, Widgets = Only(WidgetKind.Clock, WidgetKind.Cpu, WidgetKind.Memory) }, true);
@@ -247,6 +247,12 @@ foreach (var (bgKey, accent) in new[] { ("black", "#EF4444"), ("aubergine", "#D9
         Console.WriteLine("bar-page-2 ok");
     }
     catch (Exception e) { Console.WriteLine("bar-page-2 CRASH " + (e.InnerException ?? e)); }
+}
+// Storage space and drives in compact styles.
+{
+    var vol = new Settings { Language = "de", Density = Density.Comfortable, Widgets = Only(WidgetKind.Volumes, WidgetKind.Drives, WidgetKind.Network) };
+    foreach (var w in vol.Widgets) w.Style = w.Kind switch { WidgetKind.Volumes => WidgetStyle.Bar, WidgetKind.Drives => WidgetStyle.Tile, _ => WidgetStyle.Minimal };
+    Sidebar("sidebar-volumes-styles", vol, true);
 }
 // Own title and hardware name, and a widget with both hidden.
 {

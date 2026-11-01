@@ -29,7 +29,11 @@ memory, drives, network and more. One portable EXE, .NET included, in six langua
 - **Registers.** Up to six pages, with your own names (e.g. Hardware, Gaming), switched by click
   or mouse wheel.
 - **Six styles per widget:** the full card, ring, minimal line, bar, graph or tile – rings and
-  tiles pair up side by side.
+  tiles pair up side by side. Every style shows the values you switched on; one click sets the
+  same style for all widgets.
+- **Your names:** each widget can have its own title and hardware name, and either can be hidden.
+- **Choose what is listed:** single values per widget, which drives and which volumes are shown.
+- **External IP on request:** a button in the network widget asks once – never in the background.
 - **Colours and backgrounds:** state colours, the Windows accent or 14 presets; nine background
   tones from graphite and OLED black to midnight blue, forest or aubergine.
 - **Hardware names** under every title, shortened in tiles (Ryzen 9 5900X, RTX 3080).

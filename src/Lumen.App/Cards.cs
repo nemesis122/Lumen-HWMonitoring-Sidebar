@@ -775,7 +775,7 @@ public static class Cards
         WidgetKind.Power => new[] { ("power.chart", T("History chart")), ("power.cost", T("Costs")), ("power.note", T("Note on the estimate")) },
         WidgetKind.DataUsage => new[] { ("data.week", T("This week")), ("data.month", T("This month")) },
         WidgetKind.System => new[] { ("system.boot", T("Started")), ("system.processes", T("Processes")), ("system.threads", T("Threads")) },
-        WidgetKind.Volumes => new[] { ("volumes.label", T("Volume name")), ("volumes.free", T("Free space")), ("volumes.bar", T("Usage bar")), ("volumes.detail", T("Used of total")) },
+        WidgetKind.Volumes => new[] { ("volumes.label", T("Volume name")), ("volumes.free", T("Free space")), ("volumes.bar", T("Usage bar")), ("volumes.detail", T("Used of total")), ("volumes.each", T("Each volume")) },
         _ => Array.Empty<(string, string)>()
     };
 }

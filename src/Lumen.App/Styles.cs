@@ -142,6 +142,16 @@ public static class Summaries
                 return new(Glyphs.Drive, T("Drives"), T2(hot?.Temperature), U, Heat(hot?.Temperature), Format.Heat(hot?.Temperature),
                     count, Array.Empty<double>(), null);
             }
+            case WidgetKind.Volumes:
+            {
+                // The fullest volume leads: that is the one that runs out first.
+                var shown = s.Volumes.Where(v => set.Shows("volume:" + v.Name)).ToList();
+                var full = shown.OrderByDescending(v => v.UsedPercent).FirstOrDefault();
+                double share = (full?.UsedPercent ?? 0) / 100;
+                var color = share >= .9 ? p.Ramp[^1] : share >= .8 ? p.Ramp[2] : p.Cool;
+                return new(Glyphs.Volume, T("Storage space"), Format.Number(full?.UsedPercent), "%", color, share,
+                    full is null ? "" : $"{full.Name} {F("{0} free", Format.Capacity(full.FreeGb))}", Array.Empty<double>(), null);
+            }
             case WidgetKind.DataUsage:
             {
                 var u = s.Usage;
@@ -170,6 +180,7 @@ public static class Summaries
         [WidgetKind.Cooling] = new[] { "cooling.fans", "cooling.board" },
         [WidgetKind.Network] = new[] { "net.link", "net.use", "net.peak", "net.address", "net.external" },
         [WidgetKind.Drives] = new[] { "drives.temps", "drives.io" },
+        [WidgetKind.Volumes] = new[] { "volumes.each" },
         [WidgetKind.Fps] = new[] { "fps.frametime" },
         [WidgetKind.Ping] = new[] { "ping.jitter", "ping.loss", "ping.target" },
         [WidgetKind.Power] = new[] { "power.cost" },
@@ -182,7 +193,7 @@ public static class Summaries
     // small figures, plus the history chart in Graph and Minimal.
     public static bool Supports(WidgetKind kind, WidgetStyle style, string key) =>
         // The Standard drives card always lists every drive; this switch is for the compact styles.
-        style == WidgetStyle.Standard || !Settings.HasStyles(kind) ? key != "drives.temps"
+        style == WidgetStyle.Standard || !Settings.HasStyles(kind) ? key is not ("drives.temps" or "volumes.each")
         : ExtraKeys.TryGetValue(kind, out var keys) && keys.Contains(key)
         || style is WidgetStyle.Graph or WidgetStyle.Minimal && key == ChartKey(kind);
 
@@ -241,6 +252,12 @@ public static class Summaries
                         list.Add((d.Letters.Length > 0 ? d.Letters : Names.Short(d.Name), Tc(d.Temperature)));
                 Add("drives.io", T("Read"), Format.Rate(s.Disks.Where(d => set.Shows("drive:" + d.Id)).Sum(d => d.ReadBytesPerSecond ?? 0)));
                 Add("drives.io", T("Write"), Format.Rate(s.Disks.Where(d => set.Shows("drive:" + d.Id)).Sum(d => d.WriteBytesPerSecond ?? 0)));
+                break;
+            case WidgetKind.Volumes:
+                // Free space per volume, by its letter.
+                if (set.Shows("volumes.each"))
+                    foreach (var v in s.Volumes.Where(v => set.Shows("volume:" + v.Name)))
+                        list.Add((v.Name, F("{0} free", Format.Capacity(v.FreeGb))));
                 break;
             case WidgetKind.Fps:
                 Add("fps.frametime", T("Frame time"), s.Fps is { } f ? Format.Milliseconds(f.FrameTimeMs) : Format.Missing);

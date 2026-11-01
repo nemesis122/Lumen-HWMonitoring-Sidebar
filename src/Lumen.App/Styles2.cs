@@ -158,7 +158,9 @@ public sealed class ExtrasView : ContentControl
         // Wide: three per line (like the Standard cards), up to two lines; tiles: three lines,
         // so the gauge stays the main thing.
         var shown = items.Take(wide ? 6 : 3).ToList();
-        string now = string.Join("|", shown.Select(i => i.Label));
+        // Long values (an IP address, a date) get a line of their own instead of being cut off.
+        static bool Long(string v) => v.Length > 14 || System.Net.IPAddress.TryParse(v, out _);
+        string now = string.Join("|", shown.Select(i => i.Label + (Long(i.Value) ? "+" : "")));
         if (now != shape)
         {
             shape = now;
@@ -166,8 +168,22 @@ public sealed class ExtrasView : ContentControl
             if (wide)
             {
                 foreach (var (label, _) in shown) stats.Add(new Stat(label, p));
-                var grid = new Avalonia.Controls.Primitives.UniformGrid { Columns = 3 };
-                foreach (var st in stats) { st.Margin = new Thickness(0, 0, 6, 4); grid.Children.Add(st); }
+                // Three equal columns; a long value starts a new line and spans all three.
+                var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*,*") };
+                int row = 0, col = 0;
+                for (int i = 0; i < stats.Count; i++)
+                {
+                    bool span = Long(shown[i].Value);
+                    if (span && col > 0) { row++; col = 0; }
+                    if (grid.RowDefinitions.Count <= row) grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+                    var st = stats[i];
+                    st.Margin = new Thickness(0, 0, 6, 4);
+                    Grid.SetRow(st, row); Grid.SetColumn(st, col);
+                    if (span) Grid.SetColumnSpan(st, 3);
+                    grid.Children.Add(st);
+                    col += span ? 3 : 1;
+                    if (col >= 3) { row++; col = 0; }
+                }
                 Content = shown.Count == 0 ? null : grid;
             }
             else

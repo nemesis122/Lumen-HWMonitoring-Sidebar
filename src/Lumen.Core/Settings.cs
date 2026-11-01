@@ -100,7 +100,7 @@ public sealed class Settings
     // Kinds whose reading can be shown as a ring or a slim line.
     public static bool HasStyles(WidgetKind k) => k is WidgetKind.Cpu or WidgetKind.Gpu or WidgetKind.Fps or WidgetKind.Memory or WidgetKind.Battery
         or WidgetKind.Cooling or WidgetKind.Network or WidgetKind.Ping or WidgetKind.Power or WidgetKind.Weather or WidgetKind.System or WidgetKind.DataUsage
-        or WidgetKind.Drives;
+        or WidgetKind.Drives or WidgetKind.Volumes;
 
     public static List<WidgetSlot> DefaultWidgets() => Enum.GetValues<WidgetKind>().Select(k => new WidgetSlot { Kind = k, Visible = VisibleByDefault(k) }).ToList();
 
