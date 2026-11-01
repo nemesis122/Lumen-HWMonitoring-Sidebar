@@ -1,16 +1,19 @@
 # Lumen Monitoring HW Sidebar
 
-A modern hardware sidebar for Windows 10 and 11: a slim glass strip on the edge of the screen
-with clock, processor, graphics cards, cooling, memory, drives, network and more. One portable
-EXE, .NET included, in six languages.
+A modern hardware sidebar for Windows 10 and 11: a glass strip on the left or right edge of the
+screen – or a bar along the top or bottom – with clock, processor, graphics cards, cooling,
+memory, drives, network and more. One portable EXE, .NET included, in six languages
+(English, Deutsch, Français, Italiano, Español, Português).
 
 **[Download the latest release](../../releases/latest)** · portable `Lumen-x.y.z.exe`, no installation
 
 <p>
   <img src="docs/images/sidebar.png" width="250" alt="Lumen sidebar, dark">
   <img src="docs/images/two-columns.png" width="420" alt="Two columns with many widgets">
-  <img src="docs/images/sidebar-styles.png" width="250" alt="Ring and minimal styles">
+  <img src="docs/images/sidebar-new-styles.png" width="250" alt="Graph, bar and tile styles">
 </p>
+
+<img src="docs/images/bar-top.png" width="860" alt="Bar at the top of the screen, two rows">
 
 ## Highlights
 
@@ -20,8 +23,15 @@ EXE, .NET included, in six languages.
 - **Temperature leads.** Wherever a part has a temperature, it is the big number, with two
   minutes of history behind it.
 - **Fills the screen exactly.** The automatic density sizes everything to reach from the top of
-  the screen to the taskbar, without scrolling. One or two columns.
-- **Three styles per widget:** the full card, a ring tile (two side by side) or one slim line.
+  the screen to the taskbar, without scrolling. Up to six columns, or the whole screen.
+- **Side or bar.** Right or left edge, or a bar at the top or bottom with up to six rows,
+  across the whole width or centred; it can reserve its space like the taskbar.
+- **Registers.** Up to six pages, with your own names (e.g. Hardware, Gaming), switched by click
+  or mouse wheel.
+- **Six styles per widget:** the full card, ring, minimal line, bar, graph or tile – rings and
+  tiles pair up side by side.
+- **Colours and backgrounds:** state colours, the Windows accent or 14 presets; nine background
+  tones from graphite and OLED black to midnight blue, forest or aubergine.
 - **Hardware names** under every title, shortened in tiles (Ryzen 9 5900X, RTX 3080).
 - **Missing stays missing:** a sensor that cannot be read shows "—", never a fake zero.
 
@@ -37,6 +47,8 @@ EXE, .NET included, in six languages.
 | Network: download/upload, throughput in Mbit/s, share of the link, IP | Storage space per drive letter |
 | Battery: charge, time left, rate, health | System uptime, world clocks, calendar, notes, top apps |
 | FPS of the game in the foreground, 1 % low, frame time (PresentMon) | |
+
+<img src="docs/images/bar-bottom.png" width="860" alt="Bar at the bottom with ring, tile and graph styles">
 
 <p>
   <img src="docs/images/sidebar-new-1.png" width="250" alt="Now playing, world clocks, calendar, ping">
@@ -68,14 +80,23 @@ sidebar shows, with Copy and Save, for tracking down a missing reading.
 
 ## Settings
 
-Everything applies immediately: language, theme, colours, glass and opacity, high contrast,
-hardware names, text size, density, columns, width, screen and edge, always on top, reserved
-desktop space, update interval, °C/°F, warning threshold with pop-up, and per widget its
-visibility, order, style, column and individual values.
+Everything applies immediately, sorted into topics: appearance (language, theme, colours,
+background, glass and opacity, high contrast, hardware names, text size 50–200 %), layout
+(columns or rows, registers and their names, whole screen, density, width), widgets (visibility,
+order, style, column/row, register and individual values), position (edge, screen, always on
+top, reserved space, click-through), readings (interval, °C/°F, warning threshold with pop-up),
+weather and clocks, power and ping, and system (autostart, sensor list).
+
+Defaults: dark theme, high contrast, language as in Windows.
 
 <p>
-  <img src="docs/images/settings-de.png" width="360" alt="Settings">
-  <img src="docs/images/desktop-warning.png" width="520" alt="Temperature warning">
+  <img src="docs/images/settings-de.png" width="430" alt="Settings: widgets">
+  <img src="docs/images/settings-layout.png" width="430" alt="Settings: layout">
+</p>
+
+<p>
+  <img src="docs/images/backgrounds.png" width="430" alt="Backgrounds and accent colours">
+  <img src="docs/images/desktop-warning.png" width="430" alt="Temperature warning">
 </p>
 
 Settings are stored in `lumen-settings.json` beside the EXE, or in `%AppData%\Lumen` if that
@@ -93,5 +114,11 @@ The release workflow (Actions → *Build and publish release*) builds on Windows
 and publishes the EXE, the source ZIP and the screenshots under the version in
 `Directory.Build.props`.
 
-Built with Avalonia 11.3 and the Inter typeface. Open Hardware Monitor parts are under MPL-2.0;
-the bundled PresentMon 2.3.1 (Intel) is under the MIT licence. Both licence texts are in `licenses/`.
+Built with Avalonia 11.3 and the Inter typeface.
+
+## Licence
+
+Lumen is released under the [MIT licence](LICENSE). The Open Hardware Monitor parts in
+`lib/OpenHardwareMonitor.Driverless` stay under MPL-2.0; the bundled PresentMon 2.3.1 (Intel) is
+under the MIT licence. Both licence texts are in `licenses/`. LibreHardwareMonitor (MPL-2.0) is
+used as a NuGet package.
