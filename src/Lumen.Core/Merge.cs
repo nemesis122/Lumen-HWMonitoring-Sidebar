@@ -180,7 +180,7 @@ public static class SensorMerge
             string serial = Key(d.Serial);
             if (serial.Length < 6) continue;
             // Older Windows versions report SATA serials with each pair of characters swapped.
-            string swapped = new(serial.Chunk(2).SelectMany(c => c.Reverse()).ToArray());
+            string swapped = new(serial.Chunk(2).SelectMany(c => Enumerable.Reverse(c)).ToArray());
             if (key.Contains(serial) || key.Contains(swapped)) return d.Number;
         }
         string model = WithoutSerial(name);
