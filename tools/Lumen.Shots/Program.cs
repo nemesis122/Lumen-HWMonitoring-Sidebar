@@ -301,7 +301,8 @@ foreach (var st in Enum.GetValues<WidgetStyle>().Where(x => Environment.GetEnvir
         var bs = new Settings { Language = "de", Edge = Edge.Top, BarHeight = rowH, Columns = 3 };
         foreach (var w in bs.Widgets) { w.Visible = w.Kind != WidgetKind.Notes; if (Settings.HasStyles(w.Kind)) w.Style = st; }
         var vb = View(bs, true, Desktop);
-        var hb = new Window { Width = 1920, Height = (int)(rowH * 3 + 2 * 10 + 56), Content = vb };
+        // Over the blurred wallpaper, as on a real desktop (glass needs something behind it).
+        var hb = new Window { Width = 1920, Height = (int)(rowH * 3 + 2 * 10 + 56), Content = new Panel { ClipToBounds = true, Children = { new Image { Source = Wall(true, true), Stretch = Stretch.UniformToFill }, vb } } };
         hb.Show();
         var (snb, hib) = Demo();
         for (int k = 0; k < 4; k++) { Dispatcher.UIThread.RunJobs(); vb.Update(snb, hib); hb.CaptureRenderedFrame(); }
