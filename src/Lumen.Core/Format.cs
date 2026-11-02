@@ -1,93 +1,295 @@
+using System;
 using System.Globalization;
 
 namespace Lumen.Core;
 
-// Every number on screen goes through here so units and precision stay consistent.
 public static class Format
 {
-    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
-    public const string Missing = "—";
+	private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
-    public static string Number(double? value, string format = "0")
-        => value is double v && double.IsFinite(v) ? v.ToString(format, Invariant) : Missing;
+	public const string Missing = "—";
 
-    public static string Temperature(double? celsius, bool fahrenheit)
-        => celsius is double c && double.IsFinite(c) ? (fahrenheit ? c * 1.8 + 32 : c).ToString("0", Invariant) : Missing;
+	public static string Number(double? value, string format = "0")
+	{
+		if (value.HasValue)
+		{
+			double valueOrDefault = value.GetValueOrDefault();
+			if (double.IsFinite(valueOrDefault))
+			{
+				return valueOrDefault.ToString(format, Invariant);
+			}
+		}
+		return "—";
+	}
 
-    public static string TemperatureUnit(bool fahrenheit) => fahrenheit ? "°F" : "°C";
+	public static string Temperature(double? celsius, bool fahrenheit)
+	{
+		if (celsius.HasValue)
+		{
+			double valueOrDefault = celsius.GetValueOrDefault();
+			if (double.IsFinite(valueOrDefault))
+			{
+				return (fahrenheit ? (valueOrDefault * 1.8 + 32.0) : valueOrDefault).ToString("0", Invariant);
+			}
+		}
+		return "—";
+	}
 
-    public static string Percent(double? value) => value is double v && double.IsFinite(v) ? Math.Clamp(v, 0, 100).ToString("0", Invariant) + " %" : Missing;
+	public static string TemperatureUnit(bool fahrenheit)
+	{
+		if (!fahrenheit)
+		{
+			return "°C";
+		}
+		return "°F";
+	}
 
-    public static string Clock(double? mhz)
-        => mhz is double m && double.IsFinite(m) && m > 0 ? (m >= 1000 ? (m / 1000).ToString("0.00", Invariant) + " GHz" : m.ToString("0", Invariant) + " MHz") : Missing;
+	public static string Percent(double? value)
+	{
+		if (value.HasValue)
+		{
+			double valueOrDefault = value.GetValueOrDefault();
+			if (double.IsFinite(valueOrDefault))
+			{
+				return Math.Clamp(valueOrDefault, 0.0, 100.0).ToString("0", Invariant) + " %";
+			}
+		}
+		return "—";
+	}
 
-    public static string Watts(double? w) => w is double v && double.IsFinite(v) ? v.ToString(v < 10 ? "0.0" : "0", Invariant) + " W" : Missing;
+	public static string Clock(double? mhz)
+	{
+		if (mhz.HasValue)
+		{
+			double valueOrDefault = mhz.GetValueOrDefault();
+			if (double.IsFinite(valueOrDefault) && valueOrDefault > 0.0)
+			{
+				if (!(valueOrDefault >= 1000.0))
+				{
+					return valueOrDefault.ToString("0", Invariant) + " MHz";
+				}
+				return (valueOrDefault / 1000.0).ToString("0.00", Invariant) + " GHz";
+			}
+		}
+		return "—";
+	}
 
-    public static string Volts(double? v) => v is double x && double.IsFinite(x) && x > 0 ? x.ToString("0.000", Invariant) + " V" : Missing;
+	public static string Watts(double? w)
+	{
+		if (w.HasValue)
+		{
+			double valueOrDefault = w.GetValueOrDefault();
+			if (double.IsFinite(valueOrDefault))
+			{
+				return valueOrDefault.ToString((valueOrDefault < 10.0) ? "0.0" : "0", Invariant) + " W";
+			}
+		}
+		return "—";
+	}
 
-    public static string Rpm(double? r) => r is double v && double.IsFinite(v) ? v.ToString("0", Invariant) + " rpm" : Missing;
+	public static string Volts(double? v)
+	{
+		if (v.HasValue)
+		{
+			double valueOrDefault = v.GetValueOrDefault();
+			if (double.IsFinite(valueOrDefault) && valueOrDefault > 0.0)
+			{
+				return valueOrDefault.ToString("0.000", Invariant) + " V";
+			}
+		}
+		return "—";
+	}
 
-    public static string Gigabytes(double? gb)
-        => gb is double v && double.IsFinite(v) ? (v >= 100 ? v.ToString("0", Invariant) : v.ToString("0.0", Invariant)) + " GB" : Missing;
+	public static string Rpm(double? r)
+	{
+		if (r.HasValue)
+		{
+			double valueOrDefault = r.GetValueOrDefault();
+			if (double.IsFinite(valueOrDefault))
+			{
+				return valueOrDefault.ToString("0", Invariant) + " rpm";
+			}
+		}
+		return "—";
+	}
 
-    // Bytes per second with binary steps, one decimal below ten: 0 B/s, 940 KB/s, 1.4 MB/s, 112 MB/s.
-    public static string Rate(double? bytesPerSecond)
-    {
-        if (bytesPerSecond is not double v || !double.IsFinite(v)) return Missing;
-        v = Math.Max(0, v);
-        string[] units = { "B/s", "KB/s", "MB/s", "GB/s" };
-        int i = 0;
-        while (v >= 1024 && i < units.Length - 1) { v /= 1024; i++; }
-        return (i > 0 && v < 10 ? v.ToString("0.0", Invariant) : v.ToString("0", Invariant)) + " " + units[i];
-    }
+	public static string Gigabytes(double? gb)
+	{
+		if (gb.HasValue)
+		{
+			double valueOrDefault = gb.GetValueOrDefault();
+			if (double.IsFinite(valueOrDefault))
+			{
+				return ((valueOrDefault >= 100.0) ? valueOrDefault.ToString("0", Invariant) : valueOrDefault.ToString("0.0", Invariant)) + " GB";
+			}
+		}
+		return "—";
+	}
 
-    // Splits "1.4 MB/s" into number and unit for the large hero display.
-    public static (string Number, string Unit) Split(string text)
-    {
-        int space = text.LastIndexOf(' ');
-        return space < 0 ? (text, "") : (text[..space], text[(space + 1)..]);
-    }
+	public static string Rate(double? bytesPerSecond)
+	{
+		if (bytesPerSecond.HasValue)
+		{
+			double valueOrDefault = bytesPerSecond.GetValueOrDefault();
+			if (double.IsFinite(valueOrDefault))
+			{
+				valueOrDefault = Math.Max(0.0, valueOrDefault);
+				string[] array = new string[4] { "B/s", "KB/s", "MB/s", "GB/s" };
+				int num = 0;
+				while (valueOrDefault >= 1024.0 && num < array.Length - 1)
+				{
+					valueOrDefault /= 1024.0;
+					num++;
+				}
+				return ((num > 0 && valueOrDefault < 10.0) ? valueOrDefault.ToString("0.0", Invariant) : valueOrDefault.ToString("0", Invariant)) + " " + array[num];
+			}
+		}
+		return "—";
+	}
 
-    public static string Link(double? bitsPerSecond)
-    {
-        if (bitsPerSecond is not double b || !double.IsFinite(b) || b <= 0) return Missing;
-        return b >= 1e9 ? (b / 1e9).ToString(b % 1e9 == 0 ? "0" : "0.#", Invariant) + " Gbit/s" : (b / 1e6).ToString("0", Invariant) + " Mbit/s";
-    }
+	public static (string Number, string Unit) Split(string text)
+	{
+		int num = text.LastIndexOf(' ');
+		if (num >= 0)
+		{
+			string item = text.Substring(0, num);
+			int num2 = num + 1;
+			return (Number: item, Unit: text.Substring(num2, text.Length - num2));
+		}
+		return (Number: text, Unit: "");
+	}
 
-    // Bits per second as network gear and providers state them: 850 kbit/s, 650 Mbit/s, 1.25 Gbit/s.
-    public static string Bits(double? bitsPerSecond)
-    {
-        if (bitsPerSecond is not double b || !double.IsFinite(b)) return Missing;
-        b = Math.Max(0, b);
-        if (b >= 1e9) return (b / 1e9).ToString(b >= 1e10 ? "0.0" : "0.00", Invariant) + " Gbit/s";
-        if (b >= 1e6) return (b / 1e6).ToString(b >= 1e8 ? "0" : "0.0", Invariant) + " Mbit/s";
-        return (b / 1e3).ToString("0", Invariant) + " kbit/s";
-    }
+	public static string Link(double? bitsPerSecond)
+	{
+		if (bitsPerSecond.HasValue)
+		{
+			double valueOrDefault = bitsPerSecond.GetValueOrDefault();
+			if (double.IsFinite(valueOrDefault) && !(valueOrDefault <= 0.0))
+			{
+				if (!(valueOrDefault >= 1000000000.0))
+				{
+					return (valueOrDefault / 1000000.0).ToString("0", Invariant) + " Mbit/s";
+				}
+				return (valueOrDefault / 1000000000.0).ToString((valueOrDefault % 1000000000.0 == 0.0) ? "0" : "0.#", Invariant) + " Gbit/s";
+			}
+		}
+		return "—";
+	}
 
-    // Byte totals: 840 MB, 18.4 GB, 1.21 TB.
-    public static string Size(double? bytes)
-    {
-        if (bytes is not double v || !double.IsFinite(v)) return Missing;
-        string[] units = { "B", "KB", "MB", "GB", "TB" };
-        int i = 0;
-        v = Math.Max(0, v);
-        while (v >= 1024 && i < units.Length - 1) { v /= 1024; i++; }
-        return v.ToString(i == 0 || v >= 100 ? "0" : v >= 10 ? "0.0" : "0.00", Invariant) + " " + units[i];
-    }
+	public static string Bits(double? bitsPerSecond)
+	{
+		if (bitsPerSecond.HasValue)
+		{
+			double valueOrDefault = bitsPerSecond.GetValueOrDefault();
+			if (double.IsFinite(valueOrDefault))
+			{
+				valueOrDefault = Math.Max(0.0, valueOrDefault);
+				if (valueOrDefault >= 1000000000.0)
+				{
+					return (valueOrDefault / 1000000000.0).ToString((valueOrDefault >= 10000000000.0) ? "0.0" : "0.00", Invariant) + " Gbit/s";
+				}
+				if (valueOrDefault >= 1000000.0)
+				{
+					return (valueOrDefault / 1000000.0).ToString((valueOrDefault >= 100000000.0) ? "0" : "0.0", Invariant) + " Mbit/s";
+				}
+				return (valueOrDefault / 1000.0).ToString("0", Invariant) + " kbit/s";
+			}
+		}
+		return "—";
+	}
 
-    // Disk capacities given in GiB: 512 GB, 1.82 TB.
-    public static string Capacity(double? gb) => gb is double v && double.IsFinite(v)
-        ? v >= 1000 ? (v / 1024).ToString("0.00", Invariant) + " TB" : v.ToString(v >= 100 ? "0" : "0.0", Invariant) + " GB" : Missing;
+	public static string Size(double? bytes)
+	{
+		if (bytes.HasValue)
+		{
+			double valueOrDefault = bytes.GetValueOrDefault();
+			if (double.IsFinite(valueOrDefault))
+			{
+				string[] array = new string[5] { "B", "KB", "MB", "GB", "TB" };
+				int num = 0;
+				valueOrDefault = Math.Max(0.0, valueOrDefault);
+				while (valueOrDefault >= 1024.0 && num < array.Length - 1)
+				{
+					valueOrDefault /= 1024.0;
+					num++;
+				}
+				return valueOrDefault.ToString((num == 0 || valueOrDefault >= 100.0) ? "0" : ((valueOrDefault >= 10.0) ? "0.0" : "0.00"), Invariant) + " " + array[num];
+			}
+		}
+		return "—";
+	}
 
-    // 2 d 3 h, 3 h 12 m, 12 m.
-    public static string Duration(TimeSpan t) =>
-        t.TotalDays >= 1 ? $"{(int)t.TotalDays} d {t.Hours} h" : t.TotalHours >= 1 ? $"{(int)t.TotalHours} h {t.Minutes:00} m" : $"{Math.Max(0, t.Minutes)} m";
+	public static string Capacity(double? gb)
+	{
+		if (gb.HasValue)
+		{
+			double valueOrDefault = gb.GetValueOrDefault();
+			if (double.IsFinite(valueOrDefault))
+			{
+				if (!(valueOrDefault >= 1000.0))
+				{
+					return valueOrDefault.ToString((valueOrDefault >= 100.0) ? "0" : "0.0", Invariant) + " GB";
+				}
+				return (valueOrDefault / 1024.0).ToString("0.00", Invariant) + " TB";
+			}
+		}
+		return "—";
+	}
 
-    public static string Milliseconds(double? ms) => ms is double v && double.IsFinite(v) ? v.ToString(v < 10 ? "0.0" : "0", Invariant) + " ms" : Missing;
+	public static string Duration(TimeSpan t)
+	{
+		if (!(t.TotalDays >= 1.0))
+		{
+			if (t.TotalHours >= 1.0)
+			{
+				return $"{(int)t.TotalHours} h {t.Minutes:00} m";
+			}
+			return $"{Math.Max(0, t.Minutes)} m";
+		}
+		return $"{(int)t.TotalDays} d {t.Hours} h";
+	}
 
-    public static string Money(double amount, string currency) => currency + " " + amount.ToString(amount < 10 ? "0.00" : "0.0", Invariant);
+	public static string Milliseconds(double? ms)
+	{
+		if (ms.HasValue)
+		{
+			double valueOrDefault = ms.GetValueOrDefault();
+			if (double.IsFinite(valueOrDefault))
+			{
+				return valueOrDefault.ToString((valueOrDefault < 10.0) ? "0.0" : "0", Invariant) + " ms";
+			}
+		}
+		return "—";
+	}
 
-    // 0 at "cool", 1 at "hot"; used to colour readings by state rather than by category.
-    public static double Heat(double? celsius) => celsius is double c && double.IsFinite(c) ? Math.Clamp((c - 30) / 65, 0, 1) : 0;
-    public static double Share(double? percent) => percent is double p && double.IsFinite(p) ? Math.Clamp(p / 100, 0, 1) : 0;
+	public static string Money(double amount, string currency)
+	{
+		return currency + " " + amount.ToString((amount < 10.0) ? "0.00" : "0.0", Invariant);
+	}
+
+	public static double Heat(double? celsius)
+	{
+		if (celsius.HasValue)
+		{
+			double valueOrDefault = celsius.GetValueOrDefault();
+			if (double.IsFinite(valueOrDefault))
+			{
+				return Math.Clamp((valueOrDefault - 30.0) / 65.0, 0.0, 1.0);
+			}
+		}
+		return 0.0;
+	}
+
+	public static double Share(double? percent)
+	{
+		if (percent.HasValue)
+		{
+			double valueOrDefault = percent.GetValueOrDefault();
+			if (double.IsFinite(valueOrDefault))
+			{
+				return Math.Clamp(valueOrDefault / 100.0, 0.0, 1.0);
+			}
+		}
+		return 0.0;
+	}
 }

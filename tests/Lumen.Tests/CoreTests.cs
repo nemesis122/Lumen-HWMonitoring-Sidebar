@@ -202,7 +202,7 @@ public class NewFeatureTests
     [Fact] public void EveryTextIsTranslated()
     {
         var src = File.ReadAllText(Path.Combine(FindRoot(), "src", "Lumen.App", "Strings.cs"));
-        var lines = src[(src.IndexOf("\"\"\"") + 3)..src.LastIndexOf("\"\"\"")].Split('\n').Select(l => l.TrimEnd('\r')).Where(l => l.Trim().Length > 0).ToList();
+        var lines = src[(src.IndexOf("\"\"\"") + 3)..src.LastIndexOf("\"\"\"")].Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0).ToList();
         Assert.All(lines, l => Assert.Equal(6, l.Split('|').Length));
         Assert.Equal(lines.Count, lines.Select(l => l.Split('|')[0]).Distinct().Count());
         // Every T("...") and F("...") key used in the app exists in the table.
@@ -413,3 +413,4 @@ public class SensorNameTests
     [InlineData("CPU Core #1 Thread #2", false)] [InlineData("CPU Total", false)] [InlineData("Core #1 VID", false)]
     public void PerCoreNames(string name, bool match) => Assert.Equal(match, Lumen.App.WindowsSource.PerCore.IsMatch(name));
 }
+

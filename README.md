@@ -1,176 +1,77 @@
-# Lumen HW Monitoring Sidebar
+# Lumen 3.0.0
 
-A modern hardware sidebar for Windows 10 and 11 – one portable EXE, .NET included, six languages
-(English, Deutsch, Français, Italiano, Español, Português). **[Download the latest release](../../releases/latest)** – portable `Lumen-x.y.z.exe`, no
-installation. All screenshots use demo data.
+A portable hardware-monitoring sidebar for Windows 10 and 11, with **44 selectable widget designs**, bold readings and live graphics. Use it vertically at either side of your desktop or horizontally at the top or bottom. Dark and light themes are supported.
 
-<img src="docs/images/desktop-right.png" width="860" alt="Lumen at the right edge of the screen">
+**[Download Lumen 3.0.0](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v3.0.0)** · [All designs](docs/style-gallery.md) · [Release notes](docs/release-notes/v3.0.0.md)
 
-## New in 2.1
+![Different designs used together](docs/images/styles-3.0.0/mixed-widgets-horizontal.png)
 
-- **AIDA64 or HWiNFO as sensor source** (optional), with automatic fallback to the built-in sensors.
-- **Eleven styles for every widget**, five of them new and compact: Compact, Status, Gauge,
-  Segments, Dual ring – made for slim bars at the top or bottom.
-- **Clearer settings:** six topics, search across all settings, live preview, reset per page.
-- **Themes as files** (`*.lumentheme`) and a **choice of typeface**, including narrow Bahnschrift.
-- **More robust:** freeze watch with automatic restart, error report as one ZIP, fewer readings
-  while nothing shows them, and tests that render every style and compare it pixel by pixel.
+## Choose a design for each widget
 
-All details: [release notes 2.1.0](docs/release-notes/v2.1.0.md).
+**Each widget can use its own design — mix and match styles across your sidebar.** This feature was already available in earlier releases.
 
-## Side, top or bottom
+Open **Settings → Widgets → Customise** on the widget you want to change. The global **Style for all widgets** control is available if you prefer one consistent design.
 
-- **Right or left edge**, 1–6 columns, or the whole screen.
-- **Bar at the top or bottom** with 1–6 rows, across the whole width or only as wide as its
-  widgets, centred. Can reserve its space like the taskbar.
-- **Automatic density** fills the height exactly, without scrolling.
-- **Registers (pages) 1–6** with your own names, switched by click or mouse wheel.
-- **Text size 50–200 %** – above 100 % the sidebar widens by the same factor.
+![Separate design choices for each widget](docs/images/styles-3.0.0/per-widget-design-selection.png)
 
-**Right edge – top – bottom** (whole screen, demo data):
+## Designs in 3.0.0
 
-<p>
-  <img src="docs/images/desktop-right.png" width="285" alt="Sidebar at the right edge">
-  <img src="docs/images/desktop-top.png" width="285" alt="Bar at the top">
-  <img src="docs/images/desktop-bottom.png" width="285" alt="Bar at the bottom">
-</p>
+The collection includes classic compact layouts, rings, graphs, capsules and lists, plus larger graphic designs:
 
-**Bar at the top**, two rows:
+- **Signal Pro, Rail Pro, Orbit Pro, Prism and Spectrum:** bold numbers with distinct waveform, segmented, radial, diagonal and history graphics.
+- **Double Capsule Plus:** an independent design with a second capsule for additional readings, such as CPU clock/power or GPU memory/power.
+- **Liquid:** a fluid-style fill reflecting the current load or level.
+- **Twin Focus:** two prominent readings with separate graphics, such as temperature/load or download/upload.
+- **Contour:** a large central reading surrounded by layered contours.
+- **Split Edge:** a diagonal layout with a main reading and two available extra values.
+- **Ribbon:** a real history band with the latest reading beside its endpoint.
+- **Core Grid:** overall CPU utilization and individual readings for every reported core. Other widget types show their available extra readings.
 
-<img src="docs/images/bar-top.png" width="860" alt="Bar at the top, two rows">
+**[Browse images of all 44 designs, in dark and light themes](docs/style-gallery.md).** All pictures use demo data.
 
-**Bar at the bottom**, two rows with mixed styles:
+## Sensor support
 
-<img src="docs/images/bar-bottom.png" width="860" alt="Bar at the bottom with mixed styles">
+| Source | Integration |
+| --- | --- |
+| **LibreHardwareMonitor** | Built-in sensor library for supported CPU, GPU, storage, mainboard, fan and battery readings. |
+| **Open Hardware Monitor** | Built-in driverless GPU/SMART fallback, combined with LibreHardwareMonitor readings. |
+| **AIDA64** | Optional external source through shared memory. Enable shared memory in AIDA64's External Applications settings, then select AIDA64 in **Settings → Sensors**. |
+| **HWiNFO** | Optional external shared-memory source, also available in **Settings → Sensors**. |
 
-**Settings for the bar** – edge and row height, rows and layout:
+Automatic selection and fallback are supported. Hardware, permissions and available drivers determine which readings can be obtained. AIDA64 and HWiNFO are separate applications; they are not bundled with Lumen.
 
-<p>
-  <img src="docs/images/settings-bar-position.png" width="420" alt="Settings: bar position">
-  <img src="docs/images/settings-bar-layout.png" width="420" alt="Settings: bar layout">
-</p>
+## Layout and widgets
 
-<p>
-  <img src="docs/images/two-columns.png" width="420" alt="Two columns">
-  <img src="docs/images/registers.png" width="200" alt="Named registers">
-</p>
+- Left/right sidebar or top/bottom bar, with multiple rows/columns and up to six pages.
+- Automatic density, adjustable text size, custom titles and hardware names.
+- CPU, discrete/integrated GPU, memory, drives, storage space, network, cooling, power, FPS, ping, battery, system, weather, clocks, calendar, media, usage and notes.
+- Colour presets, state colours, Windows accent, theme files, glass and several typefaces.
+- English, German, French, Italian, Spanish and Portuguese.
 
-## Widgets and styles
+## Diagnostics
 
-- Clock, world clocks, calendar, weather, now playing, battery, processor, graphics (dedicated and
-  integrated), FPS, cooling and mainboard, power and cost, memory, top apps, system, drives,
-  storage space, network, ping, data usage, notes.
-- **Eleven styles for every widget** (except notes): Standard, Ring, Minimal, Bar, Graph, Tile and
-  the compact Compact, Status, Gauge, Segments and Dual ring. **One click sets the style of all
-  widgets.** Every style shows the single values you keep switched on.
-- **Own title and hardware name per widget**, each can be shown or hidden.
-- **Drives and storage space:** choose which drives and volumes appear; each detail switchable.
-- **Network:** link speed, link use, 2-minute peak, local address and – only on request in the
-  settings – the external IP (one HTTPS request per click, never in the background).
+Version 3.0.0 improves horizontal layout stability, the Double Capsule indicator and local diagnostics. Error reports include the executable path, active layout, recent activity, available error logs, session state and restart history. Log read failures are distinguished from missing logs. Settings → System also shows the executable location and provides **Open folder**.
 
-<p>
-  <img src="docs/images/sidebar-new-styles.png" width="200" alt="Graph, bar and tile styles">
-  <img src="docs/images/sidebar-styles.png" width="200" alt="Ring and minimal styles">
-  <img src="docs/images/sidebar-volumes-styles.png" width="200" alt="Storage space and drives">
-  <img src="docs/images/sidebar-own-names.png" width="200" alt="Own title and hardware name">
-</p>
+Logs and reports stay local. Nothing is uploaded automatically.
 
-<img src="docs/images/bar-rows-ring.png" width="860" alt="Bar with three rows, ring style">
+## Download and run
 
-**All eleven styles** down the side, from Standard to Dual ring:
+Download **Lumen-3.0.0.exe** for the portable application, or the portable ZIP with licence files. No separate .NET installation is required. Close an older running instance before starting the new EXE. Settings are stored beside the EXE, with an AppData fallback when that folder is read-only.
 
-<img src="docs/images/styles-side.png" width="860" alt="All eleven styles in the sidebar">
+The release also includes the complete source archive, all gallery images and SHA-256 checksums.
 
-**Compact styles in the bar** – Compact, Status and Segments:
+## Build and verify
 
-<img src="docs/images/bar-compact-styles.png" width="860" alt="Compact, Status and Segments styles in a bar">
-
-## Colours
-
-State colours (blue → mint → amber → red), the Windows accent or 14 presets; nine backgrounds
-(Graphite, Black OLED, Midnight blue, Deep sea, Forest, Aubergine, Burgundy, Mocha, Slate); glass
-with adjustable opacity; dark or light theme; high contrast. Defaults: dark, high contrast, language
-as in Windows.
-
-- **Typeface:** Inter (built in), Segoe UI, Segoe UI Variable, Bahnschrift, narrow Bahnschrift
-  (more values fit into a bar) or monospace. Missing fonts fall back to Inter.
-- **Themes as files:** *Appearance → Themes* saves the whole look – colours, background, glass, text
-  size, typeface – as a `*.lumentheme` file, and loads one back. No layout and no personal data.
-
-<p>
-  <img src="docs/images/backgrounds.png" width="560" alt="Backgrounds and colours">
-  <img src="docs/images/sidebar-light.png" width="200" alt="Light theme">
-</p>
-
-## Sensors
-
-- **LibreHardwareMonitor 0.9.6** (PawnIO) and the **driverless Open Hardware Monitor** work
-  together; one shared set of rules picks the right readings on Intel (incl. P/E cores), AMD Ryzen,
-  NVIDIA, AMD and Intel Arc graphics, laptops and many mainboards.
-- **AIDA64 or HWiNFO as source (optional):** *Settings → Sensors → Sensor source* reads their shared
-  memory (AIDA64: *Preferences → External Applications → Enable shared memory*; HWiNFO: *Shared Memory
-  Support*). While one of them answers, LibreHardwareMonitor and Open Hardware Monitor pause, so only
-  one program talks to the sensor chips, and Lumen needs no administrator rights. If it stops,
-  Lumen switches back to the built-in sensors on its own. *Automatic* takes whichever runs.
-- The CPU temperature is the mainboard's CPU sensor for every source (not the die diode); the CPU
-  clock is the average of all cores. Drives are matched to Windows disks by serial number, so drive
-  letters stay right in every source.
-- Drive letters per physical drive; VPN and virtual network adapters are skipped.
-- **Settings → System → Show all sensors** lists everything both libraries found.
-- CPU temperatures need administrator rights; *Start with Windows* runs elevated without a prompt.
-- Temperature warning with pop-up; errors are written to `lumen-crash.log` beside the EXE.
-
-## Reliability
-
-- **Freeze watch:** if the sidebar stops answering for 20 seconds, Lumen notes it in
-  `lumen-crash.log` and restarts itself – at most three times in half an hour.
-- **Error report:** *Settings → System → Create error report* (or the tray menu) puts one ZIP on the
-  desktop: error log, sensor lists, settings and a few system facts. Notes, places, coordinates,
-  the ping target and own names are removed. Nothing is sent anywhere.
-- **Light on the PC:** the process list and system counts are only read while their widget shows;
-  a hidden sidebar reads every 5 seconds and draws nothing.
-- **Tested:** every style is rendered as bar and sidebar; the tests fail if a layout never comes to
-  rest, or if a picture differs from its approved reference.
-
-## Settings
-
-Six topics – Widgets, Appearance, Placement, Sensors, Extras, System – with a search across all
-settings, a live preview of the look, a dot on every topic you changed and *Reset this page*.
-Everything applies immediately.
-
-<p>
-  <img src="docs/images/settings-topic-1-widgets.png" width="420" alt="Widgets">
-  <img src="docs/images/settings-topic-2-appearance.png" width="420" alt="Appearance">
-  <img src="docs/images/settings-topic-3-placement.png" width="420" alt="Placement">
-  <img src="docs/images/settings-topic-4-sensors.png" width="420" alt="Sensors">
-  <img src="docs/images/settings-topic-5-extras.png" width="420" alt="Extras">
-  <img src="docs/images/settings-topic-6-system.png" width="420" alt="System">
-</p>
-
-<p>
-  <img src="docs/images/sensors-window.png" width="420" alt="All sensors">
-  <img src="docs/images/warning.png" width="420" alt="Temperature warning">
-</p>
-
-Settings are stored in `lumen-settings.json` beside the EXE, or in `%AppData%\Lumen` if that
-folder is read-only. `Lumen.exe --demo` shows demo data. The EXE is not code-signed, so Windows
-SmartScreen may ask once ("More info" → "Run anyway").
-
-## Build
-
-```
-dotnet test tests/Lumen.Tests                                   # incl. layout and picture tests (LUMEN_UPDATE_REFERENCES=1 renews the pictures)
-dotnet publish src/Lumen.App -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:IncludeAllContentForSelfExtract=true -p:EnableCompressionInSingleFile=true
-dotnet run --project tools/Lumen.Shots -c Release -- shots      # renders the screenshots headless (LUMEN_SHOT_LANG=en for English)
+```powershell
+dotnet test tests/Lumen.Tests -c Release -m:1
+dotnet run --project tools/Lumen.Regression -c Release -- --expect-fixed
+dotnet run --project tools/Lumen.Gallery -c Release -- docs/images/styles-3.0.0
+dotnet publish src/Lumen.App -c Release -r win-x64 --self-contained -m:1 -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:IncludeAllContentForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o publish
 ```
 
-The release workflow (Actions → *Build and publish release*) builds on Windows, runs the tests and
-publishes the EXE, the source ZIP and the screenshots under the version in `Directory.Build.props`.
-Built with Avalonia 11.3 and the Inter typeface.
+The release workflow builds the EXE from the tagged source, runs the tests and packages the source, screenshots and checksums. UI image baselines are OS-specific.
 
 ## Licence
 
-Lumen is released under the [MIT licence](LICENSE). The Open Hardware Monitor parts in
-`lib/OpenHardwareMonitor.Driverless` stay under MPL-2.0; the bundled PresentMon 2.3.1 (Intel) is
-under the MIT licence. Both licence texts are in `licenses/`. LibreHardwareMonitor (MPL-2.0) is
-used as a NuGet package.
+Lumen is distributed under the [MIT licence](LICENSE). The Open Hardware Monitor source in `lib/OpenHardwareMonitor.Driverless` remains MPL-2.0. LibreHardwareMonitor is used as a NuGet package under its licence. PresentMon is MIT-licensed. Included notices are in `licenses/` and the source archive.
+

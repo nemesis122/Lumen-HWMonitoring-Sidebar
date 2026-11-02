@@ -1,327 +1,641 @@
+using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Lumen.Core;
 
-// Where the hardware readings come from. Built-in is LibreHardwareMonitor plus the driverless
-// Open Hardware Monitor; AIDA64 and HWiNFO are read from the shared memory they publish while
-// they run. An external source only takes precedence where it has a value: everything it does
-// not report still comes from the built-in libraries, and if it stops, Lumen falls back on its own.
-public enum SensorSource { Builtin, Auto, Aida64, HwInfo }
-
-// One item of AIDA64's shared memory ("External Applications" → "Enable shared memory").
-public sealed record AidaItem(string Category, string Id, string Label, string Text)
-{
-    public double? Value => External.Number(Text);
-}
-
-// One reading of HWiNFO's shared memory ("Settings" → "Shared Memory Support"). Type follows HWiNFO:
-// 1 temperature, 2 voltage, 3 fan, 4 current, 5 power, 6 clock, 7 usage, 8 other.
-public sealed record HwinfoReading(string Sensor, int SensorIndex, int Type, string Label, string Unit, double Value);
-
 public static class External
 {
-    private const StringComparison I = StringComparison.OrdinalIgnoreCase;
+	private const StringComparison I = StringComparison.OrdinalIgnoreCase;
 
-    public static double? Number(string? text)
-    {
-        if (string.IsNullOrWhiteSpace(text)) return null;
-        string t = text.Trim();
-        if (!t.Contains('.') && t.Count(c => c == ',') == 1) t = t.Replace(',', '.');
-        return double.TryParse(t, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) && double.IsFinite(v) ? v : null;
-    }
+	private static readonly Regex AidaPattern = new Regex("<(\\w+)><id>(.*?)</id><label>(.*?)</label><value>(.*?)</value></\\1>", RegexOptions.Singleline);
 
-    // ---------------------------------------------------------------------------------------------
-    // AIDA64: a flat run of <cat><id>…</id><label>…</label><value>…</value></cat> without a root element.
+	private static readonly Regex AidaGpu = new Regex("^[A-Z]GPU(\\d+)", RegexOptions.IgnoreCase);
 
-    private static readonly Regex AidaPattern = new(@"<(\w+)><id>(.*?)</id><label>(.*?)</label><value>(.*?)</value></\1>", RegexOptions.Singleline);
+	private static readonly Regex AidaCore = new Regex("^SCPU(\\d+)UTI$", RegexOptions.IgnoreCase);
 
-    public static List<AidaItem> ParseAida(string text) =>
-        AidaPattern.Matches(text).Select(m => new AidaItem(m.Groups[1].Value, m.Groups[2].Value.Trim(), m.Groups[3].Value.Trim(), m.Groups[4].Value.Trim())).ToList();
+	private static readonly Regex AidaCoreClock = new Regex("^SCC-\\d+-\\d+$", RegexOptions.IgnoreCase);
 
-    private static readonly Regex AidaGpu = new(@"^[A-Z]GPU(\d+)", RegexOptions.IgnoreCase);
-    private static readonly Regex AidaCore = new(@"^SCPU(\d+)UTI$", RegexOptions.IgnoreCase);
-    private static readonly Regex AidaCoreClock = new(@"^SCC-\d+-\d+$", RegexOptions.IgnoreCase);
-    private static readonly Regex AidaDisk = new(@"^THDD(\d+)$", RegexOptions.IgnoreCase);
+	private static readonly Regex AidaDisk = new Regex("^THDD(\\d+)$", RegexOptions.IgnoreCase);
 
-    // AIDA64's sensor ids become the same nodes LibreHardwareMonitor produces, named so that
-    // SensorPicker reads them by its usual rules.
-    public static List<SensorNode> AidaNodes(IReadOnlyList<AidaItem> items)
-    {
-        var byId = new Dictionary<string, AidaItem>(StringComparer.OrdinalIgnoreCase);
-        foreach (var i in items) byId.TryAdd(i.Id, i);
-        double? V(params string[] ids)
-        {
-            foreach (var id in ids) if (byId.TryGetValue(id, out var it) && it.Value is double v) return v;
-            return null;
-        }
-        var nodes = new List<SensorNode>();
+	public const uint HwinfoSignature = 1399412552u;
 
-        // Processor: AIDA64's "CPU" (the mainboard's socket probe) first, like everywhere in Lumen; package or diode otherwise.
-        var cpu = new List<SensorValue>();
-        void Add(List<SensorValue> list, string type, string name, double? value, int index = 0) { if (value is double v) list.Add(new SensorValue(type, name, v, index, "aida/" + type + "/" + name)); }
-        Add(cpu, "Temperature", "CPU Package", V("TCPU", "TCPUPKG", "TCPUDIO"));
-        Add(cpu, "Load", "CPU Total", V("SCPUUTI"));
-        foreach (var core in items.Select(i => (i, m: AidaCore.Match(i.Id))).Where(x => x.m.Success && x.i.Value is not null)
-                     .OrderBy(x => int.Parse(x.m.Groups[1].Value, CultureInfo.InvariantCulture)))
-            Add(cpu, "Load", "Core #" + core.m.Groups[1].Value, core.i.Value, int.Parse(core.m.Groups[1].Value, CultureInfo.InvariantCulture));
-        // "CPU Clock" is only the first core; the per-core clocks (SCC-<cpu>-<core>) give the average like the built-in sensors.
-        var coreClocks = items.Where(i => AidaCoreClock.IsMatch(i.Id) && i.Value is > 50 and < 10000).Select(i => i.Value!.Value).ToList();
-        Add(cpu, "Clock", "Cores (Average)", coreClocks.Count > 0 ? Math.Round(coreClocks.Average()) : V("SCPUCLK"));
-        Add(cpu, "Power", "Package", V("PCPUPKG", "PCPU"));
-        Add(cpu, "Voltage", "Vcore", V("VCPU"));
-        if (cpu.Count > 0) nodes.Add(new SensorNode("Cpu", "CPU", "aida/cpu", cpu, Array.Empty<SensorNode>()));
+	private static readonly Regex HwCoreUsage = new Regex("^(P-core|E-core|Core)\\s*(\\d+)(?:\\s*T(\\d+))?\\s+Usage$", RegexOptions.IgnoreCase);
 
-        // Graphics cards by AIDA64's own numbering (GPU1, GPU2 …).
-        var gpuNumbers = items.Select(i => AidaGpu.Match(i.Id)).Where(m => m.Success).Select(m => int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture)).Distinct().OrderBy(n => n);
-        foreach (int n in gpuNumbers)
-        {
-            var g = new List<SensorValue>();
-            string p = n.ToString(CultureInfo.InvariantCulture);
-            Add(g, "Temperature", "GPU Core", V($"TGPU{p}DIO", $"TGPU{p}"));
-            var hot = items.FirstOrDefault(i => i.Category == "temp" && i.Id.StartsWith($"TGPU{p}", I) && i.Value is not null
-                && (i.Id.Contains("HOT", I) || i.Label.Contains("Hot", I) || i.Label.Contains("Junction", I)));
-            Add(g, "Temperature", "GPU Hot Spot", hot?.Value);
-            Add(g, "Load", "GPU Core", V($"SGPU{p}UTI"));
-            Add(g, "Clock", "GPU Core", V($"SGPU{p}CLK"));
-            Add(g, "Power", "GPU Power", V($"PGPU{p}"));
-            Add(g, "Fan", "GPU Fan", V($"FGPU{p}"));
-            double? used = V($"SGPU{p}USEDDEMEM"), free = V($"SGPU{p}FREEDEMEM");
-            Add(g, "SmallData", "GPU Memory Used", used);
-            if (used is double u && free is double f) Add(g, "SmallData", "GPU Memory Total", u + f);
-            if (g.Count > 0) nodes.Add(new SensorNode("GpuNvidia", "GPU " + p, "aida/gpu/" + p, g, Array.Empty<SensorNode>()) );
-        }
+	private static readonly Regex HwCoreClock = new Regex("^(P-core|E-core|Core)\\s*(\\d+)\\s+Clock(?:\\s*\\(.*\\))?$", RegexOptions.IgnoreCase);
 
-        // Drives: AIDA64 labels each drive temperature with the drive's model.
-        foreach (var d in items.Where(i => AidaDisk.IsMatch(i.Id) && i.Value is not null))
-            nodes.Add(new SensorNode("Storage", d.Label, "aida/drive/" + AidaDisk.Match(d.Id).Groups[1].Value,
-                new[] { new SensorValue("Temperature", "Temperature", d.Value, 0, "aida/" + d.Id) }, Array.Empty<SensorNode>()));
+	private static readonly Regex HwCoreVid = new Regex("^(P-core|E-core|Core)\\s*(\\d+)\\s+VID$", RegexOptions.IgnoreCase);
 
-        // Mainboard: its probes and every fan header that is not on a graphics card.
-        var board = new List<SensorValue>();
-        foreach (var t in items.Where(i => i.Category == "temp" && i.Value is not null && !Regex.IsMatch(i.Id, @"^T(CPU|CC|GPU|HDD)", RegexOptions.IgnoreCase)))
-        {
-            string name = t.Id.ToUpperInvariant() switch
-            {
-                "TMOBO" => "Motherboard",
-                "TCHIP" or "TPCH" => "Chipset",
-                var id when id.StartsWith("TVRM") => "VRM",
-                _ => t.Label
-            };
-            board.Add(new SensorValue("Temperature", name, t.Value, board.Count, "aida/" + t.Id));
-        }
-        int fanIndex = 0;
-        foreach (var f in items.Where(i => i.Category == "fan" && i.Value is not null && !AidaGpu.IsMatch(i.Id)))
-        {
-            string name = f.Id.Equals("FCPU", I) && !f.Label.Contains("CPU", I) ? "CPU Fan" : f.Label;
-            board.Add(new SensorValue("Fan", name, f.Value, fanIndex++, "aida/" + f.Id));
-        }
-        if (board.Count > 0) nodes.Add(new SensorNode("Motherboard", "Mainboard", "aida/board", board, Array.Empty<SensorNode>()));
-        return nodes;
-    }
+	private static readonly Regex HwGroup = new Regex("^(CPU|GPU)\\s*\\[#(\\d+)\\]", RegexOptions.IgnoreCase);
 
-    // ---------------------------------------------------------------------------------------------
-    // HWiNFO: binary layout of HWiNFO_SENS_SM2, packed to one byte.
+	public static double? Number(string? text)
+	{
+		if (string.IsNullOrWhiteSpace(text))
+		{
+			return null;
+		}
+		string text2 = text.Trim();
+		if (!text2.Contains('.') && text2.Count((char c) => c == ',') == 1)
+		{
+			text2 = text2.Replace(',', '.');
+		}
+		if (!double.TryParse(text2, NumberStyles.Float, CultureInfo.InvariantCulture, out var result) || !double.IsFinite(result))
+		{
+			return null;
+		}
+		return result;
+	}
 
-    public const uint HwinfoSignature = 0x53695748; // "HWiS"
+	public static List<AidaItem> ParseAida(string text)
+	{
+		return (from m in AidaPattern.Matches(text)
+			select new AidaItem(m.Groups[1].Value, m.Groups[2].Value.Trim(), m.Groups[3].Value.Trim(), m.Groups[4].Value.Trim())).ToList();
+	}
 
-    private static string Ansi(ReadOnlySpan<byte> bytes)
-    {
-        int end = bytes.IndexOf((byte)0);
-        if (end >= 0) bytes = bytes[..end];
-        return Encoding.Latin1.GetString(bytes).Trim();
-    }
+	public static List<SensorNode> AidaNodes(IReadOnlyList<AidaItem> items)
+	{
+		Dictionary<string, AidaItem> byId = new Dictionary<string, AidaItem>(StringComparer.OrdinalIgnoreCase);
+		foreach (AidaItem item in items)
+		{
+			byId.TryAdd(item.Id, item);
+		}
+		List<SensorNode> list = new List<SensorNode>();
+		List<SensorValue> list2 = new List<SensorValue>();
+		Add(list2, "Temperature", "CPU Package", V(new string[3] { "TCPU", "TCPUPKG", "TCPUDIO" }));
+		Add(list2, "Load", "CPU Total", V(new string[1] { "SCPUUTI" }));
+		foreach (var item2 in from i in items
+			select (i: i, m: AidaCore.Match(i.Id)) into x
+			where x.m.Success && x.i.Value.HasValue
+			orderby int.Parse(x.m.Groups[1].Value, CultureInfo.InvariantCulture)
+			select x)
+		{
+			Add(list2, "Load", "Core #" + item2.Item2.Groups[1].Value, item2.Item1.Value, int.Parse(item2.Item2.Groups[1].Value, CultureInfo.InvariantCulture));
+		}
+		List<double> list3 = (from i in items.Where(delegate(AidaItem i)
+			{
+				if (AidaCoreClock.IsMatch(i.Id))
+				{
+					double? value2 = i.Value;
+					if (value2.HasValue)
+					{
+						double valueOrDefault3 = value2.GetValueOrDefault();
+						if (valueOrDefault3 > 50.0)
+						{
+							return valueOrDefault3 < 10000.0;
+						}
+					}
+					return false;
+				}
+				return false;
+			})
+			select i.Value.Value).ToList();
+		Add(list2, "Clock", "Cores (Average)", (list3.Count > 0) ? new double?(Math.Round(list3.Average())) : V(new string[1] { "SCPUCLK" }));
+		Add(list2, "Power", "Package", V(new string[2] { "PCPUPKG", "PCPU" }));
+		Add(list2, "Voltage", "Vcore", V(new string[1] { "VCPU" }));
+		if (list2.Count > 0)
+		{
+			list.Add(new SensorNode("Cpu", "CPU", "aida/cpu", list2, Array.Empty<SensorNode>()));
+		}
+		foreach (int item3 in from n in (from i in items
+				select AidaGpu.Match(i.Id) into m
+				where m.Success
+				select int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture)).Distinct()
+			orderby n
+			select n)
+		{
+			List<SensorValue> list4 = new List<SensorValue>();
+			string p = item3.ToString(CultureInfo.InvariantCulture);
+			Add(list4, "Temperature", "GPU Core", V(new string[2]
+			{
+				"TGPU" + p + "DIO",
+				"TGPU" + p
+			}));
+			Add(list4, "Temperature", "GPU Hot Spot", items.FirstOrDefault((AidaItem i) => i.Category == "temp" && i.Id.StartsWith("TGPU" + p, StringComparison.OrdinalIgnoreCase) && i.Value.HasValue && (i.Id.Contains("HOT", StringComparison.OrdinalIgnoreCase) || i.Label.Contains("Hot", StringComparison.OrdinalIgnoreCase) || i.Label.Contains("Junction", StringComparison.OrdinalIgnoreCase)))?.Value);
+			Add(list4, "Load", "GPU Core", V(new string[1] { "SGPU" + p + "UTI" }));
+			Add(list4, "Clock", "GPU Core", V(new string[1] { "SGPU" + p + "CLK" }));
+			Add(list4, "Power", "GPU Power", V(new string[1] { "PGPU" + p }));
+			Add(list4, "Fan", "GPU Fan", V(new string[1] { "FGPU" + p }));
+			double? value = V(new string[1] { "SGPU" + p + "USEDDEMEM" });
+			double? num = V(new string[1] { "SGPU" + p + "FREEDEMEM" });
+			Add(list4, "SmallData", "GPU Memory Used", value);
+			if (value.HasValue)
+			{
+				double valueOrDefault = value.GetValueOrDefault();
+				if (num.HasValue)
+				{
+					double valueOrDefault2 = num.GetValueOrDefault();
+					Add(list4, "SmallData", "GPU Memory Total", valueOrDefault + valueOrDefault2);
+				}
+			}
+			if (list4.Count > 0)
+			{
+				list.Add(new SensorNode("GpuNvidia", "GPU " + p, "aida/gpu/" + p, list4, Array.Empty<SensorNode>()));
+			}
+		}
+		foreach (AidaItem item4 in items.Where((AidaItem i) => AidaDisk.IsMatch(i.Id) && i.Value.HasValue))
+		{
+			list.Add(new SensorNode("Storage", item4.Label, "aida/drive/" + AidaDisk.Match(item4.Id).Groups[1].Value, new SensorValue[1]
+			{
+				new SensorValue("Temperature", "Temperature", item4.Value, 0, "aida/" + item4.Id)
+			}, Array.Empty<SensorNode>()));
+		}
+		List<SensorValue> list5 = new List<SensorValue>();
+		foreach (AidaItem item5 in items.Where((AidaItem i) => i.Category == "temp" && i.Value.HasValue && !Regex.IsMatch(i.Id, "^T(CPU|CC|GPU|HDD)", RegexOptions.IgnoreCase)))
+		{
+			string text = item5.Id.ToUpperInvariant();
+			string text2;
+			switch (text)
+			{
+			case "TMOBO":
+				text2 = "Motherboard";
+				break;
+			case "TCHIP":
+			case "TPCH":
+				text2 = "Chipset";
+				break;
+			default:
+				text2 = ((!text.StartsWith("TVRM")) ? item5.Label : "VRM");
+				break;
+			}
+			string name = text2;
+			list5.Add(new SensorValue("Temperature", name, item5.Value, list5.Count, "aida/" + item5.Id));
+		}
+		int num2 = 0;
+		foreach (AidaItem item6 in items.Where((AidaItem i) => i.Category == "fan" && i.Value.HasValue && !AidaGpu.IsMatch(i.Id)))
+		{
+			string name2 = ((item6.Id.Equals("FCPU", StringComparison.OrdinalIgnoreCase) && !item6.Label.Contains("CPU", StringComparison.OrdinalIgnoreCase)) ? "CPU Fan" : item6.Label);
+			list5.Add(new SensorValue("Fan", name2, item6.Value, num2++, "aida/" + item6.Id));
+		}
+		if (list5.Count > 0)
+		{
+			list.Add(new SensorNode("Motherboard", "Mainboard", "aida/board", list5, Array.Empty<SensorNode>()));
+		}
+		return list;
+		static void Add(List<SensorValue> list6, string type, string text3, double? num3, int index = 0)
+		{
+			if (num3.HasValue)
+			{
+				double valueOrDefault3 = num3.GetValueOrDefault();
+				list6.Add(new SensorValue(type, text3, valueOrDefault3, index, "aida/" + type + "/" + text3));
+			}
+		}
+		double? V(string[] ids)
+		{
+			foreach (string key in ids)
+			{
+				if (byId.TryGetValue(key, out AidaItem value2))
+				{
+					double? value3 = value2.Value;
+					if (value3.HasValue)
+					{
+						return value3.GetValueOrDefault();
+					}
+				}
+			}
+			return null;
+		}
+	}
 
-    // The size the whole block needs, from its header; null if the header is not HWiNFO's.
-    public static int? HwinfoSize(ReadOnlySpan<byte> header)
-    {
-        if (header.Length < 44 || BitConverter.ToUInt32(header[..4]) != HwinfoSignature) return null;
-        long readings = BitConverter.ToUInt32(header.Slice(32, 4)) + (long)BitConverter.ToUInt32(header.Slice(36, 4)) * BitConverter.ToUInt32(header.Slice(40, 4));
-        long sensors = BitConverter.ToUInt32(header.Slice(20, 4)) + (long)BitConverter.ToUInt32(header.Slice(24, 4)) * BitConverter.ToUInt32(header.Slice(28, 4));
-        long size = Math.Max(readings, sensors);
-        return size is > 0 and < 64 * 1024 * 1024 ? (int)size : null;
-    }
+	private static string Ansi(ReadOnlySpan<byte> bytes)
+	{
+		int num = bytes.IndexOf<byte>(0);
+		if (num >= 0)
+		{
+			bytes = bytes.Slice(0, num);
+		}
+		return Encoding.Latin1.GetString(bytes).Trim();
+	}
 
-    public static List<HwinfoReading> ParseHwinfo(ReadOnlySpan<byte> data)
-    {
-        var result = new List<HwinfoReading>();
-        if (HwinfoSize(data) is not int size || data.Length < size) return result;
-        int U(ReadOnlySpan<byte> d, int at) => (int)BitConverter.ToUInt32(d.Slice(at, 4));
-        int sensorOffset = U(data, 20), sensorSize = U(data, 24), sensorCount = U(data, 28);
-        int readingOffset = U(data, 32), readingSize = U(data, 36), readingCount = U(data, 40);
-        if (sensorSize < 136 || readingSize < 316) return result;
-        var sensors = new List<string>();
-        for (int i = 0; i < sensorCount; i++)
-            sensors.Add(Ansi(data.Slice(sensorOffset + i * sensorSize + 8, 128)));
-        for (int i = 0; i < readingCount; i++)
-        {
-            var r = data.Slice(readingOffset + i * readingSize, readingSize);
-            int type = (int)BitConverter.ToUInt32(r[..4]);
-            int sensor = (int)BitConverter.ToUInt32(r.Slice(4, 4));
-            double value = BitConverter.ToDouble(r.Slice(284, 8));
-            if (type == 0 || sensor < 0 || sensor >= sensors.Count || !double.IsFinite(value)) continue;
-            result.Add(new HwinfoReading(sensors[sensor], sensor, type, Ansi(r.Slice(12, 128)), Ansi(r.Slice(268, 16)), value));
-        }
-        return result;
-    }
+	public static int? HwinfoSize(ReadOnlySpan<byte> header)
+	{
+		if (header.Length < 44 || BitConverter.ToUInt32(header.Slice(0, 4)) != 1399412552)
+		{
+			return null;
+		}
+		long val = BitConverter.ToUInt32(header.Slice(32, 4)) + (long)BitConverter.ToUInt32(header.Slice(36, 4)) * (long)BitConverter.ToUInt32(header.Slice(40, 4));
+		long val2 = BitConverter.ToUInt32(header.Slice(20, 4)) + (long)BitConverter.ToUInt32(header.Slice(24, 4)) * (long)BitConverter.ToUInt32(header.Slice(28, 4));
+		long num = Math.Max(val, val2);
+		if (num <= 0 || num >= 67108864)
+		{
+			return null;
+		}
+		return (int)num;
+	}
 
-    private static readonly Regex HwCoreUsage = new(@"^(P-core|E-core|Core)\s*(\d+)(?:\s*T(\d+))?\s+Usage$", RegexOptions.IgnoreCase);
-    private static readonly Regex HwCoreClock = new(@"^(P-core|E-core|Core)\s*(\d+)\s+Clock(?:\s*\(.*\))?$", RegexOptions.IgnoreCase);
-    private static readonly Regex HwCoreVid = new(@"^(P-core|E-core|Core)\s*(\d+)\s+VID$", RegexOptions.IgnoreCase);
-    private static readonly Regex HwGroup = new(@"^(CPU|GPU)\s*\[#(\d+)\]", RegexOptions.IgnoreCase);
+	public static List<HwinfoReading> ParseHwinfo(ReadOnlySpan<byte> data)
+	{
+		List<HwinfoReading> list = new List<HwinfoReading>();
+		int? num = HwinfoSize(data);
+		if (num.HasValue)
+		{
+			int valueOrDefault = num.GetValueOrDefault();
+			if (data.Length >= valueOrDefault)
+			{
+				int num2 = U(data, 20);
+				int num3 = U(data, 24);
+				int num4 = U(data, 28);
+				int num5 = U(data, 32);
+				int num6 = U(data, 36);
+				int num7 = U(data, 40);
+				if (num3 < 136 || num6 < 316)
+				{
+					return list;
+				}
+				List<string> list2 = new List<string>();
+				for (int i = 0; i < num4; i++)
+				{
+					list2.Add(Ansi(data.Slice(num2 + i * num3 + 8, 128)));
+				}
+				for (int j = 0; j < num7; j++)
+				{
+					ReadOnlySpan<byte> readOnlySpan = data.Slice(num5 + j * num6, num6);
+					int num8 = (int)BitConverter.ToUInt32(readOnlySpan.Slice(0, 4));
+					int num9 = (int)BitConverter.ToUInt32(readOnlySpan.Slice(4, 4));
+					double num10 = BitConverter.ToDouble(readOnlySpan.Slice(284, 8));
+					if (num8 != 0 && num9 >= 0 && num9 < list2.Count && double.IsFinite(num10))
+					{
+						list.Add(new HwinfoReading(list2[num9], num9, num8, Ansi(readOnlySpan.Slice(12, 128)), Ansi(readOnlySpan.Slice(268, 16)), num10));
+					}
+				}
+				return list;
+			}
+		}
+		return list;
+		static int U(ReadOnlySpan<byte> d, int at)
+		{
+			return (int)BitConverter.ToUInt32(d.Slice(at, 4));
+		}
+	}
 
-    // "GPU [#0]: NVIDIA GeForce RTX 3070 Ti: ASUS TUF …" → "NVIDIA GeForce RTX 3070 Ti";
-    // "S.M.A.R.T.: Samsung SSD 970 EVO Plus 1TB (S4EW…)" → "Samsung SSD 970 EVO Plus 1TB".
-    public static string HwinfoName(string sensor)
-    {
-        int colon = sensor.IndexOf(": ", StringComparison.Ordinal);
-        string rest = colon >= 0 ? sensor[(colon + 2)..] : sensor;
-        int next = rest.IndexOf(": ", StringComparison.Ordinal);
-        if (next >= 0) rest = rest[..next];
-        rest = Regex.Replace(rest, @"\s*\([^()]*\)\s*$", "");
-        return rest.Trim();
-    }
+	public static string HwinfoName(string sensor)
+	{
+		int num = sensor.IndexOf(": ", StringComparison.Ordinal);
+		string text;
+		if (num < 0)
+		{
+			text = sensor;
+		}
+		else
+		{
+			int num2 = num + 2;
+			text = sensor.Substring(num2, sensor.Length - num2);
+		}
+		string text2 = text;
+		int num3 = text2.IndexOf(": ", StringComparison.Ordinal);
+		if (num3 >= 0)
+		{
+			text2 = text2.Substring(0, num3);
+		}
+		text2 = Regex.Replace(text2, "\\s*\\([^()]*\\)\\s*$", "");
+		return text2.Trim();
+	}
 
-    private static double Convert(HwinfoReading r)
-    {
-        string u = r.Unit.Trim();
-        return u switch
-        {
-            "°F" or "°F" => (r.Value - 32) * 5 / 9,
-            "GB" when r.Type == 8 => r.Value * 1024,
-            "KB/s" => r.Value * 1024,
-            "MB/s" => r.Value * 1024 * 1024,
-            "GB/s" => r.Value * 1024 * 1024 * 1024,
-            "GHz" => r.Value * 1000,
-            _ => r.Value
-        };
-    }
+	private static double Convert(HwinfoReading r)
+	{
+		switch (r.Unit.Trim())
+		{
+		case "°F":
+			return (r.Value - 32.0) * 5.0 / 9.0;
+		case "GB":
+			if (r.Type == 8)
+			{
+				return r.Value * 1024.0;
+			}
+			break;
+		case "KB/s":
+			return r.Value * 1024.0;
+		case "MB/s":
+			return r.Value * 1024.0 * 1024.0;
+		case "GB/s":
+			return r.Value * 1024.0 * 1024.0 * 1024.0;
+		case "GHz":
+			return r.Value * 1000.0;
+		}
+		return r.Value;
+	}
 
-    public static List<SensorNode> HwinfoNodes(IReadOnlyList<HwinfoReading> readings)
-    {
-        var nodes = new List<SensorNode>();
-        var groups = readings.GroupBy(r => r.Sensor).ToList();
+	public static List<SensorNode> HwinfoNodes(IReadOnlyList<HwinfoReading> readings)
+	{
+		List<SensorNode> list = new List<SensorNode>();
+		List<IGrouping<string, HwinfoReading>> source = (from r in readings
+			group r by r.Sensor).ToList();
+		List<IGrouping<string, HwinfoReading>> list2 = source.Where((IGrouping<string, HwinfoReading> g) => g.Key.StartsWith("CPU [#0]", StringComparison.OrdinalIgnoreCase)).ToList();
+		if (list2.Count > 0)
+		{
+			List<SensorValue> list3 = new List<SensorValue>();
+			int num = 0;
+			foreach (HwinfoReading item in list2.SelectMany((IGrouping<string, HwinfoReading> g) => g))
+			{
+				double value = Convert(item);
+				string label = item.Label;
+				(string, string)? tuple;
+				switch (item.Type)
+				{
+				case 1:
+					tuple = ((!label.Equals("CPU (Tctl/Tdie)", StringComparison.OrdinalIgnoreCase)) ? ((!label.Equals("CPU Package", StringComparison.OrdinalIgnoreCase)) ? ((!label.Equals("Core Max", StringComparison.OrdinalIgnoreCase)) ? ((!label.Equals("CPU Die (average)", StringComparison.OrdinalIgnoreCase)) ? new(string, string)?(("Temperature", label)) : new(string, string)?(("Temperature", "Core (Tdie)"))) : new(string, string)?(("Temperature", "Core Max"))) : new(string, string)?(("Temperature", "CPU Package"))) : new(string, string)?(("Temperature", "Core (Tctl/Tdie)")));
+					break;
+				case 7:
+				{
+					if (label.Equals("Total CPU Usage", StringComparison.OrdinalIgnoreCase))
+					{
+						tuple = ("Load", "CPU Total");
+						break;
+					}
+					Match match3 = HwCoreUsage.Match(label);
+					if (match3 != null && match3.Success && match3.Groups[3].Success)
+					{
+						int num2 = ++num;
+						tuple = ("Load", "Thread #" + num2);
+						break;
+					}
+					Match match4 = HwCoreUsage.Match(label);
+					if (match4 != null && match4.Success)
+					{
+						tuple = ("Load", CoreName(match4.Groups[1].Value, match4.Groups[2].Value));
+						break;
+					}
+					goto default;
+				}
+				case 6:
+					if (label.StartsWith("Core Clocks", StringComparison.OrdinalIgnoreCase) && label.Contains("avg", StringComparison.OrdinalIgnoreCase))
+					{
+						tuple = ("Clock", "Cores (Average)");
+						break;
+					}
+					if (!label.Contains("Effective", StringComparison.OrdinalIgnoreCase))
+					{
+						Match match2 = HwCoreClock.Match(label);
+						if (match2 != null && match2.Success)
+						{
+							tuple = ("Clock", CoreName(match2.Groups[1].Value, match2.Groups[2].Value));
+							break;
+						}
+					}
+					goto default;
+				case 5:
+					if (label.Equals("CPU Package Power", StringComparison.OrdinalIgnoreCase))
+					{
+						tuple = ("Power", "Package");
+						break;
+					}
+					if (label.Equals("CPU PPT", StringComparison.OrdinalIgnoreCase))
+					{
+						tuple = ("Power", "CPU PPT");
+						break;
+					}
+					if (label.StartsWith("CPU Core Power", StringComparison.OrdinalIgnoreCase))
+					{
+						tuple = ("Power", "CPU Cores");
+						break;
+					}
+					goto default;
+				case 2:
+				{
+					if (label.StartsWith("CPU Core Voltage (SVI2", StringComparison.OrdinalIgnoreCase))
+					{
+						tuple = ("Voltage", "Core (SVI2 TFN)");
+						break;
+					}
+					if (label.StartsWith("CPU Core Voltage (SVI3", StringComparison.OrdinalIgnoreCase))
+					{
+						tuple = ("Voltage", "Core (SVI3 TFN)");
+						break;
+					}
+					if (label.Equals("Vcore", StringComparison.OrdinalIgnoreCase) || label.Equals("CPU Core Voltage", StringComparison.OrdinalIgnoreCase))
+					{
+						tuple = ("Voltage", "Vcore");
+						break;
+					}
+					Match match = HwCoreVid.Match(label);
+					if (match != null && match.Success)
+					{
+						tuple = ("Voltage", CoreName(match.Groups[1].Value, match.Groups[2].Value) + " VID");
+						break;
+					}
+					goto default;
+				}
+				default:
+					tuple = null;
+					break;
+				}
+				(string, string)? tuple2 = tuple;
+				if (tuple2.HasValue)
+				{
+					(string type, string name) x = tuple2.GetValueOrDefault();
+					list3.Add(new SensorValue(x.type, x.name, value, list3.Count((SensorValue s) => s.Type == x.type), "hwinfo/cpu/" + label));
+				}
+			}
+			string text = HwinfoName(list2[0].Key);
+			list.Add(new SensorNode("Cpu", (text.Length > 0) ? text : "CPU", "hwinfo/cpu/0", list3, Array.Empty<SensorNode>()));
+		}
+		foreach (IGrouping<string, IGrouping<string, HwinfoReading>> item2 in from g in source.Where(delegate(IGrouping<string, HwinfoReading> g)
+			{
+				Match match5 = HwGroup.Match(g.Key);
+				return match5 != null && match5.Success && match5.Groups[1].Value.Equals("GPU", StringComparison.OrdinalIgnoreCase);
+			})
+			group g by HwGroup.Match(g.Key).Groups[2].Value)
+		{
+			List<SensorValue> list4 = new List<SensorValue>();
+			double? num3 = null;
+			double? num4 = null;
+			foreach (HwinfoReading item3 in item2.SelectMany((IGrouping<string, HwinfoReading> g) => g))
+			{
+				double value2 = Convert(item3);
+				string label2 = item3.Label;
+				(string, string)? tuple;
+				switch (item3.Type)
+				{
+				case 1:
+					tuple = ((!label2.Equals("GPU Temperature", StringComparison.OrdinalIgnoreCase)) ? ((!label2.Contains("Hot Spot", StringComparison.OrdinalIgnoreCase) && !label2.Contains("Hotspot", StringComparison.OrdinalIgnoreCase)) ? new(string, string)?(("Temperature", label2)) : new(string, string)?(("Temperature", "GPU Hot Spot"))) : new(string, string)?(("Temperature", "GPU Core")));
+					break;
+				case 7:
+					if (label2.Equals("GPU Core Load", StringComparison.OrdinalIgnoreCase) || label2.Equals("GPU Utilization", StringComparison.OrdinalIgnoreCase))
+					{
+						tuple = ("Load", "GPU Core");
+						break;
+					}
+					if (label2.Equals("GPU Memory Usage", StringComparison.OrdinalIgnoreCase))
+					{
+						tuple = ("Load", "GPU Memory");
+						break;
+					}
+					goto default;
+				case 6:
+					if (label2.Equals("GPU Clock", StringComparison.OrdinalIgnoreCase) || label2.Equals("GPU Core Clock", StringComparison.OrdinalIgnoreCase))
+					{
+						tuple = ("Clock", "GPU Core");
+						break;
+					}
+					goto default;
+				case 5:
+					if (label2.Equals("GPU Power", StringComparison.OrdinalIgnoreCase) || label2.Equals("GPU ASIC Power", StringComparison.OrdinalIgnoreCase) || label2.Equals("Total Graphics Power", StringComparison.OrdinalIgnoreCase) || label2.Equals("GPU PPT", StringComparison.OrdinalIgnoreCase))
+					{
+						tuple = ("Power", "GPU Power");
+						break;
+					}
+					goto default;
+				case 3:
+					tuple = ("Fan", label2);
+					break;
+				case 8:
+					if (label2.Equals("GPU Memory Allocated", StringComparison.OrdinalIgnoreCase))
+					{
+						tuple = ("SmallData", "GPU Memory Used");
+						break;
+					}
+					if (label2.Equals("GPU Memory Available", StringComparison.OrdinalIgnoreCase))
+					{
+						tuple = ("SmallData", "GPU Memory Free");
+						break;
+					}
+					if (label2.Equals("GPU D3D Memory Dedicated", StringComparison.OrdinalIgnoreCase))
+					{
+						tuple = ("SmallData", "D3D Dedicated Memory Used");
+						break;
+					}
+					goto default;
+				default:
+					tuple = null;
+					break;
+				}
+				(string, string)? tuple3 = tuple;
+				if (tuple3.HasValue)
+				{
+					(string type, string name) x2 = tuple3.GetValueOrDefault();
+					if (x2.name == "GPU Memory Used")
+					{
+						num3 = value2;
+					}
+					if (x2.name == "GPU Memory")
+					{
+						num4 = value2;
+					}
+					list4.Add(new SensorValue(x2.type, x2.name, value2, list4.Count((SensorValue s) => s.Type == x2.type), "hwinfo/gpu/" + label2));
+				}
+			}
+			if (num3.HasValue)
+			{
+				double valueOrDefault = num3.GetValueOrDefault();
+				if (num4.HasValue)
+				{
+					double valueOrDefault2 = num4.GetValueOrDefault();
+					if (valueOrDefault2 > 1.0 && valueOrDefault2 <= 100.0 && !list4.Any(delegate(SensorValue s)
+					{
+						string name = s.Name;
+						return (name == "GPU Memory Free" || name == "GPU Memory Total") ? true : false;
+					}))
+					{
+						list4.Add(new SensorValue("SmallData", "GPU Memory Total", Math.Round(valueOrDefault / num4.Value * 100.0), 0, "hwinfo/gpu/total"));
+					}
+				}
+			}
+			string text2 = HwinfoName(item2.First().Key);
+			string type = ((text2.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase) || text2.Contains("GeForce", StringComparison.OrdinalIgnoreCase)) ? "GpuNvidia" : (text2.Contains("Intel", StringComparison.OrdinalIgnoreCase) ? "GpuIntel" : "GpuAmd"));
+			list.Add(new SensorNode(type, text2, "hwinfo/gpu/" + item2.Key, list4, Array.Empty<SensorNode>()));
+		}
+		foreach (IGrouping<string, IGrouping<string, HwinfoReading>> item4 in from g in source
+			where g.Key.StartsWith("S.M.A.R.T.", StringComparison.OrdinalIgnoreCase) || g.Key.StartsWith("Drive:", StringComparison.OrdinalIgnoreCase)
+			group g by DriveName(g.Key))
+		{
+			List<SensorValue> list5 = new List<SensorValue>();
+			foreach (HwinfoReading item5 in item4.SelectMany((IGrouping<string, HwinfoReading> g) => g))
+			{
+				int type2 = item5.Type;
+				(string, string)? tuple;
+				if (type2 == 1)
+				{
+					tuple = ((!item5.Label.StartsWith("Drive Temperature", StringComparison.OrdinalIgnoreCase) || item5.Label.Contains("2")) ? new(string, string)?(("Temperature", item5.Label)) : new(string, string)?(("Temperature", "Temperature")));
+				}
+				else
+				{
+					if (type2 != 8)
+					{
+						goto IL_0c01;
+					}
+					if (item5.Label.Equals("Read Rate", StringComparison.OrdinalIgnoreCase))
+					{
+						tuple = ("Throughput", "Read Rate");
+					}
+					else
+					{
+						if (!item5.Label.Equals("Write Rate", StringComparison.OrdinalIgnoreCase))
+						{
+							goto IL_0c01;
+						}
+						tuple = ("Throughput", "Write Rate");
+					}
+				}
+				goto IL_0c0d;
+				IL_0c0d:
+				(string, string)? tuple4 = tuple;
+				if (tuple4.HasValue)
+				{
+					(string type, string name) x3 = tuple4.GetValueOrDefault();
+					list5.Add(new SensorValue(x3.type, x3.name, Convert(item5), list5.Count((SensorValue s) => s.Type == x3.type), "hwinfo/drive/" + item5.Label));
+				}
+				continue;
+				IL_0c01:
+				tuple = null;
+				goto IL_0c0d;
+			}
+			if (list5.Count > 0)
+			{
+				list.Add(new SensorNode("Storage", item4.Key, "hwinfo/drive/" + item4.Key, list5, Array.Empty<SensorNode>()));
+			}
+		}
+		string[] skip = new string[11]
+		{
+			"CPU [", "GPU [", "S.M.A.R.T.", "Drive:", "Network:", "Memory Timings", "System:", "Windows Hardware Errors", "Battery", "DIMM",
+			"RTSS"
+		};
+		List<IGrouping<string, HwinfoReading>> list6 = source.Where((IGrouping<string, HwinfoReading> g) => !skip.Any((string s) => g.Key.StartsWith(s, StringComparison.OrdinalIgnoreCase)) && g.Any(delegate(HwinfoReading r)
+		{
+			int type3 = r.Type;
+			return (type3 == 1 || type3 == 3) ? true : false;
+		})).ToList();
+		if (list6.Count > 0)
+		{
+			List<SensorNode> sub = list6.Select((IGrouping<string, HwinfoReading> g) => new SensorNode("SuperIO", g.Key, "hwinfo/board/" + g.Key, g.Where(delegate(HwinfoReading r)
+			{
+				int type3 = r.Type;
+				return (type3 == 1 || type3 == 3) ? true : false;
+			}).Select((HwinfoReading r, int i) => new SensorValue((r.Type == 1) ? "Temperature" : "Fan", r.Label, Convert(r), i, "hwinfo/board/" + g.Key + "/" + r.Label)).ToList(), Array.Empty<SensorNode>())).ToList();
+			list.Add(new SensorNode("Motherboard", HwinfoName(list6[0].Key), "hwinfo/board", Array.Empty<SensorValue>(), sub));
+		}
+		return list;
+	}
 
-        // Processor: HWiNFO splits it into several blocks ("CPU [#0]: …", "…: Enhanced", "C-State Residency").
-        var cpuGroups = groups.Where(g => g.Key.StartsWith("CPU [#0]", I)).ToList();
-        if (cpuGroups.Count > 0)
-        {
-            var list = new List<SensorValue>();
-            int thread = 0;
-            foreach (var r in cpuGroups.SelectMany(g => g))
-            {
-                double v = Convert(r);
-                string label = r.Label;
-                (string type, string name)? map = r.Type switch
-                {
-                    1 when label.Equals("CPU (Tctl/Tdie)", I) => ("Temperature", "Core (Tctl/Tdie)"),
-                    1 when label.Equals("CPU Package", I) => ("Temperature", "CPU Package"),
-                    1 when label.Equals("Core Max", I) => ("Temperature", "Core Max"),
-                    1 when label.Equals("CPU Die (average)", I) => ("Temperature", "Core (Tdie)"),
-                    1 => ("Temperature", label),
-                    7 when label.Equals("Total CPU Usage", I) => ("Load", "CPU Total"),
-                    7 when HwCoreUsage.Match(label) is { Success: true } m && m.Groups[3].Success => ("Load", "Thread #" + (++thread)),
-                    7 when HwCoreUsage.Match(label) is { Success: true } m => ("Load", CoreName(m.Groups[1].Value, m.Groups[2].Value)),
-                    6 when label.StartsWith("Core Clocks", I) && label.Contains("avg", I) => ("Clock", "Cores (Average)"),
-                    6 when !label.Contains("Effective", I) && HwCoreClock.Match(label) is { Success: true } m => ("Clock", CoreName(m.Groups[1].Value, m.Groups[2].Value)),
-                    5 when label.Equals("CPU Package Power", I) => ("Power", "Package"),
-                    5 when label.Equals("CPU PPT", I) => ("Power", "CPU PPT"),
-                    5 when label.StartsWith("CPU Core Power", I) => ("Power", "CPU Cores"),
-                    2 when label.StartsWith("CPU Core Voltage (SVI2", I) => ("Voltage", "Core (SVI2 TFN)"),
-                    2 when label.StartsWith("CPU Core Voltage (SVI3", I) => ("Voltage", "Core (SVI3 TFN)"),
-                    2 when label.Equals("Vcore", I) || label.Equals("CPU Core Voltage", I) => ("Voltage", "Vcore"),
-                    2 when HwCoreVid.Match(label) is { Success: true } m => ("Voltage", CoreName(m.Groups[1].Value, m.Groups[2].Value) + " VID"),
-                    _ => null
-                };
-                if (map is { } x) list.Add(new SensorValue(x.type, x.name, v, list.Count(s => s.Type == x.type), "hwinfo/cpu/" + label));
-            }
-            string name = HwinfoName(cpuGroups[0].Key);
-            nodes.Add(new SensorNode("Cpu", name.Length > 0 ? name : "CPU", "hwinfo/cpu/0", list, Array.Empty<SensorNode>()));
-        }
+	public static string DriveName(string sensor)
+	{
+		int num = sensor.IndexOf(": ", StringComparison.Ordinal);
+		string text;
+		if (num < 0)
+		{
+			text = sensor;
+		}
+		else
+		{
+			int num2 = num + 2;
+			text = sensor.Substring(num2, sensor.Length - num2);
+		}
+		return text.Trim();
+	}
 
-        // Graphics cards: every "GPU [#n]" block of one card becomes one node.
-        foreach (var card in groups.Where(g => HwGroup.Match(g.Key) is { Success: true } m && m.Groups[1].Value.Equals("GPU", I))
-                     .GroupBy(g => HwGroup.Match(g.Key).Groups[2].Value))
-        {
-            var list = new List<SensorValue>();
-            double? allocated = null, usagePercent = null;
-            foreach (var r in card.SelectMany(g => g))
-            {
-                double v = Convert(r);
-                string label = r.Label;
-                (string type, string name)? map = r.Type switch
-                {
-                    1 when label.Equals("GPU Temperature", I) => ("Temperature", "GPU Core"),
-                    1 when label.Contains("Hot Spot", I) || label.Contains("Hotspot", I) => ("Temperature", "GPU Hot Spot"),
-                    1 => ("Temperature", label),
-                    7 when label.Equals("GPU Core Load", I) || label.Equals("GPU Utilization", I) => ("Load", "GPU Core"),
-                    7 when label.Equals("GPU Memory Usage", I) => ("Load", "GPU Memory"),
-                    6 when label.Equals("GPU Clock", I) || label.Equals("GPU Core Clock", I) => ("Clock", "GPU Core"),
-                    5 when label.Equals("GPU Power", I) || label.Equals("GPU ASIC Power", I) || label.Equals("Total Graphics Power", I) || label.Equals("GPU PPT", I) => ("Power", "GPU Power"),
-                    3 => ("Fan", label),
-                    8 when label.Equals("GPU Memory Allocated", I) => ("SmallData", "GPU Memory Used"),
-                    8 when label.Equals("GPU Memory Available", I) => ("SmallData", "GPU Memory Free"),
-                    8 when label.Equals("GPU D3D Memory Dedicated", I) => ("SmallData", "D3D Dedicated Memory Used"),
-                    _ => null
-                };
-                if (map is not { } x) continue;
-                if (x.name == "GPU Memory Used") allocated = v;
-                if (x.name == "GPU Memory") usagePercent = v;
-                list.Add(new SensorValue(x.type, x.name, v, list.Count(s => s.Type == x.type), "hwinfo/gpu/" + label));
-            }
-            // Only "Allocated" and "Usage %" given: the card's memory follows from the two.
-            if (allocated is double a && usagePercent is > 1 and <= 100 && !list.Any(s => s.Name is "GPU Memory Free" or "GPU Memory Total"))
-                list.Add(new SensorValue("SmallData", "GPU Memory Total", Math.Round(a / usagePercent.Value * 100), 0, "hwinfo/gpu/total"));
-            string name = HwinfoName(card.First().Key);
-            string type = name.Contains("NVIDIA", I) || name.Contains("GeForce", I) ? "GpuNvidia"
-                : name.Contains("Intel", I) ? "GpuIntel" : "GpuAmd";
-            nodes.Add(new SensorNode(type, name, "hwinfo/gpu/" + card.Key, list, Array.Empty<SensorNode>()));
-        }
-
-        // Drives: "S.M.A.R.T.: <model>" holds the temperature, "Drive: <model>" the throughput.
-        foreach (var drive in groups.Where(g => g.Key.StartsWith("S.M.A.R.T.", I) || g.Key.StartsWith("Drive:", I)).GroupBy(g => DriveName(g.Key)))
-        {
-            var list = new List<SensorValue>();
-            foreach (var r in drive.SelectMany(g => g))
-            {
-                (string type, string name)? map = r.Type switch
-                {
-                    1 when r.Label.StartsWith("Drive Temperature", I) && !r.Label.Contains("2") => ("Temperature", "Temperature"),
-                    1 => ("Temperature", r.Label),
-                    8 when r.Label.Equals("Read Rate", I) => ("Throughput", "Read Rate"),
-                    8 when r.Label.Equals("Write Rate", I) => ("Throughput", "Write Rate"),
-                    _ => null
-                };
-                if (map is { } x) list.Add(new SensorValue(x.type, x.name, Convert(r), list.Count(s => s.Type == x.type), "hwinfo/drive/" + r.Label));
-            }
-            if (list.Count > 0) nodes.Add(new SensorNode("Storage", drive.Key, "hwinfo/drive/" + drive.Key, list, Array.Empty<SensorNode>()));
-        }
-
-        // Mainboard: the sensor chips and embedded controllers – every remaining block with temperatures or fans.
-        var skip = new[] { "CPU [", "GPU [", "S.M.A.R.T.", "Drive:", "Network:", "Memory Timings", "System:", "Windows Hardware Errors", "Battery", "DIMM", "RTSS" };
-        var boardGroups = groups.Where(g => !skip.Any(s => g.Key.StartsWith(s, I)) && g.Any(r => r.Type is 1 or 3)).ToList();
-        if (boardGroups.Count > 0)
-        {
-            var subs = boardGroups.Select(g => new SensorNode("SuperIO", g.Key, "hwinfo/board/" + g.Key,
-                g.Where(r => r.Type is 1 or 3).Select((r, i) => new SensorValue(r.Type == 1 ? "Temperature" : "Fan", r.Label, Convert(r), i, "hwinfo/board/" + g.Key + "/" + r.Label)).ToList(),
-                Array.Empty<SensorNode>())).ToList();
-            nodes.Add(new SensorNode("Motherboard", HwinfoName(boardGroups[0].Key), "hwinfo/board", Array.Empty<SensorValue>(), subs));
-        }
-        return nodes;
-    }
-
-    // "S.M.A.R.T.: Samsung SSD 970 EVO Plus 1TB (S4EWNX0)" → "Samsung SSD 970 EVO Plus 1TB (S4EWNX0)": the serial stays
-    // so the drive can be matched to its Windows disk; it is dropped from the name afterwards.
-    public static string DriveName(string sensor)
-    {
-        int colon = sensor.IndexOf(": ", StringComparison.Ordinal);
-        return (colon >= 0 ? sensor[(colon + 2)..] : sensor).Trim();
-    }
-
-    private static string CoreName(string kind, string number)
-    {
-        int n = int.Parse(number, CultureInfo.InvariantCulture) + 1;
-        return kind.ToLowerInvariant() switch { "p-core" => "P-Core #" + n, "e-core" => "E-Core #" + n, _ => "Core #" + n };
-    }
+	private static string CoreName(string kind, string number)
+	{
+		int num = int.Parse(number, CultureInfo.InvariantCulture) + 1;
+		string text = kind.ToLowerInvariant();
+		if (!(text == "p-core"))
+		{
+			if (text == "e-core")
+			{
+				return "E-Core #" + num;
+			}
+			return "Core #" + num;
+		}
+		return "P-Core #" + num;
+	}
 }

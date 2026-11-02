@@ -1,139 +1,214 @@
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Platform;
+using Avalonia.Threading;
 using Lumen.Core;
 
 namespace Lumen.App;
 
-// A borderless full-height strip on one edge of one screen, with real acrylic behind it on Windows.
 public sealed class SidebarWindow : Window
 {
-    private bool reserved;
+	private bool reserved;
 
-    public SidebarView? View { get; private set; }
+	private Settings? settings;
 
-    public SidebarWindow()
-    {
-        Title = "Lumen";
-        SystemDecorations = SystemDecorations.None;
-        CanResize = false;
-        ShowInTaskbar = false;
-        ShowActivated = false;
-        Background = Brushes.Transparent;
-        Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://Lumen/Assets/lumen.ico")));
-        ScalingChanged += (_, _) => { if (settings != null) Place(settings); };
-        // Any later size change (DPI, columns, width) must keep the strip flush with its edge.
-        Resized += (_, _) => Avalonia.Threading.Dispatcher.UIThread.Post(() => { if (settings != null && Position != target) Position = target; }, Avalonia.Threading.DispatcherPriority.Background);
-        Opened += (_, _) => { if (settings != null) Place(settings); };
-    }
+	private bool addedLayered;
 
-    private Settings? settings;
+	private PixelPoint target;
 
-    public void Apply(Settings s, SidebarView view)
-    {
-        settings = s;
-        View = view;
-        Content = view;
-        Topmost = s.Topmost;
-        TransparencyLevelHint = s.Glass
-            ? new[] { WindowTransparencyLevel.AcrylicBlur, WindowTransparencyLevel.Blur, WindowTransparencyLevel.Transparent }
-            : new[] { WindowTransparencyLevel.None };
-        Place(s);
-        ClickThrough(s.ClickThrough);
-    }
+	public SidebarView? View { get; private set; }
 
-    [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern int GetWindowLong(IntPtr hWnd, int index);
-    [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern int SetWindowLong(IntPtr hWnd, int index, int value);
+	public SidebarWindow()
+	{
+		base.Title = "Lumen";
+		base.SystemDecorations = SystemDecorations.None;
+		base.CanResize = false;
+		base.ShowInTaskbar = false;
+		base.ShowActivated = false;
+		base.Background = Brushes.Transparent;
+		base.Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://Lumen/Assets/lumen.ico")));
+		base.ScalingChanged += delegate
+		{
+			if (settings != null)
+			{
+				Place(settings);
+			}
+		};
+		base.Resized += delegate
+		{
+			Dispatcher.UIThread.Post(delegate
+			{
+				if (settings != null && base.Position != target)
+				{
+					base.Position = target;
+				}
+			}, DispatcherPriority.Background);
+		};
+		base.Opened += delegate
+		{
+			if (settings != null)
+			{
+				Place(settings);
+			}
+		};
+	}
 
-    // Mouse clicks pass through to the windows behind (WS_EX_TRANSPARENT); the sidebar stays visible.
-    private void ClickThrough(bool on)
-    {
-        if (!OperatingSystem.IsWindows()) return;
-        var handle = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
-        if (handle == IntPtr.Zero) { if (on) Opened += (_, _) => ClickThrough(true); return; }
-        const int ExStyle = -20, Transparent = 0x20, Layered = 0x80000;
-        int style = GetWindowLong(handle, ExStyle);
-        // Clicks only fall through a layered window; fully opaque layering keeps it looking the same.
-        int wanted = on ? style | Transparent | Layered : style & ~Transparent & ~(addedLayered ? Layered : 0);
-        if (wanted == style) return;
-        if (on && (style & Layered) == 0) addedLayered = true;
-        SetWindowLong(handle, ExStyle, wanted);
-        if (on && (wanted & Layered) != 0) SetLayeredWindowAttributes(handle, 0, 255, 2);
-        if (!on) addedLayered = false;
-    }
+	public void Apply(Settings s, SidebarView view)
+	{
+		settings = s;
+		View = view;
+		base.Content = view;
+		base.Topmost = s.Topmost;
+		base.TransparencyLevelHint = ((!s.Glass) ? new WindowTransparencyLevel[1] { WindowTransparencyLevel.None } : new WindowTransparencyLevel[3]
+		{
+			WindowTransparencyLevel.AcrylicBlur,
+			WindowTransparencyLevel.Blur,
+			WindowTransparencyLevel.Transparent
+		});
+		Place(s);
+		ClickThrough(s.ClickThrough);
+	}
 
-    private bool addedLayered;
+	[DllImport("user32.dll")]
+	private static extern int GetWindowLong(nint hWnd, int index);
 
-    [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern bool SetLayeredWindowAttributes(IntPtr hWnd, uint key, byte alpha, uint flags);
+	[DllImport("user32.dll")]
+	private static extern int SetWindowLong(nint hWnd, int index, int value);
 
-    private void Place(Settings s)
-    {
-        var all = Screens.All;
-        if (all.Count == 0) { Width = SidebarView.WindowWidth(s); Height = 900; return; }
-        var screen = all[Math.Clamp(s.Screen, 0, all.Count - 1)];
-        double scale = screen.Scaling;
-        var work = screen.WorkingArea;
-        var handle = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
-        int x, y, width, h;
-        double logical;
-        if (s.Horizontal)
-        {
-            // A bar across the whole width (or as wide as its widgets, centred), at the top or above the taskbar.
-            width = s.BarFullWidth ? work.Width : Math.Min(work.Width, (int)Math.Round(SidebarView.WindowWidth(s) * scale));
-            logical = width / scale;
-            // Each row is as tall as the bar height; more rows grow the bar away from its edge.
-            h = Math.Min(work.Height, (int)Math.Round((s.BarHeight * s.Rows + (s.Rows - 1) * Metrics.For(s.Density).Gap) * scale));
-            x = work.X + (work.Width - width) / 2;
-            y = s.Edge == Edge.Top ? work.Y : work.Bottom - h;
-        }
-        else
-        {
-            // Full screen: the whole working area, from the left edge to the right, top to taskbar.
-            logical = s.FullScreen ? work.Width / scale : SidebarView.WindowWidth(s);
-            width = s.FullScreen ? work.Width : (int)Math.Round(logical * scale);
-            x = s.FullScreen ? work.X : s.Edge == Edge.Right ? work.Right - width : work.X;
-            y = work.Y; h = work.Height;
-        }
-        if (OperatingSystem.IsWindows() && handle != IntPtr.Zero)
-        {
-            if (s.ReserveSpace && !(s.FullScreen && !s.Horizontal))
-            {
-                // The work area already excludes our own strip once reserved, so ask against the full bounds.
-                var b = screen.Bounds;
-                if (s.Horizontal)
-                {
-                    int bx, bw;
-                    (bx, y, bw, h) = AppBar.Reserve(handle, s.Edge, b.X, b.Y, b.Right, b.Bottom, h);
-                    if (s.BarFullWidth) { x = bx; width = bw; logical = width / scale; }
-                }
-                else (x, y, _, h) = AppBar.Reserve(handle, s.Edge, b.X, work.Y, b.Right, work.Bottom, width);
-                reserved = true;
-            }
-            else if (reserved) { AppBar.Release(handle); reserved = false; }
-        }
-        // Size first, then position: Windows keeps the left edge when a window is resized, so
-        // moving before resizing left a right-docked sidebar stranded away from the edge.
-        Width = logical;
-        Height = h / scale;
-        Position = new PixelPoint(x, y);
-        target = new PixelPoint(x, y);
-        // The resize lands a moment later; dock again once it has.
-        Avalonia.Threading.Dispatcher.UIThread.Post(() => { if (Position != target) Position = target; }, Avalonia.Threading.DispatcherPriority.Background);
-    }
+	private void ClickThrough(bool on)
+	{
+		if (!OperatingSystem.IsWindows())
+		{
+			return;
+		}
+		nint num = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
+		if (num == IntPtr.Zero)
+		{
+			if (on)
+			{
+				base.Opened += delegate
+				{
+					ClickThrough(on: true);
+				};
+			}
+			return;
+		}
+		int windowLong = GetWindowLong(num, -20);
+		int num2 = (on ? (windowLong | 0x20 | 0x80000) : (windowLong & -33 & ~(addedLayered ? 524288 : 0)));
+		if (num2 != windowLong)
+		{
+			if (on && (windowLong & 0x80000) == 0)
+			{
+				addedLayered = true;
+			}
+			SetWindowLong(num, -20, num2);
+			if (on && (num2 & 0x80000) != 0)
+			{
+				SetLayeredWindowAttributes(num, 0u, byte.MaxValue, 2u);
+			}
+			if (!on)
+			{
+				addedLayered = false;
+			}
+		}
+	}
 
-    private PixelPoint target;
+	[DllImport("user32.dll")]
+	private static extern bool SetLayeredWindowAttributes(nint hWnd, uint key, byte alpha, uint flags);
 
-    public void Release()
-    {
-        var handle = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
-        if (reserved && handle != IntPtr.Zero && OperatingSystem.IsWindows()) AppBar.Release(handle);
-        reserved = false;
-    }
+	private void Place(Settings s)
+	{
+		IReadOnlyList<Screen> all = base.Screens.All;
+		if (all.Count == 0)
+		{
+			base.Width = SidebarView.WindowWidth(s);
+			base.Height = 900.0;
+			return;
+		}
+		Screen screen = all[Math.Clamp(s.Screen, 0, all.Count - 1)];
+		double scaling = screen.Scaling;
+		PixelRect workingArea = screen.WorkingArea;
+		nint num = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
+		double num3;
+		int num4;
+		int x;
+		int y;
+		int num2;
+		if (s.Horizontal)
+		{
+			num2 = (s.BarFullWidth ? workingArea.Width : Math.Min(workingArea.Width, (int)Math.Round(SidebarView.WindowWidth(s) * scaling)));
+			num3 = (double)num2 / scaling;
+			num4 = Math.Min(workingArea.Height, (int)Math.Round((s.BarHeight * (double)s.Rows + (double)(s.Rows - 1) * Metrics.For(s.Density).Gap) * scaling));
+			x = workingArea.X + (workingArea.Width - num2) / 2;
+			y = ((s.Edge == Edge.Top) ? workingArea.Y : (workingArea.Bottom - num4));
+		}
+		else
+		{
+			num3 = (s.FullScreen ? ((double)workingArea.Width / scaling) : SidebarView.WindowWidth(s));
+			num2 = (s.FullScreen ? workingArea.Width : ((int)Math.Round(num3 * scaling)));
+			x = (s.FullScreen ? workingArea.X : ((s.Edge == Edge.Right) ? (workingArea.Right - num2) : workingArea.X));
+			y = workingArea.Y;
+			num4 = workingArea.Height;
+		}
+		if (OperatingSystem.IsWindows() && num != IntPtr.Zero)
+		{
+			if (s.ReserveSpace && (!s.FullScreen || s.Horizontal))
+			{
+				PixelRect bounds = screen.Bounds;
+				if (!s.Horizontal)
+				{
+					(x, y, _, num4) = AppBar.Reserve(num, s.Edge, bounds.X, workingArea.Y, bounds.Right, workingArea.Bottom, num2);
+				}
+				else
+				{
+					int num5;
+					int num6;
+					(num5, y, num6, num4) = AppBar.Reserve(num, s.Edge, bounds.X, bounds.Y, bounds.Right, bounds.Bottom, num4);
+					if (s.BarFullWidth)
+					{
+						x = num5;
+						num2 = num6;
+						num3 = (double)num2 / scaling;
+					}
+				}
+				reserved = true;
+			}
+			else if (reserved)
+			{
+				AppBar.Release(num);
+				reserved = false;
+			}
+		}
+		base.Width = num3;
+		base.Height = (double)num4 / scaling;
+		base.Position = new PixelPoint(x, y);
+		target = new PixelPoint(x, y);
+		Dispatcher.UIThread.Post(delegate
+		{
+			if (base.Position != target)
+			{
+				base.Position = target;
+			}
+		}, DispatcherPriority.Background);
+	}
 
-    protected override void OnClosed(EventArgs e)
-    {
-        Release();
-        base.OnClosed(e);
-    }
+	public void Release()
+	{
+		nint num = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
+		if (reserved && num != IntPtr.Zero && OperatingSystem.IsWindows())
+		{
+			AppBar.Release(num);
+		}
+		reserved = false;
+	}
+
+	protected override void OnClosed(EventArgs e)
+	{
+		Release();
+		base.OnClosed(e);
+	}
 }

@@ -104,14 +104,16 @@ public class GuardTests
     }
 
     [Fact]
-    public void The_report_is_one_zip_with_four_files()
+    public void The_report_contains_diagnostics_and_preserves_privacy()
     {
         string dir = TempFile();
         try
         {
             string zip = ErrorReport.Create(new Settings { Notes = "secret" }, "=== LibreHardwareMonitor ===\n[Cpu] Test", new[] { "Screen 1 · 1920×1080" }, dir);
             using var archive = ZipFile.OpenRead(zip);
-            Assert.Equal(new[] { "lumen-crash.log", "sensors.txt", "settings.json", "system.txt" }, archive.Entries.Select(e => e.Name).OrderBy(n => n));
+            foreach (var required in new[] { "lumen-crash.log", "sensors.txt", "settings.json", "system.txt", "report-status.txt", "session-info.txt" })
+                Assert.Contains(archive.Entries, entry => entry.Name == required);
+            Assert.Equal(archive.Entries.Count, archive.Entries.Select(entry => entry.FullName).Distinct().Count());
             string settings = new StreamReader(archive.GetEntry("settings.json")!.Open()).ReadToEnd();
             Assert.DoesNotContain("secret", settings);
             string system = new StreamReader(archive.GetEntry("system.txt")!.Open()).ReadToEnd();
@@ -120,3 +122,5 @@ public class GuardTests
         finally { if (Directory.Exists(dir)) Directory.Delete(dir, true); }
     }
 }
+
+

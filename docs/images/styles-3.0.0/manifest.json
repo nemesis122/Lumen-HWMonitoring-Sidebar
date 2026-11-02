@@ -1,0 +1,270 @@
+{
+  "Version": "3.0.0",
+  "Count": 44,
+  "Styles": [
+    {
+      "Id": "Standard",
+      "Name": "Standard",
+      "Dark": "card-Standard-dark.png",
+      "Light": "card-Standard-light.png"
+    },
+    {
+      "Id": "Ring",
+      "Name": "Ring",
+      "Dark": "card-Ring-dark.png",
+      "Light": "card-Ring-light.png"
+    },
+    {
+      "Id": "Minimal",
+      "Name": "Minimal",
+      "Dark": "card-Minimal-dark.png",
+      "Light": "card-Minimal-light.png"
+    },
+    {
+      "Id": "Bar",
+      "Name": "Bar",
+      "Dark": "card-Bar-dark.png",
+      "Light": "card-Bar-light.png"
+    },
+    {
+      "Id": "Graph",
+      "Name": "Graph",
+      "Dark": "card-Graph-dark.png",
+      "Light": "card-Graph-light.png"
+    },
+    {
+      "Id": "Tile",
+      "Name": "Tile",
+      "Dark": "card-Tile-dark.png",
+      "Light": "card-Tile-light.png"
+    },
+    {
+      "Id": "Compact",
+      "Name": "Compact",
+      "Dark": "card-Compact-dark.png",
+      "Light": "card-Compact-light.png"
+    },
+    {
+      "Id": "Status",
+      "Name": "Status",
+      "Dark": "card-Status-dark.png",
+      "Light": "card-Status-light.png"
+    },
+    {
+      "Id": "Segments",
+      "Name": "Segments",
+      "Dark": "card-Segments-dark.png",
+      "Light": "card-Segments-light.png"
+    },
+    {
+      "Id": "DualRing",
+      "Name": "Dual Ring",
+      "Dark": "card-DualRing-dark.png",
+      "Light": "card-DualRing-light.png"
+    },
+    {
+      "Id": "Timeline",
+      "Name": "Timeline",
+      "Dark": "card-Timeline-dark.png",
+      "Light": "card-Timeline-light.png"
+    },
+    {
+      "Id": "Heatmap",
+      "Name": "Heatmap",
+      "Dark": "card-Heatmap-dark.png",
+      "Light": "card-Heatmap-light.png"
+    },
+    {
+      "Id": "Rings",
+      "Name": "Rings",
+      "Dark": "card-Rings-dark.png",
+      "Light": "card-Rings-light.png"
+    },
+    {
+      "Id": "BigNumber",
+      "Name": "Big Number",
+      "Dark": "card-BigNumber-dark.png",
+      "Light": "card-BigNumber-light.png"
+    },
+    {
+      "Id": "Table",
+      "Name": "Table",
+      "Dark": "card-Table-dark.png",
+      "Light": "card-Table-light.png"
+    },
+    {
+      "Id": "Pill",
+      "Name": "Pill",
+      "Dark": "card-Pill-dark.png",
+      "Light": "card-Pill-light.png"
+    },
+    {
+      "Id": "DotMatrix",
+      "Name": "Dot Matrix",
+      "Dark": "card-DotMatrix-dark.png",
+      "Light": "card-DotMatrix-light.png"
+    },
+    {
+      "Id": "Bento",
+      "Name": "Bento",
+      "Dark": "card-Bento-dark.png",
+      "Light": "card-Bento-light.png"
+    },
+    {
+      "Id": "Ticker",
+      "Name": "Ticker",
+      "Dark": "card-Ticker-dark.png",
+      "Light": "card-Ticker-light.png"
+    },
+    {
+      "Id": "MiniArc",
+      "Name": "Mini Arc",
+      "Dark": "card-MiniArc-dark.png",
+      "Light": "card-MiniArc-light.png"
+    },
+    {
+      "Id": "FillBars",
+      "Name": "Fill Bars",
+      "Dark": "card-FillBars-dark.png",
+      "Light": "card-FillBars-light.png"
+    },
+    {
+      "Id": "Split",
+      "Name": "Split",
+      "Dark": "card-Split-dark.png",
+      "Light": "card-Split-light.png"
+    },
+    {
+      "Id": "Chips",
+      "Name": "Chips",
+      "Dark": "card-Chips-dark.png",
+      "Light": "card-Chips-light.png"
+    },
+    {
+      "Id": "Scale",
+      "Name": "Scale",
+      "Dark": "card-Scale-dark.png",
+      "Light": "card-Scale-light.png"
+    },
+    {
+      "Id": "HistoryBars",
+      "Name": "History Bars",
+      "Dark": "card-HistoryBars-dark.png",
+      "Light": "card-HistoryBars-light.png"
+    },
+    {
+      "Id": "Backdrop",
+      "Name": "Backdrop",
+      "Dark": "card-Backdrop-dark.png",
+      "Light": "card-Backdrop-light.png"
+    },
+    {
+      "Id": "PillDuo",
+      "Name": "Double Capsule",
+      "Dark": "card-PillDuo-dark.png",
+      "Light": "card-PillDuo-light.png"
+    },
+    {
+      "Id": "PillRow",
+      "Name": "Pill Row",
+      "Dark": "card-PillRow-dark.png",
+      "Light": "card-PillRow-light.png"
+    },
+    {
+      "Id": "KeyFigures",
+      "Name": "Key Figures",
+      "Dark": "card-KeyFigures-dark.png",
+      "Light": "card-KeyFigures-light.png"
+    },
+    {
+      "Id": "BadgeList",
+      "Name": "List",
+      "Dark": "card-BadgeList-dark.png",
+      "Light": "card-BadgeList-light.png"
+    },
+    {
+      "Id": "SignalBand",
+      "Name": "Signal Band",
+      "Dark": "card-SignalBand-dark.png",
+      "Light": "card-SignalBand-light.png"
+    },
+    {
+      "Id": "Rail",
+      "Name": "Rail",
+      "Dark": "card-Rail-dark.png",
+      "Light": "card-Rail-light.png"
+    },
+    {
+      "Id": "SignalPro",
+      "Name": "Signal Pro",
+      "Dark": "card-SignalPro-dark.png",
+      "Light": "card-SignalPro-light.png"
+    },
+    {
+      "Id": "RailPro",
+      "Name": "Rail Pro",
+      "Dark": "card-RailPro-dark.png",
+      "Light": "card-RailPro-light.png"
+    },
+    {
+      "Id": "OrbitPro",
+      "Name": "Orbit Pro",
+      "Dark": "card-OrbitPro-dark.png",
+      "Light": "card-OrbitPro-light.png"
+    },
+    {
+      "Id": "Prism",
+      "Name": "Prism",
+      "Dark": "card-Prism-dark.png",
+      "Light": "card-Prism-light.png"
+    },
+    {
+      "Id": "Spectrum",
+      "Name": "Spectrum",
+      "Dark": "card-Spectrum-dark.png",
+      "Light": "card-Spectrum-light.png"
+    },
+    {
+      "Id": "PillDuoPlus",
+      "Name": "Double Capsule Plus",
+      "Dark": "card-PillDuoPlus-dark.png",
+      "Light": "card-PillDuoPlus-light.png"
+    },
+    {
+      "Id": "Liquid",
+      "Name": "Liquid",
+      "Dark": "card-Liquid-dark.png",
+      "Light": "card-Liquid-light.png"
+    },
+    {
+      "Id": "TwinFocus",
+      "Name": "Twin Focus",
+      "Dark": "card-TwinFocus-dark.png",
+      "Light": "card-TwinFocus-light.png"
+    },
+    {
+      "Id": "Contour",
+      "Name": "Contour",
+      "Dark": "card-Contour-dark.png",
+      "Light": "card-Contour-light.png"
+    },
+    {
+      "Id": "SplitEdge",
+      "Name": "Split Edge",
+      "Dark": "card-SplitEdge-dark.png",
+      "Light": "card-SplitEdge-light.png"
+    },
+    {
+      "Id": "Ribbon",
+      "Name": "Ribbon",
+      "Dark": "card-Ribbon-dark.png",
+      "Light": "card-Ribbon-light.png"
+    },
+    {
+      "Id": "CoreGrid",
+      "Name": "Core Grid",
+      "Dark": "card-CoreGrid-dark.png",
+      "Light": "card-CoreGrid-light.png"
+    }
+  ]
+}

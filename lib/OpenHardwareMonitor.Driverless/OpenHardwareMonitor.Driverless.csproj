@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>NemeSIS.OpenHardwareMonitor.Driverless</AssemblyName>
     <RootNamespace>OpenHardwareMonitor</RootNamespace>
     <Version>1.0.9513.1</Version>
@@ -17,3 +17,4 @@
     <Error Condition="'@(EmbeddedResource)' != ''" Text="The driverless OHM library must not embed any resource payloads." />
   </Target>
 </Project>
+

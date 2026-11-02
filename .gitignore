@@ -8,3 +8,14 @@ out/
 lumen-settings.json
 lumen-usage.json
 lumen-sensors.txt
+
+work/
+lumen-activity.log*
+lumen-session*.json
+lumen-previous-session.json
+
+
+# Individual style renders are generated into the release screenshots archive.
+docs/images/styles-3.0.0/card-*.png
+portable/
+

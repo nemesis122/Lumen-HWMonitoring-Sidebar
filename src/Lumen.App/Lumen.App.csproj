@@ -37,7 +37,8 @@
   <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x64'">
     <EmbeddedResource Include="Native\PresentMon.exe" LogicalName="PresentMon.exe" />
   </ItemGroup>
-  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'win-x64'">
+  <ItemGroup>
     <ProjectReference Include="..\..\lib\OpenHardwareMonitor.Driverless\OpenHardwareMonitor.Driverless.csproj" />
   </ItemGroup>
 </Project>
+

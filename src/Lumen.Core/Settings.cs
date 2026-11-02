@@ -1,331 +1,721 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace Lumen.Core;
 
-public enum Edge { Right, Left, Top, Bottom }
-// Fit scales the cards so they fill the height between the screen top and the taskbar exactly.
-public enum Density { Fit, Comfortable, Compact }
-public enum ThemeMode { System, Dark, Light }
-
-// The order here is the default order in the sidebar.
-public enum WidgetKind { Clock, WorldClocks, Calendar, Weather, Media, Battery, Cpu, Gpu, Fps, Cooling, Power, Memory, Processes, System, Drives, Volumes, Network, Ping, DataUsage, Notes }
-
-// Standard is the full card; Ring is a half-width tile (two sit side by side); Minimal is one slim line.
-// Ring and Tile are half width: two of them share a line.
-public enum WidgetStyle { Standard, Ring, Minimal, Bar, Graph, Tile, Compact, Status, Gauge, Segments, DualRing }
-
-public sealed class WidgetSlot
-{
-    public WidgetKind Kind { get; set; }
-    public bool Visible { get; set; } = true;
-    public WidgetStyle Style { get; set; }
-    // 0 = placed automatically, 1 or 2 = pinned to that column (only used with two columns).
-    public int Column { get; set; }
-    // Register (tab) the widget is shown on, 1..Pages.
-    public int Page { get; set; } = 1;
-    // Own title and hardware name; empty keeps the built-in one. Either can be hidden.
-    public string Name { get; set; } = "";
-    public string HardwareName { get; set; } = "";
-    public bool ShowTitle { get; set; } = true;
-    public bool ShowHardware { get; set; } = true;
-}
-
 public sealed class Settings
 {
-    public const string StateColors = "state";
-    public const string WindowsAccent = "windows";
-    public static readonly string[] Languages = { "de", "en", "fr", "it", "es", "pt" };
+	public const string StateColors = "state";
 
-    public Edge Edge { get; set; } = Edge.Right;
-    // Top or bottom: a bar across the whole screen width; the widgets sit side by side.
-    public bool Horizontal => Edge is Edge.Top or Edge.Bottom;
-    public double BarHeight { get; set; } = 300;
-    // The bar spans the whole screen width; off, it is as wide as its widgets and centred.
-    public bool BarFullWidth { get; set; } = true;
-    // At the side edges: the number of columns. In the bar at the top or bottom the same
-    // setting is the number of rows, one below the other, each BarHeight tall.
-    public int ColumnsInUse => Columns;
-    public int Rows => Horizontal ? Columns : 1;
-    public int Screen { get; set; }
-    public double Width { get; set; } = 300;
-    public Density Density { get; set; } = Density.Fit;
-    public ThemeMode Theme { get; set; } = ThemeMode.Dark;
-    public bool Glass { get; set; } = true;
-    public bool HighContrast { get; set; } = true;
-    public bool ShowNames { get; set; } = true;
-    public bool SmoothTransitions { get; set; }
-    public double Opacity { get; set; } = .55;
-    public double TextScale { get; set; } = 1;
-    public string Colors { get; set; } = StateColors;
-    // Tone of the sidebar and card backgrounds: graphite, black, midnight, ocean, forest, aubergine, wine, mocha, slate.
-    public string Background { get; set; } = "graphite";
-    public string Language { get; set; } = "auto";
-    // Typeface of the sidebar: inter (built in), segoe, segoe-variable, bahnschrift, bahnschrift-narrow, mono.
-    public string Font { get; set; } = "inter";
-    public static readonly string[] Fonts = { "inter", "segoe", "segoe-variable", "bahnschrift", "bahnschrift-narrow", "mono" };
-    public bool Topmost { get; set; }
-    public bool ReserveSpace { get; set; }
-    public bool Fahrenheit { get; set; }
-    public int IntervalMs { get; set; } = 1000;
-    public double TemperatureWarning { get; set; } = 85;
-    public bool WarningPopup { get; set; } = true;
-    public bool ShowIntegratedGpu { get; set; } = true;
-    // Built-in libraries, or AIDA64 / HWiNFO first where they run (see SensorSource).
-    public SensorSource SensorSource { get; set; } = SensorSource.Builtin;
-    public string WeatherPlace { get; set; } = "";
-    public double? WeatherLatitude { get; set; }
-    public double? WeatherLongitude { get; set; }
-    public List<WidgetSlot> Widgets { get; set; } = DefaultWidgets();
-    public List<string> HiddenValues { get; set; } = new();
-    public int Columns { get; set; } = 1;
-    public int Pages { get; set; } = 1;
-    // Own names for the registers ("Gaming", "System" …); an empty name shows the number.
-    public List<string> PageNames { get; set; } = new();
-    public string PageName(int page) => page >= 1 && page <= PageNames.Count && PageNames[page - 1].Length > 0 ? PageNames[page - 1] : page.ToString();
-    public bool HasPageNames => PageNames.Take(Pages).Any(n => n.Length > 0);
-    // Covers the whole screen up to the taskbar instead of a strip at one edge.
-    public bool FullScreen { get; set; }
-    public double PricePerKwh { get; set; } = .30;
-    public string Currency { get; set; } = "CHF";
-    public double BaseWatts { get; set; } = 50;
-    public string PingTarget { get; set; } = "1.1.1.1";
-    public List<string> WorldClocks { get; set; } = new() { "America/New_York", "Asia/Tokyo" };
-    public string Notes { get; set; } = "";
-    public bool ClickThrough { get; set; }
-    // Own names for fans and temperature probes, keyed "fan:<sensor name>" or "temp:<sensor name>".
-    // An entry of "-" hides that reading.
-    public Dictionary<string, string> Labels { get; set; } = new();
+	public const string WindowsAccent = "windows";
 
-    // The original hardware set is on by default; everything else is opt-in, so the
-    // sidebar never gets crowded by itself.
-    public static bool VisibleByDefault(WidgetKind k) => k is WidgetKind.Clock or WidgetKind.Battery or WidgetKind.Cpu or WidgetKind.Gpu
-        or WidgetKind.Cooling or WidgetKind.Memory or WidgetKind.Drives or WidgetKind.Network;
+	public const string MonoColors = "mono";
 
-    // Kinds whose reading can be shown as a ring or a slim line.
-    public static bool HasStyles(WidgetKind k) => k is WidgetKind.Cpu or WidgetKind.Gpu or WidgetKind.Fps or WidgetKind.Memory or WidgetKind.Battery
-        or WidgetKind.Cooling or WidgetKind.Network or WidgetKind.Ping or WidgetKind.Power or WidgetKind.Weather or WidgetKind.System or WidgetKind.DataUsage
-        or WidgetKind.Drives or WidgetKind.Volumes
-        or WidgetKind.Clock or WidgetKind.WorldClocks or WidgetKind.Calendar or WidgetKind.Media or WidgetKind.Processes;
+	public static readonly string[] Languages = new string[6] { "de", "en", "fr", "it", "es", "pt" };
 
-    public static List<WidgetSlot> DefaultWidgets() => Enum.GetValues<WidgetKind>().Select(k => new WidgetSlot { Kind = k, Visible = VisibleByDefault(k) }).ToList();
+	public static readonly string[] Fonts = new string[6] { "inter", "segoe", "segoe-variable", "bahnschrift", "bahnschrift-narrow", "mono" };
 
-    public bool Shows(string value) => !HiddenValues.Contains(value);
+	public static readonly WidgetStyle[] Retired = new WidgetStyle[3]
+	{
+		WidgetStyle.Gauge,
+		WidgetStyle.Columns,
+		WidgetStyle.Dial
+	};
 
-    // The user's own name for a sensor, or null; Hidden(...) when they switched it off.
-    public string? Label(string key) => Labels.TryGetValue(key, out var v) && v != "-" ? v : null;
-    public bool Hidden(string key) => Labels.TryGetValue(key, out var v) && v == "-";
+	public static readonly JsonSerializerOptions Json = new JsonSerializerOptions
+	{
+		WriteIndented = true,
+		Converters = { (JsonConverter)new JsonStringEnumConverter() }
+	};
 
-    public static readonly JsonSerializerOptions Json = new() { WriteIndented = true, Converters = { new JsonStringEnumConverter() } };
+	public Edge Edge { get; set; }
 
-    // Portable first: beside the EXE when writable, otherwise in the user's app-data folder.
-    public static string DefaultPath()
-    {
-        // ProcessPath, not BaseDirectory: a single-file EXE that self-extracts reports its temp folder as the base.
-        string folderOfExe = Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory;
-        string beside = Path.Combine(folderOfExe, "lumen-settings.json");
-        try
-        {
-            using (File.Open(beside, FileMode.OpenOrCreate, FileAccess.ReadWrite)) { }
-            if (new FileInfo(beside).Length == 0) File.Delete(beside);
-            return beside;
-        }
-        catch
-        {
-            string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Lumen");
-            Directory.CreateDirectory(folder);
-            return Path.Combine(folder, "lumen-settings.json");
-        }
-    }
+	public bool Horizontal
+	{
+		get
+		{
+			Edge edge = Edge;
+			if ((uint)(edge - 2) <= 1u)
+			{
+				return true;
+			}
+			return false;
+		}
+	}
 
-    public static Settings Load(string path)
-    {
-        try { return Normalize(JsonSerializer.Deserialize<Settings>(File.ReadAllText(path), Json) ?? new()); }
-        catch { return new(); }
-    }
+	public double BarHeight { get; set; } = 300.0;
 
-    public void Save(string path)
-    {
-        string temp = path + ".tmp";
-        File.WriteAllText(temp, JsonSerializer.Serialize(this, Json));
-        File.Move(temp, path, true);
-    }
+	public bool BarFullWidth { get; set; } = true;
 
-    // Keeps every widget exactly once, in the saved order, and clamps numbers to sane ranges.
-    // Widgets added in a newer version are inserted at their default position.
-    public static Settings Normalize(Settings s)
-    {
-        s.Width = double.IsFinite(s.Width) ? Math.Clamp(s.Width, 240, 440) : 300;
-        s.IntervalMs = Math.Clamp(s.IntervalMs, 500, 5000);
-        s.TemperatureWarning = double.IsFinite(s.TemperatureWarning) ? Math.Clamp(s.TemperatureWarning, 50, 110) : 85;
-        s.Opacity = double.IsFinite(s.Opacity) ? Math.Clamp(s.Opacity, .2, 1) : .55;
-        s.TextScale = double.IsFinite(s.TextScale) ? Math.Clamp(s.TextScale, .5, 2) : 1;
-        s.Screen = Math.Max(0, s.Screen);
-        s.Colors = string.IsNullOrWhiteSpace(s.Colors) ? StateColors : s.Colors.Trim();
-        s.Background = string.IsNullOrWhiteSpace(s.Background) ? "graphite" : s.Background.Trim().ToLowerInvariant();
-        if (s.Colors is not (StateColors or WindowsAccent) && !IsHexColor(s.Colors)) s.Colors = StateColors;
-        s.Language = Languages.Contains(s.Language) ? s.Language : "auto";
-        s.Font = Fonts.Contains(s.Font?.Trim().ToLowerInvariant()) ? s.Font!.Trim().ToLowerInvariant() : "inter";
-        s.WeatherPlace ??= "";
-        s.Columns = Math.Clamp(s.Columns, 1, 6);
-        s.Pages = Math.Clamp(s.Pages, 1, 6);
-        if (!Enum.IsDefined(s.Edge)) s.Edge = Edge.Right;
-        if (!Enum.IsDefined(s.SensorSource)) s.SensorSource = SensorSource.Builtin;
-        // Down to 40 px: the Status and Compact styles fit a slim bar.
-        s.BarHeight = double.IsFinite(s.BarHeight) ? Math.Clamp(s.BarHeight, 40, 700) : 300;
-        s.PageNames = Enumerable.Range(0, 6).Select(i => (s.PageNames ?? new()).ElementAtOrDefault(i)?.Trim() ?? "")
-            .Select(n => n.Length > 16 ? n[..16] : n).ToList();
-        s.PricePerKwh = double.IsFinite(s.PricePerKwh) ? Math.Clamp(s.PricePerKwh, 0, 5) : .30;
-        s.BaseWatts = double.IsFinite(s.BaseWatts) ? Math.Clamp(s.BaseWatts, 0, 500) : 50;
-        s.Currency = string.IsNullOrWhiteSpace(s.Currency) ? "CHF" : s.Currency.Trim()[..Math.Min(5, s.Currency.Trim().Length)];
-        s.PingTarget = string.IsNullOrWhiteSpace(s.PingTarget) ? "1.1.1.1" : s.PingTarget.Trim();
-        s.WorldClocks = (s.WorldClocks ?? new()).Where(z => !string.IsNullOrWhiteSpace(z)).Distinct().Take(4).ToList();
-        s.Notes ??= "";
-        // Own sensor names are no longer offered; drop any saved by 1.5.0 so nothing stays renamed or hidden.
-        s.Labels = new();
-        s.HiddenValues = (s.HiddenValues ?? new()).Where(v => !string.IsNullOrWhiteSpace(v))
-            // Drives are "/disk/<number>" since 2.1, whichever library found them; hidden ones stay hidden.
-            .Select(v => System.Text.RegularExpressions.Regex.Replace(v, @"^drive:.*?/(nvme|hdd|ssd|ata|storage|scsi|usb)[^/]*/(\d+)$", "drive:/disk/$2"))
-            .Distinct().ToList();
-        var seen = new HashSet<WidgetKind>();
-        s.Widgets = (s.Widgets ?? new()).Where(w => w != null && Enum.IsDefined(w.Kind) && seen.Add(w.Kind)).ToList();
-        foreach (var w in s.Widgets)
-        {
-            w.Column = Math.Clamp(w.Column, 0, 6);
-            w.Page = Math.Clamp(w.Page, 1, 6);
-            w.Name = (w.Name ?? "").Trim();
-            w.HardwareName = (w.HardwareName ?? "").Trim();
-            if (w.Name.Length > 40) w.Name = w.Name[..40];
-            if (w.HardwareName.Length > 60) w.HardwareName = w.HardwareName[..60];
-            if (!Enum.IsDefined(w.Style) || !HasStyles(w.Kind)) w.Style = WidgetStyle.Standard;
-        }
-        foreach (var kind in Enum.GetValues<WidgetKind>())
-        {
-            if (!seen.Add(kind)) continue;
-            // Place it after the nearest earlier kind that is already in the list.
-            int at = 0;
-            for (int i = 0; i < s.Widgets.Count; i++) if (s.Widgets[i].Kind < kind) at = i + 1;
-            s.Widgets.Insert(at, new WidgetSlot { Kind = kind, Visible = VisibleByDefault(kind) });
-        }
-        return s;
-    }
+	public int ColumnsInUse => Columns;
 
-    // Rough card heights, so automatic placement balances the columns by height, not by count.
-    public static double Weight(WidgetSlot w) => w.Style switch
-    {
-        WidgetStyle.Ring or WidgetStyle.Tile => .5,
-        WidgetStyle.Minimal => .35,
-        WidgetStyle.Bar => .45,
-        WidgetStyle.Graph => .7,
-        WidgetStyle.Compact => .32,
-        WidgetStyle.Status => .18,
-        WidgetStyle.Gauge => .55,
-        WidgetStyle.Segments => .55,
-        WidgetStyle.DualRing => .5,
-        _ => 1
-    } * w.Kind switch
-    {
-        WidgetKind.Cpu or WidgetKind.Gpu => 2,
-        WidgetKind.Cooling or WidgetKind.Network or WidgetKind.Calendar => 1.7,
-        WidgetKind.Weather or WidgetKind.Processes => 1.4,
-        WidgetKind.Clock or WidgetKind.Drives => 1.2,
-        WidgetKind.WorldClocks => .8,
-        _ => 1.05
-    };
+	public int Rows
+	{
+		get
+		{
+			if (!Horizontal)
+			{
+				return 1;
+			}
+			return Columns;
+		}
+	}
 
-    // Which column each visible widget of a page goes in. Pinned widgets stay in their column;
-    // the free ones are spread so the tallest column is as short as possible (exactly for two
-    // columns, by largest-first otherwise). Within a column the widgets keep their order.
-    // weight: measured card heights once the sidebar has been laid out; the estimate before that.
-    // cards: how many cards a widget makes (each graphics adapter is one), so bar rows come out even.
-    public List<List<WidgetSlot>> Layout(Func<WidgetSlot, double>? weight = null, int page = 1, Func<WidgetSlot, int>? cards = null)
-    {
-        weight ??= Weight;
-        var visible = Widgets.Where(w => w.Visible && Math.Min(w.Page, Pages) == page).ToList();
-        if (Horizontal) return BarRows(visible, cards ?? (_ => 1));
-        int n = ColumnsInUse;
-        if (n < 2) return new() { visible };
-        int Pinned(WidgetSlot w) => w.Column > 0 ? Math.Min(w.Column, n) - 1 : -1;
-        var height = new double[n];
-        foreach (var w in visible.Where(w => Pinned(w) >= 0)) height[Pinned(w)] += weight(w);
-        var free = visible.Where(w => Pinned(w) < 0).ToList();
-        var place = new Dictionary<WidgetSlot, int>();
-        if (n == 2 && free.Count is > 0 and <= 16)
-        {
-            int best = 0; double bestMax = double.MaxValue;
-            var weights = free.Select(weight).ToArray();
-            for (int mask = 0; mask < 1 << free.Count; mask++)
-            {
-                double a = height[0], b = height[1];
-                for (int i = 0; i < free.Count; i++) if ((mask & (1 << i)) == 0) a += weights[i]; else b += weights[i];
-                double worst = Math.Max(a, b);
-                if (worst < bestMax - .5) { bestMax = worst; best = mask; }
-            }
-            for (int i = 0; i < free.Count; i++) place[free[i]] = (best & (1 << i)) == 0 ? 0 : 1;
-        }
-        else
-        {
-            foreach (var w in free.OrderByDescending(weight))
-            {
-                int c = Array.IndexOf(height, height.Min());
-                place[w] = c;
-                height[c] += weight(w);
-            }
-        }
-        var cols = Enumerable.Range(0, n).Select(_ => new List<WidgetSlot>()).ToList();
-        foreach (var w in visible) cols[Pinned(w) >= 0 ? Pinned(w) : place[w]].Add(w);
-        // Without pinned columns, read left to right: the column holding the first widget comes first.
-        if (!visible.Any(w => Pinned(w) >= 0))
-            cols = cols.OrderBy(c => c.Count == 0 ? int.MaxValue : visible.IndexOf(c[0])).ToList();
-        return cols;
-    }
+	public int Screen { get; set; }
 
-    public static bool IsHalf(WidgetSlot w) => w.Style is WidgetStyle.Ring or WidgetStyle.Tile or WidgetStyle.DualRing && HasStyles(w.Kind);
+	public double Width { get; set; } = 300.0;
 
-    // Columns the sidebar needs: as set, or for a bar the most any register holds.
-    // Columns of cards: as set at the side; in the bar, the most cards any row holds.
-    public int ColumnCount => Horizontal ? Math.Max(1, Enumerable.Range(1, Pages).SelectMany(pg => Layout(page: pg)).Select(Units).DefaultIfEmpty(1).Max()) : Math.Max(1, Columns);
+	public Density Density { get; set; }
 
-    // Cards side by side in one bar row: two half-width tiles in a row share one place.
-    public static int Units(List<WidgetSlot> row)
-    {
-        int n = 0;
-        for (int i = 0; i < row.Count; i++) { n++; if (IsHalf(row[i]) && i + 1 < row.Count && IsHalf(row[i + 1])) i++; }
-        return n;
-    }
+	public ThemeMode Theme { get; set; } = ThemeMode.Dark;
 
-    // Rows of the bar, top to bottom, each read left to right. Pinned widgets stay in their row
-    // (the widget's "Column" number); the others fill the rows in order, about equally many per row.
-    private List<List<WidgetSlot>> BarRows(List<WidgetSlot> visible, Func<WidgetSlot, int> cards)
-    {
-        int n = Math.Max(1, Columns);
-        int Pinned(WidgetSlot w) => w.Column > 0 ? Math.Min(w.Column, n) - 1 : -1;
-        // Units: a widget, or two half-width tiles that share a place.
-        var units = new List<List<WidgetSlot>>();
-        for (int i = 0; i < visible.Count; i++)
-        {
-            if (IsHalf(visible[i]) && i + 1 < visible.Count && IsHalf(visible[i + 1]) && Pinned(visible[i]) == Pinned(visible[i + 1]))
-            { units.Add(new() { visible[i], visible[i + 1] }); i++; }
-            else units.Add(new() { visible[i] });
-        }
-        var rows = Enumerable.Range(0, n).Select(_ => new List<List<WidgetSlot>>()).ToList();
-        foreach (var u in units.Where(u => Pinned(u[0]) >= 0)) rows[Pinned(u[0])].Add(u);
-        // Even rows: counted in cards (a widget with two graphics adapters is two), the rest of the
-        // division going to the first rows – 20 cards in 3 rows become 7, 7, 6.
-        int Size(List<WidgetSlot> u) => u.Count == 2 ? 1 : Math.Max(1, cards(u[0]));
-        int total = units.Sum(Size);
-        var target = Enumerable.Range(0, n).Select(i => total / n + (i < total % n ? 1 : 0)).ToArray();
-        var filled = rows.Select(row => row.Sum(Size)).ToArray();
-        int r = 0;
-        foreach (var u in units.Where(u => Pinned(u[0]) < 0))
-        {
-            while (r < n - 1 && filled[r] + Size(u) > target[r] && filled[r] > 0) r++;
-            rows[r].Add(u);
-            filled[r] += Size(u);
-        }
-        // Keep the original order inside each row.
-        return rows.Select(row => row.OrderBy(u => visible.IndexOf(u[0])).SelectMany(u => u).ToList()).ToList();
-    }
+	public bool Glass { get; set; } = true;
 
-    public static bool IsHexColor(string v) => v.Length == 7 && v[0] == '#' && v[1..].All(Uri.IsHexDigit);
+	public bool HighContrast { get; set; } = true;
+
+	public bool ShowNames { get; set; } = true;
+
+	public bool SmoothTransitions { get; set; }
+
+	public bool Modern { get; set; } = true;
+
+	public double Opacity { get; set; } = 0.55;
+
+	public double TextScale { get; set; } = 1.0;
+
+	public string Colors { get; set; } = "state";
+
+	public string Background { get; set; } = "graphite";
+
+	public string Language { get; set; } = "auto";
+
+	public string Font { get; set; } = "inter";
+
+	public bool Topmost { get; set; }
+
+	public bool ReserveSpace { get; set; }
+
+	public bool Fahrenheit { get; set; }
+
+	public int IntervalMs { get; set; } = 1000;
+
+	public double TemperatureWarning { get; set; } = 85.0;
+
+	public bool WarningPopup { get; set; } = true;
+
+	public bool ShowIntegratedGpu { get; set; } = true;
+
+	public SensorSource SensorSource { get; set; }
+
+	public string WeatherPlace { get; set; } = "";
+
+	public double? WeatherLatitude { get; set; }
+
+	public double? WeatherLongitude { get; set; }
+
+	public List<WidgetSlot> Widgets { get; set; } = DefaultWidgets();
+
+	public List<string> HiddenValues { get; set; } = new List<string>();
+
+	public int Columns { get; set; } = 1;
+
+	public int Pages { get; set; } = 1;
+
+	public List<string> PageNames { get; set; } = new List<string>();
+
+	public bool HasPageNames => PageNames.Take(Pages).Any((string n) => n.Length > 0);
+
+	public bool FullScreen { get; set; }
+
+	public double PricePerKwh { get; set; } = 0.3;
+
+	public string Currency { get; set; } = "CHF";
+
+	public double BaseWatts { get; set; } = 50.0;
+
+	public string PingTarget { get; set; } = "1.1.1.1";
+
+	public List<string> WorldClocks { get; set; } = new List<string> { "America/New_York", "Asia/Tokyo" };
+
+	public string Notes { get; set; } = "";
+
+	public bool ClickThrough { get; set; }
+
+	public Dictionary<string, string> Labels { get; set; } = new Dictionary<string, string>();
+
+	public static IEnumerable<WidgetStyle> Selectable => from s in Enum.GetValues<WidgetStyle>()
+		where !Retired.Contains(s)
+		select s;
+
+	public int ColumnCount
+	{
+		get
+		{
+			if (!Horizontal)
+			{
+				return Math.Max(1, Columns);
+			}
+			return Math.Max(1, Enumerable.Range(1, Pages).SelectMany((int pg) => Layout(null, pg)).Select(Units)
+				.DefaultIfEmpty(1)
+				.Max());
+		}
+	}
+
+	public string PageName(int page)
+	{
+		if (page < 1 || page > PageNames.Count || PageNames[page - 1].Length <= 0)
+		{
+			return page.ToString();
+		}
+		return PageNames[page - 1];
+	}
+
+	public static bool VisibleByDefault(WidgetKind k)
+	{
+		switch (k)
+		{
+		case WidgetKind.Clock:
+		case WidgetKind.Battery:
+		case WidgetKind.Cpu:
+		case WidgetKind.Gpu:
+		case WidgetKind.Cooling:
+		case WidgetKind.Memory:
+		case WidgetKind.Drives:
+		case WidgetKind.Network:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	public static bool HasStyles(WidgetKind k)
+	{
+		if ((uint)k <= 18u)
+		{
+			return true;
+		}
+		return false;
+	}
+
+	public static WidgetStyle Successor(WidgetStyle s)
+	{
+		switch (s)
+		{
+		case WidgetStyle.Gauge:
+		case WidgetStyle.Dial:
+			return WidgetStyle.Scale;
+		case WidgetStyle.Columns:
+			return WidgetStyle.FillBars;
+		default:
+			return s;
+		}
+	}
+
+	public static List<WidgetSlot> DefaultWidgets()
+	{
+		return (from k in Enum.GetValues<WidgetKind>()
+			select new WidgetSlot
+			{
+				Kind = k,
+				Visible = VisibleByDefault(k)
+			}).ToList();
+	}
+
+	public bool Shows(string value)
+	{
+		return !HiddenValues.Contains(value);
+	}
+
+	public string? Label(string key)
+	{
+		if (!Labels.TryGetValue(key, out string value) || !(value != "-"))
+		{
+			return null;
+		}
+		return value;
+	}
+
+	public bool Hidden(string key)
+	{
+		if (Labels.TryGetValue(key, out string value))
+		{
+			return value == "-";
+		}
+		return false;
+	}
+
+	public static string DefaultPath()
+	{
+		string text = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath) ?? AppContext.BaseDirectory, "lumen-settings.json");
+		try
+		{
+			using (File.Open(text, FileMode.OpenOrCreate, FileAccess.ReadWrite))
+			{
+			}
+			if (new FileInfo(text).Length == 0L)
+			{
+				File.Delete(text);
+			}
+			return text;
+		}
+		catch
+		{
+			string text2 = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Lumen");
+			Directory.CreateDirectory(text2);
+			return Path.Combine(text2, "lumen-settings.json");
+		}
+	}
+
+	public static Settings Load(string path)
+	{
+		try
+		{
+			return Normalize(JsonSerializer.Deserialize<Settings>(File.ReadAllText(path), Json) ?? new Settings());
+		}
+		catch
+		{
+			return new Settings();
+		}
+	}
+
+	public void Save(string path)
+	{
+		string text = path + ".tmp";
+		File.WriteAllText(text, JsonSerializer.Serialize(this, Json));
+		File.Move(text, path, overwrite: true);
+	}
+
+	public static Settings Normalize(Settings s)
+	{
+		foreach (WidgetSlot item in s.Widgets ?? new List<WidgetSlot>())
+		{
+			if (item != null)
+			{
+				item.Style = Successor(item.Style);
+			}
+		}
+		s.Width = (double.IsFinite(s.Width) ? Math.Clamp(s.Width, 240.0, 440.0) : 300.0);
+		s.IntervalMs = Math.Clamp(s.IntervalMs, 500, 5000);
+		s.TemperatureWarning = (double.IsFinite(s.TemperatureWarning) ? Math.Clamp(s.TemperatureWarning, 50.0, 110.0) : 85.0);
+		s.Opacity = (double.IsFinite(s.Opacity) ? Math.Clamp(s.Opacity, 0.2, 1.0) : 0.55);
+		s.TextScale = (double.IsFinite(s.TextScale) ? Math.Clamp(s.TextScale, 0.5, 2.0) : 1.0);
+		s.Screen = Math.Max(0, s.Screen);
+		s.Colors = (string.IsNullOrWhiteSpace(s.Colors) ? "state" : s.Colors.Trim());
+		s.Background = (string.IsNullOrWhiteSpace(s.Background) ? "graphite" : s.Background.Trim().ToLowerInvariant());
+		bool flag;
+		switch (s.Colors)
+		{
+		case "state":
+		case "windows":
+		case "mono":
+			flag = true;
+			break;
+		default:
+			flag = false;
+			break;
+		}
+		if (!flag && !IsHexColor(s.Colors))
+		{
+			s.Colors = "state";
+		}
+		s.Language = (Languages.Contains(s.Language) ? s.Language : "auto");
+		s.Font = (Fonts.Contains(s.Font?.Trim().ToLowerInvariant()) ? s.Font.Trim().ToLowerInvariant() : "inter");
+		Settings settings = s;
+		if (settings.WeatherPlace == null)
+		{
+			string text = (settings.WeatherPlace = "");
+		}
+		s.Columns = Math.Clamp(s.Columns, 1, 6);
+		s.Pages = Math.Clamp(s.Pages, 1, 6);
+		if (!Enum.IsDefined(s.Edge))
+		{
+			s.Edge = Edge.Right;
+		}
+		if (!Enum.IsDefined(s.SensorSource))
+		{
+			s.SensorSource = SensorSource.Builtin;
+		}
+		s.BarHeight = (double.IsFinite(s.BarHeight) ? Math.Clamp(s.BarHeight, 40.0, 700.0) : 300.0);
+		s.PageNames = (from i in Enumerable.Range(0, 6)
+			select (s.PageNames ?? new List<string>()).ElementAtOrDefault(i)?.Trim() ?? "" into n
+			select (n.Length <= 16) ? n : n.Substring(0, 16)).ToList();
+		s.PricePerKwh = (double.IsFinite(s.PricePerKwh) ? Math.Clamp(s.PricePerKwh, 0.0, 5.0) : 0.3);
+		s.BaseWatts = (double.IsFinite(s.BaseWatts) ? Math.Clamp(s.BaseWatts, 0.0, 500.0) : 50.0);
+		s.Currency = (string.IsNullOrWhiteSpace(s.Currency) ? "CHF" : s.Currency.Trim().Substring(0, Math.Min(5, s.Currency.Trim().Length)));
+		s.PingTarget = (string.IsNullOrWhiteSpace(s.PingTarget) ? "1.1.1.1" : s.PingTarget.Trim());
+		s.WorldClocks = (s.WorldClocks ?? new List<string>()).Where((string z) => !string.IsNullOrWhiteSpace(z)).Distinct().Take(4)
+			.ToList();
+		settings = s;
+		if (settings.Notes == null)
+		{
+			string text = (settings.Notes = "");
+		}
+		s.Labels = new Dictionary<string, string>();
+		s.HiddenValues = (from v in s.HiddenValues ?? new List<string>()
+			where !string.IsNullOrWhiteSpace(v)
+			select Regex.Replace(v, "^drive:.*?/(nvme|hdd|ssd|ata|storage|scsi|usb)[^/]*/(\\d+)$", "drive:/disk/$2")).Distinct().ToList();
+		HashSet<WidgetKind> seen = new HashSet<WidgetKind>();
+		s.Widgets = (s.Widgets ?? new List<WidgetSlot>()).Where((WidgetSlot w) => w != null && Enum.IsDefined(w.Kind) && seen.Add(w.Kind)).ToList();
+		foreach (WidgetSlot widget in s.Widgets)
+		{
+			widget.Column = Math.Clamp(widget.Column, 0, 6);
+			widget.Page = Math.Clamp(widget.Page, 1, 6);
+			widget.Name = (widget.Name ?? "").Trim();
+			widget.HardwareName = (widget.HardwareName ?? "").Trim();
+			if (widget.Name.Length > 40)
+			{
+				widget.Name = widget.Name.Substring(0, 40);
+			}
+			if (widget.HardwareName.Length > 60)
+			{
+				widget.HardwareName = widget.HardwareName.Substring(0, 60);
+			}
+			if (!Enum.IsDefined(widget.Style) || !HasStyles(widget.Kind))
+			{
+				widget.Style = WidgetStyle.Standard;
+			}
+		}
+		WidgetKind[] values = Enum.GetValues<WidgetKind>();
+		foreach (WidgetKind widgetKind in values)
+		{
+			if (!seen.Add(widgetKind))
+			{
+				continue;
+			}
+			int index = 0;
+			for (int num2 = 0; num2 < s.Widgets.Count; num2++)
+			{
+				if (s.Widgets[num2].Kind < widgetKind)
+				{
+					index = num2 + 1;
+				}
+			}
+			s.Widgets.Insert(index, new WidgetSlot
+			{
+				Kind = widgetKind,
+				Visible = VisibleByDefault(widgetKind)
+			});
+		}
+		return s;
+	}
+
+	public static double Weight(WidgetSlot w)
+	{
+		double num;
+		switch (w.Style)
+		{
+		case WidgetStyle.Ring:
+		case WidgetStyle.Tile:
+			num = 0.5;
+			break;
+		case WidgetStyle.Minimal:
+			num = 0.35;
+			break;
+		case WidgetStyle.Bar:
+			num = 0.45;
+			break;
+		case WidgetStyle.Graph:
+			num = 0.7;
+			break;
+		case WidgetStyle.Compact:
+			num = 0.32;
+			break;
+		case WidgetStyle.Status:
+			num = 0.18;
+			break;
+		case WidgetStyle.Segments:
+			num = 0.55;
+			break;
+		case WidgetStyle.DualRing:
+			num = 0.5;
+			break;
+		case WidgetStyle.Timeline:
+			num = 0.65;
+			break;
+		case WidgetStyle.Heatmap:
+			num = 0.6;
+			break;
+		case WidgetStyle.Rings:
+			num = 0.65;
+			break;
+		case WidgetStyle.BigNumber:
+			num = 0.45;
+			break;
+		case WidgetStyle.Table:
+			num = 0.6;
+			break;
+		case WidgetStyle.Pill:
+			num = 0.32;
+			break;
+		case WidgetStyle.DotMatrix:
+		case WidgetStyle.Bento:
+		case WidgetStyle.MiniArc:
+			num = 0.5;
+			break;
+		case WidgetStyle.Ticker:
+			num = 0.3;
+			break;
+		case WidgetStyle.FillBars:
+			num = 0.55;
+			break;
+		case WidgetStyle.Split:
+			num = 0.45;
+			break;
+		case WidgetStyle.Chips:
+			num = 0.18;
+			break;
+		case WidgetStyle.Scale:
+			num = 0.45;
+			break;
+		case WidgetStyle.HistoryBars:
+			num = 0.5;
+			break;
+		case WidgetStyle.Backdrop:
+			num = 0.55;
+			break;
+		case WidgetStyle.PillDuo:
+			num = 0.34;
+			break;
+		case WidgetStyle.PillRow:
+			num = 0.45;
+			break;
+		case WidgetStyle.KeyFigures:
+			num = 0.5;
+			break;
+		case WidgetStyle.BadgeList:
+			num = 0.55;
+			break;
+		default:
+			num = 1.0;
+			break;
+		}
+		double num2 = num;
+		double num3;
+		switch (w.Kind)
+		{
+		case WidgetKind.Cpu:
+		case WidgetKind.Gpu:
+			num3 = 2.0;
+			break;
+		case WidgetKind.Calendar:
+		case WidgetKind.Cooling:
+		case WidgetKind.Network:
+			num3 = 1.7;
+			break;
+		case WidgetKind.Weather:
+		case WidgetKind.Processes:
+			num3 = 1.4;
+			break;
+		case WidgetKind.Clock:
+		case WidgetKind.Drives:
+			num3 = 1.2;
+			break;
+		case WidgetKind.WorldClocks:
+			num3 = 0.8;
+			break;
+		default:
+			num3 = 1.05;
+			break;
+		}
+		return num2 * num3;
+	}
+
+	public List<List<WidgetSlot>> Layout(Func<WidgetSlot, double>? weight = null, int page = 1, Func<WidgetSlot, int>? cards = null)
+	{
+		if (weight == null)
+		{
+			weight = Weight;
+		}
+		List<WidgetSlot> visible = Widgets.Where((WidgetSlot w) => w.Visible && Math.Min(w.Page, Pages) == page).ToList();
+		if (Horizontal)
+		{
+			return BarRows(visible, cards ?? ((Func<WidgetSlot, int>)((WidgetSlot _) => 1)));
+		}
+		int n = ColumnsInUse;
+		if (n < 2)
+		{
+			return new List<List<WidgetSlot>> { visible };
+		}
+		double[] array = new double[n];
+		foreach (WidgetSlot item in visible.Where((WidgetSlot w) => Pinned(w) >= 0))
+		{
+			array[Pinned(item)] += weight(item);
+		}
+		List<WidgetSlot> list = visible.Where((WidgetSlot w) => Pinned(w) < 0).ToList();
+		Dictionary<WidgetSlot, int> dictionary = new Dictionary<WidgetSlot, int>();
+		if (n == 2)
+		{
+			int count = list.Count;
+			if (count > 0 && count <= 16)
+			{
+				int num = 0;
+				double num2 = double.MaxValue;
+				double[] array2 = list.Select(weight).ToArray();
+				for (int num3 = 0; num3 < 1 << list.Count; num3++)
+				{
+					double num4 = array[0];
+					double num5 = array[1];
+					for (int num6 = 0; num6 < list.Count; num6++)
+					{
+						if ((num3 & (1 << num6)) == 0)
+						{
+							num4 += array2[num6];
+						}
+						else
+						{
+							num5 += array2[num6];
+						}
+					}
+					double num7 = Math.Max(num4, num5);
+					if (num7 < num2 - 0.5)
+					{
+						num2 = num7;
+						num = num3;
+					}
+				}
+				for (int num8 = 0; num8 < list.Count; num8++)
+				{
+					dictionary[list[num8]] = (((num & (1 << num8)) != 0) ? 1 : 0);
+				}
+				goto IL_02a1;
+			}
+		}
+		foreach (WidgetSlot item2 in list.OrderByDescending(weight))
+		{
+			int num9 = (dictionary[item2] = Array.IndexOf(array, array.Min()));
+			array[num9] += weight(item2);
+		}
+		goto IL_02a1;
+		IL_02a1:
+		List<List<WidgetSlot>> list2 = (from _ in Enumerable.Range(0, n)
+			select new List<WidgetSlot>()).ToList();
+		foreach (WidgetSlot item3 in visible)
+		{
+			list2[(Pinned(item3) >= 0) ? Pinned(item3) : dictionary[item3]].Add(item3);
+		}
+		if (!visible.Any((WidgetSlot w) => Pinned(w) >= 0))
+		{
+			list2 = list2.OrderBy((List<WidgetSlot> c) => (c.Count != 0) ? visible.IndexOf(c[0]) : int.MaxValue).ToList();
+		}
+		return list2;
+		int Pinned(WidgetSlot w)
+		{
+			if (w.Column <= 0)
+			{
+				return -1;
+			}
+			return Math.Min(w.Column, n) - 1;
+		}
+	}
+
+	public static bool IsHalf(WidgetSlot w)
+	{
+		bool flag;
+		switch (w.Style)
+		{
+		case WidgetStyle.Ring:
+		case WidgetStyle.Tile:
+		case WidgetStyle.DualRing:
+		case WidgetStyle.BigNumber:
+		case WidgetStyle.DotMatrix:
+		case WidgetStyle.Bento:
+		case WidgetStyle.MiniArc:
+			flag = true;
+			break;
+		default:
+			flag = false;
+			break;
+		}
+		if (flag)
+		{
+			return HasStyles(w.Kind);
+		}
+		return false;
+	}
+
+	public static int Units(List<WidgetSlot> row)
+	{
+		int num = 0;
+		for (int i = 0; i < row.Count; i++)
+		{
+			num++;
+			if (IsHalf(row[i]) && i + 1 < row.Count && IsHalf(row[i + 1]))
+			{
+				i++;
+			}
+		}
+		return num;
+	}
+
+	private List<List<WidgetSlot>> BarRows(List<WidgetSlot> visible, Func<WidgetSlot, int> cards)
+	{
+		int n = Math.Max(1, Columns);
+		List<List<WidgetSlot>> list = new List<List<WidgetSlot>>();
+		for (int i = 0; i < visible.Count; i++)
+		{
+			if (IsHalf(visible[i]) && i + 1 < visible.Count && IsHalf(visible[i + 1]) && Pinned(visible[i]) == Pinned(visible[i + 1]))
+			{
+				list.Add(new List<WidgetSlot>
+				{
+					visible[i],
+					visible[i + 1]
+				});
+				i++;
+			}
+			else
+			{
+				list.Add(new List<WidgetSlot> { visible[i] });
+			}
+		}
+		List<List<List<WidgetSlot>>> list2 = (from _ in Enumerable.Range(0, n)
+			select new List<List<WidgetSlot>>()).ToList();
+		foreach (List<WidgetSlot> item in list.Where((List<WidgetSlot> u) => Pinned(u[0]) >= 0))
+		{
+			list2[Pinned(item[0])].Add(item);
+		}
+		int total = ((IEnumerable<List<WidgetSlot>>)list).Sum((Func<List<WidgetSlot>, int>)Size);
+		int[] array = (from num2 in Enumerable.Range(0, n)
+			select total / n + ((num2 < total % n) ? 1 : 0)).ToArray();
+		int[] array2 = list2.Select((List<List<WidgetSlot>> row) => ((IEnumerable<List<WidgetSlot>>)row).Sum((Func<List<WidgetSlot>, int>)Size)).ToArray();
+		int num = 0;
+		foreach (List<WidgetSlot> item2 in list.Where((List<WidgetSlot> u) => Pinned(u[0]) < 0))
+		{
+			for (; num < n - 1 && array2[num] + Size(item2) > array[num] && array2[num] > 0; num++)
+			{
+			}
+			list2[num].Add(item2);
+			array2[num] += Size(item2);
+		}
+		return list2.Select((List<List<WidgetSlot>> row) => row.OrderBy((List<WidgetSlot> u) => visible.IndexOf(u[0])).SelectMany((List<WidgetSlot> u) => u).ToList()).ToList();
+		int Pinned(WidgetSlot w)
+		{
+			if (w.Column <= 0)
+			{
+				return -1;
+			}
+			return Math.Min(w.Column, n) - 1;
+		}
+		int Size(List<WidgetSlot> u)
+		{
+			if (u.Count != 2)
+			{
+				return Math.Max(1, cards(u[0]));
+			}
+			return 1;
+		}
+	}
+
+	public static bool IsHexColor(string v)
+	{
+		if (v.Length == 7 && v[0] == '#')
+		{
+			return v.Substring(1, v.Length - 1).All(Uri.IsHexDigit);
+		}
+		return false;
+	}
 }

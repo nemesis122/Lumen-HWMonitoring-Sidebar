@@ -1,48 +1,92 @@
+using System;
+using System.Collections.Generic;
+
 namespace Lumen.Core;
 
-// A bounded series per key (e.g. "cpu.load"). Values are kept in arrival order; gaps
-// (missing readings) are stored as NaN so charts can break the line instead of inventing data.
 public sealed class History
 {
-    public const int Capacity = 120;
-    private readonly Dictionary<string, double[]> series = new();
-    private readonly Dictionary<string, int> counts = new();
-    private readonly Dictionary<string, int> heads = new();
+	public const int Capacity = 120;
 
-    public void Add(string key, double? value)
-    {
-        if (!series.TryGetValue(key, out var buffer))
-        {
-            buffer = new double[Capacity];
-            series[key] = buffer; counts[key] = 0; heads[key] = 0;
-        }
-        int head = heads[key];
-        buffer[head] = value is double v && double.IsFinite(v) ? v : double.NaN;
-        heads[key] = (head + 1) % Capacity;
-        counts[key] = Math.Min(Capacity, counts[key] + 1);
-    }
+	private readonly Dictionary<string, double[]> series = new Dictionary<string, double[]>();
 
-    // Oldest first.
-    public double[] Read(string key)
-    {
-        if (!series.TryGetValue(key, out var buffer)) return Array.Empty<double>();
-        int count = counts[key], head = heads[key];
-        var result = new double[count];
-        for (int i = 0; i < count; i++) result[i] = buffer[(head - count + i + Capacity * 2) % Capacity];
-        return result;
-    }
+	private readonly Dictionary<string, int> counts = new Dictionary<string, int>();
 
-    public void Record(Snapshot s)
-    {
-        Add("cpu.load", s.Cpu?.Load);
-        Add("cpu.temp", s.Cpu?.Temperature);
-        foreach (var g in s.Gpus) { Add($"gpu.{g.Id}.load", g.Load); Add($"gpu.{g.Id}.temp", g.Temperature); }
-        if (s.Memory is { } m) Add("mem.load", m.Load);
-        foreach (var d in s.Disks) { Add($"disk.{d.Id}.read", d.ReadBytesPerSecond); Add($"disk.{d.Id}.write", d.WriteBytesPerSecond); }
-        Add("net.down", s.Network?.DownloadBytesPerSecond);
-        Add("net.up", s.Network?.UploadBytesPerSecond);
-        if (s.Ping != null) Add("ping", s.Ping.Ms);
-        Add("fps", s.Fps?.Fps);
-        if (s.Usage != null) Add("power", s.Usage.WattsNow);
-    }
+	private readonly Dictionary<string, int> heads = new Dictionary<string, int>();
+
+	public void Add(string key, double? value)
+	{
+		if (!series.TryGetValue(key, out double[] value2))
+		{
+			value2 = new double[120];
+			series[key] = value2;
+			counts[key] = 0;
+			heads[key] = 0;
+		}
+		int num = heads[key];
+		double[] array = value2;
+		double num2;
+		if (value.HasValue)
+		{
+			double valueOrDefault = value.GetValueOrDefault();
+			if (double.IsFinite(valueOrDefault))
+			{
+				num2 = valueOrDefault;
+				goto IL_0073;
+			}
+		}
+		num2 = double.NaN;
+		goto IL_0073;
+		IL_0073:
+		array[num] = num2;
+		heads[key] = (num + 1) % 120;
+		counts[key] = Math.Min(120, counts[key] + 1);
+	}
+
+	public double[] Read(string key)
+	{
+		if (!series.TryGetValue(key, out double[] value))
+		{
+			return Array.Empty<double>();
+		}
+		int num = counts[key];
+		int num2 = heads[key];
+		double[] array = new double[num];
+		for (int i = 0; i < num; i++)
+		{
+			array[i] = value[(num2 - num + i + 240) % 120];
+		}
+		return array;
+	}
+
+	public void Record(Snapshot s)
+	{
+		Add("cpu.load", s.Cpu?.Load);
+		Add("cpu.temp", s.Cpu?.Temperature);
+		foreach (GpuInfo gpu in s.Gpus)
+		{
+			Add("gpu." + gpu.Id + ".load", gpu.Load);
+			Add("gpu." + gpu.Id + ".temp", gpu.Temperature);
+		}
+		MemoryInfo memory = s.Memory;
+		if ((object)memory != null)
+		{
+			Add("mem.load", memory.Load);
+		}
+		foreach (DiskInfo disk in s.Disks)
+		{
+			Add("disk." + disk.Id + ".read", disk.ReadBytesPerSecond);
+			Add("disk." + disk.Id + ".write", disk.WriteBytesPerSecond);
+		}
+		Add("net.down", s.Network?.DownloadBytesPerSecond);
+		Add("net.up", s.Network?.UploadBytesPerSecond);
+		if (s.Ping != null)
+		{
+			Add("ping", s.Ping.Ms);
+		}
+		Add("fps", s.Fps?.Fps);
+		if (s.Usage != null)
+		{
+			Add("power", s.Usage.WattsNow);
+		}
+	}
 }
