@@ -1,8 +1,14 @@
-# Lumen 3.0.0
+# Lumen 3.0.1
 
 A portable hardware-monitoring sidebar for Windows 10 and 11, with **44 selectable widget designs**, bold readings and live graphics. Use it vertically at either side of your desktop or horizontally at the top or bottom. Dark and light themes are supported.
 
-**[Download Lumen 3.0.0](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v3.0.0)** · [All designs](docs/style-gallery.md) · [Release notes](docs/release-notes/v3.0.0.md)
+**[Download Lumen 3.0.1](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v3.0.1)** · [All designs](docs/style-gallery.md) · [Release notes](docs/release-notes/v3.0.1.md)
+
+## Fixed in 3.0.1
+
+Widget settings now group widgets by their actual register, matching the sidebar. Changing a register immediately updates the group and summary. Numbered names distinguish registers even when they share a custom name. Sorting, hidden widgets and empty registers follow the same assignments.
+
+![Settings grouped by the actual register](docs/images/register-settings.png)
 
 ![Different designs used together](docs/images/styles-3.0.0/mixed-widgets-horizontal.png)
 
@@ -14,7 +20,7 @@ Open **Settings → Widgets → Customise** on the widget you want to change. Th
 
 ![Separate design choices for each widget](docs/images/styles-3.0.0/per-widget-design-selection.png)
 
-## Designs in 3.0.0
+## Widget designs
 
 The collection includes classic compact layouts, rings, graphs, capsules and lists, plus larger graphic designs:
 

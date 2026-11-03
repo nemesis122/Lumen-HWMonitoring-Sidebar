@@ -83,16 +83,6 @@ public sealed class SettingsWindow : Window
 
 	private readonly Func<Snapshot?> snapshot;
 
-	private static readonly WidgetKind[] InfoKinds = new WidgetKind[6]
-	{
-		WidgetKind.Clock,
-		WidgetKind.WorldClocks,
-		WidgetKind.Calendar,
-		WidgetKind.Weather,
-		WidgetKind.Media,
-		WidgetKind.Notes
-	};
-
 	private WidgetSlot? dragging;
 
 	private double dragStart;
@@ -711,8 +701,6 @@ public sealed class SettingsWindow : Window
 			};
 			uniformGrid.Children.Add(button2);
 		}
-		List<WidgetSlot> list2 = s.Widgets.Where((WidgetSlot w) => w.Visible && !InfoKinds.Contains(w.Kind)).ToList();
-		List<WidgetSlot> list3 = s.Widgets.Where((WidgetSlot w) => w.Visible && InfoKinds.Contains(w.Kind)).ToList();
 		List<WidgetSlot> list4 = s.Widgets.Where((WidgetSlot w) => !w.Visible).ToList();
 		foreach (WidgetSlot widget in s.Widgets)
 		{
@@ -722,13 +710,11 @@ public sealed class SettingsWindow : Window
 		list5.Add(textBlock);
 		list5.Add(Ui.Stack(10.0, SectionTitle(L.T("Style for all widgets")), uniformGrid));
 		List<Control> list6 = list5;
-		if (list2.Count > 0)
+		for (int register = 1; register <= s.Pages; register++)
 		{
-			list6.Add(Group(L.T("Hardware"), L.F("{0} shown", list2.Count), list2));
-		}
-		if (list3.Count > 0)
-		{
-			list6.Add(Group(L.T("Info"), L.F("{0} shown", list3.Count), list3));
+			List<WidgetSlot> slots = s.WidgetsOnPage(register).ToList();
+			string heading = s.Pages > 1 ? RegisterLabel(register) : L.T("Widgets");
+			list6.Add(Group(heading, L.F("{0} shown", slots.Count), slots));
 		}
 		if (list4.Count > 0)
 		{
@@ -737,6 +723,7 @@ public sealed class SettingsWindow : Window
 			{
 				CheckBox c = new CheckBox
 				{
+					Name = "widget-" + slot.Kind,
 					Content = Cards.Name(slot.Kind),
 					IsChecked = false,
 					FontSize = 13.0
@@ -773,8 +760,18 @@ public sealed class SettingsWindow : Window
 		{
 			stackPanel.Children.Add(WidgetRow(slots, i, stackPanel));
 		}
+		if (slots.Count == 0)
+		{
+			var hint = Ui.Text(L.T("Nothing on this register yet – choose its widgets in the settings under Widgets → Customise → Register."), 12.0, p.Soft);
+			hint.TextWrapping = TextWrapping.Wrap;
+			stackPanel.Children.Add(hint);
+		}
 		return Ui.Stack(10.0, Ui.Columns("*,Auto", SectionTitle(name), Ui.Text(count, 12.0, p.Soft)), stackPanel);
 	}
+
+	private string RegisterLabel(int page) => s.PageName(page) == page.ToString()
+		? L.F("Register {0}", page)
+		: L.F("Register {0}: {1}", page, s.PageName(page));
 
 	private TextBlock SectionTitle(string text)
 	{
@@ -1286,6 +1283,7 @@ public sealed class SettingsWindow : Window
 		string text = ((slot.Name.Length > 0) ? (slot.Name + "  (" + Cards.Name(slot.Kind) + ")") : Cards.Name(slot.Kind));
 		CheckBox check = new CheckBox
 		{
+			Name = "widget-" + slot.Kind,
 			Content = text,
 			IsChecked = slot.Visible,
 			FontSize = 13.5
@@ -1308,7 +1306,7 @@ public sealed class SettingsWindow : Window
 		List<string> list = new List<string>();
 		if (s.Pages > 1)
 		{
-			list.Add(s.PageName(Math.Min(slot.Page, s.Pages)));
+			list.Add(RegisterLabel(s.EffectivePage(slot)));
 		}
 		if (s.ColumnsInUse > 1 && slot.Column > 0)
 		{
@@ -1477,14 +1475,14 @@ public sealed class SettingsWindow : Window
 					select n.ToString()).ToList(), Math.Min(slot.Column, s.ColumnsInUse), delegate(int i)
 				{
 					slot.Column = i;
-				}, rebuild: false, small: true)));
+				}, rebuild: true, small: true)));
 			}
 			if (s.Pages > 1)
 			{
-				wrapPanel.Children.Add(Ui.Row(8.0, Ui.Text(L.T("Register"), 12.5, p.Soft), Choice(Enumerable.Range(1, s.Pages).Select(s.PageName).ToList(), Math.Min(slot.Page, s.Pages) - 1, delegate(int i)
+				wrapPanel.Children.Add(Ui.Row(8.0, Ui.Text(L.T("Register"), 12.5, p.Soft), Choice(Enumerable.Range(1, s.Pages).Select(RegisterLabel).ToList(), s.EffectivePage(slot) - 1, delegate(int i)
 				{
 					slot.Page = i + 1;
-				}, rebuild: false, small: true)));
+				}, rebuild: true, small: true)));
 			}
 			foreach (Control child in wrapPanel.Children)
 			{

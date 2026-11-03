@@ -9,6 +9,8 @@ namespace Lumen.App;
 public static class L
 {
 	private const string Table = """
+    Register {0}|Register {0}|Onglet {0}|Scheda {0}|Pestaña {0}|Separador {0}
+    Register {0}: {1}|Register {0}: {1}|Onglet {0} : {1}|Scheda {0}: {1}|Pestaña {0}: {1}|Separador {0}: {1}
     Liquid|Liquid|Liquide|Liquido|Líquido|Líquido
     TwinFocus|Twin Focus|Twin Focus|Twin Focus|Twin Focus|Twin Focus
     Contour|Contour|Contour|Contorno|Contorno|Contorno

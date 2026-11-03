@@ -175,6 +175,11 @@ public sealed class Settings
 		return PageNames[page - 1];
 	}
 
+	public int EffectivePage(WidgetSlot slot) => Math.Clamp(slot.Page, 1, Pages);
+
+	public IEnumerable<WidgetSlot> WidgetsOnPage(int page) =>
+		Widgets.Where(w => w.Visible && EffectivePage(w) == page);
+
 	public static bool VisibleByDefault(WidgetKind k)
 	{
 		switch (k)
@@ -531,7 +536,7 @@ public sealed class Settings
 		{
 			weight = Weight;
 		}
-		List<WidgetSlot> visible = Widgets.Where((WidgetSlot w) => w.Visible && Math.Min(w.Page, Pages) == page).ToList();
+		List<WidgetSlot> visible = WidgetsOnPage(page).ToList();
 		if (Horizontal)
 		{
 			return BarRows(visible, cards ?? ((Func<WidgetSlot, int>)((WidgetSlot _) => 1)));
