@@ -36,6 +36,15 @@ public sealed class SidebarView : Border
 
 	private readonly Grid barRows = new Grid();
 
+	private FloatPanel? floating;
+
+	private Border? floatHeader;
+
+	// A card was moved in the floating sidebar; the new position should be saved.
+	public event Action? LayoutChanged;
+
+	public bool IsOverCard(Point point) => floating?.IsOverCard(point) ?? true;
+
 	private int gpuCount = 1;
 
 	private Metrics metrics;
@@ -75,10 +84,10 @@ public sealed class SidebarView : Border
 		this.metrics = Metrics.For(settings.Density);
 		Ui.Modern = settings.Modern;
 		Metrics metrics = this.metrics;
-		base.Background = Palette.Brush(p.Surface);
+		base.Background = settings.Floating ? Brushes.Transparent : Palette.Brush(p.Surface);
 		base.BorderBrush = Palette.Brush(p.Stroke);
 		Edge edge = settings.Edge;
-		base.BorderThickness = ((settings.FullScreen && !settings.Horizontal) ? new Thickness(0.0) : (edge switch
+		base.BorderThickness = (((settings.FullScreen && !settings.Horizontal) || settings.Floating) ? new Thickness(0.0) : (edge switch
 		{
 			Edge.Right => new Thickness(1.0, 0.0, 0.0, 0.0), 
 			Edge.Top => new Thickness(0.0, 0.0, 0.0, 1.0), 
@@ -210,6 +219,29 @@ public sealed class SidebarView : Border
 		};
 		DockPanel.SetDock(grid, Dock.Top);
 		grid.Margin = new Thickness(6.0, 0.0, 0.0, metrics.Gap + 2.0);
+		if (settings.Floating)
+		{
+			// Floating: no bar behind the cards; the header becomes a small card of its own that can be
+			// moved like the others.
+			grid.Margin = new Thickness(0.0);
+			if (flag)
+			{
+				tabs.Margin = new Thickness(0.0, 6.0, 0.0, 0.0);
+			}
+			floatHeader = Float(new Border
+			{
+				Background = Palette.Brush(Solid(p.Card)),
+				BorderBrush = Palette.Brush(p.Stroke),
+				BorderThickness = new Thickness(1.0),
+				CornerRadius = new CornerRadius(metrics.Radius),
+				Padding = new Thickness(10.0, 7.0, 6.0, 7.0),
+				Child = flag ? Ui.Stack(0.0, grid, tabs) : grid
+			});
+			floating!.Children.Insert(0, floatHeader);
+			floating.Register(floatHeader, "header");
+			base.Child = floating;
+			return;
+		}
 		dockPanel.Children.Add(grid);
 		if (flag)
 		{
@@ -230,16 +262,52 @@ public sealed class SidebarView : Border
 		}
 	}
 
+	// Height and scale at the moment the sidebar switched to compact cards, to know when there is
+	// room again for the normal cards.
+	private double squeezedHeight;
+
+	private double squeezedScale;
+
+	private double FillHeight()
+	{
+		if (settings.Horizontal)
+		{
+			return barRows.Children.OfType<FitPanel>().Select((FitPanel f) => f.LastHeight).DefaultIfEmpty(0.0).Max();
+		}
+		return fit.LastHeight;
+	}
+
 	private void Squeezed(double scale)
 	{
-		if (scale >= 0.8 || compacted)
+		if (!compacted)
 		{
+			if (scale >= 0.8)
+			{
+				return;
+			}
+			compacted = true;
+			squeezedHeight = FillHeight();
+			squeezedScale = scale;
+			Rebuild(Metrics.For(Density.Compact));
 			return;
 		}
-		compacted = true;
+		// Compact cards are only a fallback for too little room. Once the sidebar is clearly taller again
+		// (other monitor, bar made higher, a resolution change during start), the normal cards return.
+		// The normal cards would roughly scale with the height; 0.9 stays well above the 0.8 that
+		// triggers compacting, so the two never take turns.
+		double height = FillHeight();
+		if (squeezedHeight > 0.0 && height > 0.0 && squeezedScale * height / squeezedHeight >= 0.9)
+		{
+			compacted = false;
+			Rebuild(Metrics.For(settings.Density));
+		}
+	}
+
+	private void Rebuild(Metrics next)
+	{
 		Dispatcher.UIThread.Post(delegate
 		{
-			metrics = Metrics.For(Density.Compact);
+			metrics = next;
 			BuildCards();
 			if (last != null)
 			{
@@ -261,6 +329,11 @@ public sealed class SidebarView : Border
 		widgets.Clear();
 		builtCards.Clear();
 		BuildTabs();
+		if (settings.Floating)
+		{
+			BuildFloating();
+			return;
+		}
 		if (settings.Horizontal)
 		{
 			BuildBar();
@@ -296,37 +369,47 @@ public sealed class SidebarView : Border
 				Control control = Make(item, item2);
 				widgets.Add((IWidget)control);
 				Remember(item.Kind, control);
-				bool flag = Half(item);
-				if (flag)
-				{
-					bool flag2 = ((control is RingTile || control is NumberTile || control is DualRingTile || control is BigNumberTile || control is DotsTile || control is BentoTile || control is MiniArcTile) ? true : false);
-					flag = flag2;
-				}
-				if (flag && num3 + 1 < list2.Count && Half(list2[num3 + 1].Item1))
-				{
-					Control control2 = Make(list2[num3 + 1].Item1, list2[num3 + 1].Item2);
-					widgets.Add((IWidget)control2);
-					Remember(list2[num3 + 1].Item1.Kind, control2);
-					Grid grid = new Grid
-					{
-						ColumnDefinitions = new ColumnDefinitions($"*,{metrics.Gap},*")
-					};
-					Grid.SetColumn(control2, 2);
-					grid.Children.Add(control);
-					grid.Children.Add(control2);
-					stackPanel.Children.Add(grid);
-					num3++;
-				}
-				else
-				{
-					stackPanel.Children.Add(control);
-				}
+				stackPanel.Children.Add(control);
 			}
 		}
+		fit?.Reset();
 		fit?.SetGap(metrics.Gap);
-		static bool Half(WidgetSlot w)
+	}
+
+	private void BuildFloating()
+	{
+		if (floating == null)
 		{
-			return Settings.IsHalf(w);
+			floating = new FloatPanel(settings, metrics.Gap);
+			floating.PositionsChanged += () => LayoutChanged?.Invoke();
+		}
+		floating.CardWidth = settings.Width * Math.Max(1.0, settings.TextScale);
+		floating.ClearCards(floatHeader == null ? Array.Empty<Control>() : new Control[] { floatHeader });
+		(hint.Parent as Panel)?.Children.Remove(hint);
+		(emptyNote.Parent as Panel)?.Children.Remove(emptyNote);
+		if (emptyNote.Parent is Decorator holder)
+		{
+			holder.Child = null;
+		}
+		List<WidgetSlot> slots = settings.Layout(null, page).SelectMany((List<WidgetSlot> c) => c).ToList();
+		emptyNote.IsVisible = slots.Count == 0;
+		floating.Add(hint, "hint");
+		Border note = Float(new Border { Background = Palette.Brush(Solid(p.Card)), CornerRadius = new CornerRadius(metrics.Radius), Padding = new Thickness(10.0), Child = emptyNote, IsVisible = slots.Count == 0 });
+		floating.Add(note, "empty");
+		foreach (WidgetSlot slot in slots)
+		{
+			for (int i = 0; i < ((slot.Kind != WidgetKind.Gpu) ? 1 : gpuCount); i++)
+			{
+				Control control = Make(slot, i);
+				widgets.Add((IWidget)control);
+				Remember(slot.Kind, control);
+				Control shown = control;
+				if (settings.TextScale > 1.0)
+				{
+					shown = new LayoutTransformControl { LayoutTransform = new ScaleTransform(settings.TextScale, settings.TextScale), Child = control };
+				}
+				floating.Add(shown, slot.Kind + "#" + i);
+			}
 		}
 	}
 
@@ -374,44 +457,7 @@ public sealed class SidebarView : Border
 				widgets.Add((IWidget)control);
 				Remember(item.Kind, control);
 				Control item3 = control;
-				bool flag = Settings.IsHalf(item);
-				if (flag)
-				{
-					bool flag2 = ((control is RingTile || control is NumberTile || control is DualRingTile || control is BigNumberTile || control is DotsTile || control is BentoTile || control is MiniArcTile) ? true : false);
-					flag = flag2;
-				}
-				if (flag && num3 + 1 < list3.Count && Settings.IsHalf(list3[num3 + 1].Item1))
-				{
-					Control control2 = Make(list3[num3 + 1].Item1, list3[num3 + 1].Item2);
-					widgets.Add((IWidget)control2);
-					Remember(list3[num3 + 1].Item1.Kind, control2);
-					Grid obj = new Grid
-					{
-						ColumnDefinitions = new ColumnDefinitions($"*,{metrics.Gap},*")
-					};
-					Grid.SetColumn(control2, 2);
-					obj.Children.Add(control);
-					obj.Children.Add(control2);
-					item3 = obj;
-					num3++;
-				}
-				else
-				{
-					flag = Settings.IsHalf(item);
-					if (flag)
-					{
-						bool flag2 = ((control is RingTile || control is NumberTile || control is DualRingTile || control is BigNumberTile || control is DotsTile || control is BentoTile || control is MiniArcTile) ? true : false);
-						flag = flag2;
-					}
-					if (flag)
-					{
-						item3 = new Grid
-						{
-							ColumnDefinitions = new ColumnDefinitions($"*,{metrics.Gap},*"),
-							Children = { control }
-						};
-					}
-				}
+
 				list4.Add(new StackPanel
 				{
 					Spacing = metrics.Gap,
@@ -455,6 +501,11 @@ public sealed class SidebarView : Border
 	private Control Make(WidgetSlot slot, int index)
 	{
 		Control control = Cards.Create(slot.Kind, slot.Style, index, p, metrics, settings);
+		if (settings.Floating && control is Border card)
+		{
+			card.Background = Palette.Brush(Solid(p.Card));
+			Float(card);
+		}
 		INamed obj = control as INamed;
 		if (obj != null)
 		{
@@ -462,6 +513,20 @@ public sealed class SidebarView : Border
 			return control;
 		}
 		return control;
+	}
+
+	// Cards that float over the desktop need an almost opaque background and a soft shadow to stay readable.
+	private static Color Solid(Color c) => Color.FromArgb(Math.Max(c.A, (byte)238), c.R, c.G, c.B);
+
+	private static Border Float(Border b)
+	{
+		b.BoxShadow = new BoxShadows(new BoxShadow
+		{
+			OffsetY = 6.0,
+			Blur = 18.0,
+			Color = Color.FromArgb(90, 0, 0, 0)
+		});
+		return b;
 	}
 
 	private void BuildTabs()
@@ -604,7 +669,7 @@ public sealed class SidebarView : Border
 		{
 			widget.Update(s, h);
 		}
-		if (settings.ColumnsInUse >= 2 && !settings.Horizontal && !balanced)
+		if (settings.ColumnsInUse >= 2 && !settings.Horizontal && !settings.Floating && !balanced)
 		{
 			balanced = true;
 			Dispatcher.UIThread.Post(Rebalance, DispatcherPriority.Background);

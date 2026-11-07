@@ -14,6 +14,18 @@ public sealed class StatPanel : Panel
 
 	public int MaxColumns { get; init; } = int.MaxValue;
 
+	// Rows as even as possible (4 values: 2 + 2 instead of 3 + 1); values in a shorter last row share
+	// its full width, so no single value is left alone at the left edge.
+	public bool Balanced { get; init; }
+
+    public double MinimumColumnWidth { get; set; } = MinColumn;
+    public static readonly StyledProperty<double> RowSpacingProperty =
+        AvaloniaProperty.Register<StatPanel,double>(nameof(RowSpacing));
+    public double RowSpacing { get => GetValue(RowSpacingProperty); set => SetValue(RowSpacingProperty,value); }
+    public int RowGaps { get; private set; }
+
+    static StatPanel() { AffectsMeasure<StatPanel>(RowSpacingProperty); }
+
 	public StatPanel(double[] weights, Control[] children)
 	{
 		this.weights = weights;
@@ -28,9 +40,14 @@ public sealed class StatPanel : Panel
 			return Math.Min(val, MaxColumns);
 		}
 		int num = Math.Min(val, MaxColumns);
-		while (num > 2 && width / (double)num < 76.0)
+		while (num > 1 && width / (double)num < MinimumColumnWidth)
 		{
 			num--;
+		}
+		if (Balanced && num > 1 && val > num)
+		{
+			int rows = (val + num - 1) / num;
+			num = (val + rows - 1) / rows;
 		}
 		return num;
 	}
@@ -48,9 +65,10 @@ public sealed class StatPanel : Panel
 		}
 		else
 		{
+			int last = n - (n - 1) / cols * cols;
 			for (int num3 = 0; num3 < n; num3++)
 			{
-				array[num3] = width / (double)cols;
+				array[num3] = (Balanced && num3 >= n - last) ? (width / (double)last) : (width / (double)cols);
 			}
 		}
 		return array;
@@ -61,10 +79,12 @@ public sealed class StatPanel : Panel
 		List<Control> list = base.Children.Where((Control c) => c.IsVisible).ToList();
 		if (list.Count == 0)
 		{
+			RowGaps=0;
 			return default(Size);
 		}
 		double num = (double.IsFinite(available.Width) ? available.Width : ((double)(list.Count * 90)));
 		int num2 = Columns(num);
+        RowGaps=Math.Max(0,(list.Count+num2-1)/num2-1);
 		double[] array = Widths(num, num2, list.Count);
 		double num3 = 0.0;
 		double num4 = 0.0;
@@ -78,7 +98,7 @@ public sealed class StatPanel : Panel
 				num4 = 0.0;
 			}
 		}
-		return new Size(double.IsFinite(available.Width) ? available.Width : num, num3);
+		return new Size(double.IsFinite(available.Width) ? available.Width : num, num3+RowSpacing*RowGaps);
 	}
 
 	protected override Size ArrangeOverride(Size final)
@@ -100,7 +120,7 @@ public sealed class StatPanel : Panel
 			num3 += array[num5];
 			if ((num5 + 1) % num == 0)
 			{
-				num2 += num4;
+				num2 += num4+RowSpacing;
 				num4 = 0.0;
 				num3 = 0.0;
 			}

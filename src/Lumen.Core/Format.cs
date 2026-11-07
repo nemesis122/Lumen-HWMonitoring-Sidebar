@@ -100,6 +100,9 @@ public static class Format
 		return "—";
 	}
 
+	// "rpm", or "U/min" in German; set with the language.
+	public static string RpmUnit { get; set; } = "rpm";
+
 	public static string Rpm(double? r)
 	{
 		if (r.HasValue)
@@ -107,7 +110,8 @@ public static class Format
 			double valueOrDefault = r.GetValueOrDefault();
 			if (double.IsFinite(valueOrDefault))
 			{
-				return valueOrDefault.ToString("0", Invariant) + " rpm";
+				// No line break inside the value: non-breaking space, word joiner after the slash.
+				return valueOrDefault.ToString("0", Invariant) + "\u00A0" + RpmUnit.Replace("/", "/\u2060");
 			}
 		}
 		return "—";

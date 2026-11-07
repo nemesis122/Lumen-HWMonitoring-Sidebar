@@ -19,7 +19,7 @@ public sealed class VolumesCard : Card
 		Body.Children.Add(rows);
 	}
 
-	public override void Update(Snapshot s, History h)
+	protected override void UpdateReadings(Snapshot s, History h)
 	{
 		List<VolumeInfo> list = s.Volumes.Where((VolumeInfo v) => S.Shows("volume:" + v.Name)).ToList();
 		foreach (string item in map.Keys.Except(list.Select((VolumeInfo v) => v.Name)).ToList())
@@ -39,9 +39,9 @@ public sealed class VolumesCard : Card
 					Palette = P
 				};
 				TextBlock textBlock3 = Ui.Text("", 11.5, P.Soft, FontWeight.Normal, numbers: true);
-				textBlock3.IsVisible = Shows("volumes.detail");
+				textBlock3.IsVisible = Shows("volumes.detail") && Shows("volumes.used");
 				textBlock2.IsVisible = Shows("volumes.free");
-				meter.IsVisible = Shows("volumes.bar");
+				meter.IsVisible = Shows("volumes.bar") && Shows("volumes.used");
 				rows.Children.Add(Ui.Stack(5.0, Ui.Columns("*,Auto", textBlock, textBlock2), meter, textBlock3));
 				value = (map[item2.Name] = (textBlock, textBlock2, meter, textBlock3));
 			}

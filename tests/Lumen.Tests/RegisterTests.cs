@@ -110,12 +110,14 @@ public class RegisterTests
             Field<HashSet<WidgetKind>>(window, "expanded").Add(WidgetKind.Cooling);
             Call<object?>(window, "Build");
             var content = Field<StackPanel>(window, "content");
-            var choice = Within<ComboBox>(content).Single();
+            // (The other list chooses the register for "Style for all widgets".)
+            var choice = Within<ComboBox>(content).Single(c => !c.ItemsSource!.Cast<string>().Contains(L.T("All registers")));
             Assert.Equal(new[] { "Register 1: Same", "Register 2: Same" }, choice.ItemsSource!.Cast<string>());
             choice.SelectedIndex = 1;
             Dispatcher.UIThread.RunJobs();
             Assert.Equal(2, s.Widgets.Single(w => w.Kind == WidgetKind.Cooling).Page);
-            var groups = content.Children.Skip(2).ToArray();
+            // Page heading, introduction and design picker come before the register groups.
+            var groups = content.Children.Skip(3).ToArray();
             Assert.Empty(Names(groups[0]));
             Assert.Equal(new[] { "Cooling and mainboard" }, Names(groups[1]));
             Assert.Contains(Text(groups[1]), t => t.StartsWith("Register 2: Same ·"));

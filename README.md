@@ -1,39 +1,29 @@
-# Lumen 3.0.1
+# Lumen 4.0.0 – Every Widget, Every Design
 
-A portable hardware-monitoring sidebar for Windows 10 and 11, with **44 selectable widget designs**, bold readings and live graphics. Use it vertically at either side of your desktop or horizontally at the top or bottom. Dark and light themes are supported.
+A portable hardware-monitoring sidebar for Windows 10 and 11 with **36 widget designs**. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
 
-**[Download Lumen 3.0.1](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v3.0.1)** · [All designs](docs/style-gallery.md) · [Release notes](docs/release-notes/v3.0.1.md)
+**[Download Lumen 4.0.0](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.0.0)** · [All designs](docs/style-gallery.md) · [Release notes](docs/release-notes/v4.0.0.md)
 
-## Fixed in 3.0.1
+![Sci-Fi, Thermostat, Neon HUD and Evolution](docs/images/v4.0.0/hero-designs.png)
 
-Widget settings now group widgets by their actual register, matching the sidebar. Changing a register immediately updates the group and summary. Numbered names distinguish registers even when they share a custom name. Sorting, hidden widgets and empty registers follow the same assignments.
+## What's new in 4.0.0
 
-![Settings grouped by the actual register](docs/images/register-settings.png)
+- **26 new designs**: Sci-Fi, Thermostat, Neon HUD, Neon tiles, Smart Panel, Purple dashboard and list, Evolution, Dial, History graph, Double ring, Level columns, Duplex, Signal rows, Open panel, the Clarity family, Control deck and six graph variants.
+- **Every widget in every design**: clock, calendar, weather, now playing, top apps, data usage, uptime, overview and drive health follow the chosen design.
+- **Design per register**: one design for HW, another for INFO.
+- **Size controls**: widget, graphic, main value, value and label size – per widget or for all at once.
+- **Every drive and both network directions** are shown in every design.
+- **Designs follow your background and colour scheme.**
+- **No jumping**: columns end flush at the bottom, widgets keep their place when values change.
+- **Translated everywhere**, no word broken in the middle.
 
-![Different designs used together](docs/images/styles-3.0.0/mixed-widgets-horizontal.png)
+![Info widgets in four designs](docs/images/v4.0.0/info-widgets.png)
 
-## Choose a design for each widget
+![Horizontal bar](docs/images/v4.0.0/horizontal-bar.png)
 
-**Each widget can use its own design — mix and match styles across your sidebar.** This feature was already available in earlier releases.
+![Style per register](docs/images/v4.0.0/settings-style-per-register.png)
 
-Open **Settings → Widgets → Customise** on the widget you want to change. The global **Style for all widgets** control is available if you prefer one consistent design.
-
-![Separate design choices for each widget](docs/images/styles-3.0.0/per-widget-design-selection.png)
-
-## Widget designs
-
-The collection includes classic compact layouts, rings, graphs, capsules and lists, plus larger graphic designs:
-
-- **Signal Pro, Rail Pro, Orbit Pro, Prism and Spectrum:** bold numbers with distinct waveform, segmented, radial, diagonal and history graphics.
-- **Double Capsule Plus:** an independent design with a second capsule for additional readings, such as CPU clock/power or GPU memory/power.
-- **Liquid:** a fluid-style fill reflecting the current load or level.
-- **Twin Focus:** two prominent readings with separate graphics, such as temperature/load or download/upload.
-- **Contour:** a large central reading surrounded by layered contours.
-- **Split Edge:** a diagonal layout with a main reading and two available extra values.
-- **Ribbon:** a real history band with the latest reading beside its endpoint.
-- **Core Grid:** overall CPU utilization and individual readings for every reported core. Other widget types show their available extra readings.
-
-**[Browse images of all 44 designs, in dark and light themes](docs/style-gallery.md).** All pictures use demo data.
+**[Browse images of all 36 designs, in dark and light](docs/style-gallery.md).** All pictures use demo data.
 
 ## Sensor support
 
@@ -56,13 +46,13 @@ Automatic selection and fallback are supported. Hardware, permissions and availa
 
 ## Diagnostics
 
-Version 3.0.0 improves horizontal layout stability, the Double Capsule indicator and local diagnostics. Error reports include the executable path, active layout, recent activity, available error logs, session state and restart history. Log read failures are distinguished from missing logs. Settings → System also shows the executable location and provides **Open folder**.
+Error reports include the executable path, active layout, recent activity, available error logs, session state and restart history. Log read failures are distinguished from missing logs. Settings → System also shows the executable location and provides **Open folder**.
 
 Logs and reports stay local. Nothing is uploaded automatically.
 
 ## Download and run
 
-Download **Lumen-3.0.0.exe** for the portable application, or the portable ZIP with licence files. No separate .NET installation is required. Close an older running instance before starting the new EXE. Settings are stored beside the EXE, with an AppData fallback when that folder is read-only.
+Download **Lumen-4.0.0.exe** for the portable application, or the portable ZIP with licence files. No separate .NET installation is required. Close an older running instance before starting the new EXE. Settings are stored beside the EXE, with an AppData fallback when that folder is read-only.
 
 The release also includes the complete source archive, all gallery images and SHA-256 checksums.
 
@@ -71,7 +61,6 @@ The release also includes the complete source archive, all gallery images and SH
 ```powershell
 dotnet test tests/Lumen.Tests -c Release -m:1
 dotnet run --project tools/Lumen.Regression -c Release -- --expect-fixed
-dotnet run --project tools/Lumen.Gallery -c Release -- docs/images/styles-3.0.0
 dotnet publish src/Lumen.App -c Release -r win-x64 --self-contained -m:1 -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:IncludeAllContentForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o publish
 ```
 

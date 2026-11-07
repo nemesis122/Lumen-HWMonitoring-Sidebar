@@ -20,12 +20,8 @@ public sealed class Settings
 
 	public static readonly string[] Fonts = new string[6] { "inter", "segoe", "segoe-variable", "bahnschrift", "bahnschrift-narrow", "mono" };
 
-	public static readonly WidgetStyle[] Retired = new WidgetStyle[3]
-	{
-		WidgetStyle.Gauge,
-		WidgetStyle.Columns,
-		WidgetStyle.Dial
-	};
+	// Legacy enum values remain readable so older settings migrate without losing other preferences.
+	public static readonly WidgetStyle[] Retired = Enum.GetValues<WidgetStyle>().Except(Selectable).ToArray();
 
 	public static readonly JsonSerializerOptions Json = new JsonSerializerOptions
 	{
@@ -92,7 +88,8 @@ public sealed class Settings
 
 	public string Background { get; set; } = "graphite";
 
-	public string Language { get; set; } = "auto";
+	// English on the first start; the system language ("auto") and the others stay selectable.
+	public string Language { get; set; } = "en";
 
 	public string Font { get; set; } = "inter";
 
@@ -132,6 +129,15 @@ public sealed class Settings
 
 	public bool FullScreen { get; set; }
 
+	// Floating: no continuous bar, the cards sit on a transparent window with a gap and a shadow.
+	public bool Floating { get; set; }
+
+	// Hide the sidebar while a game or video covers the whole monitor it is on.
+	public bool HideInFullscreen { get; set; }
+
+	// Positions of cards moved with Ctrl in the floating sidebar: "<screen>:<widget>#<index>" -> x, y.
+	public Dictionary<string, double[]> FloatPositions { get; set; } = new Dictionary<string, double[]>();
+
 	public double PricePerKwh { get; set; } = 0.3;
 
 	public string Currency { get; set; } = "CHF";
@@ -148,9 +154,45 @@ public sealed class Settings
 
 	public Dictionary<string, string> Labels { get; set; } = new Dictionary<string, string>();
 
-	public static IEnumerable<WidgetStyle> Selectable => from s in Enum.GetValues<WidgetStyle>()
-		where !Retired.Contains(s)
-		select s;
+	public static IEnumerable<WidgetStyle> Selectable => new[]
+	{
+		WidgetStyle.Standard,
+		WidgetStyle.Segments,
+		WidgetStyle.Table,
+		WidgetStyle.Pill,
+		WidgetStyle.FillBars,
+		WidgetStyle.Split,
+		WidgetStyle.PillRow,
+		WidgetStyle.KeyFigures,
+		WidgetStyle.BadgeList,
+		WidgetStyle.TwinFocus,
+        WidgetStyle.Duplex,
+        WidgetStyle.SignalRows,
+        WidgetStyle.OpenPanel,
+        WidgetStyle.Clarity,
+        WidgetStyle.ControlDeck,
+        WidgetStyle.ClarityColor,
+        WidgetStyle.ClarityRows,
+        WidgetStyle.ClarityTiles,
+        WidgetStyle.Evolution,
+        WidgetStyle.Dial,
+        WidgetStyle.HistoryGraph,
+        WidgetStyle.RingPair,
+        WidgetStyle.LevelColumns,
+        WidgetStyle.NeonHud,
+        WidgetStyle.NeonTiles,
+        WidgetStyle.Thermostat,
+        WidgetStyle.SmartPanel,
+        WidgetStyle.PurpleDash,
+        WidgetStyle.SciFi,
+        WidgetStyle.PurpleList,
+        WidgetStyle.SegmentGraph,
+        WidgetStyle.TableGraph,
+        WidgetStyle.FillBarsGraph,
+        WidgetStyle.PillRowGraph,
+        WidgetStyle.BadgeListGraph,
+        WidgetStyle.NeonHudGraph
+	};
 
 	public int ColumnCount
 	{
@@ -200,26 +242,15 @@ public sealed class Settings
 
 	public static bool HasStyles(WidgetKind k)
 	{
-		if ((uint)k <= 18u)
+		if ((uint)k <= 18u || k == WidgetKind.Overview || k == WidgetKind.DriveHealth)
 		{
 			return true;
 		}
 		return false;
 	}
 
-	public static WidgetStyle Successor(WidgetStyle s)
-	{
-		switch (s)
-		{
-		case WidgetStyle.Gauge:
-		case WidgetStyle.Dial:
-			return WidgetStyle.Scale;
-		case WidgetStyle.Columns:
-			return WidgetStyle.FillBars;
-		default:
-			return s;
-		}
-	}
+	public static WidgetStyle Successor(WidgetStyle style) =>
+		Selectable.Contains(style) ? style : WidgetStyle.Standard;
 
 	public static List<WidgetSlot> DefaultWidgets()
 	{
@@ -235,6 +266,17 @@ public sealed class Settings
 	{
 		return !HiddenValues.Contains(value);
 	}
+
+    [JsonIgnore]
+    public WidgetSlot? ActiveWidget { get; private set; }
+
+    public Settings ForWidget(WidgetKind kind)
+    {
+        var scoped = (Settings)MemberwiseClone();
+        scoped.ActiveWidget = Widgets.FirstOrDefault(w => w.Kind == kind);
+        scoped.HiddenValues = HiddenValues.Concat(scoped.ActiveWidget?.HiddenSensors ?? new List<string>()).Distinct().ToList();
+        return scoped;
+    }
 
 	public string? Label(string key)
 	{
@@ -276,15 +318,59 @@ public sealed class Settings
 		}
 	}
 
+	/// <summary>
+	/// What the sidebar shows on its first start: register 1 "HW" with processor, graphics card, memory,
+	/// drives and network; register 2 "INFO" with clock and date, world clocks, calendar and weather.
+	/// Everything else is hidden and can be ticked in the settings.
+	/// </summary>
+	public static Settings Starter()
+	{
+		var s = new Settings { Pages = 2, PageNames = new List<string> { "HW", "INFO" } };
+		var hw = new[] { WidgetKind.Cpu, WidgetKind.Gpu, WidgetKind.Memory, WidgetKind.Drives, WidgetKind.Network };
+		var info = new[] { WidgetKind.Clock, WidgetKind.WorldClocks, WidgetKind.Calendar, WidgetKind.Weather };
+		foreach (WidgetSlot w in s.Widgets)
+		{
+			w.Visible = hw.Contains(w.Kind) || info.Contains(w.Kind);
+			w.Page = info.Contains(w.Kind) ? 2 : 1;
+		}
+		return Normalize(s);
+	}
+
 	public static Settings Load(string path)
 	{
+		if (!File.Exists(path))
+		{
+			return Starter();
+		}
 		try
 		{
 			return Normalize(JsonSerializer.Deserialize<Settings>(File.ReadAllText(path), Json) ?? new Settings());
 		}
+		catch (Exception e) when (e is JsonException || e is NotSupportedException || e is ArgumentException || e is InvalidOperationException)
+		{
+			// The file is damaged. Keep a copy before the defaults are saved over it, so the user's
+			// widgets, registers and colours can still be recovered by hand.
+			Preserve(path);
+			return new Settings();
+		}
 		catch
 		{
+			// Unreadable for now (locked by another program, no access): defaults for this run only.
 			return new Settings();
+		}
+	}
+
+	private static void Preserve(string path)
+	{
+		try
+		{
+			string directory = Path.GetDirectoryName(path) ?? ".";
+			string name = Path.GetFileNameWithoutExtension(path);
+			string target = Path.Combine(directory, $"{name}.broken-{DateTime.Now:yyyyMMdd-HHmmss}.json");
+			File.Copy(path, target, overwrite: false);
+		}
+		catch
+		{
 		}
 	}
 
@@ -302,6 +388,7 @@ public sealed class Settings
 			if (item != null)
 			{
 				item.Style = Successor(item.Style);
+				item.Accent = (item.Accent != null && IsHexColor(item.Accent.Trim())) ? item.Accent.Trim() : "";
 			}
 		}
 		s.Width = (double.IsFinite(s.Width) ? Math.Clamp(s.Width, 240.0, 440.0) : 300.0);
@@ -310,6 +397,7 @@ public sealed class Settings
 		s.Opacity = (double.IsFinite(s.Opacity) ? Math.Clamp(s.Opacity, 0.2, 1.0) : 0.55);
 		s.TextScale = (double.IsFinite(s.TextScale) ? Math.Clamp(s.TextScale, 0.5, 2.0) : 1.0);
 		s.Screen = Math.Max(0, s.Screen);
+		s.FloatPositions = (s.FloatPositions ?? new Dictionary<string, double[]>()).Where((KeyValuePair<string, double[]> kv) => kv.Value != null && kv.Value.Length == 2 && kv.Value.All(double.IsFinite)).ToDictionary((KeyValuePair<string, double[]> kv) => kv.Key, (KeyValuePair<string, double[]> kv) => kv.Value);
 		s.Colors = (string.IsNullOrWhiteSpace(s.Colors) ? "state" : s.Colors.Trim());
 		s.Background = (string.IsNullOrWhiteSpace(s.Background) ? "graphite" : s.Background.Trim().ToLowerInvariant());
 		bool flag;
@@ -368,6 +456,13 @@ public sealed class Settings
 		s.Widgets = (s.Widgets ?? new List<WidgetSlot>()).Where((WidgetSlot w) => w != null && Enum.IsDefined(w.Kind) && seen.Add(w.Kind)).ToList();
 		foreach (WidgetSlot widget in s.Widgets)
 		{
+            widget.GraphicScale = double.IsFinite(widget.GraphicScale) ? Math.Clamp(widget.GraphicScale, 0.5, 2.0) : 1.0;
+            widget.ValueScale = double.IsFinite(widget.ValueScale) ? Math.Clamp(widget.ValueScale, 0.5, 2.0) : 1.0;
+            widget.LabelScale = double.IsFinite(widget.LabelScale) ? Math.Clamp(widget.LabelScale, 0.5, 2.0) : 1.0;
+            widget.WidgetScale = double.IsFinite(widget.WidgetScale) ? Math.Clamp(widget.WidgetScale, 0.5, 2.0) : 1.0;
+            widget.HeroScale = double.IsFinite(widget.HeroScale) ? Math.Clamp(widget.HeroScale, 0.5, 2.0) : 1.0;
+            widget.HiddenSensors = (widget.HiddenSensors ?? new List<string>()).Where(k => !string.IsNullOrWhiteSpace(k)).Distinct().ToList();
+            widget.HiddenSensors.RemoveAll(k => k.StartsWith("cpu.core:", StringComparison.Ordinal));
 			widget.Column = Math.Clamp(widget.Column, 0, 6);
 			widget.Page = Math.Clamp(widget.Page, 1, 6);
 			widget.Name = (widget.Name ?? "").Trim();
@@ -411,95 +506,15 @@ public sealed class Settings
 
 	public static double Weight(WidgetSlot w)
 	{
-		double num;
-		switch (w.Style)
+		double num2 = w.Style switch
 		{
-		case WidgetStyle.Ring:
-		case WidgetStyle.Tile:
-			num = 0.5;
-			break;
-		case WidgetStyle.Minimal:
-			num = 0.35;
-			break;
-		case WidgetStyle.Bar:
-			num = 0.45;
-			break;
-		case WidgetStyle.Graph:
-			num = 0.7;
-			break;
-		case WidgetStyle.Compact:
-			num = 0.32;
-			break;
-		case WidgetStyle.Status:
-			num = 0.18;
-			break;
-		case WidgetStyle.Segments:
-			num = 0.55;
-			break;
-		case WidgetStyle.DualRing:
-			num = 0.5;
-			break;
-		case WidgetStyle.Timeline:
-			num = 0.65;
-			break;
-		case WidgetStyle.Heatmap:
-			num = 0.6;
-			break;
-		case WidgetStyle.Rings:
-			num = 0.65;
-			break;
-		case WidgetStyle.BigNumber:
-			num = 0.45;
-			break;
-		case WidgetStyle.Table:
-			num = 0.6;
-			break;
-		case WidgetStyle.Pill:
-			num = 0.32;
-			break;
-		case WidgetStyle.DotMatrix:
-		case WidgetStyle.Bento:
-		case WidgetStyle.MiniArc:
-			num = 0.5;
-			break;
-		case WidgetStyle.Ticker:
-			num = 0.3;
-			break;
-		case WidgetStyle.FillBars:
-			num = 0.55;
-			break;
-		case WidgetStyle.Split:
-			num = 0.45;
-			break;
-		case WidgetStyle.Chips:
-			num = 0.18;
-			break;
-		case WidgetStyle.Scale:
-			num = 0.45;
-			break;
-		case WidgetStyle.HistoryBars:
-			num = 0.5;
-			break;
-		case WidgetStyle.Backdrop:
-			num = 0.55;
-			break;
-		case WidgetStyle.PillDuo:
-			num = 0.34;
-			break;
-		case WidgetStyle.PillRow:
-			num = 0.45;
-			break;
-		case WidgetStyle.KeyFigures:
-			num = 0.5;
-			break;
-		case WidgetStyle.BadgeList:
-			num = 0.55;
-			break;
-		default:
-			num = 1.0;
-			break;
-		}
-		double num2 = num;
+			WidgetStyle.Segments or WidgetStyle.FillBars or WidgetStyle.BadgeList => 0.55,
+			WidgetStyle.Table => 0.6,
+			WidgetStyle.Pill => 0.32,
+			WidgetStyle.Split or WidgetStyle.PillRow => 0.45,
+			WidgetStyle.KeyFigures => 0.5,
+			_ => 1.0
+		};
 		double num3;
 		switch (w.Kind)
 		{
@@ -618,30 +633,8 @@ public sealed class Settings
 		}
 	}
 
-	public static bool IsHalf(WidgetSlot w)
-	{
-		bool flag;
-		switch (w.Style)
-		{
-		case WidgetStyle.Ring:
-		case WidgetStyle.Tile:
-		case WidgetStyle.DualRing:
-		case WidgetStyle.BigNumber:
-		case WidgetStyle.DotMatrix:
-		case WidgetStyle.Bento:
-		case WidgetStyle.MiniArc:
-			flag = true;
-			break;
-		default:
-			flag = false;
-			break;
-		}
-		if (flag)
-		{
-			return HasStyles(w.Kind);
-		}
-		return false;
-	}
+	// All remaining designs occupy a complete cell.
+	public static bool IsHalf(WidgetSlot w) => false;
 
 	public static int Units(List<WidgetSlot> row)
 	{

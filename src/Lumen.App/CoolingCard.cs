@@ -50,15 +50,19 @@ public sealed class CoolingCard : Card
 			temps = new Grid();
 			Body.Children.Add(temps);
 		}
+        WidgetPresentation.Sensor((Control)hero.Parent!, "cooling.board");
+        WidgetPresentation.Sensor((Control)active.Parent!, "cooling.fans");
 	}
 
-	public override void Update(Snapshot s, History h)
+	protected override void UpdateReadings(Snapshot s, History h)
 	{
 		List<FanInfo> list = s.Fans.Where((FanInfo f) => !S.Hidden("fan:" + f.Name)).ToList();
 		List<TempReading> list2 = s.BoardTemps.Where((TempReading t) => !S.Hidden("temp:" + t.Name)).ToList();
 		base.IsVisible = list.Count > 0 || list2.Count > 0;
 		base.Subtitle = s.BoardName ?? "";
-		TempReading tempReading = list2.OrderByDescending((TempReading t) => t.Celsius).FirstOrDefault();
+		// Big number: the mainboard sensor, otherwise the hottest; the row below lists only the others.
+		TempReading tempReading = list2.FirstOrDefault((TempReading t) => t.Name == "Board") ?? list2.OrderByDescending((TempReading t) => t.Celsius).FirstOrDefault();
+		List<TempReading> others = list2.Where((TempReading t) => t != tempReading).ToList();
 		heroName.Text = (((object)tempReading == null) ? L.T("Board") : Names.Temp(tempReading.Name, S)).ToUpper(L.Culture);
 		hero.Set(Temp(tempReading?.Celsius), base.TempUnit, HeatColor(((object)tempReading != null) ? new double?(tempReading.Celsius + 5.0) : ((double?)null)));
 		Motion.Text(active, (list.Count == 0) ? "—" : $"{list.Count((FanInfo f) => f.Rpm > 0.0)}/{list.Count}");
@@ -101,16 +105,17 @@ public sealed class CoolingCard : Card
 		{
 			return;
 		}
-		string text = string.Join("|", from t in list2.Take(3)
+		temps.IsVisible = others.Count > 0;
+		string text = string.Join("|", from t in others.Take(3)
 			select t.Name + "=" + Names.Temp(t.Name, S));
 		if (!object.Equals(temps.Tag, text))
 		{
 			temps.Tag = text;
 			temps.Children.Clear();
-			temps.ColumnDefinitions = ColumnDefinitions.Parse(string.Join(",", (from _ in list2.Take(3)
+			temps.ColumnDefinitions = ColumnDefinitions.Parse(string.Join(",", (from _ in others.Take(3)
 				select "*").DefaultIfEmpty("*")));
 			int num2 = 0;
-			foreach (TempReading item2 in list2.Take(3))
+			foreach (TempReading item2 in others.Take(3))
 			{
 				Stat stat = new Stat(Names.Temp(item2.Name, S), P)
 				{

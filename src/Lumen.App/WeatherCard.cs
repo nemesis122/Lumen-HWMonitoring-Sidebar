@@ -69,9 +69,12 @@ public sealed class WeatherCard : Card
 		empty.TextTrimming = TextTrimming.None;
 		Body.Children.Add(content);
 		Body.Children.Add(empty);
+        WidgetPresentation.Sensor(hero, "weather.temp");
+        WidgetPresentation.Sensor(sky, "weather.sky");
+        WidgetPresentation.Sensor(icon, "weather.sky");
 	}
 
-	public override void Update(Snapshot s, History h)
+	protected override void UpdateReadings(Snapshot s, History h)
 	{
 		WeatherInfo w = s.Weather;
 		content.IsVisible = w != null;
@@ -85,7 +88,7 @@ public sealed class WeatherCard : Card
 		hero.Set(Temp(w.TemperatureC), base.TempUnit, P.At(Math.Clamp((w.TemperatureC + 10.0) / 45.0, 0.0, 1.0)));
 		string text = WeatherClient.Group(w.Code);
 		icon.Set(text, w.IsDay);
-		sky.Text = L.T(text);
+		sky.Text = Summaries.Sky(w.Code);
 		Card.Put(stats, "weather.feels", TempWithUnit(w.FeelsLikeC));
 		Dictionary<string, Stat> dictionary = stats;
 		double? windKmh = w.WindKmh;

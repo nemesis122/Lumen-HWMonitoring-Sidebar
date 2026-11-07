@@ -36,6 +36,12 @@ public static class Glyphs
 
 	public const string Notes = "M3,2 H10 L13,5 V14 H3 Z M10,2 V5 H13 M5.5,8 H10.5 M5.5,10.5 H10.5";
 
+	public const string Overview = "M2,3 H14 V13 H2 Z M4,6 H9 M4,8.5 H11 M4,11 H7";
+
+	public const string Health = "M8,14 C3,10.5 1.5,8 1.5,5.5 A3,3 0 0 1 8,4 A3,3 0 0 1 14.5,5.5 C14.5,8 13,10.5 8,14 Z M4,8 H6 L7,6 L9,10 L10,8 H12";
+
+	public const string Timer = "M8,15 A6,6 0 1 1 8,3 A6,6 0 1 1 8,15 Z M8,6 V9 L10,10.5 M6.5,1 H9.5";
+
 	public const string Globe = "M8,1.5 A6.5,6.5 0 1 1 7.99,1.5 Z M1.5,8 H14.5 M8,1.5 C5.5,4 5.5,12 8,14.5 M8,1.5 C10.5,4 10.5,12 8,14.5";
 
 	public const string Music = "M6,12 V3 L13,1.8 V10.5 M6,12 A2,2 0 1 1 5.99,12 Z M13,10.5 A2,2 0 1 1 12.99,10.5 Z";

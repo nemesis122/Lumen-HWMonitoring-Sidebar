@@ -45,9 +45,10 @@ public sealed class ClockCard : Card
 		dayBlock = Ui.Stack(5.0, Ui.Columns("*,Auto", Card.Label(L.T("Day"), p), dayText), day);
 		dayBlock.IsVisible = Shows("clock.day");
 		Body.Children.Add(dayBlock);
+        WidgetPresentation.Sensor(time, "clock.time");
 	}
 
-	public override void Update(Snapshot s, History h)
+	protected override void UpdateReadings(Snapshot s, History h)
 	{
 		DateTime dateTime = s.Time;
 		time.Text = dateTime.ToString("HH:mm", L.Culture);

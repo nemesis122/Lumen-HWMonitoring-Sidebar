@@ -466,7 +466,8 @@ public static class SensorPicker
 		}
 		return new GpuInfo(h.Id, h.Name.Trim(), temperature, hotSpot, load, clockMhz, powerW, fanRpm, num, memoryTotalMb)
 		{
-			Integrated = flag
+			Integrated = flag,
+			MemoryJunction = Find(list, "Temperature", "GPU Memory Junction", "Memory Junction", "GPU Memory Junction Temperature", "GPU Memory")
 		};
 	}
 
@@ -502,7 +503,30 @@ public static class SensorPicker
 				return false;
 			})
 			select s.Value).FirstOrDefault();
-		return new DiskInfo(h.Id, h.Name.Trim(), temperature, Find(list, "Load", "Used Space"), Find(list, "Throughput", "Read Rate"), Find(list, "Throughput", "Write Rate"));
+		double? used = Find(list, "Level", "Percentage Used");
+		return new DiskInfo(h.Id, h.Name.Trim(), temperature, Find(list, "Load", "Used Space"), Find(list, "Throughput", "Read Rate"), Find(list, "Throughput", "Write Rate"))
+		{
+			ReadActivity = Find(list, "Load", "Read Activity"),
+			WriteActivity = Find(list, "Load", "Write Activity"),
+			TotalActivity = Find(list, "Load", "Total Activity"),
+			PowerOnHours = Any(list, "Power On Hours", "Power-On Hours", "Power On Time"),
+			PowerOnCount = Any(list, "Power On Count", "Power Cycle Count", "Power Cycles"),
+			Life = Find(list, "Level", "Remaining Life", "Life") ?? (used.HasValue ? Math.Max(0.0, 100.0 - used.Value) : null)
+		};
+	}
+
+	// A reading whose type differs between drive kinds, found by name alone.
+	private static double? Any(IEnumerable<SensorValue> sensors, params string[] names)
+	{
+		foreach (string n in names)
+		{
+			SensorValue? s = sensors.FirstOrDefault((SensorValue x) => Ok(x) && x.Name.Trim().Equals(n, StringComparison.OrdinalIgnoreCase));
+			if (s != null)
+			{
+				return s.Value;
+			}
+		}
+		return null;
 	}
 
 	public static bool HasReadings(DiskInfo d)

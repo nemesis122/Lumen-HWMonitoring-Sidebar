@@ -27,6 +27,7 @@ public sealed class WorldClocksCard : Card
 			{
 				TextBlock textBlock = Ui.Text(City(worldClock), 13.0, p.Ink, FontWeight.Medium);
 				TextBlock textBlock2 = Ui.Text("", 11.5, p.Soft, FontWeight.Normal, numbers: true);
+                WidgetPresentation.Sensor(textBlock2, "world.offset");
 				Border border = new Border
 				{
 					Width = 7.0,
@@ -36,6 +37,7 @@ public sealed class WorldClocksCard : Card
 					Margin = new Thickness(0.0, 0.0, 8.0, 0.0)
 				};
 				TextBlock textBlock3 = Ui.Text("", 20.0, p.Ink, FontWeight.Light, numbers: true);
+                WidgetPresentation.Sensor(textBlock3, "world.time");
 				StackPanel stackPanel = Ui.Stack(0.0, textBlock, textBlock2);
 				rows.Children.Add(Ui.Columns("Auto,*,Auto", border, stackPanel, textBlock3));
 				clocks.Add((timeZoneInfo, textBlock3, textBlock2, border));
@@ -54,7 +56,7 @@ public sealed class WorldClocksCard : Card
 		return id.Substring(num, id.Length - num).Replace('_', ' ');
 	}
 
-	public override void Update(Snapshot s, History h)
+	protected override void UpdateReadings(Snapshot s, History h)
 	{
 		TimeSpan utcOffset = TimeZoneInfo.Local.GetUtcOffset(s.Time);
 		DateTime dateTime = s.Time - utcOffset;

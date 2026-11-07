@@ -9,6 +9,130 @@ namespace Lumen.App;
 public static class L
 {
 	private const string Table = """
+    Nord|Nord|Nord|Nord|Nord|Nord
+    Emerald|Smaragd|Émeraude|Smeraldo|Esmeralda|Esmeralda
+    Copper|Kupfer|Cuivre|Rame|Cobre|Cobre
+    Plum|Pflaume|Prune|Prugna|Ciruela|Ameixa
+    Eight themes with coordinated colours, backgrounds and fonts.|Acht Themes mit abgestimmten Farben, Hintergründen und Schriften.|Huit thèmes aux couleurs, arrière-plans et polices assortis.|Otto temi con colori, sfondi e caratteri coordinati.|Ocho temas con colores, fondos y fuentes coordinados.|Oito temas com cores, fundos e fontes coordenados.
+    Clarity|Klartext|Clarté|Chiarezza|Claridad|Clareza
+    ClarityColor|Klartext Farbe|Clarté couleur|Chiarezza colori|Claridad color|Clareza cor
+    ClarityRows|Klartext Zeilen|Clarté lignes|Chiarezza righe|Claridad filas|Clareza linhas
+    Accent colour|Akzentfarbe|Couleur d’accent|Colore d’accento|Color de acento|Cor de destaque
+    Amber|Bernstein|Ambre|Ambra|Ámbar|Âmbar
+    Floating|Schwebend|Flottant|Fluttuante|Flotante|Flutuante
+    Single cards with a gap and a shadow instead of a continuous bar; no space is reserved.|Einzelne Karten mit Abstand und Schatten statt einer durchgehenden Leiste; es wird kein Platz reserviert.|Cartes séparées avec espace et ombre au lieu d’une barre continue ; aucun espace n’est réservé.|Schede separate con spazio e ombra invece di una barra continua; nessuno spazio riservato.|Tarjetas separadas con espacio y sombra en lugar de una barra continua; no se reserva espacio.|Cartões separados com espaço e sombra em vez de uma barra contínua; nenhum espaço é reservado.
+    Hide in full screen|Im Vollbild ausblenden|Masquer en plein écran|Nascondi a schermo intero|Ocultar en pantalla completa|Ocultar em ecrã inteiro
+    Hides the sidebar while a game or video fills the monitor it is on.|Blendet die Sidebar aus, solange ein Spiel oder Video ihren Monitor ganz ausfüllt.|Masque la barre tant qu’un jeu ou une vidéo remplit son écran.|Nasconde la barra finché un gioco o un video riempie il suo monitor.|Oculta la barra mientras un juego o vídeo ocupa todo su monitor.|Oculta a barra enquanto um jogo ou vídeo preenche o seu monitor.
+    Off|Aus|Arrêt|Spento|Apagado|Desligado
+    Click for the last 10 minutes|Klicken für die letzten 10 Minuten|Cliquer pour les 10 dernières minutes|Clic per gli ultimi 10 minuti|Clic para los últimos 10 minutos|Clique para os últimos 10 minutos
+    10 minutes|10 Minuten|10 minutes|10 minuti|10 minutos|10 minutos
+    min.|min.|min.|min.|mín.|mín.
+    max.|max.|max.|max.|máx.|máx.
+    Reset positions|Positionen zurücksetzen|Réinitialiser les positions|Ripristina posizioni|Restablecer posiciones|Repor posições
+    Card positions|Kartenpositionen|Positions des cartes|Posizioni delle schede|Posiciones de las tarjetas|Posições dos cartões
+    Hold Ctrl and drag a card to place it anywhere on the monitor. Clicks between the cards go to the windows behind.|Strg halten und eine Karte ziehen, um sie frei auf dem Monitor zu platzieren. Klicks zwischen den Karten gehen an die Fenster dahinter.|Maintenez Ctrl et faites glisser une carte pour la placer n’importe où. Les clics entre les cartes vont aux fenêtres derrière.|Tieni premuto Ctrl e trascina una scheda per posizionarla ovunque. I clic tra le schede vanno alle finestre dietro.|Mantén Ctrl y arrastra una tarjeta para colocarla donde quieras. Los clics entre tarjetas van a las ventanas de detrás.|Mantenha Ctrl e arraste um cartão para o colocar em qualquer lugar. Os cliques entre cartões vão para as janelas atrás.
+    Average clock|Ø Takt|Fréquence moy.|Clock medio|Reloj medio|Relógio médio
+    Core voltage|Kernspannung|Tension cœur|Tensione core|Voltaje núcleo|Tensão núcleo
+    Load per thread|Last pro Thread|Charge par thread|Carico per thread|Carga por hilo|Carga por thread
+    Video memory|Videospeicher|Mémoire vidéo|Memoria video|Memoria de vídeo|Memória de vídeo
+    Core clock|Kerntakt|Fréquence cœur|Clock core|Reloj núcleo|Relógio núcleo
+    Connection|Verbindung|Connexion|Connessione|Conexión|Ligação
+    Working well|Läuft gut|Fonctionne bien|Funziona bene|Funciona bien|A funcionar bem
+    Unstable|Instabil|Instable|Instabile|Inestable|Instável
+    Packet loss|Paketverlust|Perte de paquets|Perdita pacchetti|Pérdida de paquetes|Perda de pacotes
+    Connection quality|Verbindungsqualität|Qualité de connexion|Qualità connessione|Calidad de conexión|Qualidade da ligação
+    Ping|Ping|Ping|Ping|Ping|Ping
+    Next drive|Nächstes Laufwerk|Disque suivant|Unità successiva|Siguiente unidad|Próxima unidade
+    Used space|Belegter Platz|Espace utilisé|Spazio usato|Espacio usado|Espaço usado
+    Read activity|Leseaktivität|Activité lecture|Attività lettura|Actividad lectura|Atividade leitura
+    Write activity|Schreibaktivität|Activité écriture|Attività scrittura|Actividad escritura|Atividade escrita
+    Total activity|Gesamtaktivität|Activité totale|Attività totale|Actividad total|Atividade total
+    Total space|Gesamtplatz|Espace total|Spazio totale|Espacio total|Espaço total
+    Read rate|Leserate|Débit lecture|Velocità lettura|Velocidad lectura|Taxa leitura
+    Write rate|Schreibrate|Débit écriture|Velocità scrittura|Velocidad escritura|Taxa escrita
+    Power-on count|Einschaltvorgänge|Mises sous tension|Accensioni|Encendidos|Ligações
+    Power-on hours|Betriebsstunden|Heures de fonctionnement|Ore di funzionamento|Horas de uso|Horas de uso
+    Life left|Restlebensdauer|Durée de vie restante|Vita residua|Vida restante|Vida restante
+    Connected by|Verbunden über|Connecté par|Connesso tramite|Conectado por|Ligado por
+    On|Ein|Activé|Attivo|Activado|Ligado
+    WLAN|WLAN|Wi-Fi|Wi-Fi|Wi-Fi|Wi-Fi
+    Ethernet|Ethernet|Ethernet|Ethernet|Ethernet|Ethernet
+    Memory junction|VRAM-Temp.|Temp. VRAM|Temp. VRAM|Temp. VRAM|Temp. VRAM
+    History graph|Verlauf|Historique|Andamento|Historial|Histórico
+    Double ring|Doppelring|Double anneau|Doppio anello|Doble anillo|Anel duplo
+    Level columns|Säulen|Colonnes de niveau|Colonne|Columnas|Colunas
+    Overview|Übersicht|Vue d’ensemble|Panoramica|Resumen|Visão geral
+    Drive health|Laufwerksgesundheit|Santé des disques|Salute dischi|Salud de unidades|Saúde dos discos
+    started|gestartet|démarrages|avvii|arranques|arranques
+    This drive reports no health values.|Dieses Laufwerk meldet keine Gesundheitswerte.|Ce disque ne fournit aucune valeur de santé.|Questa unità non fornisce valori di salute.|Esta unidad no informa valores de salud.|Este disco não indica valores de saúde.
+    No drives found.|Keine Laufwerke gefunden.|Aucun disque trouvé.|Nessuna unità trovata.|No se encontraron unidades.|Nenhum disco encontrado.
+    All good|Alles gut|Tout va bien|Tutto bene|Todo bien|Tudo bem
+    {0} to check|{0} prüfen|{0} à vérifier|{0} da controllare|{0} por revisar|{0} a verificar
+    Critical|Kritisch|Critique|Critico|Crítico|Crítico
+    Check|Prüfen|À vérifier|Da controllare|Revisar|Verificar
+    Good|Gut|Bon|Buono|Bueno|Bom
+    Timer|Timer|Minuteur|Timer|Temporizador|Temporizador
+    Click to start or pause|Klicken zum Starten oder Anhalten|Cliquer pour démarrer ou mettre en pause|Clic per avviare o mettere in pausa|Clic para iniciar o pausar|Clique para iniciar ou pausar
+    Time is up|Zeit ist um|Temps écoulé|Tempo scaduto|Se acabó el tiempo|Tempo esgotado
+    Running|Läuft|En cours|In corso|En marcha|A decorrer
+    Ready|Bereit|Prêt|Pronto|Listo|Pronto
+    Paused|Pausiert|En pause|In pausa|En pausa|Em pausa
+    Neon tiles|Neon-Kacheln|Tuiles néon|Riquadri neon|Mosaicos neón|Mosaicos néon
+    Thermostat|Regler|Thermostat|Termostato|Termostato|Termóstato
+    Purple dashboard|Lila-Dashboard|Tableau violet|Dashboard viola|Panel morado|Painel roxo
+    Capsule row graph|Kapselreihe-Graph|Graphe en rangée de capsules|Grafico a capsule in fila|Gráfico de cápsulas en fila|Gráfico de cápsulas em fila
+    List graph|Liste-Graph|Graphe en liste|Grafico a elenco|Gráfico de lista|Gráfico de lista
+    Neon HUD graph|Neon-HUD-Graph|Graphe HUD néon|Grafico HUD neon|Gráfico HUD neón|Gráfico HUD néon
+    Fill bars graph|Füllbalken-Graph|Graphe à barres pleines|Grafico a barre piene|Gráfico de barras llenas|Gráfico de barras cheias
+    Table graph|Tabelle-Graph|Graphe en tableau|Grafico a tabella|Gráfico de tabla|Gráfico em tabela
+    Segment graph|Segment-Graph|Graphe à segments|Grafico a segmenti|Gráfico de segmentos|Gráfico de segmentos
+    Purple list|Lila-Liste|Liste violette|Lista viola|Lista morada|Lista roxa
+    Evolution|Evolution|Évolution|Evoluzione|Evolución|Evolução
+    Hottest|Wärmstes|Le plus chaud|Il più caldo|El más caliente|O mais quente
+    Speed|Drehzahl|Vitesse|Velocità|Velocidad|Velocidade
+    Used|Belegt|Utilisé|Usata|Usado|Usado
+    Total|Gesamt|Total|Totale|Total|Total
+    Clock|Takt|Fréquence|Frequenza|Frecuencia|Frequência
+    Avail.|Frei|Libre|Libera|Libre|Livre
+    Peak 2m|Spitze 2 Min.|Pic 2 min|Picco 2 min|Pico 2 min|Pico 2 min
+    DL max|DL max|DL max|DL max|DL máx.|DL máx.
+    Link|Verbindung|Liaison|Collegamento|Enlace|Link
+    Traffic|Auslastung|Trafic|Traffico|Tráfico|Tráfego
+    Choose what the sidebar shows, in which design and in which order.|Was die Sidebar zeigt, in welchem Design und in welcher Reihenfolge.|Ce que la barre affiche, dans quel design et dans quel ordre.|Cosa mostra la barra, con quale design e in quale ordine.|Qué muestra la barra, con qué diseño y en qué orden.|O que a barra mostra, com que design e em que ordem.
+    Colours, effects, text and themes.|Farben, Effekte, Schrift und Themes.|Couleurs, effets, texte et thèmes.|Colori, effetti, testo e temi.|Colores, efectos, texto y temas.|Cores, efeitos, texto e temas.
+    Screen edge, monitor, columns and registers.|Bildschirmrand, Monitor, Spalten und Register.|Bord d’écran, moniteur, colonnes et onglets.|Bordo dello schermo, monitor, colonne e schede.|Borde de pantalla, monitor, columnas y pestañas.|Margem do ecrã, monitor, colunas e separadores.
+    Where the readings come from and how often they update.|Woher die Messwerte kommen und wie oft sie aktualisiert werden.|D’où viennent les mesures et à quelle fréquence elles se mettent à jour.|Da dove arrivano le misure e ogni quanto si aggiornano.|De dónde vienen las lecturas y cada cuánto se actualizan.|De onde vêm as leituras e com que frequência são atualizadas.
+    Weather, world clocks, power costs and ping.|Wetter, Weltuhren, Stromkosten und Ping.|Météo, horloges mondiales, coût de l’énergie et ping.|Meteo, orologi mondiali, costi energia e ping.|Tiempo, relojes mundiales, coste de energía y ping.|Meteorologia, relógios mundiais, custo de energia e ping.
+    Language, autostart, warnings and diagnostics.|Sprache, Autostart, Warnungen und Diagnose.|Langue, démarrage automatique, alertes et diagnostic.|Lingua, avvio automatico, avvisi e diagnostica.|Idioma, inicio automático, avisos y diagnóstico.|Idioma, arranque automático, avisos e diagnóstico.
+    Ctrl+F searches, Esc closes.|Strg+F sucht, Esc schließt.|Ctrl+F recherche, Échap ferme.|Ctrl+F cerca, Esc chiude.|Ctrl+F busca, Esc cierra.|Ctrl+F procura, Esc fecha.
+    ClarityTiles|Klartext Kacheln|Clarté tuiles|Chiarezza riquadri|Claridad mosaicos|Clareza blocos
+    ControlDeck|Leitstand|Poste de contrôle|Postazione|Centro de control|Central de controle
+    Duplex|Doppelspur|Double voie|Doppia traccia|Doble pista|Dupla via
+    SignalRows|Signalzeilen|Signaux en ligne|Righe segnale|Filas de señal|Linhas de sinal
+    OpenPanel|Offenes Panel|Panneau ouvert|Pannello aperto|Panel abierto|Painel aberto
+    Graphic size|Grafikgröße|Taille des graphiques|Dimensione grafici|Tamaño de gráficos|Tamanho dos gráficos
+    Label size|Beschriftungsgröße|Taille des libellés|Dimensione etichette|Tamaño de etiquetas|Tamanho dos rótulos
+    Progress|Fortschritt|Progression|Avanzamento|Progreso|Progresso
+    Application|Anwendung|Application|Applicazione|Aplicación|Aplicação
+    Period|Zeitraum|Période|Periodo|Período|Período
+    Cover|Coverbild|Pochette|Copertina|Portada|Capa
+    Energy today|Energie heute|Énergie du jour|Energia oggi|Energía de hoy|Energia de hoje
+    Charging state|Ladestatus|État de charge|Stato di carica|Estado de carga|Estado de carga
+    Weather condition|Wetterzustand|Conditions météo|Condizioni meteo|Estado del tiempo|Condição do tempo
+    Operating system|Betriebssystem|Système d’exploitation|Sistema operativo|Sistema operativo|Sistema operativo
+    Artist|Interpret|Artiste|Artista|Artista|Artista
+    VRAM used|VRAM belegt|VRAM utilisée|VRAM utilizzata|VRAM usada|VRAM utilizada
+    VRAM total|VRAM gesamt|VRAM totale|VRAM totale|VRAM total|VRAM total
+    Drive count|Laufwerksanzahl|Nombre de disques|Numero di unità|Número de unidades|Número de unidades
+    Time difference|Zeitverschiebung|Décalage horaire|Differenza oraria|Diferencia horaria|Diferença horária
+    Value size|Wertgröße (Liste)|Taille des valeurs (liste)|Dimensione valori (elenco)|Tamaño de valores (lista)|Tamanho dos valores (lista)
+    Widget size|Widgetgröße|Taille du widget|Dimensione widget|Tamaño del widget|Tamanho do widget
+    Sizes for all widgets|Größen für alle Widgets|Tailles pour tous les widgets|Dimensioni per tutti i widget|Tamaños para todos los widgets|Tamanhos para todos os widgets
+    Sets every widget at once; each one can still be changed under Widgets → Customise.|Stellt alle Widgets auf einmal ein; jedes lässt sich weiterhin unter Widgets → Anpassen einzeln ändern.|Règle tous les widgets d'un coup ; chacun reste modifiable sous Widgets → Personnaliser.|Imposta tutti i widget insieme; ognuno resta modificabile in Widget → Personalizza.|Ajusta todos los widgets a la vez; cada uno se puede cambiar en Widgets → Personalizar.|Ajusta todos os widgets de uma vez; cada um continua editável em Widgets → Personalizar.
+    Main value size|Hauptwertgröße|Taille de la valeur principale|Dimensione valore principale|Tamaño del valor principal|Tamanho do valor principal
+    Sensor values|Sensorwerte|Valeurs des capteurs|Valori sensori|Valores de sensores|Valores dos sensores
+    No sensor values for this widget.|Keine Sensorwerte für dieses Widget.|Aucune valeur pour ce widget.|Nessun valore per questo widget.|Sin valores para este widget.|Sem valores para este widget.
+    Increase the row height for larger values and graphics.|Für größere Werte und Grafiken die Zeilenhöhe erhöhen.|Augmentez la hauteur pour des valeurs et graphiques plus grands.|Aumentare l’altezza per valori e grafici più grandi.|Aumenta la altura para valores y gráficos más grandes.|Aumente a altura para valores e gráficos maiores.
     Register {0}|Register {0}|Onglet {0}|Scheda {0}|Pestaña {0}|Separador {0}
     Register {0}: {1}|Register {0}: {1}|Onglet {0} : {1}|Scheda {0}: {1}|Pestaña {0}: {1}|Separador {0}: {1}
     Liquid|Liquid|Liquide|Liquido|Líquido|Líquido
@@ -54,7 +178,7 @@ public static class L
     used|belegt|utilisés|usati|usados|usados
     Available|Frei|Libre|Libera|Libre|Livre
     Installed|Verbaut|Installée|Installata|Instalada|Instalada
-    2-min peak|Max 2 min|Pic 2 min|Picco 2 min|Pico 2 min|Pico 2 min
+    2-min peak|Spitze 2 Min.|Pic 2 min|Picco 2 min|Pico 2 min|Pico 2 min
     drive|Laufwerk|disque|unità|unidad|unidade
     drives|Laufwerke|disques|unità|unidades|unidades
     Download|Download|Réception|Download|Descarga|Download
@@ -348,6 +472,19 @@ public static class L
     Above 100 % the sidebar grows wider by the same amount.|Über 100 % wird die Sidebar im gleichen Mass breiter.|Au-delà de 100 %, la barre s'élargit d'autant.|Oltre il 100 % la barra si allarga in proporzione.|Por encima del 100 %, la barra se ensancha en la misma medida.|Acima de 100 %, a barra alarga na mesma medida.
     Nothing on this register yet – choose its widgets in the settings under Widgets → Customise → Register.|Noch nichts auf diesem Register – Widgets dafür in den Einstellungen unter Widgets → Anpassen → Register wählen.|Rien sur cette page pour l'instant – choisissez ses widgets dans les réglages sous Widgets → Personnaliser → Page.|Ancora niente in questa pagina – scegli i widget nelle impostazioni in Widget → Personalizza → Pagina.|Aún no hay nada en esta página – elige sus widgets en los ajustes, en Widgets → Personalizar → Página.|Ainda nada nesta página – escolha os widgets nas definições em Widgets → Personalizar → Página.
     Style for all widgets|Stil für alle Widgets|Style pour tous les widgets|Stile per tutti i widget|Estilo para todos los widgets|Estilo para todos os widgets
+    DL|DL|DL|DL|DL|DL
+    UP|UP|UP|UP|UP|UP
+    1% low|1 % Tief|1 % bas|1 % minimo|1 % bajo|1 % baixo
+    DL peak · 2 min|DL-Spitze · 2 Min.|Pic DL · 2 min|Picco DL · 2 min|Pico DL · 2 min|Pico DL · 2 min
+    Conditions|Wetterlage|Conditions|Condizioni|Condiciones|Condições
+    Playback|Wiedergabe|Lecture|Riproduzione|Reproducción|Reprodução
+    Time|Zeit|Heure|Ora|Hora|Hora
+    Model|Modell|Modèle|Modello|Modelo|Modelo
+    Free|Frei|Libre|Libero|Libre|Livre
+    Used / total|Belegt / gesamt|Utilisé / total|Usato / totale|Usado / total|Usado / total
+    Style per register|Stil pro Register|Style par onglet|Stile per scheda|Estilo por pestaña|Estilo por separador
+    All registers|Alle Register|Tous les onglets|Tutte le schede|Todas las pestañas|Todos os separadores
+    Sets the design only for the widgets of the chosen register.|Setzt das Design nur für die Widgets des gewählten Registers.|Applique le design uniquement aux widgets de l’onglet choisi.|Applica il design solo ai widget della scheda scelta.|Aplica el diseño solo a los widgets de la pestaña elegida.|Aplica o design apenas aos widgets do separador escolhido.
     One click sets every widget with styles; each one can still be changed below.|Ein Klick stellt alle Widgets mit Stilen um; jedes lässt sich unten weiterhin einzeln ändern.|Un clic règle tous les widgets à styles ; chacun reste modifiable ci-dessous.|Un clic imposta tutti i widget con stili; ognuno resta modificabile qui sotto.|Un clic cambia todos los widgets con estilos; cada uno se puede cambiar abajo.|Um clique muda todos os widgets com estilos; cada um pode ser alterado abaixo.
     Link speed|Verbindung|Liaison|Collegamento|Enlace|Ligação
     Each drive|Jedes Laufwerk|Chaque disque|Ogni unità|Cada unidad|Cada unidade
@@ -360,6 +497,7 @@ public static class L
     Free space|Freier Platz|Espace libre|Spazio libero|Espacio libre|Espaço livre
     Drives shown|Angezeigte Laufwerke|Disques affichés|Unità mostrate|Unidades mostradas|Unidades mostradas
     Volumes shown|Angezeigte Partitionen|Volumes affichés|Volumi mostrati|Volúmenes mostrados|Volumes mostrados
+    Internal IP|Interne IP|IP interne|IP interno|IP interna|IP interno
     External IP|Externe IP|IP externe|IP esterno|IP externa|IP externo
     Get|Abrufen|Obtenir|Recupera|Obtener|Obter
     Asking…|Wird abgerufen…|Demande…|Richiesta…|Consultando…|A consultar…
@@ -395,7 +533,7 @@ public static class L
     Load theme …|Theme laden …|Charger un thème …|Carica tema …|Cargar tema …|Carregar tema …
     Timeline|Verlauf breit|Historique large|Storico ampio|Historial ancho|Histórico largo
     Heatmap|Heatmap|Carte de chaleur|Mappa di calore|Mapa de calor|Mapa de calor
-    Dial|Tacho rund|Cadran|Quadrante|Dial|Mostrador
+    Dial|Messuhr|Jauge|Indicatore|Indicador|Medidor
     Rings|Ringe|Anneaux|Anelli|Anillos|Anéis
     BigNumber|Große Zahl|Grand chiffre|Numero grande|Número grande|Número grande
     Table|Tabelle|Tableau|Tabella|Tabla|Tabela
@@ -488,6 +626,7 @@ public static class L
 		}
 		Language = text;
 		Culture = CultureInfo.GetCultureInfo(Cultures[text]);
+		Format.RpmUnit = text == "de" ? "U/min" : "rpm";
 	}
 
 	public static string T(string key)

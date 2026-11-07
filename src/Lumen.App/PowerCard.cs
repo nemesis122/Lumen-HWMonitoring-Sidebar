@@ -35,9 +35,11 @@ public sealed class PowerCard : Card
 		note = Ui.Text(L.F("CPU + GPU + {0} W for the rest (estimate)", Format.Number(s.BaseWatts)), 11.0, p.Faint);
 		note.IsVisible = Shows("power.note");
 		Body.Children.Add(note);
+        WidgetPresentation.Sensor(hero, "power.watts");
+        WidgetPresentation.Sensor((Control)today.Parent!, "power.energy");
 	}
 
-	public override void Update(Snapshot s, History h)
+	protected override void UpdateReadings(Snapshot s, History h)
 	{
 		UsageInfo usage = s.Usage;
 		hero.Set(Format.Number(usage?.WattsNow), "W", P.At(Math.Clamp((usage?.WattsNow ?? 0.0) / 600.0, 0.0, 1.0)));

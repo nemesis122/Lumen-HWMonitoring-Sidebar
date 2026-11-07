@@ -1,6 +1,9 @@
 using Avalonia;
 using Avalonia.Controls;
+using System.Collections.Generic;
+using System.Linq;
 using Avalonia.Layout;
+using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Lumen.Core;
 
@@ -63,15 +66,13 @@ public abstract class SummaryTile : Border, IWidget, INamed
 		Caption = Ui.Text("", 11.5, p.Soft, FontWeight.Normal, numbers: true);
 		Caption.HorizontalAlignment = (half ? HorizontalAlignment.Left : HorizontalAlignment.Right);
 		Caption.VerticalAlignment = VerticalAlignment.Center;
-		Head = (half ? Ui.Stack(0.0, Ui.Columns("Auto,*", glyph, title), name) : Ui.Stack(0.0, Ui.Columns("Auto,Auto,*", glyph, title, Caption), name));
-		if (!half)
-		{
-			Grid.SetColumn(Caption, 2);
-		}
+        Caption.IsVisible = false;
+		Head = Ui.Stack(0.0, Ui.Columns("Auto,*", glyph, title), name);
 	}
 
 	public void Update(Snapshot snap, History h)
 	{
+		snap = WidgetSensors.FilterSnapshot(snap, S);
 		Last = (Snap: snap, History: h);
 		Summary summary = Summaries.For(Kind, Index, snap, h, S, P);
 		Color tint = Shade(summary);
@@ -85,11 +86,65 @@ public abstract class SummaryTile : Border, IWidget, INamed
 		name.Text = Naming.Hardware(slot, Index, summary.Name);
 		name.IsVisible = Naming.ShowHardware(slot, S) && name.Text.Length > 0;
 		Caption.Text = summary.Caption;
-		Extras.Set(Summaries.Extras(Kind, Index, snap, h, S));
+        Caption.IsVisible = false;
 		Show(summary);
+		Extras.Set(AdjustExtras(WithoutShown(Summaries.Extras(Kind, Index, snap, h, S)).Where(i => ShowsEmpty || i.Value != "—").ToList()));
+        WidgetPresentation.Apply(this, S);
 	}
 
+	// Designs that list only readings the hardware actually reports leave out values shown as a dash.
+	protected virtual bool ShowsEmpty => true;
+
+	protected virtual List<(string Label, string Value)> AdjustExtras(List<(string Label, string Value)> items) => items;
+
 	protected abstract void Show(Summary sum);
+
+	// A reading that the upper part of the card already shows (bar, big number, second value) is not
+	// repeated in the extras below. Readings are matched by their label, so a value that is still
+	// counting up or formatted differently does not make it appear twice for a moment.
+	private List<(string Label, string Value)> WithoutShown(List<(string Label, string Value)> items)
+	{
+		if (items.Count == 0)
+		{
+			return items;
+		}
+		HashSet<string> shown = new HashSet<string>();
+		foreach (TextBlock text in this.GetLogicalDescendants().OfType<TextBlock>())
+		{
+			if (string.IsNullOrWhiteSpace(text.Text) || !Visible(text))
+			{
+				continue;
+			}
+			List<ILogical> ancestors = text.GetLogicalAncestors().ToList();
+			if (ancestors.Contains(Extras) || ancestors.Contains(Head))
+			{
+				continue;
+			}
+			shown.Add(Key(text.Text));
+			foreach (string part in text.Text.Split('·'))
+			{
+				shown.Add(Key(part));
+			}
+		}
+		return items.Where(((string Label, string Value) i) => !shown.Contains(Key(i.Label))).ToList();
+	}
+
+	private bool Visible(Control control)
+	{
+		for (Control? c = control; c != null && c != this; c = c.GetLogicalParent() as Control)
+		{
+			if (!c.IsVisible)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private static string Key(string text)
+	{
+		return new string(text.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
+	}
 
 	protected Color Shade(Summary sum)
 	{

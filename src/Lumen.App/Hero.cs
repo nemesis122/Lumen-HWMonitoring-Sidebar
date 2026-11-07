@@ -19,7 +19,7 @@ public sealed class Hero : StackPanel
 		number = Ui.Text("—", size, p.Ink, Ui.Modern ? FontWeight.Bold : FontWeight.DemiBold, numbers: true);
 		number.LetterSpacing = (0.0 - size) * (Ui.Modern ? 0.045 : 0.03);
 		number.VerticalAlignment = VerticalAlignment.Bottom;
-		unit = Ui.Text("", Math.Max(10.5, Math.Round(size * 0.4)), p.Soft, FontWeight.Medium);
+		unit = Ui.Text("", Math.Max(10.5, Math.Round(size * 0.4)), p.Soft, FontWeight.Medium, numbers: true);
 		unit.VerticalAlignment = VerticalAlignment.Bottom;
 		unit.Margin = new Thickness(0.0, 0.0, 0.0, size * 0.16);
 		base.Children.Add(number);

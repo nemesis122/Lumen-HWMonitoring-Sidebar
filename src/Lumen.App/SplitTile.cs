@@ -58,12 +58,12 @@ public sealed class SplitTile : SummaryTile
 				textBlock.LetterSpacing = -1.0;
 				TextBlock textBlock2 = Ui.Text("", 10.0, P.Faint, FontWeight.DemiBold);
 				textBlock2.LetterSpacing = 0.8;
-				StackPanel stackPanel = Ui.Stack(1.0, new Viewbox
+				StackPanel stackPanel = Ui.Stack(1.0, SteadyHeight.Of(new Viewbox
 				{
 					Child = textBlock,
 					StretchDirection = StretchDirection.DownOnly,
 					HorizontalAlignment = HorizontalAlignment.Left
-				}, textBlock2);
+				}), textBlock2);
 				stackPanel.Margin = new Thickness((i != 0) ? 12 : 0, 0.0, 6.0, 0.0);
 				Grid.SetColumn(stackPanel, i * 2);
 				grid.Children.Add(stackPanel);

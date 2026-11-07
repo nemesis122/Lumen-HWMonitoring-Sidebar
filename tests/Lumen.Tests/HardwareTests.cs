@@ -344,11 +344,12 @@ public class RegisterNameTests
 public class BarLayoutTests
 {
     [Fact]
-    public void DefaultsAreDarkWindowsLanguageHighContrast()
+    public void DefaultsAreDarkEnglishHighContrast()
     {
+        // First start: dark, English, high contrast.
         var s = new Settings();
         Assert.Equal(ThemeMode.Dark, s.Theme);
-        Assert.Equal("auto", s.Language);
+        Assert.Equal("en", s.Language);
         Assert.True(s.HighContrast);
     }
 

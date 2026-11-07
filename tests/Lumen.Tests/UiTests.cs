@@ -97,7 +97,7 @@ public static class Render
 
     public static double BarRow(WidgetStyle st) => st switch
     {
-        WidgetStyle.Status => 44, WidgetStyle.Compact => 72, WidgetStyle.Gauge or WidgetStyle.Segments or WidgetStyle.DualRing => 150, _ => 220
+        WidgetStyle.Segments => 150, _ => 220
     };
 
     public static (Window Window, SidebarView View) Show(Settings settings, double width, double height)
@@ -121,7 +121,7 @@ public class LayoutSettleTests
     public LayoutSettleTests(ITestOutputHelper output) => this.output = output;
 
     public static IEnumerable<object[]> Cases() =>
-        Enum.GetValues<WidgetStyle>().SelectMany(st => new[] { new object[] { st, true }, new object[] { st, false } });
+        Settings.Selectable.ToArray().SelectMany(st => new[] { new object[] { st, true }, new object[] { st, false } });
 
     // Each update may lay the sidebar out once (new numbers, new chart points); without updates
     // nothing may be measured again. A layout that keeps re-arranging itself (the Segments hang
@@ -184,7 +184,7 @@ public class LayoutSettleTests
     [InlineData(700)]
     public void Mixed_bar_comes_to_rest_at_any_height(double height)
     {
-        var styles = Enum.GetValues<WidgetStyle>();
+        var styles = Settings.Selectable.ToArray();
         var s = new Settings { Language = "en", Edge = Edge.Bottom, BarHeight = height, Columns = 1, Glass = false };
         int i = 0;
         foreach (var w in s.Widgets) { w.Visible = w.Kind != WidgetKind.Notes; if (Settings.HasStyles(w.Kind)) w.Style = styles[i++ % styles.Length]; }

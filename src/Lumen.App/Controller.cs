@@ -178,6 +178,7 @@ public sealed class Controller
 		SidebarView sidebarView = new SidebarView(settings, palette);
 		sidebarView.SettingsRequested += OpenSettings;
 		sidebarView.ElevateRequested += platform.RestartElevated;
+		sidebarView.LayoutChanged += Save;
 		window.Apply(settings, sidebarView);
 		if (!window.IsVisible)
 		{
@@ -203,6 +204,7 @@ public sealed class Controller
 		reading = true;
 		try
 		{
+			window?.CheckFullscreen(settings.HideInFullscreen);
 			bool shown = window?.IsVisible ?? false;
 			TimeSpan timeSpan = TimeSpan.FromMilliseconds(shown ? settings.IntervalMs : Math.Max(settings.IntervalMs, 5000));
 			if (timer.Interval != timeSpan)

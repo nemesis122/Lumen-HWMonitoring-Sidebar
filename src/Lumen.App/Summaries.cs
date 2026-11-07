@@ -9,25 +9,23 @@ namespace Lumen.App;
 
 public static class Summaries
 {
-	public static readonly Dictionary<WidgetKind, string[]> ExtraKeys = new Dictionary<WidgetKind, string[]>
-	{
-		[WidgetKind.Cpu] = new string[3] { "cpu.power", "cpu.voltage", "cpu.fan" },
-		[WidgetKind.Gpu] = new string[4] { "gpu.vram", "gpu.power", "gpu.hotspot", "gpu.fan" },
-		[WidgetKind.Memory] = new string[3] { "mem.free", "mem.total", "mem.peak" },
-		[WidgetKind.Battery] = new string[3] { "battery.time", "battery.rate", "battery.health" },
-		[WidgetKind.Cooling] = new string[2] { "cooling.fans", "cooling.board" },
-		[WidgetKind.Network] = new string[5] { "net.link", "net.use", "net.peak", "net.address", "net.external" },
-		[WidgetKind.Drives] = new string[2] { "drives.temps", "drives.io" },
-		[WidgetKind.Volumes] = new string[1] { "volumes.each" },
-		[WidgetKind.Fps] = new string[1] { "fps.frametime" },
-		[WidgetKind.Ping] = new string[3] { "ping.jitter", "ping.loss", "ping.target" },
-		[WidgetKind.Power] = new string[1] { "power.cost" },
-		[WidgetKind.Weather] = new string[3] { "weather.feels", "weather.wind", "weather.humidity" },
-		[WidgetKind.System] = new string[3] { "system.boot", "system.processes", "system.threads" },
-		[WidgetKind.DataUsage] = new string[2] { "data.week", "data.month" }
-	};
+    /// <summary>The weather condition in words ("Partly cloudy", "Teilweise bewölkt"), never the raw code name.</summary>
+    public static string Sky(int code)
+    {
+        string group = WeatherClient.Group(code);
+        string text = L.T(group);
+        if (text != group) return text;
+        text = group.Replace('-', ' ');
+        return text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
+    }
 
-	public static Summary For(WidgetKind kind, int index, Snapshot s, History h, Settings set, Palette p)
+    public static Summary For(WidgetKind kind, int index, Snapshot s, History h, Settings set, Palette p)
+    {
+        var summary = Raw(kind, index, s, h, set, p);
+        return WidgetSensors.FilterSummary(kind, summary, set);
+    }
+
+	private static Summary Raw(WidgetKind kind, int index, Snapshot s, History h, Settings set, Palette p)
 	{
 		string unit = Format.TemperatureUnit(set.Fahrenheit);
 		NetworkInfo network;
@@ -72,7 +70,7 @@ public static class Summaries
 		case WidgetKind.Memory:
 		{
 			MemoryInfo memory = s.Memory;
-			return new Summary("M1.5,5 H14.5 V11 H1.5 Z M4,7 V9 M6.5,7 V9 M9,7 V9 M11.5,7 V9 M3,11 V13 M6,11 V13 M10,11 V13 M13,11 V13", L.T("Memory"), Format.Number(memory?.Load), "%", p.At(Format.Share(memory?.Load) * 0.9), Format.Share(memory?.Load), ((object)memory == null) ? "" : (Format.Number(memory.UsedGb, "0.0") + " / " + Format.Gigabytes(memory.TotalGb)), h.Read("mem.load"), 100.0);
+			return new Summary("M1.5,5 H14.5 V11 H1.5 Z M4,7 V9 M6.5,7 V9 M9,7 V9 M11.5,7 V9 M3,11 V13 M6,11 V13 M10,11 V13 M13,11 V13", L.T("Memory"), Format.Number(memory?.Load), "%", p.At(Format.Share(memory?.Load) * 0.9), Format.Share(memory?.Load), ((object)memory == null) ? "" : WidgetSensors.MemoryCaption(memory, set), h.Read("mem.load"), 100.0);
 		}
 		case WidgetKind.Battery:
 		{
@@ -82,10 +80,11 @@ public static class Summaries
 		}
 		case WidgetKind.Cooling:
 		{
-			TempReading tempReading = s.BoardTemps.OrderByDescending((TempReading t) => t.Celsius).FirstOrDefault();
+			TempReading tempReading = CoolingHero(s);
 			return new Summary("M8,8 m-1.3,0 a1.3,1.3 0 1 0 2.6,0 a1.3,1.3 0 1 0 -2.6,0 M8,6.7 C7.2,4.5 7.6,2 9.6,1.8 C11.4,1.7 11,4.6 9.2,7.2 M9.3,8 C11.5,7.2 14,7.6 14.2,9.6 C14.3,11.4 11.4,11 8.8,9.2 M8,9.3 C8.8,11.5 8.4,14 6.4,14.2 C4.6,14.3 5,11.4 6.8,8.8 M6.7,8 C4.5,8.8 2,8.4 1.8,6.4 C1.7,4.6 4.6,5 7.2,6.8", L.T("Cooling"), T(tempReading?.Celsius), unit, Heat(((object)tempReading != null) ? new double?(tempReading.Celsius + 5.0) : ((double?)null)), Format.Heat(((object)tempReading != null) ? new double?(tempReading.Celsius + 5.0) : ((double?)null)), (s.Fans.Count == 0) ? "" : $"{L.T("Fans")} {s.Fans.Count((FanInfo f) => f.Rpm > 0.0)}/{s.Fans.Count}", Array.Empty<double>(), null)
 			{
-				Name = Names.Short(s.BoardName)
+				Name = Names.Short(s.BoardName),
+				HeroLabel = ((object)tempReading == null) ? "" : Names.Temp(tempReading.Name, set)
 			};
 		}
 		case WidgetKind.Network:
@@ -94,24 +93,15 @@ public static class Summaries
 			(string Number, string Unit) tuple2 = Format.Split(Format.Rate(network?.DownloadBytesPerSecond));
 			item = tuple2.Number;
 			item2 = tuple2.Unit;
-			positionSeconds = network?.LinkBitsPerSecond;
-			if (positionSeconds.HasValue)
-			{
-				double valueOrDefault3 = positionSeconds.GetValueOrDefault();
-				if (valueOrDefault3 > 0.0)
-				{
-					num2 = network.DownloadBytesPerSecond.GetValueOrDefault() * 8.0 / valueOrDefault3;
-					goto IL_080e;
-				}
-			}
-			num2 = 0.0;
+			num2 = NetFill(network?.DownloadBytesPerSecond, network?.LinkBitsPerSecond);
 			goto IL_080e;
 		}
 		case WidgetKind.Ping:
 		{
+			// No caption: the jitter is one of the extras and would otherwise show twice.
 			PingInfo ping = s.Ping;
 			var (value4, unit4) = Format.Split(Format.Milliseconds(ping?.Ms));
-			return new Summary("M2,13 L5,13 L7,4 L9.5,12 L11,8 L14,8", "Ping", value4, unit4, PingColor(ping?.Ms, p), Math.Clamp((ping?.Ms).GetValueOrDefault() / 150.0, 0.0, 1.0), ((object)ping == null) ? "" : (L.T("Jitter") + " " + Format.Milliseconds(ping.JitterMs)), h.Read("ping"), null);
+			return new Summary("M2,13 L5,13 L7,4 L9.5,12 L11,8 L14,8", "Ping", value4, unit4, PingColor(ping?.Ms, p), Math.Clamp((ping?.Ms).GetValueOrDefault() / 150.0, 0.0, 1.0), "", h.Read("ping"), null);
 		}
 		case WidgetKind.Power:
 		{
@@ -121,7 +111,7 @@ public static class Summaries
 		case WidgetKind.Weather:
 		{
 			WeatherInfo weather = s.Weather;
-			return new Summary("M4.5,12.5 H11.5 A3,3 0 0 0 11.7,6.5 A4,4 0 0 0 4.1,7.6 A2.5,2.5 0 0 0 4.5,12.5 Z", weather?.Place ?? L.T("Weather"), T(weather?.TemperatureC), unit, p.At(Math.Clamp(((weather?.TemperatureC ?? 0.0) + 10.0) / 45.0, 0.0, 1.0)), Math.Clamp(((weather?.TemperatureC ?? 0.0) + 10.0) / 45.0, 0.0, 1.0), ((object)weather == null) ? L.T("Set a place in the settings.") : L.T(WeatherClient.Group(weather.Code)), Array.Empty<double>(), null);
+			return new Summary("M4.5,12.5 H11.5 A3,3 0 0 0 11.7,6.5 A4,4 0 0 0 4.1,7.6 A2.5,2.5 0 0 0 4.5,12.5 Z", weather?.Place ?? L.T("Weather"), T(weather?.TemperatureC), unit, p.At(Math.Clamp(((weather?.TemperatureC ?? 0.0) + 10.0) / 45.0, 0.0, 1.0)), Math.Clamp(((weather?.TemperatureC ?? 0.0) + 10.0) / 45.0, 0.0, 1.0), ((object)weather == null) ? L.T("Set a place in the settings.") : Sky(weather.Code), Array.Empty<double>(), null);
 		}
 		case WidgetKind.System:
 		{
@@ -147,7 +137,10 @@ public static class Summaries
 				orderby d.Temperature descending
 				select d).FirstOrDefault();
 			string caption = $"{list.Count} {((list.Count == 1) ? L.T("drive") : L.T("drives"))}";
-			return new Summary("M2,4 A1.5,1.5 0 0 1 3.5,2.5 H12.5 A1.5,1.5 0 0 1 14,4 V12 A1.5,1.5 0 0 1 12.5,13.5 H3.5 A1.5,1.5 0 0 1 2,12 Z M2,9.5 H14 M11,11.5 H12", L.T("Drives"), T(diskInfo?.Temperature), unit, Heat(diskInfo?.Temperature), Format.Heat(diskInfo?.Temperature), caption, Array.Empty<double>(), null);
+			return new Summary("M2,4 A1.5,1.5 0 0 1 3.5,2.5 H12.5 A1.5,1.5 0 0 1 14,4 V12 A1.5,1.5 0 0 1 12.5,13.5 H3.5 A1.5,1.5 0 0 1 2,12 Z M2,9.5 H14 M11,11.5 H12", L.T("Drives"), T(diskInfo?.Temperature), unit, Heat(diskInfo?.Temperature), Format.Heat(diskInfo?.Temperature), caption, Array.Empty<double>(), null)
+			{
+				HeroLabel = ((object)diskInfo == null || list.Count < 2) ? "" : (L.T("Hottest") + " · " + DriveName(diskInfo))
+			};
 		}
 		case WidgetKind.Volumes:
 		{
@@ -249,7 +242,7 @@ public static class Summaries
 			};
 			IL_080e:
 			value5 = num2;
-			return new Summary("M5,13 V3 M2.5,5.5 L5,3 L7.5,5.5 M11,3 V13 M8.5,10.5 L11,13 L13.5,10.5", L.T("Network"), item, item2, p.Cool, Math.Sqrt(Math.Clamp(value5, 0.0, 1.0)), "↑ " + Format.Rate(network?.UploadBytesPerSecond), h.Read("net.down"), null)
+			return new Summary("M5,13 V3 M2.5,5.5 L5,3 L7.5,5.5 M11,3 V13 M8.5,10.5 L11,13 L13.5,10.5", L.T("Network"), item, item2, p.Cool, Math.Clamp(value5, 0.0, 1.0), "↑ " + Format.Rate(network?.UploadBytesPerSecond), h.Read("net.down"), null)
 			{
 				Name = Names.Short(network?.Name)
 			};
@@ -290,45 +283,32 @@ public static class Summaries
 		};
 	}
 
-	public static bool Supports(WidgetKind kind, WidgetStyle style, string key)
+	// Fill of a download or upload bar, on a logarithmic scale from 1 KB/s up to the link speed
+	// (1 Gbit/s when unknown). Download and upload use the same scale, so more traffic always means a
+	// fuller bar, and a few MB/s of upload stay visible next to a fast download on a 10 Gbit link.
+	public static double NetFill(double? bytesPerSecond, double? linkBitsPerSecond)
 	{
-		if (key == "cpu.clock") return style is WidgetStyle.PillDuoPlus or WidgetStyle.SplitEdge;
-		if (style is WidgetStyle.Liquid or WidgetStyle.Contour) return false;
-		if (style == WidgetStyle.Ribbon) return key == ChartKey(kind);
-		if (style == WidgetStyle.CoreGrid && kind == WidgetKind.Cpu) return key == "cpu.cores";
-		if (style == WidgetStyle.TwinFocus && key == ChartKey(kind)) return true;
-		if (style is WidgetStyle.SignalPro or WidgetStyle.RailPro or WidgetStyle.OrbitPro or WidgetStyle.Prism or WidgetStyle.Spectrum) return key == ChartKey(kind) && (style == WidgetStyle.SignalPro || style == WidgetStyle.Spectrum);
-		bool result;
-		if (style != WidgetStyle.Standard && Settings.HasStyles(kind))
+		if (!bytesPerSecond.HasValue || !double.IsFinite(bytesPerSecond.Value) || bytesPerSecond.Value < 1024.0)
 		{
-			if (style == WidgetStyle.Status)
-			{
-				result = false;
-			}
-			else
-			{
-				bool flag;
-				if ((style == WidgetStyle.Compact || style == WidgetStyle.Backdrop) ? true : false)
-				{
-					flag = key == ChartKey(kind);
-				}
-				else
-				{
-					string[] value;
-					bool flag2 = ExtraKeys.TryGetValue(kind, out value) && value.Contains(key);
-					if (!flag2)
-					{
-						bool flag3 = ((style == WidgetStyle.Minimal || style == WidgetStyle.Graph) ? true : false);
-						flag2 = flag3 && key == ChartKey(kind);
-					}
-					flag = flag2;
-				}
-				result = flag;
-			}
-			return result;
+			return 0.0;
 		}
-		result = ((key == "drives.temps" || key == "volumes.each") ? true : false);
-		return !result;
+		double link = (linkBitsPerSecond.HasValue && linkBitsPerSecond.Value > 0.0) ? (linkBitsPerSecond.Value / 8.0) : 125000000.0;
+		return Math.Clamp(Math.Log10(bytesPerSecond.Value / 1024.0) / Math.Log10(Math.Max(link, 2048.0) / 1024.0), 0.0, 1.0);
+	}
+
+	// The board sensor shown big on the cooling widget: the mainboard itself, otherwise the hottest one.
+	public static TempReading? CoolingHero(Snapshot s)
+	{
+		return s.BoardTemps.FirstOrDefault((TempReading t) => t.Name == "Board") ?? s.BoardTemps.OrderByDescending((TempReading t) => t.Celsius).FirstOrDefault();
+	}
+
+	private static string DriveName(DiskInfo d)
+	{
+		if (d.Letters.Length <= 0)
+		{
+			return Names.Short(d.Name);
+		}
+		return d.Letters;
 	}
 
 	public static List<(string Label, string Value)> Extras(WidgetKind kind, int index, Snapshot s, History h, Settings set)
@@ -339,6 +319,7 @@ public static class Summaries
 		switch (kind)
 		{
 		case WidgetKind.Cpu:
+            Add("cpu.clock", L.T("Clock speed"), Format.Clock(s.Cpu?.ClockMhz));
 			Add("cpu.power", L.T("Power"), Format.Watts(s.Cpu?.PowerW));
 			Add("cpu.voltage", L.T("Voltage"), Format.Volts(s.Cpu?.Voltage));
 			Add("cpu.fan", L.T("Fan"), Format.Rpm(s.Cpu?.FanRpm));
@@ -346,6 +327,7 @@ public static class Summaries
 		case WidgetKind.Gpu:
 		{
 			gpuInfo = GpuGroup.Visible(s, set).ElementAtOrDefault(index);
+            Add("gpu.clock", L.T("Clock speed"), Format.Clock(gpuInfo?.ClockMhz));
 			double? num = gpuInfo?.MemoryUsedMb;
 			if (num.HasValue)
 			{
@@ -406,7 +388,7 @@ public static class Summaries
 			{
 				break;
 			}
-			foreach (TempReading boardTemp in s.BoardTemps)
+			foreach (TempReading boardTemp in s.BoardTemps.Where((TempReading t) => t != CoolingHero(s)))
 			{
 				list.Add((Names.Temp(boardTemp.Name, set), Tc(boardTemp.Celsius)));
 			}
@@ -428,9 +410,11 @@ public static class Summaries
 		case WidgetKind.Drives:
 			if (set.Shows("drives.temps"))
 			{
-				foreach (DiskInfo item in s.Disks.Where((DiskInfo d) => set.Shows("drive:" + d.Id)))
+				List<DiskInfo> drives = s.Disks.Where((DiskInfo d) => set.Shows("drive:" + d.Id)).ToList();
+				DiskInfo? hottest = set.Shows("drives.temp") ? drives.Where((DiskInfo d) => d.Temperature.HasValue).OrderByDescending((DiskInfo d) => d.Temperature).FirstOrDefault() : null;
+				foreach (DiskInfo item in drives.Where((DiskInfo d) => d != hottest))
 				{
-					list.Add(((item.Letters.Length > 0) ? item.Letters : Names.Short(item.Name), Tc(item.Temperature)));
+					list.Add((DriveName(item), Tc(item.Temperature)));
 				}
 			}
 			Add("drives.io", L.T("Read"), Format.Rate(s.Disks.Where((DiskInfo d) => set.Shows("drive:" + d.Id)).Sum((DiskInfo d) => d.ReadBytesPerSecond.GetValueOrDefault())));
@@ -466,7 +450,12 @@ public static class Summaries
 		{
 			string label4 = L.T("Today");
 			UsageInfo usage3 = s.Usage;
-			Add("power.cost", label4, ((object)usage3 != null) ? Format.Money(usage3.KwhToday * set.PricePerKwh, set.Currency) : "—");
+            if (set.Shows("power.cost"))
+            {
+                Add("power.today", label4, usage3 != null ? Format.Money(usage3.KwhToday * set.PricePerKwh, set.Currency) : "—");
+                Add("power.week", L.T("This week"), usage3 != null ? Format.Money(usage3.KwhWeek * set.PricePerKwh, set.Currency) : "—");
+                Add("power.month", L.T("This month"), usage3 != null ? Format.Money(usage3.KwhMonth * set.PricePerKwh, set.Currency) : "—");
+            }
 			break;
 		}
 		case WidgetKind.Weather:
@@ -505,14 +494,22 @@ public static class Summaries
 			{
 				string label = L.T("This week");
 				UsageInfo usage = s.Usage;
-				Add("data.week", label, ((object)usage != null) ? Format.Size(usage.DownWeek) : "—");
+                    if (set.Shows("data.week"))
+                    {
+                        Add("data.week.down", label + " ↓", usage != null ? Format.Size(usage.DownWeek) : "—");
+                        Add("data.week.up", label + " ↑", usage != null ? Format.Size(usage.UpWeek) : "—");
+                    }
 				string label2 = L.T("This month");
 				UsageInfo usage2 = s.Usage;
-				Add("data.month", label2, ((object)usage2 != null) ? Format.Size(usage2.DownMonth) : "—");
+                    if (set.Shows("data.month"))
+                    {
+                        Add("data.month.down", label2 + " ↓", usage2 != null ? Format.Size(usage2.DownMonth) : "—");
+                        Add("data.month.up", label2 + " ↑", usage2 != null ? Format.Size(usage2.UpMonth) : "—");
+                    }
 				break;
 			}
 			IL_01cf:
-			Add("gpu.vram", "VRAM", (string)value);
+			if (set.Shows("gpu.vram.used") || set.Shows("gpu.vram.total")) Add("gpu.vram", "VRAM", WidgetSensors.Vram(gpuInfo, set));
 			Add("gpu.power", L.T("Power"), Format.Watts(gpuInfo?.PowerW));
 			Add("gpu.hotspot", L.T("Hot spot"), Tc(gpuInfo?.HotSpot));
 			Add("gpu.fan", L.T("Fan"), Format.Rpm(gpuInfo?.FanRpm));
@@ -521,6 +518,8 @@ public static class Summaries
 		return list;
 		void Add(string key, string item, string item2)
 		{
+            if (key == "drives.io" && !set.Shows(item == L.T("Read") ? "drives.read" : "drives.write")) return;
+            if (key == "power.cost" && !set.Shows("power.today")) return;
 			if (set.Shows(key))
 			{
 				list.Add((item, item2));

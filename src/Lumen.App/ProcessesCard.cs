@@ -21,6 +21,7 @@ public sealed class ProcessesCard : Card
 	{
 		Grid grid = Ui.Columns("*,Auto,Auto", Card.Label("", p), Card.Label("RAM", p), Card.Label("CPU", p));
 		grid.Children[1].IsVisible = Shows("proc.memory");
+        grid.Children[2].IsVisible = Shows("proc.cpu");
 		((TextBlock)grid.Children[1]).Width = 64.0;
 		((TextBlock)grid.Children[1]).TextAlignment = TextAlignment.Right;
 		((TextBlock)grid.Children[2]).Width = 52.0;
@@ -29,7 +30,7 @@ public sealed class ProcessesCard : Card
 		Body.Children.Add(list);
 	}
 
-	public override void Update(Snapshot s, History h)
+	protected override void UpdateReadings(Snapshot s, History h)
 	{
 		List<ProcessInfo> list = s.Processes.Take(5).ToList();
 		while (rows.Count < list.Count)
@@ -47,6 +48,8 @@ public sealed class ProcessesCard : Card
 				Height = 3.0,
 				Palette = P
 			};
+			WidgetPresentation.Sensor(textBlock3, "proc.cpu");
+            WidgetPresentation.Sensor(meter, "proc.cpu");
 			this.list.Children.Add(Ui.Stack(4.0, Ui.Columns("*,Auto,Auto", textBlock, textBlock2, textBlock3), meter));
 			rows.Add((textBlock, textBlock2, textBlock3, meter));
 		}

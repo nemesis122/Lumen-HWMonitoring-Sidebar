@@ -14,7 +14,7 @@ public sealed class GpuCard : Card
 
 	private readonly Hero hero;
 
-	private readonly TextBlock load;
+	private readonly Hero load;
 
 	private readonly AreaChart? chart;
 
@@ -28,7 +28,7 @@ public sealed class GpuCard : Card
 		: base(p, m, s, "M1.5,4 H14.5 V12 H1.5 Z M6,8 m-2.2,0 a2.2,2.2 0 1 0 4.4,0 a2.2,2.2 0 1 0 -4.4,0 M10,6.5 H12.5 M10,9.5 H12.5 M3,12 V14", L.T("Graphics"))
 	{
 		this.index = index;
-		(hero, load, chart) = HeroBlock(L.T("Load"), "gpu.chart");
+		(hero, load, chart) = TwinHeroBlock(L.T("Load"), "gpu.chart");
 		if (Shows("gpu.vram"))
 		{
 			vram = Ui.Text("—", 11.5, p.Soft, FontWeight.Medium, numbers: true);
@@ -41,9 +41,11 @@ public sealed class GpuCard : Card
 			Body.Children.Add(Ui.Stack(5.0, Ui.Columns("*,Auto", Card.Label("VRAM", p), vram), vramBar));
 		}
 		stats = Stats(("gpu.power", L.T("Power")), ("gpu.hotspot", L.T("Hot spot")), ("gpu.fan", L.T("Fan")));
+        WidgetPresentation.Sensor(hero, "gpu.temp");
+        WidgetPresentation.Sensor((Control)load.Parent!, "gpu.load");
 	}
 
-	public override void Update(Snapshot s, History h)
+	protected override void UpdateReadings(Snapshot s, History h)
 	{
 		Show(GpuGroup.Visible(s, S).ElementAtOrDefault(index), h);
 	}
@@ -54,10 +56,12 @@ public sealed class GpuCard : Card
 		base.Subtitle = g?.Name ?? "";
 		base.Aside = Format.Clock(g?.ClockMhz);
 		hero.Set(Temp(g?.Temperature), base.TempUnit, HeatColor(g?.Temperature));
-		Motion.Text(load, Format.Percent(g?.Load));
+		load.Set(Format.Number(g?.Load), "%", P.Cool);
 		chart?.Set(((object)g == null) ? Array.Empty<double>() : h.Read("gpu." + g.Id + ".load"), P.At(Format.Share(g?.Load) * 0.9));
 		if (vram != null && vramBar != null)
 		{
+            vram.IsVisible = S.Shows("gpu.vram.used") || S.Shows("gpu.vram.total");
+            vramBar.IsVisible = S.Shows("gpu.vram.used") && S.Shows("gpu.vram.total");
 			double? num = g?.MemoryUsedMb;
 			if (num.HasValue)
 			{
@@ -68,7 +72,9 @@ public sealed class GpuCard : Card
 					double valueOrDefault2 = num.GetValueOrDefault();
 					if (valueOrDefault2 > 0.0)
 					{
-						Motion.Text(vram, Format.Number(valueOrDefault / 1024.0, "0.0") + " / " + Format.Gigabytes(valueOrDefault2 / 1024.0));
+						Motion.Text(vram, WidgetSensors.Vram(g, S));
+                        vram.IsVisible = S.Shows("gpu.vram.used") || S.Shows("gpu.vram.total");
+                        vramBar.IsVisible = S.Shows("gpu.vram.used") && S.Shows("gpu.vram.total");
 						vramBar.Set(valueOrDefault / valueOrDefault2, P.At(valueOrDefault / valueOrDefault2 * 0.85));
 						goto IL_0243;
 					}

@@ -34,9 +34,12 @@ public sealed class BatteryCard : Card
 		};
 		Body.Children.Add(bar);
 		stats = Stats(("battery.time", L.T("Time left")), ("battery.rate", L.T("Rate")), ("battery.health", L.T("Health")));
+        WidgetPresentation.Sensor(hero, "battery.level");
+        WidgetPresentation.Sensor(bar, "battery.level");
+        WidgetPresentation.Sensor(state, "battery.state");
 	}
 
-	public override void Update(Snapshot s, History h)
+	protected override void UpdateReadings(Snapshot s, History h)
 	{
 		BatteryInfo battery = s.Battery;
 		base.IsVisible = battery != null;

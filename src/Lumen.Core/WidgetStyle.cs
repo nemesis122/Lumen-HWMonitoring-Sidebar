@@ -2,6 +2,8 @@ namespace Lumen.Core;
 
 public enum WidgetStyle
 {
+    // Preserve historic numeric values and names only for loading existing settings.
+    // Settings.Selectable is the complete current design collection.
 	Standard,
 	Ring,
 	Minimal,
@@ -48,7 +50,70 @@ public enum WidgetStyle
 	Contour,
 	SplitEdge,
 	Ribbon,
-	CoreGrid
+	CoreGrid,
+    // Retired local designs: retain IDs so saved preferences migrate to Standard.
+    LedgerV,
+    MatrixV,
+    TraceV,
+    RailH,
+    SplitH,
+    BandH,
+    Duplex,
+    SignalRows,
+    OpenPanel,
+    StandardRemastered,
+    SegmentsRemastered,
+    RingsRemastered,
+    TableRemastered,
+    PillRemastered,
+    FillBarsRemastered,
+    SplitRemastered,
+    PillRowRemastered,
+    KeyFiguresRemastered,
+    BadgeListRemastered,
+    TwinFocusRemastered,
+    DuplexRemastered,
+    SignalRowsRemastered,
+    OpenPanelRemastered,
+    Clarity,
+    ControlDeck,
+    ClarityColor,
+    ClarityRows,
+    ClarityTiles,
+    // Retired again after 3.0.1: kept so saved preferences migrate to Standard.
+    CapsuleStack,
+    Mosaic,
+    Frost,
+    Aura,
+    Pulse,
+    HeatField,
+    Headline,
+    Console,
+    // Evolution build: accent colour per widget, sensor line under the big number.
+    Evolution,
+    // Newer designs: history graph behind the number, two rings, upright level columns.
+    HistoryGraph,
+    RingPair,
+    LevelColumns,
+    // After dashboard pictures: neon HUD, neon tiles, thermostat, smart panel, purple dashboard, sci-fi.
+    NeonHud,
+    NeonTiles,
+    Thermostat,
+    SmartPanel,
+    PurpleDash,
+    SciFi,
+    // The purple dashboard without its half ring: header and one list of bars.
+    PurpleList,
+    // Segments with every further value as a segment line as well.
+    SegmentGraph,
+    // Table with every further value as a table line with a bar as well.
+    TableGraph,
+    // Fill bars with every further value as a fill bar as well.
+    FillBarsGraph,
+    // Capsule row, badge list and neon HUD with every further value in the design's own bar as well.
+    PillRowGraph,
+    BadgeListGraph,
+    NeonHudGraph
 }
 
 

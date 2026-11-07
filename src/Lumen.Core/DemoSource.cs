@@ -56,7 +56,10 @@ public sealed class DemoSource : ISnapshotSource, IDisposable
 		double num6 = Math.Clamp(38.0 + 26.0 * num2 + 8.0 * num, 2.0, 100.0);
 		GpuInfo[] gpus = new GpuInfo[2]
 		{
-			new GpuInfo("gpu0", "NVIDIA GeForce RTX 3080", 41.0 + num6 * 0.36, 52.0 + num6 * 0.4, num6, 1830.0 + num6 * 2.0, 34.0 + num6 * 2.6, (num6 > 30.0) ? (1150.0 + num6 * 8.0) : 0.0, 3100.0 + num6 * 52.0, 10240.0),
+			new GpuInfo("gpu0", "NVIDIA GeForce RTX 3080", 41.0 + num6 * 0.36, 52.0 + num6 * 0.4, num6, 1830.0 + num6 * 2.0, 34.0 + num6 * 2.6, (num6 > 30.0) ? (1150.0 + num6 * 8.0) : 0.0, 3100.0 + num6 * 52.0, 10240.0)
+			{
+				MemoryJunction = 54.0 + num6 * 0.3
+			},
 			new GpuInfo("gpu1", "AMD Radeon Graphics", 39.0 + num * 1.5, null, 3.0 + Math.Abs(num) * 4.0, 400.0, 3.1, null, 380.0, 512.0)
 			{
 				Integrated = true
@@ -67,6 +70,12 @@ public sealed class DemoSource : ISnapshotSource, IDisposable
 		{
 			new DiskInfo("nvme0", "Samsung SSD 970 EVO Plus 2TB", 47.0 + num, 33.0, (random.NextDouble() < 0.3) ? (random.NextDouble() * 90000000.0) : 40000.0, (random.NextDouble() < 0.25) ? (random.NextDouble() * 40000000.0) : 120000.0)
 			{
+				ReadActivity = 2.5,
+				WriteActivity = 0.8,
+				TotalActivity = 3.3,
+				PowerOnHours = 13210.0,
+				PowerOnCount = 812.0,
+				Life = 97.0,
 				Letters = "C:"
 			},
 			new DiskInfo("sata0", "Samsung SSD 870 EVO 4TB", 33.0, 57.0, (random.NextDouble() < 0.1) ? (random.NextDouble() * 20000000.0) : 0.0, 0.0)

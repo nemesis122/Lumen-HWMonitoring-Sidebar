@@ -65,12 +65,12 @@ public sealed class KeyFiguresTile : SummaryTile
 					Track = P.Track,
 					Margin = new Thickness(0.0, 6.0, 0.0, 0.0)
 				};
-				StackPanel stackPanel = Ui.Stack(1.0, new Viewbox
+				StackPanel stackPanel = Ui.Stack(1.0, SteadyHeight.Of(new Viewbox
 				{
 					Child = textBlock,
 					StretchDirection = StretchDirection.DownOnly,
 					HorizontalAlignment = HorizontalAlignment.Left
-				}, textBlock2, fillBack);
+				}), textBlock2, fillBack);
 				stackPanel.Margin = new Thickness((i != 0) ? 12 : 0, 0.0, (i != list.Count - 1) ? 10 : 0, 0.0);
 				Grid.SetColumn(stackPanel, i * 2);
 				grid.Children.Add(stackPanel);

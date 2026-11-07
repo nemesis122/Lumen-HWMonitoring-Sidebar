@@ -47,6 +47,14 @@ public abstract class Card : Border, IWidget, INamed
 		set
 		{
 			aside.Text = value;
+            if (S.ActiveWidget?.Kind is WidgetKind.Cpu or WidgetKind.Gpu)
+                aside.IsVisible = S.Shows(S.ActiveWidget.Kind == WidgetKind.Cpu ? "cpu.clock" : "gpu.clock");
+            if (S.ActiveWidget?.Kind is WidgetKind.Clock or WidgetKind.Calendar or WidgetKind.Drives)
+                aside.IsVisible = S.Shows(S.ActiveWidget.Kind switch { WidgetKind.Clock => "clock.week", WidgetKind.Calendar => "calendar.week", _ => "drives.count" });
+            if (S.ActiveWidget?.Kind == WidgetKind.Weather) aside.IsVisible = S.Shows("weather.place");
+            if (S.ActiveWidget?.Kind == WidgetKind.Fps) aside.IsVisible = S.Shows("fps.app");
+            if (S.ActiveWidget?.Kind == WidgetKind.Media) aside.IsVisible = S.Shows("media.source");
+            if (S.ActiveWidget?.Kind == WidgetKind.DataUsage) aside.IsVisible = S.Shows("data.period");
 		}
 	}
 
@@ -56,7 +64,7 @@ public abstract class Card : Border, IWidget, INamed
 		{
 			lastSubtitle = value;
 			subtitle.Text = Naming.Hardware(slot, slotIndex, Names.Clean(value));
-			subtitle.IsVisible = Naming.ShowHardware(slot, S) && !string.IsNullOrWhiteSpace(subtitle.Text);
+			subtitle.IsVisible = Naming.ShowHardware(slot, S) && !string.IsNullOrWhiteSpace(subtitle.Text) && (S.ActiveWidget?.Kind != WidgetKind.System || S.Shows("system.os"));
 		}
 	}
 
@@ -129,7 +137,14 @@ public abstract class Card : Border, IWidget, INamed
 		return P.Faint;
 	}
 
-	public abstract void Update(Snapshot s, History h);
+    public void Update(Snapshot s, History h)
+    {
+        var filtered = WidgetSensors.FilterSnapshot(s, S);
+        UpdateReadings(filtered, h);
+        WidgetPresentation.Apply(this, S);
+    }
+
+    protected abstract void UpdateReadings(Snapshot s, History h);
 
 	protected static TextBlock Label(string text, Palette p)
 	{
@@ -162,6 +177,24 @@ public abstract class Card : Border, IWidget, INamed
 		}
 		return (hero: hero, side: textBlock2, chart: areaChart);
 	}
+
+    protected (Hero hero, Hero side, AreaChart? chart) TwinHeroBlock(string sideLabel, string chartKey)
+    {
+        var hero = new Hero(M.Hero, P);
+        var side = new Hero(M.Hero, P) { HorizontalAlignment = HorizontalAlignment.Right };
+        var label = Label(sideLabel, P);
+        label.HorizontalAlignment = HorizontalAlignment.Right;
+        var sideGroup = Ui.Stack(0, label, side);
+        sideGroup.VerticalAlignment = VerticalAlignment.Bottom;
+        Body.Children.Add(Ui.Columns("*,Auto", hero, sideGroup));
+        AreaChart? chart = null;
+        if (Shows(chartKey))
+        {
+            chart = new AreaChart { Height = M.Chart, Max = 100, Margin = new Thickness(0, -2, 0, 0) };
+            Body.Children.Add(chart);
+        }
+        return (hero, side, chart);
+    }
 
 	protected Dictionary<string, Stat> Stats(params (string key, string label)[] items)
 	{

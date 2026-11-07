@@ -41,6 +41,8 @@ public sealed class DataUsageCard : Card
 			{
 				TextBlock textBlock = Ui.Text("", 12.0, p2.Ink, FontWeight.Medium, numbers: true);
 				TextBlock textBlock2 = Ui.Text("", 12.0, p2.Soft, FontWeight.Normal, numbers: true);
+                WidgetPresentation.Sensor(textBlock, key + ".down");
+                WidgetPresentation.Sensor(textBlock2, key + ".up");
 				textBlock.HorizontalAlignment = HorizontalAlignment.Right;
 				textBlock2.HorizontalAlignment = HorizontalAlignment.Right;
 				textBlock2.Width = 82.0;
@@ -65,9 +67,11 @@ public sealed class DataUsageCard : Card
 			};
 			return Ui.Stack(1.0, Ui.Row(5.0, border, Card.Label(text2, p2)), hero);
 		}
+        WidgetPresentation.Sensor((Control)down.Parent!, "data.down");
+        WidgetPresentation.Sensor((Control)up.Parent!, "data.up");
 	}
 
-	public override void Update(Snapshot s, History h)
+	protected override void UpdateReadings(Snapshot s, History h)
 	{
 		UsageInfo usage = s.Usage;
 		base.Aside = L.T("Today");

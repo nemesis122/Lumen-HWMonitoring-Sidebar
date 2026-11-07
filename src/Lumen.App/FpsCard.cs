@@ -37,6 +37,8 @@ public sealed class FpsCard : Card
 		live = (from c in Body.Children.Skip(1)
 			where c != empty
 			select c).ToArray();
+        WidgetPresentation.Sensor(hero, "fps.value");
+        WidgetPresentation.Sensor((Control)low.Parent!, "fps.low");
 	}
 
 	public static Color Color(double? fps, Palette p)
@@ -57,7 +59,7 @@ public sealed class FpsCard : Card
 		return p.Faint;
 	}
 
-	public override void Update(Snapshot s, History h)
+	protected override void UpdateReadings(Snapshot s, History h)
 	{
 		FpsInfo fps = s.Fps;
 		Control[] array = live;

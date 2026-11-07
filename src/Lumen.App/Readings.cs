@@ -8,7 +8,10 @@ namespace Lumen.App;
 
 public static class Readings
 {
-	public static List<Reading> For(WidgetKind kind, int index, Snapshot s, History h, Settings set, Palette p)
+    public static List<Reading> For(WidgetKind kind, int index, Snapshot s, History h, Settings set, Palette p) =>
+        Raw(kind, index, s, h, set, p).Where(r => set.Shows(WidgetSensors.ReadingKey(kind, r.Label))).ToList();
+
+	private static List<Reading> Raw(WidgetKind kind, int index, Snapshot s, History h, Settings set, Palette p)
 	{
 		List<Reading> list = new List<Reading>();
 		NetworkInfo network;
@@ -65,7 +68,7 @@ public static class Readings
 			MemoryInfo memory = s.Memory;
 			if ((object)memory != null)
 			{
-				list.Add(new Reading(L.T("used"), Format.Percent(memory.Load), Share(memory.Load, 100.0), p.At(Share(memory.Load, 100.0) * 0.9)));
+				list.Add(new Reading(L.T("Used"), Format.Percent(memory.Load), Share(memory.Load, 100.0), p.At(Share(memory.Load, 100.0) * 0.9)));
 				list.Add(new Reading(L.T("2-min peak"), Format.Percent(Peak("mem.load")), Share(Peak("mem.load"), 100.0), p.Cool));
 				return list;
 			}
@@ -105,7 +108,7 @@ public static class Readings
 				return list;
 			}
 		case WidgetKind.Drives:
-			foreach (DiskInfo item3 in s.Disks.Where((DiskInfo d) => set.Shows("drive:" + d.Id)).Take(8))
+			foreach (DiskInfo item3 in s.Disks.Where((DiskInfo d) => set.Shows("drive:" + d.Id)))
 			{
 				list.Add(new Reading((item3.Letters.Length > 0) ? item3.Letters : Names.Short(item3.Name), Tc(item3.Temperature), Format.Heat(item3.Temperature), Heat(item3.Temperature)));
 			}
@@ -147,8 +150,9 @@ public static class Readings
 			}
 			IL_0732:
 			max = num;
-			list.Add(new Reading("↓ " + L.T("Down"), Format.Rate(network.DownloadBytesPerSecond), Math.Sqrt(Share(network.DownloadBytesPerSecond.GetValueOrDefault() * 8.0, max)), p.Cool));
-			list.Add(new Reading("↑ " + L.T("Up"), Format.Rate(network.UploadBytesPerSecond), Math.Sqrt(Share(network.UploadBytesPerSecond.GetValueOrDefault() * 8.0, max)), p.Calm));
+			// Download and upload share one logarithmic scale, so upload does not look empty next to a fast download.
+			list.Add(new Reading("↓ " + L.T("Down"), Format.Rate(network.DownloadBytesPerSecond), Summaries.NetFill(network.DownloadBytesPerSecond, max), p.Cool));
+			list.Add(new Reading("↑ " + L.T("Up"), Format.Rate(network.UploadBytesPerSecond), Summaries.NetFill(network.UploadBytesPerSecond, max), p.Calm));
 			return list;
 		}
 		Summary summary = Summaries.For(kind, index, s, h, set, p);

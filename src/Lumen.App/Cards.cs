@@ -8,105 +8,90 @@ public static class Cards
 {
 	public static Control Create(WidgetKind kind, WidgetStyle style, int index, Palette p, Metrics m, Settings s)
 	{
-		if (style == WidgetStyle.Ring && Settings.HasStyles(kind))
+        s = s.ForWidget(kind);
+		// The overview is a list in every design (name, bar, value), drawn in that design's look.
+		if (kind == WidgetKind.Overview)
 		{
-			return new RingTile(kind, index, p, m, s);
-		}
-		if (style == WidgetStyle.Minimal && Settings.HasStyles(kind))
-		{
-			return new MinimalRow(kind, index, p, m, s);
-		}
-		if (style == WidgetStyle.Bar && Settings.HasStyles(kind))
-		{
-			return new BarTile(kind, index, p, m, s);
-		}
-		if (style == WidgetStyle.Graph && Settings.HasStyles(kind))
-		{
-			return new GraphTile(kind, index, p, m, s);
-		}
-		if (style == WidgetStyle.Tile && Settings.HasStyles(kind))
-		{
-			return new NumberTile(kind, index, p, m, s);
-		}
-		if (style == WidgetStyle.Compact && Settings.HasStyles(kind))
-		{
-			return new CompactRow(kind, index, p, m, s);
-		}
-		if (style == WidgetStyle.Status && Settings.HasStyles(kind))
-		{
-			return new StatusRow(kind, index, p, m, s);
-		}
-		if (style == WidgetStyle.Segments && Settings.HasStyles(kind))
-		{
-			return new SegmentTile(kind, index, p, m, s);
-		}
-		if (style == WidgetStyle.DualRing && Settings.HasStyles(kind))
-		{
-			return new DualRingTile(kind, index, p, m, s);
+			return new OverviewTile(Settings.Successor(style), p, m, s);
 		}
 		if (Settings.HasStyles(kind))
 		{
-			switch (style)
+			// Clock, world clocks, calendar, weather, now playing and the top apps: drawn in the design's frame,
+			// fonts and colours, but with content that fits them (no bar for a time, a list of apps).
+			if (InfoTile.Handles(kind) && Settings.Successor(style) != WidgetStyle.Standard)
 			{
-			case WidgetStyle.Timeline:
-				return new TimelineTile(kind, index, p, m, s);
-			case WidgetStyle.Heatmap:
-				return new HeatmapTile(kind, index, p, m, s);
-			case WidgetStyle.Rings:
-				return new RingsTile(kind, index, p, m, s);
-			case WidgetStyle.BigNumber:
-				return new BigNumberTile(kind, index, p, m, s);
+				return new InfoTile(kind, index, Settings.Successor(style), p, m, s);
+			}
+			switch (Settings.Successor(style))
+			{
+            case WidgetStyle.Clarity:
+            case WidgetStyle.ClarityColor:
+            case WidgetStyle.ClarityRows:
+            case WidgetStyle.ClarityTiles:
+            case WidgetStyle.ControlDeck:
+                return new InsightTile(kind,index,p,m,s,style);
+            case WidgetStyle.Duplex:
+            case WidgetStyle.SignalRows:
+            case WidgetStyle.OpenPanel:
+                return new ComparisonTile(kind,index,p,m,s,style);
+			case WidgetStyle.Segments:
+				return new SegmentTile(kind, index, p, m, s);
+			case WidgetStyle.SegmentGraph:
+				return new SegmentTile(kind, index, p, m, s, graph: true);
 			case WidgetStyle.Table:
 				return new TableTile(kind, index, p, m, s);
+			case WidgetStyle.TableGraph:
+				return new TableTile(kind, index, p, m, s, graph: true);
 			case WidgetStyle.Pill:
 				return new PillTile(kind, index, p, m, s);
-			case WidgetStyle.DotMatrix:
-				return new DotsTile(kind, index, p, m, s);
-			case WidgetStyle.Bento:
-				return new BentoTile(kind, index, p, m, s);
-			case WidgetStyle.Ticker:
-				return new TickerTile(kind, index, p, m, s);
-			case WidgetStyle.MiniArc:
-				return new MiniArcTile(kind, index, p, m, s);
 			case WidgetStyle.FillBars:
 				return new FillBarsTile(kind, index, p, m, s);
+			case WidgetStyle.FillBarsGraph:
+				return new FillBarsTile(kind, index, p, m, s, graph: true);
 			case WidgetStyle.Split:
 				return new SplitTile(kind, index, p, m, s);
-			case WidgetStyle.Chips:
-				return new ChipTile(kind, index, p, m, s);
-			case WidgetStyle.Scale:
-				return new ScaleTile(kind, index, p, m, s);
-			case WidgetStyle.HistoryBars:
-				return new HistoryBarsTile(kind, index, p, m, s);
-			case WidgetStyle.Backdrop:
-				return new BackdropTile(kind, index, p, m, s);
-			case WidgetStyle.PillDuo:
-				return new PillDuoTile(kind, index, p, m, s);
 			case WidgetStyle.PillRow:
 				return new PillRowTile(kind, index, p, m, s);
+			case WidgetStyle.PillRowGraph:
+				return new PillRowTile(kind, index, p, m, s, graph: true);
 			case WidgetStyle.KeyFigures:
 				return new KeyFiguresTile(kind, index, p, m, s);
-			case WidgetStyle.Liquid:
-			case WidgetStyle.TwinFocus:
-			case WidgetStyle.Contour:
-			case WidgetStyle.SplitEdge:
-			case WidgetStyle.Ribbon:
-			case WidgetStyle.CoreGrid:
-				return new NextTile(kind, index, p, m, s, style);
-			case WidgetStyle.SignalPro:
-			case WidgetStyle.RailPro:
-			case WidgetStyle.OrbitPro:
-			case WidgetStyle.Prism:
-			case WidgetStyle.Spectrum:
-				return new ProTile(kind, index, p, m, s, style);
-			case WidgetStyle.PillDuoPlus:
-				return new PillDuoPlusTile(kind, index, p, m, s);
-			case WidgetStyle.SignalBand:
-				return new SignalBandTile(kind, index, p, m, s);
-			case WidgetStyle.Rail:
-				return new RailTile(kind, index, p, m, s);
 			case WidgetStyle.BadgeList:
 				return new BadgeListTile(kind, index, p, m, s);
+			case WidgetStyle.BadgeListGraph:
+				return new BadgeListTile(kind, index, p, m, s, graph: true);
+			case WidgetStyle.Evolution:
+				return new EvolutionTile(kind, index, p, m, s);
+			case WidgetStyle.Dial:
+				// Widgets without a measured value (clock, calendar, weather, media …) have nothing for a
+				// gauge; they use the Evolution layout in the same colours.
+				return DialTile.Fits(kind) ? new DialTile(kind, index, p, m, s) : new EvolutionTile(kind, index, p, m, s);
+			case WidgetStyle.TwinFocus:
+				return new TwinFocusTile(kind, index, p, m, s);
+			// Widgets without a measured value (clock, calendar, weather, media …) have no curve, ring or
+			// level; in these designs they use the Evolution layout.
+			case WidgetStyle.HistoryGraph:
+				return DialTile.Fits(kind) ? new GraphTile(kind, index, p, m, s) : new EvolutionTile(kind, index, p, m, s);
+			case WidgetStyle.RingPair:
+				return DialTile.Fits(kind) ? new RingsTile(kind, index, p, m, s) : new EvolutionTile(kind, index, p, m, s);
+			case WidgetStyle.LevelColumns:
+				return DialTile.Fits(kind) ? new ColumnsTile(kind, index, p, m, s) : new EvolutionTile(kind, index, p, m, s);
+			case WidgetStyle.NeonHud:
+				return DialTile.Fits(kind) ? new NeonHudTile(kind, index, p, m, s) : new EvolutionTile(kind, index, p, m, s);
+			case WidgetStyle.NeonHudGraph:
+				return DialTile.Fits(kind) ? new NeonHudTile(kind, index, p, m, s, graph: true) : new EvolutionTile(kind, index, p, m, s);
+			case WidgetStyle.NeonTiles:
+				return DialTile.Fits(kind) ? new NeonTilesTile(kind, index, p, m, s) : new EvolutionTile(kind, index, p, m, s);
+			case WidgetStyle.Thermostat:
+				return DialTile.Fits(kind) ? new ThermostatTile(kind, index, p, m, s) : new EvolutionTile(kind, index, p, m, s);
+			case WidgetStyle.SmartPanel:
+				return DialTile.Fits(kind) ? new SmartPanelTile(kind, index, p, m, s) : new EvolutionTile(kind, index, p, m, s);
+			case WidgetStyle.PurpleDash:
+				return DialTile.Fits(kind) ? new PurpleTile(kind, index, p, m, s) : new EvolutionTile(kind, index, p, m, s);
+			case WidgetStyle.PurpleList:
+				return DialTile.Fits(kind) ? new PurpleTile(kind, index, p, m, s, list: true) : new EvolutionTile(kind, index, p, m, s);
+			case WidgetStyle.SciFi:
+				return DialTile.Fits(kind) ? new SciFiTile(kind, index, p, m, s) : new EvolutionTile(kind, index, p, m, s);
 			}
 		}
 		return kind switch
@@ -130,6 +115,9 @@ public static class Cards
 			WidgetKind.Ping => new PingCard(p, m, s), 
 			WidgetKind.DataUsage => new DataUsageCard(p, m, s), 
 			WidgetKind.Notes => new NotesCard(p, m, s), 
+			WidgetKind.Overview => new OverviewCard(p, m, s), 
+			WidgetKind.DriveHealth => new DriveHealthCard(p, m, s), 
+			WidgetKind.Timer => new TimerCard(p, m, s), 
 			_ => new NetworkCard(p, m, s), 
 		};
 	}
@@ -157,6 +145,9 @@ public static class Cards
 			WidgetKind.Ping => "Ping", 
 			WidgetKind.DataUsage => L.T("Data usage"), 
 			WidgetKind.Notes => L.T("Notes"), 
+			WidgetKind.Overview => L.T("Overview"), 
+			WidgetKind.DriveHealth => L.T("Drive health"), 
+			WidgetKind.Timer => L.T("Timer"), 
 			_ => L.T("Network"), 
 		};
 	}
@@ -268,6 +259,14 @@ public static class Cards
 				("volumes.bar", L.T("Usage bar")),
 				("volumes.detail", L.T("Used of total")),
 				("volumes.each", L.T("Each volume"))
+			}, 
+			WidgetKind.Overview => OverviewCard.Parts.Select(((string Key, string Label) x) => (x.Key, L.T(x.Label))).ToArray(), 
+			WidgetKind.DriveHealth => new(string, string)[4]
+			{
+				("health.life", L.T("Life left")),
+				("health.hours", L.T("Power-on hours")),
+				("health.count", L.T("Power-on count")),
+				("health.temp", L.T("Temperature"))
 			}, 
 			_ => Array.Empty<(string, string)>(), 
 		};

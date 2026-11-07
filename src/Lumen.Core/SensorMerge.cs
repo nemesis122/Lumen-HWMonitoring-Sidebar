@@ -41,7 +41,8 @@ public static class SensorMerge
 				PowerW = (p.PowerW ?? gpuInfo.PowerW),
 				FanRpm = (p.FanRpm ?? gpuInfo.FanRpm),
 				MemoryUsedMb = (p.MemoryUsedMb ?? gpuInfo.MemoryUsedMb),
-				MemoryTotalMb = (p.MemoryTotalMb ?? gpuInfo.MemoryTotalMb)
+				MemoryTotalMb = (p.MemoryTotalMb ?? gpuInfo.MemoryTotalMb),
+				MemoryJunction = (p.MemoryJunction ?? gpuInfo.MemoryJunction)
 			};
 			if (log != null && gpuInfo2 != p)
 			{
@@ -89,6 +90,34 @@ public static class SensorMerge
 			list.Add(item);
 		}
 		return list;
+	}
+
+	// Fills readings the built-in library left empty from OpenHardwareMonitor. Nothing that is already
+	// measured is replaced, so both libraries can run side by side without mixing two sensors for one value.
+	public static CpuInfo? FillCpu(CpuInfo? local, CpuInfo? ohm, List<string>? log = null)
+	{
+		if ((object)ohm == null)
+		{
+			return local;
+		}
+		if ((object)local == null)
+		{
+			log?.Add("CPU: OpenHardwareMonitor");
+			return ohm;
+		}
+		if (!local.Temperature.HasValue && ohm.Temperature.HasValue)
+		{
+			log?.Add("CPU temperature: OpenHardwareMonitor");
+		}
+		return local with
+		{
+			Temperature = (local.Temperature ?? ohm.Temperature),
+			CoreLoads = ((local.CoreLoads.Count > 0) ? local.CoreLoads : ohm.CoreLoads),
+			ClockMhz = (local.ClockMhz ?? ohm.ClockMhz),
+			PowerW = (local.PowerW ?? ohm.PowerW),
+			Voltage = (local.Voltage ?? ohm.Voltage),
+			FanRpm = (local.FanRpm ?? ohm.FanRpm)
+		};
 	}
 
 	public static CpuInfo? PreferCpu(CpuInfo? ext, CpuInfo? local)
@@ -148,7 +177,8 @@ public static class SensorMerge
 				PowerW = (gpuInfo.PowerW ?? p.PowerW),
 				FanRpm = (gpuInfo.FanRpm ?? p.FanRpm),
 				MemoryUsedMb = (gpuInfo.MemoryUsedMb ?? p.MemoryUsedMb),
-				MemoryTotalMb = (gpuInfo.MemoryTotalMb ?? p.MemoryTotalMb)
+				MemoryTotalMb = (gpuInfo.MemoryTotalMb ?? p.MemoryTotalMb),
+				MemoryJunction = (gpuInfo.MemoryJunction ?? p.MemoryJunction)
 			};
 			log?.Add(p.Name + ": readings from " + source);
 			list2.Add(item);

@@ -78,9 +78,14 @@ public sealed class MediaCard : Card
 			};
 			return button;
 		}
+        WidgetPresentation.Sensor(title, "media.title");
+        WidgetPresentation.Sensor(artist, "media.artist");
+        WidgetPresentation.Sensor(progress, "media.progress");
+        WidgetPresentation.Sensor(time, "media.progress");
+        WidgetPresentation.Sensor(cover, "media.cover");
 	}
 
-	public override void Update(Snapshot s, History h)
+	protected override void UpdateReadings(Snapshot s, History h)
 	{
 		MediaInfo media = s.Media;
 		content.IsVisible = media != null;

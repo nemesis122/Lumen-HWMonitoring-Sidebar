@@ -89,6 +89,8 @@ public sealed class NetworkCard : Card
 			};
 			return Ui.Stack(1.0, Ui.Row(5.0, border, Card.Label(text, p)), hero);
 		}
+        WidgetPresentation.Sensor((Control)down.Parent!, "net.down");
+        WidgetPresentation.Sensor((Control)up.Parent!, "net.up");
 	}
 
 	private void OnExternal()
@@ -117,7 +119,7 @@ public sealed class NetworkCard : Card
 		}
 	}
 
-	public override void Update(Snapshot s, History h)
+	protected override void UpdateReadings(Snapshot s, History h)
 	{
 		NetworkInfo network = s.Network;
 		base.Subtitle = network?.Name ?? "";
@@ -127,7 +129,7 @@ public sealed class NetworkCard : Card
 		down.Set(value, unitText, P.Ink);
 		up.Set(value2, unitText2, P.Ink);
 		double[] source = h.Read("net.down");
-		chart?.SetData(source, h.Read("net.up"));
+		chart?.SetData(Shows("net.down") && Shows("net.down.history") ? source : Array.Empty<double>(), Shows("net.up") && Shows("net.up.history") ? h.Read("net.up") : Array.Empty<double>());
 		double num = Math.Max((network?.DownloadBytesPerSecond).GetValueOrDefault(), (network?.UploadBytesPerSecond).GetValueOrDefault()) * 8.0;
 		Card.Put(stats, "net.use", ((object)network == null) ? "—" : Format.Bits(num));
 		double num3;

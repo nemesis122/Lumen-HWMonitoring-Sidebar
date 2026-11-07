@@ -53,7 +53,8 @@ public sealed class ExtrasView : ContentControl
 				{
 					stackPanel.Children.Add(new StatPanel(array.Select((Control _) => 1.0).ToArray(), array)
 					{
-						MaxColumns = 3
+						MaxColumns = 3,
+						Balanced = true
 					});
 				}
 				Control[] array3 = array2;

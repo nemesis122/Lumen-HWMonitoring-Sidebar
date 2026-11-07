@@ -7,7 +7,7 @@ namespace Lumen.App;
 
 public sealed class Palette
 {
-	public static readonly (string Key, string Name, string DarkSurface, string DarkCard, string LightSurface, string LightCard)[] Backgrounds = new(string, string, string, string, string, string)[11]
+	public static readonly (string Key, string Name, string DarkSurface, string DarkCard, string LightSurface, string LightCard)[] Backgrounds = new(string, string, string, string, string, string)[15]
 	{
 		("graphite", "Graphite", "#0B0E14", "#171C25", "#ECEFF4", "#FFFFFF"),
 		("black", "Black (OLED)", "#000000", "#0E0F12", "#E9E9EB", "#FFFFFF"),
@@ -19,7 +19,11 @@ public sealed class Palette
 		("mocha", "Mocha", "#1A120A", "#2A1F14", "#F1ECE6", "#FFFDFA"),
 		("slate", "Slate", "#151A21", "#202833", "#E4E8EE", "#F8FAFC"),
 		("retro", "Retro LCD", "#0A0906", "#15110A", "#F3EBDD", "#FFF9EE"),
-		("neon", "Neon", "#05040A", "#0C0A16", "#EEE9F7", "#FFFFFF")
+		("neon", "Neon", "#05040A", "#0C0A16", "#EEE9F7", "#FFFFFF"),
+        ("nord", "Nord", "#0C1420", "#172434", "#E7EEF4", "#FAFCFF"),
+        ("emerald", "Emerald", "#071B16", "#102B23", "#E6F0EA", "#FCFEFD"),
+        ("copper", "Copper", "#1D130F", "#302019", "#F5EBE3", "#FFFCF9"),
+        ("plum", "Plum", "#1B1223", "#2C1C39", "#EEE8F4", "#FEFCFF")
 	};
 
 	public static readonly (string Hex, string Name)[] Presets = new(string, string)[14]
@@ -59,6 +63,20 @@ public sealed class Palette
 	public required Color[] Ramp { get; init; }
 
 	public Color Cool => Ramp[0];
+
+	/// <summary>The user picked a background other than the default: designs with their own card colour use
+	/// the picked one instead.</summary>
+	public bool OwnBackground { get; private set; }
+
+	/// <summary>The colour scheme's single colour (null for "by state", mono and themes): designs with their
+	/// own accent colours use it instead.</summary>
+	public Color? Chosen { get; private set; }
+
+	/// <summary>A design's own card colour, or the user's background when one was picked.</summary>
+	public Color DesignBack(string hex) => Dark && !OwnBackground ? Color.Parse(hex) : Card;
+
+	/// <summary>A design's own tile colour inside a card, or a shade of the user's background.</summary>
+	public Color DesignTile(string hex) => Dark && !OwnBackground ? Color.Parse(hex) : Mix(Card, Ink, Dark ? 0.06 : 0.04);
 
 	public Color Calm => Ramp[1];
 
@@ -102,7 +120,10 @@ public sealed class Palette
 		}
 		}
 		Color? accent = color;
-		return For(dark, s.Glass, s.Opacity, accent, s.HighContrast, s.Background, s.Colors == "mono");
+		var palette = For(dark, s.Glass, s.Opacity, accent, s.HighContrast, s.Background, s.Colors == "mono");
+		palette.OwnBackground = !string.IsNullOrEmpty(s.Background) && s.Background != "graphite";
+		palette.Chosen = s.Colors == "mono" ? null : accent;
+		return palette;
 	}
 
 	public static Palette For(bool dark, bool glass, double opacity, Color? accent, bool highContrast, string background, bool mono)
@@ -132,6 +153,15 @@ public sealed class Palette
 			array[0] = (dark ? Mix(color, Colors.White, 0.35) : Mix(color, Colors.White, 0.25));
 			array[1] = color;
 		}
+        string[]? themeRamp = tuple.Item1 switch
+        {
+            "nord" => dark ? new[]{"#91BED6","#6EAAC8","#E4B566","#F08282"} : new[]{"#275C79","#285F78","#875C11","#AF363D"},
+            "emerald" => dark ? new[]{"#78DBB5","#45C294","#E5BD65","#EE8282"} : new[]{"#1F6A50","#247353","#875C11","#AF363D"},
+            "copper" => dark ? new[]{"#E6B18B","#D29369","#E3C46F","#F1847B"} : new[]{"#854B2C","#8A4A27","#875C11","#AF363D"},
+            "plum" => dark ? new[]{"#CFB1E5","#B895D3","#E8BF73","#EF858D"} : new[]{"#6D408E","#754395","#875C11","#AF363D"},
+            _ => null
+        };
+        if (!accent.HasValue && themeRamp != null) array = themeRamp.Select(Color.Parse).ToArray();
 		if (mono)
 		{
 			array[0] = Color.Parse(dark ? "#9A9A9A" : "#6B6B6B");

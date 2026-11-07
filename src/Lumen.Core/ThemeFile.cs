@@ -10,7 +10,7 @@ public sealed class ThemeFile
 
 	public const string Kind = "lumen-theme";
 
-	public static readonly (string Key, string Name, ThemeFile Theme)[] BuiltIn = new(string, string, ThemeFile)[4]
+	public static readonly (string Key, string Name, ThemeFile Theme)[] BuiltIn = new(string, string, ThemeFile)[8]
 	{
 		("lumen", "Lumen", new ThemeFile
 		{
@@ -44,6 +44,26 @@ public sealed class ThemeFile
 			Glass = false,
 			HighContrast = true,
 			Font = "inter"
+		}),
+        ("nord", "Nord", new ThemeFile
+        {
+            Type = Kind, Name = "Nord", Background = "nord",
+            Glass = false, HighContrast = false, Font = "inter"
+        }),
+        ("emerald", "Emerald", new ThemeFile
+        {
+            Type = Kind, Name = "Emerald", Background = "emerald",
+            Glass = false, HighContrast = false, Font = "inter"
+        }),
+        ("copper", "Copper", new ThemeFile
+        {
+            Type = Kind, Name = "Copper", Background = "copper",
+            Glass = false, HighContrast = false, Font = "inter"
+        }),
+        ("plum", "Plum", new ThemeFile
+        {
+            Type = Kind, Name = "Plum", Background = "plum",
+            Glass = false, HighContrast = false, Font = "inter"
 		})
 	};
 

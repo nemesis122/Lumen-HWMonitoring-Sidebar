@@ -21,7 +21,7 @@ public sealed class DrivesCard : Card
 		Body.Children.Add(rows);
 	}
 
-	public override void Update(Snapshot s, History h)
+	protected override void UpdateReadings(Snapshot s, History h)
 	{
 		List<DiskInfo> list = s.Disks.Where((DiskInfo d) => S.Shows("drive:" + d.Id)).ToList();
 		base.Aside = $"{list.Count} {((list.Count == 1) ? L.T("drive") : L.T("drives"))}";
@@ -44,6 +44,8 @@ public sealed class DrivesCard : Card
 				TextBlock textBlock3 = Ui.Text("", 11.5, P.Soft, FontWeight.Normal, numbers: true);
 				TextBlock textBlock4 = Rate();
 				TextBlock textBlock5 = Rate();
+                WidgetPresentation.Sensor(textBlock4, "drives.read");
+                WidgetPresentation.Sensor(textBlock5, "drives.write");
 				Grid grid = Ui.Columns("Auto,Auto,Auto,Auto", Letter("R", 0.0), textBlock4, Letter("W", 10.0), textBlock5);
 				grid.IsVisible = Shows("drives.io");
 				textBlock2.IsVisible = Shows("drives.temp");

@@ -26,9 +26,11 @@ public sealed class PingCard : Card
 			chart.Height = m.Chart * 0.8;
 		}
 		stats = Stats(("ping.jitter", L.T("Jitter")), ("ping.loss", L.T("Loss")), ("ping.target", L.T("Target")));
+        WidgetPresentation.Sensor(hero, "ping.latency");
+        WidgetPresentation.Sensor((Control)router.Parent!, "ping.router");
 	}
 
-	public override void Update(Snapshot s, History h)
+	protected override void UpdateReadings(Snapshot s, History h)
 	{
 		PingInfo ping = s.Ping;
 		var (value, unitText) = Format.Split(Format.Milliseconds(ping?.Ms));

@@ -21,5 +21,11 @@ public enum WidgetKind
 	Network,
 	Ping,
 	DataUsage,
-	Notes
+	Notes,
+	// The whole PC on one card.
+	Overview,
+	// Remaining life, hours and power-on count of the drives.
+	DriveHealth,
+	// Countdown timer.
+	Timer
 }

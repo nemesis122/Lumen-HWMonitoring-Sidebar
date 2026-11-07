@@ -1,45 +1,41 @@
 # Lumen — all widget designs
 
-All 44 selectable designs, rendered from the application with demo readings. Every widget can use its own design. This per-widget choice was already available in earlier releases.
+All 36 selectable designs of Lumen 4.0.0, rendered from the application with demo readings. Every widget can use its own design, and every register can have its own design.
 
-[Back to the README](../README.md) · [Release downloads](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v3.0.1)
+[Back to the README](../README.md) · [Release notes](release-notes/v4.0.0.md) · [Download](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.0.0)
 
-## Dark theme
+## Hardware widgets, dark theme
 
-![All designs, page 1](images/styles-3.0.0/overview-01-dark.png)
+![Hardware widgets, page 1](images/v4.0.0/gallery-hardware-dark-1.png)
 
-![All designs, page 2](images/styles-3.0.0/overview-02-dark.png)
+![Hardware widgets, page 2](images/v4.0.0/gallery-hardware-dark-2.png)
 
-![All designs, page 3](images/styles-3.0.0/overview-03-dark.png)
+![Hardware widgets, page 3](images/v4.0.0/gallery-hardware-dark-3.png)
 
-![All designs, page 4](images/styles-3.0.0/overview-04-dark.png)
+![Hardware widgets, page 4](images/v4.0.0/gallery-hardware-dark-4.png)
 
-![All designs, page 5](images/styles-3.0.0/overview-05-dark.png)
+![Hardware widgets, page 5](images/v4.0.0/gallery-hardware-dark-5.png)
 
-![All designs, page 6](images/styles-3.0.0/overview-06-dark.png)
+## Hardware widgets, light theme
 
-![All designs, page 7](images/styles-3.0.0/overview-07-dark.png)
+![Hardware widgets, light, page 1](images/v4.0.0/gallery-hardware-light-1.png)
 
-![All designs, page 8](images/styles-3.0.0/overview-08-dark.png)
+![Hardware widgets, light, page 2](images/v4.0.0/gallery-hardware-light-2.png)
 
-## Light theme
+![Hardware widgets, light, page 3](images/v4.0.0/gallery-hardware-light-3.png)
 
-![All designs, light theme, page 1](images/styles-3.0.0/overview-01-light.png)
+![Hardware widgets, light, page 4](images/v4.0.0/gallery-hardware-light-4.png)
 
-![All designs, light theme, page 2](images/styles-3.0.0/overview-02-light.png)
+![Hardware widgets, light, page 5](images/v4.0.0/gallery-hardware-light-5.png)
 
-![All designs, light theme, page 3](images/styles-3.0.0/overview-03-light.png)
+## Info widgets (clock, calendar, weather, media, top apps, uptime, data usage, power, ping)
 
-![All designs, light theme, page 4](images/styles-3.0.0/overview-04-light.png)
+![Info widgets, page 1](images/v4.0.0/gallery-info-dark-1.png)
 
-![All designs, light theme, page 5](images/styles-3.0.0/overview-05-light.png)
+![Info widgets, page 2](images/v4.0.0/gallery-info-dark-2.png)
 
-![All designs, light theme, page 6](images/styles-3.0.0/overview-06-light.png)
+![Info widgets, page 3](images/v4.0.0/gallery-info-dark-3.png)
 
-![All designs, light theme, page 7](images/styles-3.0.0/overview-07-light.png)
+![Info widgets, page 4](images/v4.0.0/gallery-info-dark-4.png)
 
-![All designs, light theme, page 8](images/styles-3.0.0/overview-08-light.png)
-
-## Individual images
-
-The [Lumen 3.0.1 screenshots archive](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/download/v3.0.1/Lumen-3.0.1-Screenshots.zip) contains a separate dark and light PNG for every design, all overview sheets and the mixed-widget examples. Run `tools/Lumen.Gallery` to regenerate them from source.
+![Info widgets, page 5](images/v4.0.0/gallery-info-dark-5.png)

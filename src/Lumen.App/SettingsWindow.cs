@@ -1,11 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -14,7 +11,6 @@ using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform;
-using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using Lumen.Core;
@@ -51,6 +47,9 @@ public sealed class SettingsWindow : Window
 
 	private static int pageIndex;
 
+	// Which register the "Style for all widgets" buttons apply to: 0 = every register.
+	private static int styleRegister;
+
 	private readonly TextBlock title;
 
 	private readonly TextBlock lead;
@@ -75,9 +74,8 @@ public sealed class SettingsWindow : Window
 
 	private readonly List<(int Page, string Label, string Help)> searchIndex = new List<(int, string, string)>();
 
-	private static readonly Settings Defaults = new Settings();
+	private static readonly Settings Defaults = Settings.Starter();
 
-	private readonly Border previewHost = new Border();
 
 	private readonly Func<string>? report;
 
@@ -87,14 +85,9 @@ public sealed class SettingsWindow : Window
 
 	private double dragStart;
 
-	private string themeMessage = "";
 
 	private string reportMessage = "";
 
-	private static readonly FilePickerFileType ThemeType = new FilePickerFileType("Lumen theme")
-	{
-		Patterns = new string[1] { "*.lumentheme" }
-	};
 
 	public static readonly string[] Zones = new string[22]
 	{
@@ -222,12 +215,34 @@ public sealed class SettingsWindow : Window
 		dockPanel2.Children.Add(border);
 		dockPanel2.Children.Add(scroller);
 		base.Content = dockPanel2;
+		KeyDown += delegate(object? _, KeyEventArgs e)
+		{
+			if (e.Key == Key.F && e.KeyModifiers.HasFlag(KeyModifiers.Control))
+			{
+				search.Focus();
+				search.SelectAll();
+				e.Handled = true;
+			}
+			else if (e.Key == Key.Escape)
+			{
+				if ((search.Text ?? "").Length > 0)
+				{
+					search.Text = "";
+				}
+				else
+				{
+					Close();
+				}
+				e.Handled = true;
+			}
+		};
 		Build();
 	}
 
 	private void Reset()
 	{
-		Settings obj = new Settings();
+		// "Reset everything" returns to the layout of the first start.
+		Settings obj = Settings.Starter();
 		foreach (PropertyInfo item in from x in typeof(Settings).GetProperties()
 			where x.CanWrite
 			select x)
@@ -256,7 +271,7 @@ public sealed class SettingsWindow : Window
 
 	private void Restore(IEnumerable<string> names)
 	{
-		Settings obj = new Settings();
+		Settings obj = Settings.Starter();
 		foreach (string name in names)
 		{
 			PropertyInfo propertyInfo = Prop(name);
@@ -575,11 +590,36 @@ public sealed class SettingsWindow : Window
 			content.Children.Add(SearchResults(text, list.Select<(string, string, Control[]), string>(((string Name, string Glyph, Control[] Body) x) => x.Name).ToList()));
 			return;
 		}
+		content.Children.Add(PageHeading(list[pageIndex].Item1, pageIndex));
 		Control[] item2 = list[pageIndex].Item3;
 		foreach (Control item3 in item2)
 		{
 			content.Children.Add(item3);
 		}
+	}
+
+	private static readonly string[] PageLeads =
+	{
+		"Choose what the sidebar shows, in which design and in which order.",
+		"Colours, effects, text and themes.",
+		"Screen edge, monitor, columns and registers.",
+		"Where the readings come from and how often they update.",
+		"Weather, world clocks, power costs and ping.",
+		"Language, autostart, warnings and diagnostics."
+	};
+
+	// Large title of the open page, so it is always clear where one is.
+	private Control PageHeading(string name, int page)
+	{
+		TextBlock heading = Ui.Text(name, 24.0, p.Ink, FontWeight.Bold);
+		TextBlock sub = Ui.Text(page < PageLeads.Length ? L.T(PageLeads[page]) : "", 12.5, p.Soft);
+		sub.TextWrapping = TextWrapping.Wrap;
+		sub.TextTrimming = TextTrimming.None;
+		TextBlock keys = Ui.Text(L.T("Ctrl+F searches, Esc closes."), 11.0, p.Faint);
+		keys.VerticalAlignment = VerticalAlignment.Bottom;
+		Grid grid = Ui.Columns("*,Auto", Ui.Stack(2.0, heading, sub), keys);
+		grid.Margin = new Thickness(0.0, 0.0, 0.0, 4.0);
+		return grid;
 	}
 
 	private Control? NavBadge(int page)
@@ -667,9 +707,15 @@ public sealed class SettingsWindow : Window
 		{
 			Columns = 6
 		};
+		if (styleRegister > s.Pages)
+		{
+			styleRegister = 0;
+		}
+		// The widgets the buttons set: all of them, or only those of the chosen register (shown or not).
+		bool Target(WidgetSlot w) => Settings.HasStyles(w.Kind) && (styleRegister == 0 || s.EffectivePage(w) == styleRegister);
 		foreach (WidgetStyle style in Settings.Selectable)
 		{
-			List<WidgetSlot> list = s.Widgets.Where((WidgetSlot w) => Settings.HasStyles(w.Kind)).ToList();
+			List<WidgetSlot> list = s.Widgets.Where(Target).ToList();
 			bool flag = list.Count > 0 && list.All((WidgetSlot w) => w.Style == style);
 			Button button = new Button();
 			button.Content = Ui.Stack(6.0, StyleThumb(style), Ui.Text(StyleName(style), 12.0, flag ? p.Ink : p.Soft, flag ? FontWeight.DemiBold : FontWeight.Medium));
@@ -682,24 +728,24 @@ public sealed class SettingsWindow : Window
 			button.BorderBrush = Palette.Brush(flag ? p.Cool : p.Stroke);
 			button.BorderThickness = new Thickness((!flag) ? 1 : 2);
 			button.Cursor = new Cursor(StandardCursorType.Hand);
-			Button button2 = button;
-			if (button2.Content is StackPanel stackPanel)
+			ToolTip.SetTip(button, StyleName(style));
+			if (button.Content is StackPanel stackPanel)
 			{
 				foreach (Control child in stackPanel.Children)
 				{
 					child.HorizontalAlignment = HorizontalAlignment.Center;
 				}
 			}
-			button2.Click += delegate
+			button.Click += delegate
 			{
-				foreach (WidgetSlot item in s.Widgets.Where((WidgetSlot w) => Settings.HasStyles(w.Kind)))
+				foreach (WidgetSlot item in s.Widgets.Where(Target))
 				{
 					item.Style = style;
 				}
 				changed();
 				Build();
 			};
-			uniformGrid.Children.Add(button2);
+			uniformGrid.Children.Add(button);
 		}
 		List<WidgetSlot> list4 = s.Widgets.Where((WidgetSlot w) => !w.Visible).ToList();
 		foreach (WidgetSlot widget in s.Widgets)
@@ -708,7 +754,26 @@ public sealed class SettingsWindow : Window
 		}
 		List<Control> list5 = new List<Control>();
 		list5.Add(textBlock);
-		list5.Add(Ui.Stack(10.0, SectionTitle(L.T("Style for all widgets")), uniformGrid));
+		if (s.Pages > 1)
+		{
+			// A design per register: choose the register, then click the design.
+			Index(L.T("Style per register"), L.T("Sets the design only for the widgets of the chosen register."));
+			var registers = new List<string> { L.T("All registers") };
+			registers.AddRange(Enumerable.Range(1, s.Pages).Select(RegisterLabel));
+			var pick = Choice(registers, styleRegister, delegate(int i)
+			{
+				styleRegister = i;
+			}, rebuild: true);
+			var note = Ui.Text(L.T("Sets the design only for the widgets of the chosen register."), 12.0, p.Soft);
+			note.TextWrapping = TextWrapping.Wrap;
+			note.IsVisible = styleRegister > 0;
+			string title = styleRegister > 0 ? L.T("Style per register") + " · " + RegisterLabel(styleRegister) : L.T("Style for all widgets");
+			list5.Add(Ui.Stack(10.0, SectionTitle(title), Ui.Row(8.0, Ui.Text(L.T("Register"), 12.5, p.Soft), pick), note, uniformGrid));
+		}
+		else
+		{
+			list5.Add(Ui.Stack(10.0, SectionTitle(L.T("Style for all widgets")), uniformGrid));
+		}
 		List<Control> list6 = list5;
 		for (int register = 1; register <= s.Pages; register++)
 		{
@@ -773,6 +838,50 @@ public sealed class SettingsWindow : Window
 		? L.F("Register {0}", page)
 		: L.F("Register {0}: {1}", page, s.PageName(page));
 
+	// Ten swatches plus the colour of the widget kind; only the Evolution design uses it.
+	private Control AccentRow(WidgetSlot slot)
+	{
+		WrapPanel swatches = new WrapPanel();
+		void Add(string hex, string tip)
+		{
+			bool chosen = slot.Accent == hex;
+			Color color = Accents.Readable(Color.Parse(hex.Length > 0 ? hex : Accents.Default(slot.Kind)), p);
+			Button b = new Button
+			{
+				Name = "accent-" + (hex.Length > 0 ? hex.TrimStart('#') : "default"),
+				Width = 26.0,
+				Height = 26.0,
+				Padding = new Thickness(0),
+				Margin = new Thickness(0, 0, 6, 6),
+				CornerRadius = new CornerRadius(13),
+				Background = Palette.Brush(color),
+				BorderBrush = Palette.Brush(chosen ? p.Ink : Colors.Transparent),
+				BorderThickness = new Thickness(chosen ? 2.5 : 0),
+				Content = hex.Length == 0 ? Ui.Text("A", 11, Readings.TextOn(color, p), FontWeight.Bold) : null,
+				HorizontalContentAlignment = HorizontalAlignment.Center,
+				VerticalContentAlignment = VerticalAlignment.Center
+			};
+			ToolTip.SetTip(b, tip);
+			b.Click += delegate
+			{
+				slot.Accent = hex;
+				changed();
+				Build();
+			};
+			swatches.Children.Add(b);
+		}
+		Add("", L.T("Automatic"));
+		foreach (var (hex, name) in Accents.Swatches)
+		{
+			Add(hex, L.T(name));
+		}
+		Grid row = Ui.Columns("Auto,*", Ui.Text(L.T("Accent colour"), 12.5, p.Soft), swatches);
+		row.Children[0].Margin = new Thickness(0, 5, 10, 0);
+		row.Children[0].VerticalAlignment = VerticalAlignment.Top;
+		row.Margin = new Thickness(28, 4, 0, 0);
+		return row;
+	}
+
 	private TextBlock SectionTitle(string text)
 	{
 		TextBlock textBlock = Ui.Text(text.ToUpper(L.Culture), 11.0, p.Soft, FontWeight.DemiBold);
@@ -781,9 +890,46 @@ public sealed class SettingsWindow : Window
 		return textBlock;
 	}
 
-	private static string StyleName(WidgetStyle style)
+	// Readable English names for the designs whose translation key is their code name.
+	private static string English(WidgetStyle style) => style switch
 	{
-		return L.T(style.ToString());
+		WidgetStyle.Pill => "Capsule",
+		WidgetStyle.FillBars => "Fill bars",
+		WidgetStyle.PillRow => "Capsule row",
+		WidgetStyle.KeyFigures => "Key figures",
+		WidgetStyle.BadgeList => "List",
+		WidgetStyle.TwinFocus => "Twin Focus",
+		WidgetStyle.SignalRows => "Signal rows",
+		WidgetStyle.OpenPanel => "Open panel",
+		WidgetStyle.ControlDeck => "Control deck",
+		WidgetStyle.ClarityColor => "Clarity colour",
+		WidgetStyle.ClarityRows => "Clarity rows",
+		WidgetStyle.ClarityTiles => "Clarity tiles",
+		_ => style.ToString()
+	};
+
+	public static string StyleName(WidgetStyle style)
+	{
+		return style switch
+		{
+			WidgetStyle.HistoryGraph => L.T("History graph"),
+			WidgetStyle.RingPair => L.T("Double ring"),
+			WidgetStyle.LevelColumns => L.T("Level columns"),
+			WidgetStyle.NeonHud => "Neon HUD",
+			WidgetStyle.NeonTiles => L.T("Neon tiles"),
+			WidgetStyle.Thermostat => L.T("Thermostat"),
+			WidgetStyle.SmartPanel => "Smart Panel",
+			WidgetStyle.PurpleDash => L.T("Purple dashboard"),
+			WidgetStyle.PurpleList => L.T("Purple list"),
+			WidgetStyle.SegmentGraph => L.T("Segment graph"),
+			WidgetStyle.TableGraph => L.T("Table graph"),
+			WidgetStyle.FillBarsGraph => L.T("Fill bars graph"),
+			WidgetStyle.PillRowGraph => L.T("Capsule row graph"),
+			WidgetStyle.BadgeListGraph => L.T("List graph"),
+			WidgetStyle.NeonHudGraph => L.T("Neon HUD graph"),
+			WidgetStyle.SciFi => "Sci-Fi",
+			_ => L.T(style.ToString()) is var name && name != style.ToString() ? name : English(style)
+		};
 	}
 
 	private Control StyleThumb(WidgetStyle style)
@@ -800,76 +946,138 @@ public sealed class SettingsWindow : Window
 		IBrush fill2 = Palette.Brush(p.Soft);
 		switch (style)
 		{
+        case WidgetStyle.HistoryGraph:
+        {
+            var a=Palette.Brush(Accents.Readable(Color.Parse("#22d3ee"),p));
+            Rect(2,2,62,22,fill2,3);Rect(5,5,14,6,fill,1.5);
+            var line=new Avalonia.Controls.Shapes.Polyline{Points={new Point(3,22),new Point(12,17),new Point(20,19),new Point(30,10),new Point(40,14),new Point(50,7),new Point(63,12)},Stroke=a,StrokeThickness=1.6};
+            c.Children.Add(line);
+            Rect(2,28,18,3,fill,1);Rect(24,28,18,3,fill,1);Rect(46,28,18,3,fill,1);
+            break;
+        }
+        case WidgetStyle.RingPair:
+        {
+            var a=Palette.Brush(Accents.Readable(Color.Parse("#34d399"),p));var b=Palette.Brush(Accents.Readable(Color.Parse("#a78bfa"),p));
+            foreach(var (sz,off,br,sw) in new[]{(26.0,2.0,a,200.0),(16.0,7.0,b,120.0)}){var t=new Avalonia.Controls.Shapes.Arc{Width=sz,Height=sz,StartAngle=135,SweepAngle=270,Stroke=brush3,StrokeThickness=3,StrokeLineCap=PenLineCap.Round};var v=new Avalonia.Controls.Shapes.Arc{Width=sz,Height=sz,StartAngle=135,SweepAngle=sw,Stroke=br,StrokeThickness=3,StrokeLineCap=PenLineCap.Round};Canvas.SetLeft(t,off+2);Canvas.SetTop(t,off+4);Canvas.SetLeft(v,off+2);Canvas.SetTop(v,off+4);c.Children.Add(t);c.Children.Add(v);}
+            Rect(36,8,26,3,fill,1);Rect(36,15,22,3,fill,1);Rect(36,22,26,3,fill,1);
+            break;
+        }
+        case WidgetStyle.LevelColumns:
+        {
+            var a=Palette.Brush(Accents.Readable(Color.Parse("#60a5fa"),p));
+            double[] hs={18,10,24,14,20};
+            for(int i=0;i<5;i++){Rect(6+i*12,6,6,26,fill2,2);Rect(6+i*12,32-hs[i],6,hs[i],a,2);}
+            break;
+        }
+        case WidgetStyle.NeonHud:
+        {
+            var cy=Palette.Brush(Accents.Readable(Color.Parse("#22d3ee"),p));var mg=Palette.Brush(Accents.Readable(Color.Parse("#ec4899"),p));
+            Rect(3,3,26,3,cy,1);Rect(50,2,14,6,fill2,2);
+            for(int i=0;i<3;i++){Rect(3,12+i*8,18,2,fill,1);Rect(54,12+i*8,10,2,i==1?mg:cy,1);Rect(3,16+i*8,61,2,fill2,1);Rect(3,16+i*8,20+i*12,2,i==1?mg:cy,1);}
+            break;
+        }
+        case WidgetStyle.NeonTiles:
+        {
+            var cy=Palette.Brush(Accents.Readable(Color.Parse("#22d3ee"),p));var mg=Palette.Brush(Accents.Readable(Color.Parse("#ec4899"),p));var am=Palette.Brush(Accents.Readable(Color.Parse("#f59e0b"),p));
+            Rect(3,3,3,3,cy,1.5);Rect(8,3,22,3,cy,1);Rect(3,9,40,5,fill,1.5);
+            Rect(3,18,19,15,fill2,3);Rect(24,18,19,15,fill2,3);Rect(45,18,19,15,fill2,3);
+            Rect(7,21,11,2,cy,1);Rect(28,21,11,2,mg,1);Rect(49,21,11,2,am,1);
+            Rect(7,26,11,4,fill,1);Rect(28,26,11,4,fill,1);Rect(49,26,11,4,fill,1);
+            break;
+        }
+        case WidgetStyle.Thermostat:
+        {
+            var am=Palette.Brush(Accents.Readable(Color.Parse("#f6b25a"),p));var bl=Palette.Brush(Accents.Readable(Color.Parse("#7cc4f5"),p));
+            var t=new Avalonia.Controls.Shapes.Arc{Width=28,Height=28,StartAngle=135,SweepAngle=270,Stroke=brush3,StrokeThickness=3.5,StrokeLineCap=PenLineCap.Round};
+            var v=new Avalonia.Controls.Shapes.Arc{Width=28,Height=28,StartAngle=135,SweepAngle=150,Stroke=am,StrokeThickness=3.5,StrokeLineCap=PenLineCap.Round};
+            Canvas.SetLeft(t,19);Canvas.SetTop(t,2);Canvas.SetLeft(v,19);Canvas.SetTop(v,2);c.Children.Add(t);c.Children.Add(v);
+            Rect(27,13,12,5,fill,1.5);Rect(3,32,20,2,bl,1);Rect(44,32,20,2,fill2,1);
+            break;
+        }
+        case WidgetStyle.SmartPanel:
+        {
+            var am=Palette.Brush(Accents.Readable(Color.Parse("#f59e0b"),p));var pk=Palette.Brush(Accents.Readable(Color.Parse("#f472b6"),p));var bl=Palette.Brush(Accents.Readable(Color.Parse("#60a5fa"),p));
+            Rect(3,3,20,2,fill2,1);Rect(46,2,18,8,fill,1.5);
+            Rect(3,20,3,3,am,1);Rect(25,20,3,3,pk,1);Rect(47,20,3,3,bl,1);
+            Rect(3,25,16,6,fill,1.5);Rect(25,25,16,6,fill,1.5);Rect(47,25,16,6,fill,1.5);
+            break;
+        }
+        case WidgetStyle.PurpleDash:
+        {
+            var pu=Palette.Brush(Accents.Readable(Color.Parse("#8b2cf5"),p));var pk=Palette.Brush(Accents.Readable(Color.Parse("#e64bd3"),p));
+            Rect(3,2,10,4,fill,1);Rect(15,2,22,4,fill2,1);
+            var v=new Avalonia.Controls.Shapes.Arc{Width=24,Height=24,StartAngle=150,SweepAngle=200,Stroke=pk,StrokeThickness=3.5,StrokeLineCap=PenLineCap.Round};
+            Canvas.SetLeft(v,3);Canvas.SetTop(v,10);c.Children.Add(v);Rect(11,19,8,5,fill,1);
+            for(int i=0;i<3;i++){Rect(32,11+i*8,32,3,fill2,0);Rect(32,11+i*8,8+i*8,3,pu,0);}
+            break;
+        }
+        case WidgetStyle.PurpleList:
+        {
+            var pu=Palette.Brush(Accents.Readable(Color.Parse("#8b2cf5"),p));var pk=Palette.Brush(Accents.Readable(Color.Parse("#e64bd3"),p));
+            Rect(3,2,10,4,fill,1);Rect(15,2,22,4,fill2,1);
+            Rect(3,10,60,4,fill2,0);Rect(3,10,34,4,pk,0);
+            for(int i=0;i<3;i++){Rect(3,18+i*6,60,3,fill2,0);Rect(3,18+i*6,14+i*12,3,pu,0);}
+            break;
+        }
+        case WidgetStyle.SciFi:
+        {
+            var pk=Palette.Brush(Accents.Readable(Color.Parse("#ec4899"),p));var bl=Palette.Brush(Accents.Readable(Color.Parse("#3b82f6"),p));
+            Rect(2,2,62,32,fill2,2);Rect(22,4,6,1.5,pk,0);Rect(38,4,6,1.5,pk,0);Rect(29,3,8,3,fill,1);
+            for(int i=0;i<12;i++){double a=(135+270*i/11.0)*Math.PI/180;double x=33+11*Math.Cos(a),y=21+11*Math.Sin(a);Rect(x-1,y-1,2,2,i<7?(i<4?pk:bl):brush3,0.5);}
+            Rect(27,18,12,6,fill,1);
+            break;
+        }
+        case WidgetStyle.Dial:
+        {
+            var green=Palette.Brush(Accents.Readable(Color.Parse("#34d399"),p));
+            var ring=new Avalonia.Controls.Shapes.Arc{Width=26,Height=26,StartAngle=135,SweepAngle=270,Stroke=brush3,StrokeThickness=3.5,StrokeLineCap=PenLineCap.Round};
+            var val=new Avalonia.Controls.Shapes.Arc{Width=26,Height=26,StartAngle=135,SweepAngle=170,Stroke=green,StrokeThickness=3.5,StrokeLineCap=PenLineCap.Round};
+            Canvas.SetLeft(ring,2);Canvas.SetTop(ring,4);Canvas.SetLeft(val,2);Canvas.SetTop(val,4);c.Children.Add(ring);c.Children.Add(val);
+            Rect(9,15,12,4,green,1.5);
+            Rect(33,4,14,12,fill,2);Rect(49,4,14,12,fill,2);Rect(33,19,14,12,fill,2);Rect(49,19,14,12,fill,2);
+            Rect(35,10,9,2,fill2,1);Rect(51,10,9,2,fill2,1);Rect(35,25,9,2,fill2,1);Rect(51,25,9,2,fill2,1);
+            break;
+        }
+        case WidgetStyle.Evolution:
+        {
+            var cyan=Palette.Brush(Accents.Readable(Color.Parse("#22d3ee"),p));var pink=Palette.Brush(Accents.Readable(Color.Parse("#f472b6"),p));var amber=Palette.Brush(Accents.Readable(Color.Parse("#fbbf24"),p));
+            Rect(2,2,4,4,cyan,1.5);Rect(9,2.5,16,3,fill2);Rect(2,10,20,11,cyan,2);Rect(2,24,12,2,fill2);
+            for(int i=0;i<8;i++){double hh=3+((i*5)%9);Rect(36+i*3.3,21-hh,2.4,hh,i==4?amber:cyan,1);}
+            Rect(2,30,40,3,brush3,1.5);Rect(2,30,26,3,pink,1.5);Rect(46,29,16,5,fill2,1);
+            break;
+        }
+        case WidgetStyle.ClarityColor:
+            for(int row=0;row<3;row++)for(int col=0;col<2;col++){var tone=Palette.Brush(p.Ramp[(row+col)%3]);Rect(2+col*33,3+row*10,2,5,tone);Rect(7+col*33,4+row*10,10,2,fill2);Rect(20+col*33,3+row*10,10,4,tone);}break;
+        case WidgetStyle.ClarityRows:
+            for(int row=0;row<3;row++){var tone=Palette.Brush(p.Ramp[row]);Rect(2,2+row*11,60,8,brush3,2);Rect(2,2+row*11,2,8,tone);Rect(8,5+row*11,19,2,fill2);Rect(47,4+row*11,11,4,tone);}break;
+        case WidgetStyle.ClarityTiles:
+            for(int row=0;row<2;row++)for(int col=0;col<3;col++){var tone=Palette.Brush(p.Ramp[(row+col)%3]);Rect(2+col*21,2+row*17,18,14,brush3,2);Rect(2+col*21,2+row*17,2,14,tone);Rect(7+col*21,5+row*17,9,2,fill2);Rect(8+col*21,10+row*17,9,4,tone);}break;
+        case WidgetStyle.Clarity:
+            for(int row=0;row<3;row++){Rect(2,3+row*8,14,2,fill2);Rect(21,3+row*8,9,3,brush);Rect(35,3+row*8,12,2,fill2);Rect(53,3+row*8,9,3,brush2);}c.Children.Add(Line("M2,32 L12,29 L22,31 L32,28 L42,31 L52,29 L62,30",brush));break;
+        case WidgetStyle.ControlDeck:
+            Rect(2,2,23,9,brush);Rect(35,2,27,9,brush2);c.Children.Add(Line("M2,18 L12,14 L22,19 L32,15 L42,18 L52,14 L62,17",brush));for(int row=0;row<2;row++){Rect(2,24+row*6,16,2,fill2);Rect(24,24+row*6,8,2,brush);Rect(38,24+row*6,12,2,fill2);Rect(55,24+row*6,7,2,brush2);}break;
+        case WidgetStyle.Duplex:
+            for(int col=0;col<2;col++){Rect(2+col*33,2,25,3,fill2);Rect(2+col*33,10,27,8,col==0?brush:brush2);c.Children.Add(Line(col==0?"M2,28 L10,24 L18,29 L27,23":"M35,28 L43,24 L51,29 L62,23",col==0?brush:brush2));}break;
+        case WidgetStyle.SignalRows:
+            for(int row=0;row<2;row++){Rect(2,5+row*18,10,3,fill2);Rect(48,3+row*18,14,7,row==0?brush:brush2);c.Children.Add(Line(row==0?"M16,10 L22,4 L29,12 L36,6 L43,9":"M16,28 L22,22 L29,30 L36,24 L43,27",row==0?brush:brush2));}break;
+        case WidgetStyle.OpenPanel:
+            Rect(2,2,24,9,brush);Rect(36,2,25,9,brush2);Rect(2,17,60,1,fill2);for(int row=0;row<2;row++){Rect(2,22+row*8,18,3,fill2);Rect(41,22+row*8,21,3,brush);}break;
 		case WidgetStyle.Standard:
 			Rect(2.0, 3.0, 22.0, 9.0, brush2);
 			Rect(2.0, 17.0, 60.0, 3.0, brush3, 1.5);
 			Rect(2.0, 17.0, 20.0, 3.0, brush, 1.5);
 			c.Children.Add(Line("M2,31 L12,28 L22,30 L32,25 L42,29 L52,26 L62,28", brush));
 			break;
-		case WidgetStyle.Ring:
+		case WidgetStyle.SegmentGraph:
 		{
-			Ellipse ellipse4 = new Ellipse
+			for (int row = 0; row < 4; row++)
 			{
-				Width = 26.0,
-				Height = 26.0,
-				Stroke = brush3,
-				StrokeThickness = 4.0
-			};
-			Canvas.SetLeft(ellipse4, 19.0);
-			Canvas.SetTop(ellipse4, 4.0);
-			c.Children.Add(ellipse4);
-			c.Children.Add(Line("M32,4 A13,13 0 0 1 44.4,21", brush2));
-			Controls children3 = c.Children;
-			if (children3[children3.Count - 1] is Shape shape3)
-			{
-				shape3.StrokeThickness = 4.0;
+				for (int num3 = 0; num3 < 10; num3++)
+				{
+					int on = new[] { 6, 3, 8, 5 }[row];
+					Rect(2.0 + (double)num3 * 6.2, 4.0 + row * 8.0, 5.0, 5.0, num3 < on ? (row == 0 ? brush2 : brush) : brush3, 1.0);
+				}
 			}
-			break;
-		}
-		case WidgetStyle.Minimal:
-			Rect(4.0, 9.0, 26.0, 14.0, brush2);
-			Rect(38.0, 13.0, 22.0, 6.0, fill2);
-			break;
-		case WidgetStyle.Bar:
-			Rect(2.0, 7.0, 60.0, 6.0, brush3, 3.0);
-			Rect(2.0, 7.0, 34.0, 6.0, brush2, 3.0);
-			Rect(2.0, 21.0, 60.0, 6.0, brush3, 3.0);
-			Rect(2.0, 21.0, 14.0, 6.0, brush, 3.0);
-			break;
-		case WidgetStyle.Graph:
-			c.Children.Add(Line("M2,32 L2,24 L12,20 L22,26 L32,12 L42,22 L52,16 L62,20 L62,32 Z", Brushes.Transparent, Palette.Brush(Color.FromArgb(64, p.Cool.R, p.Cool.G, p.Cool.B))));
-			c.Children.Add(Line("M2,24 L12,20 L22,26 L32,12 L42,22 L52,16 L62,20", brush));
-			break;
-		case WidgetStyle.Tile:
-			Rect(2.0, 2.0, 28.0, 30.0, fill, 4.0);
-			Rect(34.0, 2.0, 28.0, 30.0, fill, 4.0);
-			Rect(8.0, 12.0, 16.0, 10.0, brush2);
-			Rect(40.0, 12.0, 16.0, 10.0, brush);
-			break;
-		case WidgetStyle.Compact:
-			Rect(2.0, 8.0, 14.0, 4.0, fill2, 1.0);
-			Rect(2.0, 15.0, 10.0, 3.0, brush3, 1.0);
-			Rect(20.0, 7.0, 14.0, 12.0, brush2);
-			Rect(40.0, 8.0, 22.0, 3.0, brush3, 1.5);
-			Rect(40.0, 8.0, 9.0, 3.0, brush, 1.5);
-			c.Children.Add(Line("M40,20 L45,18 L50,19 L55,15 L62,17", brush));
-			Rect(2.0, 25.0, 60.0, 1.0, brush3, 0.0);
-			break;
-		case WidgetStyle.Status:
-		{
-			Rect(0.0, 12.0, 64.0, 12.0, fill, 6.0);
-			Ellipse ellipse8 = new Ellipse
-			{
-				Width = 5.0,
-				Height = 5.0,
-				Fill = brush2
-			};
-			Canvas.SetLeft(ellipse8, 5.0);
-			Canvas.SetTop(ellipse8, 15.5);
-			c.Children.Add(ellipse8);
-			Rect(13.0, 16.0, 12.0, 4.0, fill2, 1.0);
-			Rect(28.0, 15.0, 10.0, 6.0, brush2, 1.0);
-			Rect(42.0, 17.0, 16.0, 2.0, brush, 1.0);
 			break;
 		}
 		case WidgetStyle.Segments:
@@ -881,98 +1089,6 @@ public sealed class SettingsWindow : Window
 			}
 			break;
 		}
-		case WidgetStyle.DualRing:
-		{
-			Ellipse ellipse = new Ellipse
-			{
-				Width = 28.0,
-				Height = 28.0,
-				Stroke = brush3,
-				StrokeThickness = 3.0
-			};
-			Canvas.SetLeft(ellipse, 4.0);
-			Canvas.SetTop(ellipse, 3.0);
-			c.Children.Add(ellipse);
-			c.Children.Add(Line("M18,3 A14,14 0 0 1 31,22", brush));
-			Controls children = c.Children;
-			if (children[children.Count - 1] is Shape shape)
-			{
-				shape.StrokeThickness = 3.0;
-			}
-			Ellipse ellipse2 = new Ellipse
-			{
-				Width = 18.0,
-				Height = 18.0,
-				Stroke = brush3,
-				StrokeThickness = 3.0
-			};
-			Canvas.SetLeft(ellipse2, 9.0);
-			Canvas.SetTop(ellipse2, 8.0);
-			c.Children.Add(ellipse2);
-			c.Children.Add(Line("M18,8 A9,9 0 1 1 10,21", brush2));
-			Controls children2 = c.Children;
-			if (children2[children2.Count - 1] is Shape shape2)
-			{
-				shape2.StrokeThickness = 3.0;
-			}
-			Rect(40.0, 10.0, 20.0, 9.0, brush2);
-			Rect(40.0, 22.0, 14.0, 3.0, fill2, 1.0);
-			break;
-		}
-		case WidgetStyle.Timeline:
-			Rect(2.0, 3.0, 16.0, 7.0, brush2);
-			Rect(40.0, 5.0, 22.0, 3.0, fill2, 1.0);
-			c.Children.Add(Line("M2,32 L2,26 L8,24 L14,27 L20,18 L26,22 L32,14 L38,20 L44,16 L50,22 L56,15 L62,18 L62,32 Z", Brushes.Transparent, Palette.Brush(Color.FromArgb(64, p.Cool.R, p.Cool.G, p.Cool.B))));
-			c.Children.Add(Line("M2,26 L8,24 L14,27 L20,18 L26,22 L32,14 L38,20 L44,16 L50,22 L56,15 L62,18", brush));
-			break;
-		case WidgetStyle.Heatmap:
-		{
-			for (int num7 = 0; num7 < 16; num7++)
-			{
-				int num8 = num7 % 8;
-				int num9 = num7 / 8;
-				double num10 = (double)(num7 * 37 % 100) / 100.0;
-				Rect(2.0 + (double)num8 * 7.6, 6 + num9 * 11, 6.4, 9.0, Palette.Brush(Palette.Mix(p.Track, p.At(num10), 0.4 + num10 * 0.6)), 1.5);
-			}
-			break;
-		}
-		case WidgetStyle.Rings:
-		{
-			(double, IBrush, string)[] array3 = new(double, IBrush, string)[3]
-			{
-				(30.0, brush2, "M32,3 A15,15 0 1 1 18,24"),
-				(20.0, brush, "M32,8 A10,10 0 0 1 41,22"),
-				(10.0, Palette.Brush(Color.Parse("#A78BFA")), "M32,13 A5,5 0 1 1 28,20")
-			};
-			for (int n = 0; n < array3.Length; n++)
-			{
-				(double, IBrush, string) tuple2 = array3[n];
-				double item4 = tuple2.Item1;
-				IBrush item5 = tuple2.Item2;
-				string item6 = tuple2.Item3;
-				Ellipse ellipse10 = new Ellipse
-				{
-					Width = item4,
-					Height = item4,
-					Stroke = brush3,
-					StrokeThickness = 3.0
-				};
-				Canvas.SetLeft(ellipse10, 32.0 - item4 / 2.0);
-				Canvas.SetTop(ellipse10, 18.0 - item4 / 2.0);
-				c.Children.Add(ellipse10);
-				c.Children.Add(Line(item6, item5));
-				Controls children5 = c.Children;
-				if (children5[children5.Count - 1] is Shape shape5)
-				{
-					shape5.StrokeThickness = 3.0;
-				}
-			}
-			break;
-		}
-		case WidgetStyle.BigNumber:
-			Rect(4.0, 4.0, 14.0, 3.0, fill2, 1.0);
-			Rect(4.0, 11.0, 40.0, 19.0, brush2, 3.0);
-			break;
 		case WidgetStyle.Pill:
 		{
 			Rect(0.0, 8.0, 64.0, 20.0, fill, 10.0);
@@ -988,60 +1104,6 @@ public sealed class SettingsWindow : Window
 			c.Children.Add(ellipse9);
 			Rect(21.0, 14.0, 14.0, 4.0, fill2, 1.0);
 			Rect(46.0, 13.0, 13.0, 6.0, Palette.Brush(p.Ink), 1.0);
-			break;
-		}
-		case WidgetStyle.DotMatrix:
-		{
-			for (int num5 = 0; num5 < 13; num5++)
-			{
-				for (int num6 = 0; num6 < 5; num6++)
-				{
-					if ((num5 % 7 == 0 || num5 % 7 == 4 || num6 == 0 || num6 == 4) && num5 % 7 < 5)
-					{
-						Ellipse ellipse7 = new Ellipse
-						{
-							Width = 3.0,
-							Height = 3.0,
-							Fill = Palette.Brush(p.Ink)
-						};
-						Canvas.SetLeft(ellipse7, 10.0 + (double)num5 * 3.6);
-						Canvas.SetTop(ellipse7, 8 + num6 * 4);
-						c.Children.Add(ellipse7);
-					}
-				}
-			}
-			break;
-		}
-		case WidgetStyle.Bento:
-			Rect(2.0, 2.0, 30.0, 30.0, fill, 6.0);
-			Rect(34.0, 2.0, 28.0, 14.0, fill, 5.0);
-			Rect(34.0, 18.0, 28.0, 14.0, fill, 5.0);
-			Rect(6.0, 7.0, 14.0, 8.0, brush2);
-			c.Children.Add(Line("M2,28 L8,25 L14,27 L20,21 L26,24 L32,20", brush2));
-			break;
-		case WidgetStyle.Ticker:
-		{
-			for (int num4 = 0; num4 < 3; num4++)
-			{
-				Rect(2.0, 4 + num4 * 10, 14.0, 4.0, fill2, 1.0);
-				c.Children.Add(Line((num4 == 1) ? $"M24,{5 + num4 * 10} L30,{7 + num4 * 10} L36,{6 + num4 * 10} L42,{9 + num4 * 10}" : $"M24,{9 + num4 * 10} L30,{7 + num4 * 10} L36,{8 + num4 * 10} L42,{4 + num4 * 10}", (num4 == 1) ? brush : brush2));
-				Rect(50.0, 3 + num4 * 10, 12.0, 6.0, (num4 == 1) ? brush : brush2);
-			}
-			break;
-		}
-		case WidgetStyle.MiniArc:
-		{
-			double[] array2 = new double[3] { 2.0, 23.0, 44.0 };
-			foreach (double num2 in array2)
-			{
-				Rect(num2, 4.0, 18.0, 26.0, fill, 5.0);
-				c.Children.Add(Line($"M{num2 + 4.5},{18} A5.5,5.5 0 1 1 {num2 + 13.5},{18}", brush2));
-				Controls children4 = c.Children;
-				if (children4[children4.Count - 1] is Shape shape4)
-				{
-					shape4.StrokeThickness = 2.0;
-				}
-			}
 			break;
 		}
 		case WidgetStyle.FillBars:
@@ -1060,97 +1122,6 @@ public sealed class SettingsWindow : Window
 			Rect(26.0, 23.0, 10.0, 2.0, fill2, 1.0);
 			Rect(50.0, 23.0, 10.0, 2.0, fill2, 1.0);
 			break;
-		case WidgetStyle.Chips:
-		{
-			Rect(0.0, 4.0, 30.0, 11.0, fill, 5.5);
-			Rect(34.0, 4.0, 30.0, 11.0, fill, 5.5);
-			Rect(0.0, 19.0, 30.0, 11.0, fill, 5.5);
-			Rect(34.0, 19.0, 30.0, 11.0, Palette.Brush(Palette.Alpha(p.Ramp[3], 0.35)), 5.5);
-			(double, double, IBrush)[] array = new(double, double, IBrush)[4]
-			{
-				(3.0, 7.0, brush2),
-				(37.0, 7.0, brush),
-				(3.0, 22.0, brush2),
-				(37.0, 22.0, Palette.Brush(p.Ramp[3]))
-			};
-			for (int n = 0; n < array.Length; n++)
-			{
-				(double, double, IBrush) tuple = array[n];
-				double item = tuple.Item1;
-				double item2 = tuple.Item2;
-				IBrush item3 = tuple.Item3;
-				Ellipse ellipse6 = new Ellipse
-				{
-					Width = 5.0,
-					Height = 5.0,
-					Fill = item3
-				};
-				Canvas.SetLeft(ellipse6, item);
-				Canvas.SetTop(ellipse6, item2);
-				c.Children.Add(ellipse6);
-			}
-			break;
-		}
-		case WidgetStyle.Scale:
-		{
-			LinearGradientBrush linearGradientBrush = new LinearGradientBrush
-			{
-				StartPoint = new RelativePoint(0.0, 0.0, RelativeUnit.Relative),
-				EndPoint = new RelativePoint(1.0, 0.0, RelativeUnit.Relative)
-			};
-			linearGradientBrush.GradientStops.Add(new GradientStop(p.Ramp[0], 0.0));
-			linearGradientBrush.GradientStops.Add(new GradientStop(p.Ramp[1], 0.5));
-			linearGradientBrush.GradientStops.Add(new GradientStop(p.Ramp[2], 0.75));
-			linearGradientBrush.GradientStops.Add(new GradientStop(p.Ramp[3], 1.0));
-			Rect(2.0, 5.0, 22.0, 10.0, brush2);
-			Rect(2.0, 21.0, 60.0, 5.0, linearGradientBrush, 2.5);
-			Ellipse ellipse5 = new Ellipse
-			{
-				Width = 9.0,
-				Height = 9.0,
-				Fill = Palette.Brush(p.Ink)
-			};
-			Canvas.SetLeft(ellipse5, 30.0);
-			Canvas.SetTop(ellipse5, 19.0);
-			c.Children.Add(ellipse5);
-			break;
-		}
-		case WidgetStyle.HistoryBars:
-		{
-			Rect(2.0, 3.0, 14.0, 4.0, fill2, 1.0);
-			Rect(44.0, 2.0, 18.0, 7.0, brush2);
-			for (int m = 0; m < 10; m++)
-			{
-				double num = 6 + m * 53 % 17;
-				Rect(2.0 + (double)m * 6.2, 32.0 - num, 4.4, num, (m == 9) ? brush2 : Palette.Brush(Palette.Alpha(p.Calm, 0.45)));
-			}
-			break;
-		}
-		case WidgetStyle.Backdrop:
-			Rect(0.0, 0.0, 64.0, 34.0, fill, 6.0);
-			c.Children.Add(Line("M0,34 L0,24 L8,22 L16,25 L24,17 L32,20 L40,12 L48,16 L56,10 L64,13 L64,34 Z", Brushes.Transparent, Palette.Brush(Palette.Alpha(p.Calm, 0.35))));
-			Rect(5.0, 5.0, 12.0, 3.0, fill2, 1.0);
-			Rect(5.0, 11.0, 22.0, 9.0, Palette.Brush(p.Ink));
-			break;
-		case WidgetStyle.PillDuo:
-		{
-			Rect(0.0, 7.0, 64.0, 22.0, fill, 11.0);
-			Rect(0.0, 7.0, 26.0, 22.0, Palette.Brush(Palette.Alpha(p.Cool, 0.3)), 11.0);
-			Ellipse ellipse3 = new Ellipse
-			{
-				Width = 15.0,
-				Height = 15.0,
-				Fill = brush2
-			};
-			Canvas.SetLeft(ellipse3, 4.0);
-			Canvas.SetTop(ellipse3, 10.5);
-			c.Children.Add(ellipse3);
-			Rect(23.0, 12.0, 12.0, 4.0, fill2, 1.0);
-			Rect(23.0, 19.0, 10.0, 4.0, brush);
-			Rect(46.0, 13.0, 13.0, 7.0, Palette.Brush(p.Ink), 1.0);
-			Rect(12.0, 25.0, 34.0, 2.0, brush2, 1.0);
-			break;
-		}
 		case WidgetStyle.PillRow:
 		{
 			Rect(2.0, 3.0, 16.0, 4.0, fill2, 1.0);
@@ -1174,56 +1145,9 @@ public sealed class SettingsWindow : Window
 			Rect(43.0, 6.0, 1.0, 22.0, brush3, 0.0);
 			break;
 		}
-		                case WidgetStyle.Liquid:
-            c.Children.Add(Line("M0,20 C12,11 22,28 34,20 C46,12 54,25 64,18 L64,34 L0,34 Z",Brushes.Transparent,fill));
-            Rect(5,7,27,17,brush2);break;
         case WidgetStyle.TwinFocus:
             Rect(3,3,22,4,fill2);Rect(3,11,23,15,brush2);Rect(36,3,22,4,fill2);Rect(36,11,23,15,brush);
             Rect(31,3,1,28,brush3);break;
-        case WidgetStyle.Contour:
-            c.Children.Add(Line("M15,2 H49 Q62,2 62,17 Q62,32 49,32 H15 Q2,32 2,17 Q2,2 15,2 Z",brush3));
-            c.Children.Add(Line("M49,29 H16 Q5,29 5,17 Q5,5 16,5",brush));Rect(19,11,25,13,brush2);break;
-        case WidgetStyle.SplitEdge:
-            c.Children.Add(Line("M0,0 H40 L27,34 H0 Z",Brushes.Transparent,fill));Rect(5,11,23,17,brush2);
-            Rect(43,8,16,6,brush);Rect(40,22,19,6,brush);break;
-        case WidgetStyle.Ribbon:
-            c.Children.Add(Line("M2,25 C12,29 17,4 29,12 C35,17 39,22 44,17",brush));Rect(47,9,16,15,brush2);break;
-        case WidgetStyle.CoreGrid:
-            Rect(2,2,24,12,brush2);for(int i=0;i<12;i++)Rect(3+(i%6)*10,20+(i/6)*8,7,5,i%3==0?brush:fill2,1);break;
-
-		case WidgetStyle.SignalPro:
-            Rect(2, 3, 18, 4, fill2); Rect(2, 13, 26, 17, brush2);
-            c.Children.Add(Line("M33,28 L38,24 L43,26 L48,14 L53,20 L62,10", brush));
-            break;
-        case WidgetStyle.RailPro:
-            Rect(2, 3, 30, 4, fill2); Rect(2, 13, 32, 18, brush2);
-            for(int i=0;i<5;i++) Rect(45+i,27-i*5,15-i,3,i<3?brush:brush3,1);
-            break;
-        case WidgetStyle.OrbitPro:
-            Rect(2, 13, 27, 17, brush2);
-            c.Children.Add(Line("M44,29 A13,13 0 1 1 59,25",brush));
-            break;
-        case WidgetStyle.Prism:
-            c.Children.Add(Line("M0,0 L47,0 L30,34 L0,34 Z",Brushes.Transparent,fill));
-            c.Children.Add(Line("M47,0 L30,34",brush));Rect(6,11,26,18,brush2);
-            break;
-        case WidgetStyle.Spectrum:
-            Rect(2,2,27,14,brush2);
-            for(int i=0;i<12;i++) Rect(i*5.1,31-(i*7%15),3.5,3+(i*7%15),i>8?brush2:brush,1);
-            break;
-        case WidgetStyle.PillDuoPlus:
-            Rect(0,2,64,18,fill,9);Rect(4,5,12,12,brush2,6);Rect(45,6,14,10,brush2);
-            Rect(6,24,52,10,fill,5);Rect(12,27,14,4,brush);Rect(38,27,14,4,brush2);
-            break;
-
-		case WidgetStyle.SignalBand:
-			Rect(2, 3, 25, 4, fill2); Rect(43, 2, 19, 10, brush2);
-			c.Children.Add(Line("M2,29 L12,25 L22,28 L32,19 L42,23 L52,17 L62,20", brush));
-			break;
-		case WidgetStyle.Rail:
-			Rect(2, 2, 3, 30, brush2, 1.5); Rect(11, 4, 24, 4, fill2);
-			Rect(11, 12, 32, 13, brush2); Rect(11, 30, 51, 2, brush3, 1);
-			break;
 		case WidgetStyle.BadgeList:
 		{
 			for (int j = 0; j < 3; j++)
@@ -1234,6 +1158,61 @@ public sealed class SettingsWindow : Window
 				{
 					Rect(2.0, 12 + j * 10, 60.0, 1.0, brush3, 0.0);
 				}
+			}
+			break;
+		}
+		case WidgetStyle.PillRowGraph:
+		{
+			for (int i = 0; i < 6; i++)
+			{
+				double x = (i % 3) * 21.5, y = 4 + (i / 3) * 15;
+				Rect(x, y, 19.0, 11.0, brush3, 5.5);
+				Rect(x, y, 6 + i * 2, 11.0, (i == 0) ? Palette.Brush(p.Ramp[2]) : brush, 5.5);
+			}
+			break;
+		}
+		case WidgetStyle.BadgeListGraph:
+		{
+			for (int i = 0; i < 4; i++)
+			{
+				Rect(2.0, 3 + i * 9, 12.0, 3.0, fill2, 1.0);
+				Rect(18.0, 3.5 + i * 9, 26.0, 2.0, brush3, 1.0);
+				Rect(18.0, 3.5 + i * 9, 6 + i * 5, 2.0, brush, 1.0);
+				Rect(48.0, 1.5 + i * 9, 16.0, 6.0, (i == 0) ? Palette.Brush(p.Ramp[2]) : brush2, 3.0);
+			}
+			break;
+		}
+		case WidgetStyle.NeonHudGraph:
+		{
+			var cyan = Palette.Brush(Accents.Readable(Color.Parse("#22d3ee"), p));
+			var pink = Palette.Brush(Accents.Readable(Color.Parse("#ec4899"), p));
+			for (int i = 0; i < 4; i++)
+			{
+				Rect(2.0, 2 + i * 9, 14.0, 2.5, fill2, 1.0);
+				Rect(52.0, 2 + i * 9, 10.0, 2.5, cyan, 1.0);
+				Rect(2.0, 6 + i * 9, 60.0, 1.5, brush3, 0.5);
+				Rect(2.0, 6 + i * 9, 14 + i * 9, 1.5, i % 2 == 0 ? cyan : pink, 0.5);
+			}
+			break;
+		}
+		case WidgetStyle.FillBarsGraph:
+		{
+			int[] fills = { 30, 18, 44, 26 };
+			for (int i = 0; i < 4; i++)
+			{
+				Rect(0.0, 1 + i * 9, 64.0, 7.0, brush3, 3.0);
+				Rect(0.0, 1 + i * 9, fills[i], 7.0, (i == 0) ? Palette.Brush(p.Ramp[2]) : brush, 3.0);
+			}
+			break;
+		}
+		case WidgetStyle.TableGraph:
+		{
+			for (int i = 0; i < 5; i++)
+			{
+				Rect(2.0, 3 + i * 7, 12.0, 3.0, fill2, 1.0);
+				Rect(18.0, 3.5 + i * 7, 28.0, 2.0, brush3, 1.0);
+				Rect(18.0, 3.5 + i * 7, 6 + i * 5, 2.0, (i == 0) ? Palette.Brush(p.Ramp[2]) : brush, 1.0);
+				Rect(50.0, 3 + i * 7, 12.0, 3.0, brush2, 1.0);
 			}
 			break;
 		}
@@ -1468,6 +1447,10 @@ public sealed class SettingsWindow : Window
 				}
 				grid2.Margin = new Thickness(28.0, 0.0, 0.0, 0.0);
 				stackPanel.Children.Add(grid2);
+				if (slot.Style == WidgetStyle.Evolution)
+				{
+					stackPanel.Children.Add(AccentRow(slot));
+				}
 			}
 			if (s.ColumnsInUse > 1)
 			{
@@ -1492,83 +1475,44 @@ public sealed class SettingsWindow : Window
 			{
 				stackPanel.Children.Add(wrapPanel);
 			}
-			WrapPanel wrapPanel3 = new WrapPanel
-			{
-				Margin = new Thickness(28.0, 0.0, 0.0, 4.0)
-			};
-			foreach (var item3 in from v in Cards.Values(slot.Kind)
-				where Summaries.Supports(slot.Kind, slot.Style, v.Key)
-				select v)
-			{
-				string key = item3.Key;
-				string item = item3.Label;
-				CheckBox c = new CheckBox
-				{
-					Content = item,
-					IsChecked = s.Shows(key),
-					FontSize = 12.5,
-					Margin = new Thickness(0.0, 0.0, 14.0, 0.0)
-				};
-				c.IsCheckedChanged += delegate
-				{
-					if (c.IsChecked == true)
-					{
-						s.HiddenValues.Remove(key);
-					}
-					else if (!s.HiddenValues.Contains(key))
-					{
-						s.HiddenValues.Add(key);
-					}
-					changed();
-				};
-				wrapPanel3.Children.Add(c);
-			}
-			stackPanel.Children.Add(wrapPanel3);
-			Snapshot snapshot = this.snapshot();
-			List<(string, string)> list2 = slot.Kind switch
-			{
-				WidgetKind.Drives => snapshot?.Disks.Select((DiskInfo d) => ("drive:" + d.Id, (d.Letters.Length > 0) ? (Names.Short(d.Name) + " · " + d.Letters) : Names.Short(d.Name))).ToList(), 
-				WidgetKind.Volumes => snapshot?.Volumes.Select((VolumeInfo v) => ("volume:" + v.Name, string.IsNullOrWhiteSpace(v.Label) ? v.Name : (v.Name + " " + v.Label))).ToList(), 
-				_ => null, 
-			};
-			if (list2 != null && list2.Count > 0)
-			{
-				WrapPanel wrapPanel4 = new WrapPanel
-				{
-					Margin = new Thickness(28.0, 2.0, 0.0, 4.0)
-				};
-				TextBlock textBlock = Ui.Text((slot.Kind == WidgetKind.Drives) ? L.T("Drives shown") : L.T("Volumes shown"), 12.5, p.Soft);
-				textBlock.Margin = new Thickness(0.0, 0.0, 0.0, 4.0);
-				foreach (var item4 in list2)
-				{
-					string key2 = item4.Item1;
-					string item2 = item4.Item2;
-					CheckBox c2 = new CheckBox
-					{
-						Content = item2,
-						IsChecked = s.Shows(key2),
-						FontSize = 12.5,
-						Margin = new Thickness(0.0, 0.0, 14.0, 0.0)
-					};
-					c2.IsCheckedChanged += delegate
-					{
-						if (c2.IsChecked == true)
-						{
-							s.HiddenValues.Remove(key2);
-						}
-						else if (!s.HiddenValues.Contains(key2))
-						{
-							s.HiddenValues.Add(key2);
-						}
-						changed();
-					};
-					wrapPanel4.Children.Add(c2);
-				}
-				StackPanel stackPanel3 = Ui.Stack(0.0, textBlock, wrapPanel4);
-				stackPanel3.Margin = new Thickness(28.0, 4.0, 0.0, 4.0);
-				wrapPanel4.Margin = new Thickness(0.0);
-				stackPanel.Children.Add(stackPanel3);
-			}
+            var sizing = Ui.Stack(8,
+                Ui.Columns("140,*", Ui.Text(L.T("Widget size"), 12.5, p.Soft), Slide(0.5, 2.0, 0.05, slot.WidgetScale, v => slot.WidgetScale = v, v => $"{v * 100:0} %")),
+                Ui.Columns("140,*", Ui.Text(L.T("Graphic size"), 12.5, p.Soft), Slide(0.5, 2.0, 0.05, slot.GraphicScale, v => slot.GraphicScale = v, v => $"{v * 100:0} %")),
+                Ui.Columns("140,*", Ui.Text(L.T("Main value size"), 12.5, p.Soft), Slide(0.5, 2.0, 0.05, slot.HeroScale, v => slot.HeroScale = v, v => $"{v * 100:0} %")),
+                Ui.Columns("140,*", Ui.Text(L.T("Value size"), 12.5, p.Soft), Slide(0.5, 2.0, 0.05, slot.ValueScale, v => slot.ValueScale = v, v => $"{v * 100:0} %")),
+                Ui.Columns("140,*", Ui.Text(L.T("Label size"), 12.5, p.Soft), Slide(0.5, 2.0, 0.05, slot.LabelScale, v => slot.LabelScale = v, v => $"{v * 100:0} %")));
+            sizing.Margin = new Thickness(28, 8, 0, 8);
+            stackPanel.Children.Add(sizing);
+            var sensors = new StackPanel { Spacing = 2, Margin = new Thickness(28, 4, 0, 8) };
+            sensors.Children.Add(SectionTitle(L.T("Sensor values")));
+            foreach (var option in WidgetSensors.Options(slot.Kind, this.snapshot()))
+            {
+                if (slot.Kind == WidgetKind.Cpu && (ComparisonTile.Styles.Contains(slot.Style) || InsightTile.Styles.Contains(slot.Style)) && option.Key == "cpu.cores") continue;
+                string sensorKey = option.Key;
+                var sensorCheck = new CheckBox
+                {
+                    Name = "sensor-" + sensorKey.Replace(':', '-').Replace('.', '-'),
+                    Content = option.Label,
+                    IsChecked = s.Shows(sensorKey) && !slot.HiddenSensors.Contains(sensorKey),
+                    FontSize = 12.5,
+                    Margin = new Thickness(0, 1),
+                    Tag = sensorKey
+                };
+                sensorCheck.IsCheckedChanged += (_, _) =>
+                {
+                    if (sensorCheck.IsChecked == true)
+                    {
+                        slot.HiddenSensors.Remove(sensorKey);
+                        s.HiddenValues.Remove(sensorKey);
+                    }
+                    else if (!slot.HiddenSensors.Contains(sensorKey)) slot.HiddenSensors.Add(sensorKey);
+                    changed();
+                };
+                sensors.Children.Add(sensorCheck);
+            }
+            if (sensors.Children.Count == 1) sensors.Children.Add(Ui.Text(L.T("No sensor values for this widget."), 12, p.Soft));
+            stackPanel.Children.Add(sensors);
+
 			if (slot.Kind == WidgetKind.Network)
 			{
 				value = Ui.Text("", 12.5, p.Ink, FontWeight.Medium, numbers: true);
@@ -1695,16 +1639,6 @@ public sealed class SettingsWindow : Window
 
 	private Control[] AppearancePage()
 	{
-		RefreshPreview();
-		if (previewHost.Parent is Panel panel)
-		{
-			panel.Children.Remove(previewHost);
-		}
-		TextBlock textBlock = Ui.Text(L.T("Shows at once how colours, glass and text size look – without looking at the sidebar."), 12.5, p.Soft);
-		textBlock.TextWrapping = TextWrapping.Wrap;
-		textBlock.TextTrimming = TextTrimming.None;
-		Grid grid = Ui.Columns("*,Auto", Ui.Stack(6.0, SectionTitle(L.T("Live preview")), textBlock), previewHost);
-		textBlock.Margin = new Thickness(0.0, 0.0, 18.0, 0.0);
 		(ThemeMode, string)[] obj = new(ThemeMode, string)[3]
 		{
 			(ThemeMode.Dark, L.T("Dark")),
@@ -1833,7 +1767,6 @@ public sealed class SettingsWindow : Window
 			control = Row(L.T("Opacity"), Slide(0.2, 1.0, 0.05, s.Opacity, delegate(double v)
 			{
 				s.Opacity = v;
-				RefreshPreview();
 			}, (double v) => $"{v * 100.0:0} %"), L.T("Only with the glass effect."), "Opacity");
 			control.Margin = new Thickness(16.0, 0.0, 0.0, 0.0);
 		}
@@ -1843,7 +1776,6 @@ public sealed class SettingsWindow : Window
 		}
 		return new Control[5]
 		{
-			grid,
 			Section(L.T("Colours"), Row(L.T("Theme"), editor, null, "Theme"), Row(L.T("Colour scheme"), wrapPanel, text + ((s.Colors == "state") ? "" : (" · " + L.T("Hot readings still turn amber and red."))), "Colors"), Row(L.T("Background"), wrapPanel2, help, "Background")),
 			Section(L.T("Effects"), Row(L.T("Glass effect"), Toggle(s.Glass, delegate(bool v)
 			{
@@ -1858,7 +1790,6 @@ public sealed class SettingsWindow : Window
 			Section(L.T("Text"), Row(L.T("Text size"), Slide(0.5, 2.0, 0.05, s.TextScale, delegate(double v)
 			{
 				s.TextScale = v;
-				RefreshPreview();
 			}, (double v) => $"{v * 100.0:0} %"), L.T("Above 100 % the sidebar grows wider by the same amount."), "TextScale"), Row(L.T("Typeface"), Choice(FontNames(), Math.Max(0, Array.IndexOf(Settings.Fonts, s.Font)), delegate(int num)
 			{
 				s.Font = Settings.Fonts[num];
@@ -1869,6 +1800,7 @@ public sealed class SettingsWindow : Window
 			{
 				s.ShowNames = v;
 			}, notify: true, rebuild: true), L.T("Model names under the titles, e.g. Ryzen 9 5900X."), "ShowNames")),
+			AllSizesSection(),
 			ThemeSection()
 		};
 		Button Swatch(IBrush fill, bool on, string tip, Action pick, double w = 24.0, bool round = false)
@@ -1928,227 +1860,30 @@ public sealed class SettingsWindow : Window
 		};
 	}
 
-	private Control ThemeSection()
-	{
-		StackPanel editor = Ui.Row(8.0, Action(L.T("Save theme …"), SaveTheme), Action(L.T("Load theme …"), LoadTheme));
-		string text = L.T("Colours, background, glass, text size and typeface – no layout and no personal data.");
-		WrapPanel wrapPanel = new WrapPanel
-		{
-			HorizontalAlignment = HorizontalAlignment.Right,
-			MaxWidth = 360.0
-		};
-		(string, string, ThemeFile)[] builtIn = ThemeFile.BuiltIn;
-		for (int i = 0; i < builtIn.Length; i++)
-		{
-			(string, string, ThemeFile) tuple = builtIn[i];
-			string name = tuple.Item2;
-			ThemeFile theme = tuple.Item3;
-			Button button = new Button
-			{
-				Content = L.T(name),
-				Padding = new Thickness(12.0, 6.0),
-				CornerRadius = new CornerRadius(8.0),
-				Margin = new Thickness(8.0, 0.0, 0.0, 6.0)
-			};
-			button.Click += delegate
-			{
-				double textScale = s.TextScale;
-				theme.ApplyTo(s);
-				s.TextScale = textScale;
-				themeMessage = L.F("Theme “{0}” applied.", L.T(name));
-				changed();
-				RefreshPreview();
-				Build();
-			};
-			wrapPanel.Children.Add(button);
-		}
-		return Section(L.T("Themes"), Row(L.T("Built-in themes"), wrapPanel, L.T("Retro LCD in amber, neon outlines, or grey with colour only for warnings.")), Row(L.T("Theme file"), editor, (themeMessage.Length > 0) ? themeMessage : text));
-		Button Action(string text2, Func<Task> run)
-		{
-			Button button2 = new Button();
-			button2.Content = text2;
-			button2.Padding = new Thickness(12.0, 6.0);
-			button2.CornerRadius = new CornerRadius(8.0);
-			button2.Click += async delegate
-			{
-				try
-				{
-					await run();
-				}
-				catch (Exception ex)
-				{
-					themeMessage = L.T("The file could not be read or written.") + " " + ex.Message;
-					Build();
-				}
-			};
-			return button2;
-		}
-	}
-
-	private async Task SaveTheme()
-	{
-		IStorageFile file = await base.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
-		{
-			Title = L.T("Save theme …"),
-			SuggestedFileName = "Lumen.lumentheme",
-			DefaultExtension = ".lumentheme".TrimStart('.'),
-			FileTypeChoices = new FilePickerFileType[1] { ThemeType },
-			ShowOverwritePrompt = true
-		});
-		if (file == null)
-		{
-			return;
-		}
-		string name = System.IO.Path.GetFileNameWithoutExtension(file.Name);
-		await using (Stream stream = await file.OpenWriteAsync())
-		{
-			stream.SetLength(0L);
-			await using StreamWriter w = new StreamWriter(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-			await w.WriteAsync(ThemeFile.From(s, name).ToJson());
-		}
-		themeMessage = L.F("Saved as {0}.", file.Name);
-		Build();
-	}
-
-	private async Task LoadTheme()
-	{
-		IReadOnlyList<IStorageFile> files = await base.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
-		{
-			Title = L.T("Load theme …"),
-			AllowMultiple = false,
-			FileTypeFilter = new FilePickerFileType[2]
-			{
-				ThemeType,
-				FilePickerFileTypes.All
-			}
-		});
-		if (files.Count == 0)
-		{
-			return;
-		}
-		string text;
-		await using (Stream stream = await files[0].OpenReadAsync())
-		{
-			using StreamReader r = new StreamReader(stream);
-			text = await r.ReadToEndAsync();
-		}
-		ThemeFile themeFile = ThemeFile.Parse(text);
-		if (themeFile == null)
-		{
-			themeMessage = L.T("This is not a Lumen theme file.");
-			Build();
-			return;
-		}
-		themeFile.ApplyTo(s);
-		themeMessage = L.F("Theme “{0}” applied.", (themeFile.Name.Length > 0) ? themeFile.Name : System.IO.Path.GetFileNameWithoutExtension(files[0].Name));
-		changed();
-		RefreshPreview();
-		Build();
-	}
-
-	private void RefreshPreview()
-	{
-		string fontKey = Ui.FontKey;
-		Ui.UseFont(s.Font);
-		try
-		{
-			DrawPreview();
-		}
-		finally
-		{
-			Ui.UseFont(fontKey);
-		}
-	}
-
-	private void DrawPreview()
-	{
-		bool flag = s.Theme switch
-		{
-			ThemeMode.Dark => true, 
-			ThemeMode.Light => false, 
-			_ => Application.Current?.ActualThemeVariant != ThemeVariant.Light, 
-		};
-		Palette palette = Palette.For(s, flag, Application.Current?.PlatformSettings?.GetColorValues().AccentColor1);
-		double num = Math.Clamp(s.TextScale, 0.5, 2.0);
-		CpuInfo cpuInfo = snapshot()?.Cpu;
-		double num2 = cpuInfo?.Temperature ?? 56.0;
-		double value = cpuInfo?.Load ?? 8.0;
-		string text = Names.Clean(cpuInfo?.Name);
-		string text2 = ((text != null && text.Length > 0) ? text : "Ryzen 9 5900X");
-		Control[] obj = new Control[2]
-		{
-			Ui.Text(L.T("Processor"), 12.0 * num, palette.Ink, FontWeight.DemiBold),
-			null
-		};
-		double? num3 = cpuInfo?.ClockMhz;
-		object text3;
-		if (num3.HasValue)
-		{
-			double valueOrDefault = num3.GetValueOrDefault();
-			text3 = $"{valueOrDefault / 1000.0:0.00} GHz";
-		}
-		else
-		{
-			text3 = "3.73 GHz";
-		}
-		obj[1] = Ui.Text((string)text3, 11.0 * num, palette.Soft);
-		Grid grid = Ui.Columns("*,Auto", obj);
-		TextBlock textBlock = Ui.Text(text2, 11.0 * num, palette.Soft);
-		textBlock.IsVisible = s.ShowNames;
-		StackPanel stackPanel = Ui.Row(2.0, Ui.Text(Format.Temperature(num2, s.Fahrenheit) ?? "", 32.0 * num, palette.At(Math.Clamp((num2 - 20.0) / 80.0, 0.0, 1.0)), FontWeight.DemiBold, numbers: true), Ui.Text(Format.TemperatureUnit(s.Fahrenheit), 13.0 * num, palette.Soft));
-		Grid grid2 = Ui.Columns("*,Auto", stackPanel, Ui.Text($"{value:0} %", 16.0 * num, palette.Ink, FontWeight.DemiBold, numbers: true));
-		grid2.Margin = new Thickness(0.0, 6.0, 0.0, 4.0);
-		Polyline item = new Polyline
-		{
-			Stroke = Palette.Brush(palette.Cool),
-			StrokeThickness = 1.6,
-			Points = new List<Point>
-			{
-				new Point(0.0, 18.0),
-				new Point(24.0, 16.0),
-				new Point(48.0, 20.0),
-				new Point(72.0, 13.0),
-				new Point(96.0, 16.0),
-				new Point(120.0, 8.0),
-				new Point(144.0, 14.0),
-				new Point(168.0, 11.0),
-				new Point(192.0, 15.0),
-				new Point(216.0, 9.0),
-				new Point(240.0, 12.0)
-			}
-		};
-		Viewbox viewbox = new Viewbox
-		{
-			Stretch = Stretch.Fill,
-			Height = 26.0,
-			Child = new Canvas
-			{
-				Width = 240.0,
-				Height = 24.0,
-				Children = { (Control)item }
-			}
-		};
-		Border border = new Border();
-		border.Background = Palette.Brush(palette.Card);
-		border.BorderBrush = Palette.Brush(palette.Stroke);
-		border.BorderThickness = new Thickness(1.0);
-		border.CornerRadius = new CornerRadius(14.0);
-		border.Padding = new Thickness(14.0, 12.0);
-		border.Child = Ui.Stack(1.0, grid, textBlock, grid2, viewbox);
-		Border child = border;
-		LinearGradientBrush linearGradientBrush = new LinearGradientBrush
-		{
-			StartPoint = new RelativePoint(0.0, 0.0, RelativeUnit.Relative),
-			EndPoint = new RelativePoint(1.0, 1.0, RelativeUnit.Relative)
-		};
-		linearGradientBrush.GradientStops.Add(new GradientStop(Color.Parse(flag ? "#2B3A67" : "#9DB7E8"), 0.0));
-		linearGradientBrush.GradientStops.Add(new GradientStop(Color.Parse(flag ? "#5B2C4F" : "#E8B6C9"), 1.0));
-		previewHost.Width = 300.0;
-		previewHost.CornerRadius = new CornerRadius(16.0);
-		previewHost.Padding = new Thickness(14.0);
-		previewHost.Background = linearGradientBrush;
-		previewHost.Child = child;
-	}
+    private Control ThemeSection()
+    {
+        var choices = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right, MaxWidth = 360 };
+        foreach (var preset in ThemeFile.BuiltIn)
+        {
+            var theme = preset.Theme;
+            var button = new Button
+            {
+                Content = L.T(preset.Name), Padding = new Thickness(12, 6),
+                CornerRadius = new CornerRadius(8), Margin = new Thickness(8, 0, 0, 6)
+            };
+            button.Click += delegate
+            {
+                double textScale = s.TextScale;
+                theme.ApplyTo(s);
+                s.TextScale = textScale;
+                changed();
+                Build();
+            };
+            choices.Children.Add(button);
+        }
+        return Section(L.T("Themes"), Row(L.T("Built-in themes"), choices,
+            L.T("Eight themes with coordinated colours, backgrounds and fonts.")));
+    }
 
 	private Control[] PlacementPage()
 	{
@@ -2176,7 +1911,7 @@ public sealed class SettingsWindow : Window
 		}
 		Control[] array = new Control[2];
 		string titleText = L.T("Position");
-		Control[] obj = new Control[5]
+		Control[] obj = new Control[8]
 		{
 			Row(L.T("Screen edge"), Choice(new string[4]
 			{
@@ -2192,6 +1927,9 @@ public sealed class SettingsWindow : Window
 				}
 				s.Edge = (Edge)i;
 			}, rebuild: true), s.Horizontal ? L.T("A bar across the whole width; the widgets sit side by side.") : null, "Edge"),
+			null,
+			null,
+			null,
 			null,
 			null,
 			null,
@@ -2224,6 +1962,33 @@ public sealed class SettingsWindow : Window
 		{
 			s.ClickThrough = v;
 		}, notify: true, rebuild: true), L.T("Clicks go to the windows behind the sidebar; open the settings from the tray icon."), "ClickThrough");
+		obj[5] = Row(L.T("Floating"), Toggle(s.Floating, delegate(bool v)
+		{
+			s.Floating = v;
+		}, notify: true, rebuild: true), L.T("Single cards with a gap and a shadow instead of a continuous bar; no space is reserved."), "Floating");
+		if (s.Floating)
+		{
+			Button reset = new Button
+			{
+				Content = L.T("Reset positions"),
+				Padding = new Thickness(14.0, 5.0),
+				CornerRadius = new CornerRadius(8.0)
+			};
+			reset.Click += delegate
+			{
+				string prefix = s.Screen + ":";
+				foreach (string key in s.FloatPositions.Keys.Where((string k) => k.StartsWith(prefix)).ToList())
+				{
+					s.FloatPositions.Remove(key);
+				}
+				changed();
+			};
+			obj[7] = Row(L.T("Card positions"), reset, L.T("Hold Ctrl and drag a card to place it anywhere on the monitor. Clicks between the cards go to the windows behind."), "FloatPositions");
+		}
+		obj[6] = Row(L.T("Hide in full screen"), Toggle(s.HideInFullscreen, delegate(bool v)
+		{
+			s.HideInFullscreen = v;
+		}, notify: true), L.T("Hides the sidebar while a game or video fills the monitor it is on."), "HideInFullscreen");
 		array[0] = Section(titleText, obj);
 		array[1] = Section(L.T("Layout"), control, Row(s.Horizontal ? L.T("Rows") : L.T("Columns"), Choice(new string[6] { "1", "2", "3", "4", "5", "6" }, s.Columns - 1, delegate(int i)
 		{
@@ -2240,7 +2005,7 @@ public sealed class SettingsWindow : Window
 		}, notify: true, rebuild: true), L.T("Covers the whole monitor up to the taskbar; the columns share its width."), "FullScreen"), s.Horizontal ? Row(L.T("Row height"), Slide(40.0, 700.0, 4.0, s.BarHeight, delegate(double v)
 		{
 			s.BarHeight = v;
-		}, (double v) => $"{v:0} px"), L.T("Status fits from 40 px, Compact from 64 px; Ring, Tile and Bar read best in a low bar."), "BarHeight") : null, Row(L.T("Density"), Choice(new string[3]
+		}, (double v) => $"{v:0} px"), L.T("Increase the row height for larger values and graphics."), "BarHeight") : null, Row(L.T("Density"), Choice(new string[3]
 		{
 			L.T("Automatic"),
 			L.T("Comfortable"),
@@ -2404,6 +2169,29 @@ public sealed class SettingsWindow : Window
 		border.Child = stackPanel;
 		Border border2 = border;
 		return Ui.Stack(10.0, textBlock, border2);
+	}
+
+	// The same five sizes as under Widgets → Customize, for every widget at once. The slider starts at the
+	// value most widgets have; moving it sets that size on all widgets.
+	private Control AllSizesSection()
+	{
+		Control All(string label, Func<WidgetSlot, double> get, Action<WidgetSlot, double> set, string? help = null)
+		{
+			double start = s.Widgets.GroupBy(w => Math.Round(get(w), 2)).OrderByDescending(g => g.Count()).Select(g => g.Key).DefaultIfEmpty(1.0).First();
+			return Row(label, Slide(0.5, 2.0, 0.05, start, v =>
+			{
+				foreach (WidgetSlot w in s.Widgets)
+				{
+					set(w, v);
+				}
+			}, v => $"{v * 100:0} %"), help);
+		}
+		return Section(L.T("Sizes for all widgets"),
+			All(L.T("Widget size"), w => w.WidgetScale, (w, v) => w.WidgetScale = v, L.T("Sets every widget at once; each one can still be changed under Widgets → Customise.")),
+			All(L.T("Graphic size"), w => w.GraphicScale, (w, v) => w.GraphicScale = v),
+			All(L.T("Main value size"), w => w.HeroScale, (w, v) => w.HeroScale = v),
+			All(L.T("Value size"), w => w.ValueScale, (w, v) => w.ValueScale = v),
+			All(L.T("Label size"), w => w.LabelScale, (w, v) => w.LabelScale = v));
 	}
 
 	private Control Row(string label, Control editor, string? help = null, string? prop = null)

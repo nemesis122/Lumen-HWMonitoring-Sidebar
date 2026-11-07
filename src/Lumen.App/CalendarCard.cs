@@ -18,9 +18,10 @@ public sealed class CalendarCard : Card
 		: base(p, m, s, "M2,3.5 H14 V14 H2 Z M2,6.5 H14 M5,2 V5 M11,2 V5", "")
 	{
 		Body.Children.Add(grid);
+        WidgetPresentation.Sensor(grid, "calendar.date");
 	}
 
-	public override void Update(Snapshot s, History h)
+	protected override void UpdateReadings(Snapshot s, History h)
 	{
 		DateTime date = s.Time.Date;
 		if (date == shown)
@@ -41,7 +42,7 @@ public sealed class CalendarCard : Card
 		int num = (int)Math.Ceiling(((dateTime - dateTime2).TotalDays + (double)DateTime.DaysInMonth(date.Year, date.Month)) / 7.0);
 		for (int i = 0; i <= num; i++)
 		{
-			grid.RowDefinitions.Add(new RowDefinition((i == 0) ? GridLength.Auto : new GridLength(M.Subtitles ? 24 : 20)));
+			grid.RowDefinitions.Add(new RowDefinition((i == 0) ? GridLength.Auto : new GridLength((M.Subtitles ? 24 : 20) * (S.ActiveWidget?.Values ?? 1))));
 		}
 		for (int j = 0; j < 7; j++)
 		{

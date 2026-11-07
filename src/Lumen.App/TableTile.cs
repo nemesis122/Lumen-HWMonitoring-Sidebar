@@ -19,9 +19,15 @@ public sealed class TableTile : SummaryTile
 
 	private readonly List<(TextBlock Label, Meter Bar, TextBlock Value)> rows = new List<(TextBlock, Meter, TextBlock)>();
 
-	public TableTile(WidgetKind kind, int index, Palette p, Metrics m, Settings s)
+	// "Table graph": the further values (clock, voltage, fan, free …) become table lines with bars too.
+	private readonly bool graph;
+
+	private List<Reading> shown = new List<Reading>();
+
+	public TableTile(WidgetKind kind, int index, Palette p, Metrics m, Settings s, bool graph = false)
 		: base(kind, index, p, m, s, half: false)
 	{
+		this.graph = graph;
 		StackPanel stackPanel = new StackPanel
 		{
 			Spacing = 4.0,
@@ -30,6 +36,12 @@ public sealed class TableTile : SummaryTile
 		stackPanel.Children.Add(base.Head);
 		stackPanel.Children.Add(table);
 		stackPanel.Children.Add(Extras);
+		// Graph designs: the free height goes below the lines, not between the title and the first line,
+		// so in a bar the lines of all cards start right under their titles.
+		if (graph)
+		{
+			stackPanel.Tag = null;
+		}
 		base.Child = stackPanel;
 	}
 
@@ -77,13 +89,58 @@ public sealed class TableTile : SummaryTile
 	protected override void Show(Summary sum)
 	{
 		List<Reading> list = Readings.For(Kind, Index, base.Last.Snap, base.Last.History, S, P);
-		Shape(list.Count);
+		shown = list;
+		if (graph)
+		{
+			// Lines of further values from the last update are emptied first, so they do not count as
+			// "already shown" when the values are picked again; they are filled in AdjustExtras.
+			Shape(Math.Max(rows.Count, list.Count));
+			for (int i = list.Count; i < rows.Count; i++)
+			{
+				rows[i].Label.Text = rows[i].Value.Text = "";
+			}
+		}
+		else
+		{
+			Shape(list.Count);
+		}
 		for (int i = 0; i < list.Count; i++)
 		{
-			rows[i].Label.Text = list[i].Label;
-			rows[i].Bar.Set(list[i].Fraction, list[i].Color);
-			rows[i].Value.Text = list[i].Value;
-			rows[i].Value.Foreground = Palette.Brush((list[i].Color == P.Cool) ? P.Ink : list[i].Color);
+			Fill(i, list[i].Label, list[i].Value, list[i].Fraction, list[i].Color);
 		}
+	}
+
+	private void Fill(int i, string label, string value, double? fraction, Color color)
+	{
+		rows[i].Label.Text = label;
+		rows[i].Bar.IsVisible = fraction.HasValue;
+		rows[i].Bar.Set(fraction ?? 0, color);
+		rows[i].Value.Text = value;
+		rows[i].Value.Foreground = Palette.Brush((color == P.Cool) ? P.Ink : color);
+	}
+
+	protected override List<(string Label, string Value)> AdjustExtras(List<(string Label, string Value)> items)
+	{
+		if (!graph)
+		{
+			return items;
+		}
+		int n = shown.Count + items.Count;
+		if (rows.Count != n)
+		{
+			Shape(n);
+			for (int i = 0; i < shown.Count; i++)
+			{
+				Fill(i, shown[i].Label, shown[i].Value, shown[i].Fraction, shown[i].Color);
+			}
+		}
+		for (int k = 0; k < items.Count; k++)
+		{
+			var (label, value) = items[k];
+			double? fraction = SegmentScale.Fraction(Kind, label, value, Last.Snap);
+			Color color = value.Contains('°') && fraction is double heat ? P.At(heat) : P.Cool;
+			Fill(shown.Count + k, label, value, fraction, color);
+		}
+		return new List<(string Label, string Value)>();
 	}
 }

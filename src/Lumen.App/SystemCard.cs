@@ -18,9 +18,10 @@ public sealed class SystemCard : Card
 		Body.Children.Add(Ui.Stack(0.0, textBlock, hero));
 		stats = Stats(("system.boot", L.T("Started")), ("system.processes", L.T("Processes")), ("system.threads", L.T("Threads")));
 		Body.Children.Add(ExecutableLocation.Create(p, false));
+        WidgetPresentation.Sensor((Control)hero.Parent!, "system.uptime");
 	}
 
-	public override void Update(Snapshot s, History h)
+	protected override void UpdateReadings(Snapshot s, History h)
 	{
 		SystemInfo system = s.System;
 		base.Subtitle = (((object)system == null) ? "" : (system.Os + " · " + system.Build));

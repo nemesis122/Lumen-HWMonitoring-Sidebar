@@ -39,9 +39,11 @@ public sealed class MemoryCard : Card
 			Body.Children.Add(bar);
 		}
 		stats = Stats(("mem.free", L.T("Available")), ("mem.total", L.T("Installed")), ("mem.peak", L.T("2-min peak")));
+        WidgetPresentation.Sensor(hero, "mem.used");
+        WidgetPresentation.Sensor(load, "mem.load");
 	}
 
-	public override void Update(Snapshot s, History h)
+	protected override void UpdateReadings(Snapshot s, History h)
 	{
 		MemoryInfo memory = s.Memory;
 		var (value, text) = Format.Split(Format.Gigabytes(memory?.UsedGb));

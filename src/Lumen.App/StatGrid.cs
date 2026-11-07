@@ -15,6 +15,9 @@ public static class StatGrid
 	{
 		double result;
 		return new StatPanel((from c in columns.Split(',')
-			select (!(c.Trim() == "*")) ? ((!double.TryParse(c.Trim().TrimEnd('*'), NumberStyles.Float, CultureInfo.InvariantCulture, out result)) ? 1.0 : result) : 1.0).ToArray(), stats);
+			select (!(c.Trim() == "*")) ? ((!double.TryParse(c.Trim().TrimEnd('*'), NumberStyles.Float, CultureInfo.InvariantCulture, out result)) ? 1.0 : result) : 1.0).ToArray(), stats)
+		{
+			Balanced = true
+		};
 	}
 }

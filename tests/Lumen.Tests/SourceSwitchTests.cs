@@ -171,14 +171,14 @@ public class SourceSwitchTests
 
 public class StyleCoverageTests
 {
-    // Every widget except the notes offers every style, and every style has a card for every such widget.
+    // Every widget offers every style except those with a single design of their own (notes, timer). The overview offers every design as a list in that design's look.
     [Fact] public void EveryWidgetButNotesHasEveryStyle()
     {
         var without = Enum.GetValues<WidgetKind>().Where(k => !Settings.HasStyles(k)).ToArray();
-        Assert.Equal(new[] { WidgetKind.Notes }, without);
+        Assert.Equal(new[] { WidgetKind.Notes, WidgetKind.Timer }, without);
     }
 
-    [Fact] public void OldStyleNamesStillLoad()
+    [Fact] public void RemovedStyleNamesFallBackWithoutResettingSettings()
     {
         string path = Path.Combine(Path.GetTempPath(), "lumen-style-" + Guid.NewGuid() + ".json");
         try
@@ -189,10 +189,10 @@ public class StyleCoverageTests
             s.BarHeight = 44;
             s.Save(path);
             var back = Settings.Load(path);
-            Assert.Equal(WidgetStyle.DualRing, back.Widgets.Single(w => w.Kind == WidgetKind.Cpu).Style);
-            Assert.Equal(WidgetStyle.Graph, back.Widgets.Single(w => w.Kind == WidgetKind.Gpu).Style);
+            Assert.Equal(WidgetStyle.Standard, back.Widgets.Single(w => w.Kind == WidgetKind.Cpu).Style);
+            Assert.Equal(WidgetStyle.Standard, back.Widgets.Single(w => w.Kind == WidgetKind.Gpu).Style);
             Assert.Equal(44, back.BarHeight);
-            Assert.True(Settings.IsHalf(back.Widgets.Single(w => w.Kind == WidgetKind.Cpu)));
+            Assert.False(Settings.IsHalf(back.Widgets.Single(w => w.Kind == WidgetKind.Cpu)));
         }
         finally { File.Delete(path); }
     }
@@ -200,14 +200,14 @@ public class StyleCoverageTests
 
 public class BarRowTests
 {
-    // 19 widgets, the graphics widget showing two adapters: 20 cards in 3 rows become 7, 7, 6.
+    // 20 widgets, the graphics widget showing two adapters: 21 cards in 3 rows become 7, 7, 7.
     [Fact] public void RowsAreEvenCountingCards()
     {
         var s = new Settings { Edge = Edge.Top, Columns = 3 };
-        foreach (var w in s.Widgets) w.Visible = w.Kind != WidgetKind.Notes;
+        foreach (var w in s.Widgets) w.Visible = Settings.HasStyles(w.Kind) && w.Kind != WidgetKind.DriveHealth;
         int Cards(WidgetSlot w) => w.Kind == WidgetKind.Gpu ? 2 : 1;
         var rows = s.Layout(cards: Cards);
-        Assert.Equal(new[] { 7, 7, 6 }, rows.Select(r => r.Sum(Cards)));
+        Assert.Equal(new[] { 7, 7, 7 }, rows.Select(r => r.Sum(Cards)));
         // The order reads left to right, row after row.
         Assert.Equal(s.Widgets.Where(w => w.Visible).Select(w => w.Kind), rows.SelectMany(r => r).Select(w => w.Kind));
     }

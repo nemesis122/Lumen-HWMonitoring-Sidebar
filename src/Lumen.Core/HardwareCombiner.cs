@@ -40,6 +40,11 @@ public sealed class HardwareCombiner
 		{
 			builtin = input.Builtin;
 			cpuInfo = SensorPicker.Cpu(builtin, input.SystemLoad);
+			if (input.Ohm.Count > 0)
+			{
+				// OpenHardwareMonitor knows some older CPUs and boards that LibreHardwareMonitor misses.
+				cpuInfo = SensorMerge.FillCpu(cpuInfo, SensorPicker.Cpu(input.Ohm, input.SystemLoad), Log);
+			}
 			if ((object)cpuInfo != null && !cpuInfo.Temperature.HasValue)
 			{
 				double? num = input.FallbackCpuTemperature?.Invoke();
@@ -123,7 +128,24 @@ public sealed class HardwareCombiner
 			{
 				UsedPercent = UsedOnVolumes(d.Letters, input.Volumes)
 			} : d).ToList();
-		return new HardwareView(cpuInfo, list, list2, readOnlyList ?? SensorPicker.Fans(builtin), readOnlyList2 ?? SensorPicker.BoardTemps(builtin.FirstOrDefault((SensorNode n) => n.IsBoard)), text, builtin);
+		IReadOnlyList<SensorPicker.FanReading> fans = readOnlyList ?? SensorPicker.Fans(builtin);
+		IReadOnlyList<TempReading> boardTemps = readOnlyList2 ?? SensorPicker.BoardTemps(builtin.FirstOrDefault((SensorNode n) => n.IsBoard));
+		if (!paused && input.Ohm.Count > 0)
+		{
+			if (fans.Count == 0)
+			{
+				fans = SensorPicker.Fans(input.Ohm);
+			}
+			if (boardTemps.Count == 0)
+			{
+				boardTemps = SensorPicker.BoardTemps(input.Ohm.FirstOrDefault((SensorNode n) => n.IsBoard));
+			}
+			if (text == null)
+			{
+				text = input.Ohm.FirstOrDefault((SensorNode n) => n.IsBoard)?.Name;
+			}
+		}
+		return new HardwareView(cpuInfo, list, list2, fans, boardTemps, text, builtin);
 	}
 
 	private static List<DiskInfo> Number(List<DiskInfo> disks, IReadOnlyList<SensorMerge.PhysicalDisk> physical)

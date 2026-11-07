@@ -42,7 +42,7 @@ public sealed class NotesCard : Card
 		Body.Children.Add(box);
 	}
 
-	public override void Update(Snapshot s, History h)
+	protected override void UpdateReadings(Snapshot s, History h)
 	{
 	}
 }
