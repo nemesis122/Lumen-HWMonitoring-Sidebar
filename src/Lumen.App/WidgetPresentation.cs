@@ -13,8 +13,14 @@ public static class WidgetPresentation
         public string Key = "";
         public double FontSize, Width, Height, MinHeight, LetterSpacing, MinimumColumnWidth, MaxWidth, MaxHeight;
         public bool Captured;
+        public bool Steady;
+        public Control? Cell;
+        public double CellMin;
+        public string Row = "";
     }
     private static readonly ConditionalWeakTable<Control, Original> originals = new();
+
+    private static readonly ConditionalWeakTable<Control, Dictionary<string, double>> widest = new();
 
     public static T Sensor<T>(T control, string key) where T : Control
     {
@@ -55,12 +61,42 @@ public static class WidgetPresentation
             {
                 word.Text = said.Replace("Temperature", "Temp").Replace("TEMPERATURE", "TEMP").Replace("temperature", "temp");
             }
+            // Numbers in a column sized to its content: the column keeps the widest width seen, so the bar or
+            // label beside it does not get longer and shorter as the digits change ("0" ↔ "1130 rpm"). The
+            // width is remembered per widget and row name, so rows that are built again keep it too.
+            if (control is TextBlock { FontFeatures: not null } steady && !original.Steady)
+            {
+                Control cell = steady;
+                while (cell.Parent is Border wrap && wrap.Child == cell) cell = wrap;
+                if (cell.Parent is Grid grid && grid.ColumnDefinitions.Count > 1 && Grid.GetColumn(cell) == grid.ColumnDefinitions.Count - 1
+                    && grid.ColumnDefinitions[^1].Width.IsAuto && string.IsNullOrEmpty(grid.ColumnDefinitions[^1].SharedSizeGroup)
+                    && grid.ColumnDefinitions.Any(c => c.Width.IsStar))
+                {
+                    original.Steady = true;
+                    original.Cell = cell;
+                    original.CellMin = cell.MinWidth;
+                    original.Row = grid.Children.OfType<TextBlock>().FirstOrDefault(x => x.FontFeatures == null && Grid.GetRow(x) == Grid.GetRow(cell))?.Text ?? "#" + Grid.GetRow(cell);
+                    if (cell == steady) steady.TextAlignment = Avalonia.Media.TextAlignment.Right;
+                }
+            }
             if (control is TextBlock number)
             {
                 // Big figures (the main value) follow "Main value size", the smaller ones in the list
                 // follow "Value size", text follows "Label size".
                 double scale = number.FontFeatures == null ? labels : original.FontSize >= HeroFont ? hero : values;
                 number.FontSize = original.FontSize * scale;
+                // The value column keeps the widest value seen (per widget, row name and size), measured before
+                // the layout pass, so it never needs an extra pass.
+                if (original.Cell is Control cell2 && cell2.IsVisible)
+                {
+                    var memory = widest.GetOrCreateValue(root);
+                    string key = original.Row + "|" + number.FontSize.ToString("0.0");
+                    cell2.MinWidth = original.CellMin;
+                    cell2.Measure(Size.Infinity);
+                    double width = Math.Max(memory.GetValueOrDefault(key), Math.Ceiling(cell2.DesiredSize.Width));
+                    memory[key] = width;
+                    cell2.MinWidth = Math.Max(original.CellMin, width);
+                }
                 number.LetterSpacing = original.LetterSpacing * scale;
                 if (double.IsFinite(original.Width)) number.Width = original.Width * scale;
             }

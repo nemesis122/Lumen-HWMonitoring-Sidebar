@@ -45,7 +45,7 @@ public abstract class FreshTile : SummaryTile
 			{
 				continue;
 			}
-			int i = list.FindIndex(r => Key(r.Value) == k);
+			int i = list.FindIndex(r => Key(r.Value) == k && r.Label != L.T("2-min peak"));
 			if (i >= 0)
 			{
 				list.RemoveAt(i);
@@ -115,7 +115,9 @@ public abstract class FreshTile : SummaryTile
 				shown.Add(Key(string.Concat(row.Children.OfType<TextBlock>().Select(x => x.Text))));
 			}
 		}
-		return items.Where(i => !shown.Contains(Key(i.Value))).ToList();
+		// A 2-minute peak is its own reading even when it equals the current value right now; dropping it
+		// for that moment would make the card shorter and everything below it jump.
+		return items.Where(i => !shown.Contains(Key(i.Value)) || i.Label == L.T("2-min peak")).ToList();
 	}
 
 	protected static Color Opaque(Color c) => Color.FromArgb(255, c.R, c.G, c.B);

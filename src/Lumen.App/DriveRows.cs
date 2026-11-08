@@ -97,6 +97,10 @@ public sealed class DriveRows : StackPanel
 			label.Text = r.Label;
 			value.Text = r.Value;
 			value.Foreground = Palette.Brush(valueColor(r));
+			// The value column keeps the widest value seen, so the bars do not get longer and shorter as the
+			// digits change ("9.6 MB/s" ↔ "61 MB/s").
+			value.Measure(Size.Infinity);
+			value.MinWidth = Math.Max(value.MinWidth, Math.Ceiling(value.DesiredSize.Width));
 			setBar(bar, r);
 		}
 		IsVisible = drives.Count > 0;

@@ -284,12 +284,13 @@ public sealed class EvolutionTile : SummaryTile
 			// All drives side by side, each with its temperature; none of them is special.
 			return readings.ToList();
 		case WidgetKind.Cooling:
-			// Fans when there are any, fastest first; a stopped fan reads "off". Each bar is measured against
+			// Fans when there are any, in their own order (a fan that speeds up does not swap places with
+			// another); a stopped fan reads "off". Each bar is measured against
 			// the highest speed that fan has reached, so a slow case fan is not a short stub next to the pump.
 			if (snap.Fans.Count > 0)
 			{
 				Color accent = Accents.For(Kind, Own, P);
-				return snap.Fans.OrderByDescending(f => f.Rpm).Take(8).Select(f =>
+				return snap.Fans.Take(8).Select(f =>
 				{
 					string name = Names.Fan(f.Name, S);
 					double peak = Math.Max(1500, Math.Max(f.Rpm, fanPeaks.GetValueOrDefault(f.Name)));

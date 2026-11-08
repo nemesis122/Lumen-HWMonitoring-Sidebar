@@ -150,12 +150,12 @@ public class EvolutionPolishTests
     }
 
     [Fact]
-    public void Fans_are_sorted_and_a_stopped_fan_reads_off()
+    // Fans stay in the sensor order, so a fan that speeds up never swaps places with another.
+    public void Fans_keep_their_order_and_a_stopped_fan_reads_off()
     {
         var texts = UiHost.Run(() => Show(WidgetKind.Cooling).Texts);
         var rpm = texts.Where(t => t.EndsWith("U/⁠min")).Select(t => double.Parse(t.Split(' ')[0])).ToList();
         Assert.True(rpm.Count >= 4);
-        Assert.Equal(rpm.OrderByDescending(x => x), rpm);
         Assert.Contains("Aus", texts);
     }
 

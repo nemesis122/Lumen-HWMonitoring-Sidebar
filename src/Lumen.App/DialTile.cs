@@ -354,7 +354,8 @@ public sealed class DialTile : SummaryTile
 	{
 		TempReading? board = Summaries.CoolingHero(snap);
 		TempDial("board", S.Shows("cooling.board") ? board?.Celsius : null, snap.Time, board != null ? Names.Temp(board.Name, S) : L.T("Temperature"));
-		var fans = S.Shows("cooling.fans") ? snap.Fans.OrderByDescending(f => f.Rpm).ToList() : new List<FanInfo>();
+		// Fans keep their order (not sorted by speed): a fan that speeds up or stops stays in its place.
+		var fans = S.Shows("cooling.fans") ? snap.Fans.ToList() : new List<FanInfo>();
 		foreach (FanInfo fan in fans.Take(4))
 		{
 			specs.Add(fan.Rpm > 0 ? Value("fan:" + fan.Name, Names.Fan(fan.Name, S), fan.Rpm, snap.Time, v => Format.Rpm(v)) : new Spec("fan:" + fan.Name, Names.Fan(fan.Name, S), L.T("Off"), null, null, P.Soft));
@@ -519,6 +520,8 @@ public sealed class DialTile : SummaryTile
 		// sidebar could not plan the height (cards jumping from update to update).
 		private readonly AreaChart chart = new AreaChart { Height = 16, FillOpacity = 0.22, LineWidth = 1.5, Tag = "fixed" };
 
+		private static readonly HashSet<string> hadCurve = new();
+
 		public TileView(Palette p)
 		{
 			CornerRadius = new CornerRadius(8);
@@ -541,7 +544,11 @@ public sealed class DialTile : SummaryTile
 			value.Text = s.Value;
 			value.Foreground = Palette.Brush(s.Color ?? p.Ink);
 			bool curve = s.Series != null && s.Series.Count(double.IsFinite) > 1;
-			chart.IsVisible = curve;
+			// A tile of a value that has a curve keeps the curve's room while it has none for a moment (a fan
+			// that stops), so the tiles below do not move up and down.
+			if (curve) hadCurve.Add(s.Key);
+			chart.IsVisible = curve || hadCurve.Contains(s.Key);
+			chart.Opacity = curve ? 1 : 0;
 			if (curve)
 			{
 				chart.Max = null;
