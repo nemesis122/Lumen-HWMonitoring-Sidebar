@@ -164,7 +164,8 @@ public static class CompleteReadings
         }
         // The names are written in English above; every part ("C: · Temperature") is shown in the
         // sidebar's language.
-        return rows.Select(r => r with { Label = Translate(r.Label) }).ToList();
+        return Steady.Keep("complete|" + kind + "|" + index, set, s, rows.Select(r => r with { Label = Translate(r.Label) }).ToList(),
+            r => r.Key, r => r.Value.Length == 0 || r.Value.StartsWith("—"));
     }
 
     private static string Translate(string label) =>

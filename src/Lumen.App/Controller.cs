@@ -24,6 +24,8 @@ public sealed class Controller
 
 	private readonly History history = new History();
 
+	private readonly SensorHold hold = new SensorHold();
+
 	private readonly ISnapshotSource source;
 
 	private readonly bool demo;
@@ -218,6 +220,9 @@ public sealed class Controller
 			}
 			Diagnostics.SetStage("read sensors");
 			Snapshot snapshot = await Task.Run((Func<Snapshot>)source.Read);
+			// A sensor that reports nothing for a moment keeps its last value, so no line or tile vanishes
+			// for a second and the widgets below it do not jump.
+			snapshot = hold.Apply(snapshot);
 			Diagnostics.SetStage("update widgets");
 			if (!demo || weather != null)
 			{

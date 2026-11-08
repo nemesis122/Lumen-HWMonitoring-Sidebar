@@ -39,7 +39,6 @@ public sealed class DriveRows : StackPanel
 	{
 		Spacing = spacing;
 		Tag = "elastic";
-		Grid.SetIsSharedSizeScope(this, true);
 		IsVisible = false;
 		this.labelSize = labelSize;
 		this.valueSize = valueSize;
@@ -80,7 +79,7 @@ public sealed class DriveRows : StackPanel
 				bar.VerticalAlignment = VerticalAlignment.Center;
 				bar.Margin = new Thickness(8, 0, 12, 0);
 				// Names and values share one width in every row, so all bars start and end at the same place.
-				var row = new Grid { ColumnDefinitions = { new ColumnDefinition(GridLength.Auto) { SharedSizeGroup = "name" }, new ColumnDefinition(1, GridUnitType.Star), new ColumnDefinition(GridLength.Auto) { SharedSizeGroup = "value" } } };
+				var row = new Grid { ColumnDefinitions = { new ColumnDefinition(GridLength.Auto) { SharedSizeGroup = "LumenName" }, new ColumnDefinition(1, GridUnitType.Star), new ColumnDefinition(GridLength.Auto) { SharedSizeGroup = "LumenValue" } } };
 				Grid.SetColumn(bar, 1);
 				Grid.SetColumn(value, 2);
 				row.Children.Add(label);

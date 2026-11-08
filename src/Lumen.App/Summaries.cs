@@ -311,7 +311,10 @@ public static class Summaries
 		return d.Letters;
 	}
 
-	public static List<(string Label, string Value)> Extras(WidgetKind kind, int index, Snapshot s, History h, Settings set)
+	public static List<(string Label, string Value)> Extras(WidgetKind kind, int index, Snapshot s, History h, Settings set) =>
+		Steady.Keep("extras|" + kind + "|" + index, set, s, RawExtras(kind, index, s, h, set), e => e.Label, e => e.Value.Length == 0 || e.Value.StartsWith("—"));
+
+	private static List<(string Label, string Value)> RawExtras(WidgetKind kind, int index, Snapshot s, History h, Settings set)
 	{
 		List<(string, string)> list = new List<(string, string)>();
 		GpuInfo gpuInfo;

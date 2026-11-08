@@ -9,7 +9,9 @@ namespace Lumen.App;
 public static class Readings
 {
     public static List<Reading> For(WidgetKind kind, int index, Snapshot s, History h, Settings set, Palette p) =>
-        Raw(kind, index, s, h, set, p).Where(r => set.Shows(WidgetSensors.ReadingKey(kind, r.Label))).ToList();
+        Steady.Keep("readings|" + kind + "|" + index, set, s,
+            Raw(kind, index, s, h, set, p).Where(r => set.Shows(WidgetSensors.ReadingKey(kind, r.Label))).ToList(),
+            r => r.Label, r => r.Value.Length == 0 || r.Value.StartsWith("—"));
 
 	private static List<Reading> Raw(WidgetKind kind, int index, Snapshot s, History h, Settings set, Palette p)
 	{

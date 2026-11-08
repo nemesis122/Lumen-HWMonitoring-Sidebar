@@ -52,10 +52,15 @@ if (args.Contains("--jump"))
         window.Show();
         var first = new Dictionary<string, Rect>();
         var innerFirst = new Dictionary<string, Rect>();
+        var hold = new SensorHold();
         var innerMoves = new Dictionary<string, double>();
+        var innerFlips = new Dictionary<string, int>();
+        var cardFlips = new Dictionary<string, int>();
+        var cardPrev = new Dictionary<string, Rect>();
+        var innerPrev = new Dictionary<string, Rect>();
         var moves = new Dictionary<string, double>();
         double minBottom = 1e9, maxBottom = 0;
-        for (int i = 0; i < 60; i++)
+        for (int i = 0; i < int.Parse(Environment.GetEnvironmentVariable("FRAMES") ?? "60"); i++)
         {
             var sn = source.Read();
             if (Environment.GetEnvironmentVariable("CHAOS") == "1")
@@ -72,7 +77,19 @@ if (args.Contains("--jump"))
                     Memory = sn.Memory! with { UsedGb = 4 + rnd.NextDouble() * 27 },
                     Fans = sn.Fans.Select(f => f with { Rpm = rnd.Next(2) == 0 ? 0 : rnd.Next(400, 2600) }).ToArray()
                 };
+                if (Environment.GetEnvironmentVariable("GAPS") == "1")
+                {
+                    // Sensors that drop out for a reading (null), as real hardware sometimes does.
+                    double? Gap(double? v) => rnd.Next(4) == 0 ? null : v;
+                    sn = sn with
+                    {
+                        Cpu = sn.Cpu! with { FanRpm = Gap(sn.Cpu.FanRpm), PowerW = Gap(sn.Cpu.PowerW), Voltage = Gap(sn.Cpu.Voltage), ClockMhz = Gap(sn.Cpu.ClockMhz) },
+                        Gpus = sn.Gpus.Select(g => g with { FanRpm = Gap(g.FanRpm), HotSpot = Gap(g.HotSpot), PowerW = Gap(g.PowerW), ClockMhz = Gap(g.ClockMhz) }).ToArray(),
+                        Disks = sn.Disks.Select(d => d with { Temperature = Gap(d.Temperature), ReadBytesPerSecond = Gap(d.ReadBytesPerSecond) }).ToArray()
+                    };
+                }
             }
+            if (Environment.GetEnvironmentVariable("HOLD") != "0") sn = hold.Apply(sn);
             h2.Record(sn); view.Update(sn with { Gpus = sn.Gpus.Take(1).ToArray(), Battery = null }, h2);
             Dispatcher.UIThread.RunJobs(); window.CaptureRenderedFrame();
             if (i < 5) continue;
@@ -85,6 +102,8 @@ if (args.Contains("--jump"))
                 if (!first.ContainsKey(key)) first[key] = r;
                 var f = first[key]; double d = Math.Max(Math.Abs(f.Top - r.Top), Math.Abs(f.Bottom - r.Bottom));
                 moves[key] = Math.Max(moves.GetValueOrDefault(key), d);
+                if (cardPrev.TryGetValue(key, out var cp) && i > 20 && (Math.Abs(cp.Top - r.Top) > 1.5 || Math.Abs(cp.Bottom - r.Bottom) > 1.5)) cardFlips[key] = cardFlips.GetValueOrDefault(key) + 1;
+                cardPrev[key] = r;
                 if (Environment.GetEnvironmentVariable("PARTS") == key)
                 {
                     var hs = Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(c).OfType<Control>().Select(x => x.GetType().Name + (x is TextBlock tb ? "'" + tb.Text + "'" : "") + "=" + x.Bounds.Height.ToString("F1")).ToList();
@@ -94,7 +113,7 @@ if (args.Contains("--jump"))
                 if (r.Left < 250) colBottomL = Math.Max(colBottomL, r.Bottom); else colBottomR = Math.Max(colBottomR, r.Bottom);
             }
             minBottom = Math.Min(minBottom, Math.Min(colBottomL, colBottomR)); maxBottom = Math.Max(maxBottom, Math.Max(colBottomL, colBottomR));
-            if (i == 59) Console.Write($"{style,-14} {density,-11} L={colBottomL,6:F1} R={colBottomR,6:F1} ");
+            if (i == int.Parse(Environment.GetEnvironmentVariable("FRAMES") ?? "60") - 1) Console.Write($"{style,-14} {density,-11} L={colBottomL,6:F1} R={colBottomR,6:F1} ");
             if (Environment.GetEnvironmentVariable("INNER") == "1")
             {
                 foreach (var c in cards)
@@ -113,13 +132,26 @@ if (args.Contains("--jump"))
                         if (!innerFirst.TryGetValue(key, out var f0)) { innerFirst[key] = r; continue; }
                         double d = Math.Abs(f0.Top - r.Top);
                         if (bar || label) d = Math.Max(d, Math.Max(Math.Abs(f0.Left - r.Left), bar ? Math.Abs(f0.Width - r.Width) : 0));
+                        // Numbers: their start (left-aligned) or end (right-aligned) should stay put.
+                        if (!bar && !label && Environment.GetEnvironmentVariable("NUMS") == "1")
+                        {
+                            bool right = x is TextBlock tn && (tn.TextAlignment == Avalonia.Media.TextAlignment.Right || tn.HorizontalAlignment == Avalonia.Layout.HorizontalAlignment.Right);
+                            d = Math.Max(d, right ? Math.Abs(f0.Right - r.Right) : Math.Abs(f0.Left - r.Left));
+                        }
                         if (d > 1.5) innerMoves[key] = Math.Max(innerMoves.GetValueOrDefault(key), d);
+                        // Count changes from one frame to the next (a one-time widening is fine; going back
+                        // and forth is jumping).
+                        if (innerPrev.TryGetValue(key, out var p0) && i > 20 && (Math.Abs(p0.Top - r.Top) > 1.5 || ((bar || label) && (Math.Abs(p0.Left - r.Left) > 1.5 || (bar && Math.Abs(p0.Width - r.Width) > 1.5)))))
+                            innerFlips[key] = innerFlips.GetValueOrDefault(key) + 1;
+                        innerPrev[key] = r;
                     }
                 }
             }
         }
         Console.WriteLine($"range {minBottom:F1}..{maxBottom:F1} maxmove {moves.Values.DefaultIfEmpty(0).Max():F1}");
         foreach (var kv in innerMoves.OrderByDescending(k => k.Value).Take(25)) Console.WriteLine($"   inner {kv.Value,5:F1}  {kv.Key}");
+        foreach (var kv in cardFlips.Where(k => k.Value >= 3)) Console.WriteLine($"   cardflips {kv.Value,3}  {kv.Key}");
+        foreach (var kv in innerFlips.Where(k => k.Value >= 3).OrderByDescending(k => k.Value).Take(25)) Console.WriteLine($"   flips {kv.Value,3}  {kv.Key}");
         using var image = window.CaptureRenderedFrame()!; image.Save(Path.Combine(output, $"jump-{style}-{density}.png"));
         window.Close();
     }

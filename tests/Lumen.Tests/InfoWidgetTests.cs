@@ -265,3 +265,59 @@ public class InfoWidgetTests
         Assert.True(found.Count == 0, kind + ": " + string.Join(" | ", found));
     }
 }
+
+// A sensor that reports nothing for a moment keeps its last value (so no line vanishes and nothing jumps);
+// one that stays away is let go.
+public class SensorHoldTests
+{
+    [Fact]
+    public void Brief_gaps_keep_the_last_value_and_long_gaps_let_go()
+    {
+        var (snap, _) = Render.Demo();
+        var hold = new SensorHold();
+        var first = hold.Apply(snap with { Cpu = snap.Cpu! with { PowerW = 78 } });
+        Assert.Equal(78, first.Cpu!.PowerW);
+        var gap = hold.Apply(snap with { Cpu = snap.Cpu! with { PowerW = null }, Fans = snap.Fans.Skip(1).ToArray() });
+        Assert.Equal(78, gap.Cpu!.PowerW);
+        Assert.Equal(snap.Fans.Count, gap.Fans.Count);
+        Assert.Equal(snap.Fans[0].Name, gap.Fans[0].Name);
+        Snapshot later = gap;
+        for (int i = 0; i < SensorHold.Patience + 1; i++) later = hold.Apply(snap with { Cpu = snap.Cpu! with { PowerW = null }, Fans = snap.Fans.Skip(1).ToArray() });
+        Assert.Null(later.Cpu!.PowerW);
+        Assert.Equal(snap.Fans.Count - 1, later.Fans.Count);
+    }
+}
+
+/// <summary>Every bar line of a widget starts and ends at the same place (name and value columns are shared).</summary>
+public class AlignedBarTests
+{
+    public static IEnumerable<object[]> Cases() =>
+        from style in new[] { WidgetStyle.Segments, WidgetStyle.SegmentGraph, WidgetStyle.TableGraph, WidgetStyle.FillBarsGraph, WidgetStyle.PillRowGraph,
+            WidgetStyle.BadgeListGraph, WidgetStyle.NeonHudGraph, WidgetStyle.Thermostat, WidgetStyle.RingPair }
+        from kind in new[] { WidgetKind.Cpu, WidgetKind.Gpu, WidgetKind.Memory, WidgetKind.Drives, WidgetKind.Network }
+        select new object[] { style, kind };
+
+    [Theory]
+    [MemberData(nameof(Cases))]
+    public void Bars_start_and_end_together(WidgetStyle style, WidgetKind kind)
+    {
+        var edges = UiHost.Run(() =>
+        {
+            L.Use("en");
+            var (snap, history) = Render.Demo();
+            var card = Cards.Create(kind, style, 0, Palette.For(true, false), Metrics.For(Density.Fit), new Settings { Language = "en" });
+            ((IWidget)card).Update(snap, history);
+            var window = new Window { Content = card, Width = 320, Height = 1200 };
+            window.Show();
+            for (int i = 0; i < 3; i++) { Dispatcher.UIThread.RunJobs(); window.CaptureRenderedFrame(); }
+            var bars = card.GetVisualDescendants().OfType<Control>()
+                .Where(c => c is FillBack or Meter or GradientBar or SegmentBar or RingBar && c.IsEffectivelyVisible && c.Parent is Grid g && g.ColumnDefinitions.Count == 3)
+                .Select(c => (c.TranslatePoint(default, card)!.Value.X, c.TranslatePoint(new Point(c.Bounds.Width, 0), card)!.Value.X)).ToList();
+            window.Close();
+            return bars;
+        });
+        if (edges.Count < 2) return;
+        Assert.True(edges.Max(e => e.Item1) - edges.Min(e => e.Item1) <= 1.5, $"{style}/{kind}: starts {string.Join(", ", edges.Select(e => e.Item1.ToString("0")))}");
+        Assert.True(edges.Max(e => e.Item2) - edges.Min(e => e.Item2) <= 1.5, $"{style}/{kind}: ends {string.Join(", ", edges.Select(e => e.Item2.ToString("0")))}");
+    }
+}

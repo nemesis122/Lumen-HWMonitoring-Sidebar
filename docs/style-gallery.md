@@ -2,7 +2,7 @@
 
 All 36 selectable designs of Lumen 4.0.0, rendered from the application with demo readings. Every widget can use its own design, and every register can have its own design.
 
-[Back to the README](../README.md) · [Release notes](release-notes/v4.0.0.md) · [Download](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.0.1)
+[Back to the README](../README.md) · [Release notes](release-notes/v4.0.0.md) · [Download](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.0.2)
 
 ## Hardware widgets, dark theme
 

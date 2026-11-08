@@ -17,6 +17,7 @@ public static class WidgetPresentation
         public Control? Cell;
         public double CellMin;
         public string Row = "";
+        public double AppliedGraphics = double.NaN;
     }
     private static readonly ConditionalWeakTable<Control, Original> originals = new();
 
@@ -37,6 +38,19 @@ public static class WidgetPresentation
         double graphics = settings.ActiveWidget?.Graphics ?? 1;
         double labels = settings.ActiveWidget?.Labels ?? 1;
         double hero = settings.ActiveWidget?.Hero ?? 1;
+        // Rows of the form "name – bar – value": every row of a widget shares one name width and one value
+        // width, so all bars start and end at the same place.
+        Grid.SetIsSharedSizeScope(root, true);
+        foreach (var row in root.GetLogicalDescendants().OfType<Grid>())
+        {
+            var cols = row.ColumnDefinitions;
+            if (cols.Count != 3 || !cols[0].Width.IsAuto || !cols[1].Width.IsStar || !cols[2].Width.IsAuto) continue;
+            bool bar = row.Children.Any(c => Grid.GetColumn(c) == 1 && c is FillBack or Meter or GradientBar or SegmentBar or RingBar or LevelBar);
+            bool name = row.Children.Any(c => Grid.GetColumn(c) == 0 && c is TextBlock { FontFeatures: null });
+            if (!bar || !name) continue;
+            cols[0].SharedSizeGroup = "LumenName";
+            cols[2].SharedSizeGroup = "LumenValue";
+        }
         foreach (var control in root.GetLogicalDescendants().OfType<Control>().Prepend(root))
         {
             var original = originals.GetOrCreateValue(control);
@@ -69,7 +83,7 @@ public static class WidgetPresentation
                 Control cell = steady;
                 while (cell.Parent is Border wrap && wrap.Child == cell) cell = wrap;
                 if (cell.Parent is Grid grid && grid.ColumnDefinitions.Count > 1 && Grid.GetColumn(cell) == grid.ColumnDefinitions.Count - 1
-                    && grid.ColumnDefinitions[^1].Width.IsAuto && string.IsNullOrEmpty(grid.ColumnDefinitions[^1].SharedSizeGroup)
+                    && grid.ColumnDefinitions[^1].Width.IsAuto
                     && grid.ColumnDefinitions.Any(c => c.Width.IsStar))
                 {
                     original.Steady = true;
@@ -115,8 +129,14 @@ public static class WidgetPresentation
                 if (double.IsFinite(original.Height)) control.Height = original.Height * graphics;
                 if (double.IsFinite(original.Width)) control.Width = original.Width * graphics;
             }
-            if (control is Meter or AreaChart or MirrorChart or Skyline or WaveChart or WeatherIcon or FillBack)
+            // Charts are also grown by the fitting panel to fill the column. Their height is set again only
+            // when the graphic size changes; resetting it on every update made the fitting panel grow them
+            // again each time, and with display scaling (125 %, 150 %) the result could differ by a pixel,
+            // so everything below a chart twitched once a second.
+            bool resize = !(control is AreaChart or MirrorChart) || original.AppliedGraphics != graphics;
+            if (control is Meter or AreaChart or MirrorChart or Skyline or WaveChart or WeatherIcon or FillBack && resize)
             {
+                original.AppliedGraphics = graphics;
                 if (double.IsFinite(original.Height)) control.Height = original.Height * graphics;
                 if (double.IsFinite(original.Width)) control.Width = original.Width * graphics;
                 // Fill backgrounds share their container with values: reserve enough height for both.

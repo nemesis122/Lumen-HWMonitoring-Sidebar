@@ -64,6 +64,8 @@ public sealed class EvolutionTile : SummaryTile
 
 	private static readonly HashSet<string> expanded = new();
 
+	private readonly Dictionary<string, double> laneWidth = new();
+
 	private static readonly Dictionary<string, double> fanPeaks = new();
 
 	private IBrush? normalBackground;
@@ -211,6 +213,14 @@ public sealed class EvolutionTile : SummaryTile
 		}
 
 		big.Text = sum.Value;
+		// The big number keeps its widest width (right-aligned), so the unit and the bar beside it stay in
+		// place when it goes from "35" to "9".
+		big.TextAlignment = TextAlignment.Right;
+		big.MinWidth = 0;
+		big.Measure(Size.Infinity);
+		string bkey = "big|" + big.FontSize.ToString("0.0");
+		laneWidth[bkey] = Math.Max(laneWidth.GetValueOrDefault(bkey), Math.Ceiling(big.DesiredSize.Width));
+		big.MinWidth = laneWidth[bkey];
 		big.Foreground = Palette.Brush(Heats(Kind) ? Shade(sum) : accent);
 		bigUnit.Text = sum.Value == "—" ? "" : sum.Unit;
 		// Drives and cooling name what the big number is (for example the board); no sensor names.
@@ -487,6 +497,14 @@ public sealed class EvolutionTile : SummaryTile
 			var (number, unit) = Format.Split(Format.Rate(rate));
 			lane.Value.Text = number;
 			lane.Value.Foreground = Palette.Brush(color);
+			// The number keeps the widest width it has had and stands right-aligned in it, so the unit
+			// beside it stays in place when the rate changes from "292" to "1.9".
+			lane.Value.TextAlignment = TextAlignment.Right;
+			lane.Value.MinWidth = 0;
+			lane.Value.Measure(Size.Infinity);
+			string wkey = key + "|" + lane.Value.FontSize.ToString("0.0");
+			laneWidth[wkey] = Math.Max(laneWidth.GetValueOrDefault(wkey), Math.Ceiling(lane.Value.DesiredSize.Width));
+			lane.Value.MinWidth = laneWidth[wkey];
 			lane.Unit.Text = unit;
 			lane.Bar.Animate(Summaries.NetFill(rate, link), color);
 			double[] series = history.Read(key);

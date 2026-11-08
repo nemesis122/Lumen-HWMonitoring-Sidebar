@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.LogicalTree;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -44,6 +45,12 @@ public sealed class SegmentTile : SummaryTile
 		// Drives: every drive as its own segment line.
 		drives = new DriveRows(8, 11, 13, p.Soft, () => new Meter { Height = 12, Palette = p, Segments = 20, RampBySegment = true },
 			(c, r) => ((Meter)c).Set(r.Fraction, r.Color), r => r.Color);
+		// In the graph variant reading and writing follow as lines of their own; the drive lines keep the
+		// same spacing as those instead of spreading over the free height.
+		if (graph)
+		{
+			drives.Tag = null;
+		}
         WidgetPresentation.Sensor(grid, WidgetSensors.PrimaryKey(kind));
 		secondRow = Line(L.T("Load"), out secondLabel, out second, out secondValue);
         WidgetPresentation.Sensor(secondRow, WidgetSensors.SecondaryKey(kind));
@@ -83,12 +90,22 @@ public sealed class SegmentTile : SummaryTile
 			v.TextAlignment = TextAlignment.Right;
 			v.VerticalAlignment = VerticalAlignment.Center;
 			Grid result = Ui.Columns("Auto,*,Auto", l, meter, v);
-			meter.Margin = new Thickness(0.0, 0.0, 10.0, 0.0);
+			Share(result);
+			meter.Margin = new Thickness(8, 0, 12, 0);
 			return result;
 		}
 	}
 
 	private const double LabelWidth = 84;
+
+	// One name width and one value width for every line of the widget (main lines, further lines and
+	// drive lines), so all bars start and end at the same place.
+	private static Grid Share(Grid row)
+	{
+		row.ColumnDefinitions[0].SharedSizeGroup = "LumenName";
+		row.ColumnDefinitions[2].SharedSizeGroup = "LumenValue";
+		return row;
+	}
 
 	protected override List<(string Label, string Value)> AdjustExtras(List<(string Label, string Value)> items)
 	{
@@ -101,14 +118,14 @@ public sealed class SegmentTile : SummaryTile
 			var l = Ui.Text(label, 11.0, palette.Soft, FontWeight.Medium);
 			l.Width = Kind == WidgetKind.Drives ? double.NaN : LabelWidth;
 			l.MinWidth = 46;
-			l.Margin = new Thickness(0, 0, 8, 0);
 			l.TextTrimming = TextTrimming.CharacterEllipsis;
 			l.VerticalAlignment = VerticalAlignment.Center;
 			var v = Ui.Text(value, 13.0, palette.Ink, FontWeight.DemiBold, numbers: true);
 			v.MinWidth = 58.0;
 			v.TextAlignment = TextAlignment.Right;
 			v.VerticalAlignment = VerticalAlignment.Center;
-			var meter = new Meter { Height = 12.0, Palette = palette, Segments = 20, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
+			// The same spacing as the main lines and the drive lines, so every bar starts and ends together.
+			var meter = new Meter { Height = 12.0, Palette = palette, Segments = 20, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 12, 0) };
 			double? fraction = SegmentScale.Fraction(Kind, label, value, Last.Snap);
 			if (fraction is double fr)
 			{
@@ -125,10 +142,52 @@ public sealed class SegmentTile : SummaryTile
 				// Text without a scale (an address, a model name): no bar.
 				meter.IsVisible = false;
 			}
-			more.Children.Add(Ui.Columns("Auto,*,Auto", l, meter, v));
+			more.Children.Add(Share(Ui.Columns("Auto,*,Auto", l, meter, v)));
 		}
 		more.IsVisible = more.Children.Count > 0;
 		return new List<(string Label, string Value)>();
+	}
+
+	// Widest name and value seen so far, per text size, so the columns never shrink and jump back.
+	private readonly Dictionary<string, double> widest = new();
+
+	// Every line of the widget (main lines, further lines, drive lines) gets one name width and one value
+	// width before it is laid out, so all bars start and end at the same place. A line without a bar
+	// (an address) keeps its own widths.
+	protected override Size MeasureOverride(Size available)
+	{
+		var rows = this.GetLogicalDescendants().OfType<Grid>()
+			.Where(g => g.ColumnDefinitions.Count == 3 && g.ColumnDefinitions[0].SharedSizeGroup == "LumenName" && g.IsVisible && g.Children.Any(c => Grid.GetColumn(c) == 1 && c.IsVisible) && g.GetLogicalAncestors().OfType<Control>().All(a => a.IsVisible))
+			.ToList();
+		if (rows.Count > 1)
+		{
+			double Widest(int column)
+			{
+				double w = 0;
+				string size = "";
+				foreach (var row in rows)
+				{
+					foreach (var cell in row.Children.Where(c => Grid.GetColumn(c) == column && c.IsVisible))
+					{
+						cell.Measure(Size.Infinity);
+						w = Math.Max(w, Math.Ceiling(cell.DesiredSize.Width));
+						if (size.Length == 0 && cell is TextBlock tb) size = tb.FontSize.ToString("0.#");
+					}
+				}
+				string key = column + "|" + size;
+				w = Math.Max(w, widest.GetValueOrDefault(key));
+				widest[key] = w;
+				return w;
+			}
+			double name = Widest(0), value = Widest(2);
+			foreach (var row in rows)
+			{
+				var cols = row.ColumnDefinitions;
+				if (cols[0].Width.Value != name || !cols[0].Width.IsAbsolute) cols[0].Width = new GridLength(name);
+				if (cols[2].Width.Value != value || !cols[2].Width.IsAbsolute) cols[2].Width = new GridLength(value);
+			}
+		}
+		return base.MeasureOverride(available);
 	}
 
 	protected override void Show(Summary sum)
