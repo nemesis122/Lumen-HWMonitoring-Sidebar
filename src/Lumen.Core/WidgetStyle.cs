@@ -113,7 +113,17 @@ public enum WidgetStyle
     // Capsule row, badge list and neon HUD with every further value in the design's own bar as well.
     PillRowGraph,
     BadgeListGraph,
-    NeonHudGraph
+    NeonHudGraph,
+    // Calm designs after Apple's system apps: a grey card with a ring and a list, and square widget tiles.
+    Pure,
+    PureWidgets,
+    CleanDark,
+    CompactPro,
+    PerformanceView,
+    PureBar,
+    PureNumber,
+    PureSegments,
+    PureWidgetsRight
 }
 
 

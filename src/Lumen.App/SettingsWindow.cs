@@ -372,7 +372,7 @@ public sealed class SettingsWindow : Window
 		searchIndex.Clear();
 		List<(string, string, Control[])> list = new List<(string, string, Control[])>();
 		building = 0;
-		Owns("Widgets", "HiddenValues");
+		Owns("Widgets", "HiddenValues", "ShowIntegratedGpu");
 		list.Add((L.T("Widgets"), "M2,2.5 H6.5 V7 H2 Z M9.5,2.5 H14 V7 H9.5 Z M2,9 H6.5 V13.5 H2 Z M9.5,9 H14 V13.5 H9.5 Z", WidgetsPage()));
 		building = 1;
 		list.Add((L.T("Appearance"), "M8,5.5 A2.5,2.5 0 1 1 7.99,5.5 Z M8,1 V3 M8,13 V15 M1,8 H3 M13,8 H15 M3.05,3.05 L4.46,4.46 M11.54,11.54 L12.95,12.95 M3.05,12.95 L4.46,11.54 M11.54,4.46 L12.95,3.05", AppearancePage()));
@@ -404,10 +404,7 @@ public sealed class SettingsWindow : Window
 		}, (double v) => $"{v:0} °C"), L.T("Above this the temperature turns red."), "TemperatureWarning"), Row(L.T("Warning pop-up"), Toggle(s.WarningPopup, delegate(bool v)
 		{
 			s.WarningPopup = v;
-		}, notify: true, rebuild: true), L.T("Shows a notice when a temperature crosses the limit."), "WarningPopup"), Row(L.T("Integrated graphics"), Toggle(s.ShowIntegratedGpu, delegate(bool v)
-		{
-			s.ShowIntegratedGpu = v;
-		}, notify: true, rebuild: true), L.T("Also show the graphics built into the processor."), "ShowIntegratedGpu")) }));
+		}, notify: true, rebuild: true), L.T("Shows a notice when a temperature crosses the limit."), "WarningPopup")) }));
 		building = 4;
 		Owns("WeatherPlace", "WeatherLatitude", "WeatherLongitude", "WorldClocks");
 		NumericUpDown price = new NumericUpDown
@@ -699,13 +696,14 @@ public sealed class SettingsWindow : Window
 
 	private Control[] WidgetsPage()
 	{
+		Index(L.T("Integrated graphics"), L.T("Also show the graphics built into the processor."));
 		TextBlock textBlock = Ui.Text(L.T("Tick what the sidebar shows; drag by the handle or use the arrows to sort. “Customise” opens style, column, register and single values."), 12.0, p.Soft);
 		textBlock.TextWrapping = TextWrapping.Wrap;
 		textBlock.TextTrimming = TextTrimming.None;
 		Index(L.T("Style for all widgets"), L.T("One click sets every widget with styles; each one can still be changed below."));
 		UniformGrid uniformGrid = new UniformGrid
 		{
-			Columns = 6
+			Columns = 4
 		};
 		if (styleRegister > s.Pages)
 		{
@@ -734,6 +732,12 @@ public sealed class SettingsWindow : Window
 				foreach (Control child in stackPanel.Children)
 				{
 					child.HorizontalAlignment = HorizontalAlignment.Center;
+					if (child is TextBlock designName)
+					{
+						designName.TextWrapping = TextWrapping.Wrap;
+						designName.TextAlignment = TextAlignment.Center;
+						designName.MaxWidth = 100;
+					}
 				}
 			}
 			button.Click += delegate
@@ -912,6 +916,9 @@ public sealed class SettingsWindow : Window
 	{
 		return style switch
 		{
+			WidgetStyle.CleanDark => "Clean Dark",
+			WidgetStyle.CompactPro => "Compact Pro",
+			WidgetStyle.PerformanceView => "Performance View",
 			WidgetStyle.HistoryGraph => L.T("History graph"),
 			WidgetStyle.RingPair => L.T("Double ring"),
 			WidgetStyle.LevelColumns => L.T("Level columns"),
@@ -928,6 +935,12 @@ public sealed class SettingsWindow : Window
 			WidgetStyle.BadgeListGraph => L.T("List graph"),
 			WidgetStyle.NeonHudGraph => L.T("Neon HUD graph"),
 			WidgetStyle.SciFi => "Sci-Fi",
+			WidgetStyle.PureBar => L.Language == "de" ? "Pure · Balken" : "Pure · Bar",
+            WidgetStyle.PureNumber => L.Language == "de" ? "Pure · Zahl" : "Pure · Number",
+            WidgetStyle.PureSegments => L.Language == "de" ? "Pure · Segmente" : "Pure · Segments",
+            WidgetStyle.Pure => "Pure",
+			WidgetStyle.PureWidgets => L.T("Pure widgets"),
+            WidgetStyle.PureWidgetsRight => L.Language == "de" ? "Pure-Widgets rechts" : "Pure Widgets Right",
 			_ => L.T(style.ToString()) is var name && name != style.ToString() ? name : English(style)
 		};
 	}
@@ -946,6 +959,20 @@ public sealed class SettingsWindow : Window
 		IBrush fill2 = Palette.Brush(p.Soft);
 		switch (style)
 		{
+        case WidgetStyle.PureBar:
+        case WidgetStyle.PureNumber:
+        case WidgetStyle.PureSegments:
+            Rect(2,2,60,30,fill,6);Rect(7,6,13,3,brush);Rect(7,15,22,10,fill2,2);Rect(37,13,18,6,fill2,2);
+            if(style==WidgetStyle.PureBar){Rect(37,23,18,3,brush3,1);Rect(37,23,5,3,brush,1);}
+            else if(style==WidgetStyle.PureSegments){for(int i=0;i<6;i++)Rect(37+i*3,23,2,4,i<2?brush:brush3,1);}
+            else Rect(34,10,24,14,brush3,3);
+            break;
+        case WidgetStyle.CleanDark:
+            Rect(2,2,60,30,fill,8);Rect(7,7,19,12,brush,2);Rect(42,7,15,6,brush2,2);Rect(7,24,50,3,fill2,1);break;
+        case WidgetStyle.CompactPro:
+            Rect(2,2,60,30,fill,3);Rect(7,6,20,8,brush,1);Rect(37,6,20,8,brush2,1);Rect(7,19,50,1,fill2);for(int i=0;i<3;i++)Rect(7+i*18,24,14,3,fill2,1);break;
+        case WidgetStyle.PerformanceView:
+            Rect(2,2,60,30,fill,4);Rect(7,5,18,8,brush,1);Rect(43,5,14,8,brush2,1);for(int i=0;i<3;i++)Rect(7,17+i*5,50,1,brush3);c.Children.Add(Line("M7,28 L15,24 L22,26 L31,18 L39,23 L48,21 L57,25",brush));break;
         case WidgetStyle.HistoryGraph:
         {
             var a=Palette.Brush(Accents.Readable(Color.Parse("#22d3ee"),p));
@@ -1036,6 +1063,27 @@ public sealed class SettingsWindow : Window
             Rect(9,15,12,4,green,1.5);
             Rect(33,4,14,12,fill,2);Rect(49,4,14,12,fill,2);Rect(33,19,14,12,fill,2);Rect(49,19,14,12,fill,2);
             Rect(35,10,9,2,fill2,1);Rect(51,10,9,2,fill2,1);Rect(35,25,9,2,fill2,1);Rect(51,25,9,2,fill2,1);
+            break;
+        }
+        case WidgetStyle.Pure:
+        {
+            var blue=Palette.Brush(Accents.Readable(Color.Parse("#64d2ff"),p));
+            Rect(2,2,14,3,blue,1.5);Rect(2,8,18,9,fill,2);Rect(22,13,5,3,fill2,1);
+            var track=new Avalonia.Controls.Shapes.Ellipse{Width=14,Height=14,Stroke=brush3,StrokeThickness=2.5};
+            var arc=new Avalonia.Controls.Shapes.Arc{Width=14,Height=14,StartAngle=-90,SweepAngle=120,Stroke=blue,StrokeThickness=2.5,StrokeLineCap=PenLineCap.Round};
+            Canvas.SetLeft(track,48);Canvas.SetTop(track,4);Canvas.SetLeft(arc,48);Canvas.SetTop(arc,4);c.Children.Add(track);c.Children.Add(arc);
+            for(int i=0;i<3;i++){Rect(2,22+i*5,16,2,fill2,1);Rect(50,22+i*5,12,2,fill,1);if(i<2)Rect(2,25.5+i*5,60,0.6,brush3,0);}
+            break;
+        }
+        case WidgetStyle.PureWidgets:
+        case WidgetStyle.PureWidgetsRight:
+        {
+            var blue=Palette.Brush(Accents.Readable(Color.Parse("#64d2ff"),p));
+            Rect(2,2,29,30,brush3,5);Rect(33,2,29,30,brush3,5);
+            var track=new Avalonia.Controls.Shapes.Ellipse{Width=20,Height=20,Stroke=fill2,StrokeThickness=3};
+            var arc=new Avalonia.Controls.Shapes.Arc{Width=20,Height=20,StartAngle=-90,SweepAngle=200,Stroke=blue,StrokeThickness=3,StrokeLineCap=PenLineCap.Round};
+            Canvas.SetLeft(track,6.5);Canvas.SetTop(track,7);Canvas.SetLeft(arc,6.5);Canvas.SetTop(arc,7);c.Children.Add(track);c.Children.Add(arc);
+            for(int i=0;i<3;i++){Rect(37,7+i*8,10,2,fill2,1);Rect(37,10+i*8,18,3,fill,1);}
             break;
         }
         case WidgetStyle.Evolution:
@@ -1447,7 +1495,7 @@ public sealed class SettingsWindow : Window
 				}
 				grid2.Margin = new Thickness(28.0, 0.0, 0.0, 0.0);
 				stackPanel.Children.Add(grid2);
-				if (slot.Style == WidgetStyle.Evolution)
+				if (slot.Style == WidgetStyle.Evolution || FavoriteTile.Styles.Contains(slot.Style) || PureLoadIndicator.Styles.Contains(slot.Style))
 				{
 					stackPanel.Children.Add(AccentRow(slot));
 				}
@@ -1485,6 +1533,26 @@ public sealed class SettingsWindow : Window
             stackPanel.Children.Add(sizing);
             var sensors = new StackPanel { Spacing = 2, Margin = new Thickness(28, 4, 0, 8) };
             sensors.Children.Add(SectionTitle(L.T("Sensor values")));
+            if (slot.Kind == WidgetKind.Cpu)
+            {
+                var integrated = new CheckBox
+                {
+                    Name = "sensor-integrated-graphics",
+                    Content = L.T("Integrated graphics"),
+                    IsChecked = s.ShowIntegratedGpu,
+                    Foreground = Palette.Brush(p.Ink),
+                    FontSize = 12.5,
+                    Margin = new Thickness(0, 1)
+                };
+                ToolTip.SetTip(integrated, L.T("Also show the graphics built into the processor."));
+                integrated.IsCheckedChanged += (_, _) =>
+                {
+                    s.ShowIntegratedGpu = integrated.IsChecked == true;
+                    changed();
+                    Build();
+                };
+                sensors.Children.Add(integrated);
+            }
             foreach (var option in WidgetSensors.Options(slot.Kind, this.snapshot()))
             {
                 if (slot.Kind == WidgetKind.Cpu && (ComparisonTile.Styles.Contains(slot.Style) || InsightTile.Styles.Contains(slot.Style)) && option.Key == "cpu.cores") continue;

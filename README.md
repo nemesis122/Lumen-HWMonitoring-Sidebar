@@ -1,10 +1,22 @@
-# Lumen 4.0.2 – Every Widget, Every Design
+# Lumen 4.0.3 – Readable and Steady
 
-A portable hardware-monitoring sidebar for Windows 10 and 11 with **36 widget designs**. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
+A portable hardware-monitoring sidebar for Windows 10 and 11 with **45 widget designs**. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
 
-**[Download Lumen 4.0.2](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.0.2)** · [All designs](docs/style-gallery.md) · [Release notes 4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
+**[Download Lumen 4.0.3](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.0.3)** · [All designs](docs/style-gallery.md) · [Release notes 4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
 
 ![Sci-Fi, Thermostat, Neon HUD and Evolution](docs/images/v4.0.0/hero-designs.png)
+
+## New in 4.0.3
+
+- **Nine additional designs:** Pure, Pure Widgets, Clean Dark, Compact Pro, Performance View, Pure Bar, Pure Number, Pure Segments and Pure Widgets Right. Choose designs globally, per register or per widget.
+- **Readable horizontal layouts:** bounded rings, compact charts and better use of the space beside graphics.
+- **Stable readings:** reserved number widths and a network 2-min peak that keeps its row.
+- **Optional integrated graphics:** enable it in **Widgets → Processor → Customise → Sensor values**. It is off by default for new settings.
+- **Clearer design picker:** four columns and wrapping names.
+
+[New design previews](docs/neue-sidebar-designs.md) · [Load indicators](docs/pure-lastanzeigen.md) · [Values on the right](docs/pure-widgets-rechts.md) · [Horizontal before/after](docs/horizontale-darstellung.md)
+
+![Improved horizontal layout](docs/images/horizontal-fix/nachher.png)
 
 ## Fixed in 4.0.2
 

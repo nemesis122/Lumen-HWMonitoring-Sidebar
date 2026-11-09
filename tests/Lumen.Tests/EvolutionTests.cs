@@ -137,7 +137,7 @@ public class EvolutionPolishTests
         L.Use("de");
         var (snap, history) = Render.Demo();
         if (change != null) snap = change(snap);
-        var settings = new Settings { Language = "de" };
+        var settings = new Settings { Language = "de", ShowIntegratedGpu = true };
         set?.Invoke(settings);
         var card = Cards.Create(kind, WidgetStyle.Evolution, kind == WidgetKind.Gpu ? 1 : 0, Palette.For(true, false), Metrics.For(Density.Fit), settings);
         ((IWidget)card).Update(snap, history);

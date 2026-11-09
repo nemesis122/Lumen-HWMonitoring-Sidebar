@@ -30,6 +30,8 @@ public sealed class FitPanel : Panel
 
 	private readonly bool fill;
 
+	private readonly bool stretchContent;
+
 	private double gap;
 
 	private double applied = double.NaN;
@@ -50,11 +52,12 @@ public sealed class FitPanel : Panel
 	/// <summary>The height the panel was last asked to fill (0 when it does not fill).</summary>
 	public double LastHeight { get; private set; }
 
-	public FitPanel(List<StackPanel> lists, double scale, bool fill, double gap)
+	public FitPanel(List<StackPanel> lists, double scale, bool fill, double gap, bool stretchContent = true)
 	{
 		this.lists = lists;
 		this.scale = scale;
 		this.fill = fill;
+		this.stretchContent = stretchContent;
 		this.gap = gap;
 		base.ClipToBounds = fill;
 		foreach (StackPanel list in lists)
@@ -211,14 +214,14 @@ public sealed class FitPanel : Panel
 				}
 				break;
 			}
-			case StatPanel p when object.Equals(p.Tag, "elastic") && Shown(p):
+			case StatPanel p when stretchContent && object.Equals(p.Tag, "elastic") && Shown(p):
 				if (!baseRows.ContainsKey(p))
 				{
 					baseRows[p] = p.RowSpacing;
 				}
 				parts.Rows.Add(p);
 				break;
-			case StackPanel s when object.Equals(s.Tag, "elastic") && s.IsVisible && s.Children.Count((Control x) => x.IsVisible) > 1:
+			case StackPanel s when stretchContent && object.Equals(s.Tag, "elastic") && s.IsVisible && s.Children.Count((Control x) => x.IsVisible) > 1:
 				if (!baseSpacing.ContainsKey(s))
 				{
 					baseSpacing[s] = s.Spacing;
@@ -314,6 +317,22 @@ public sealed class FitPanel : Panel
 		double s = start;
 		if (Fits(natural, s, height) && (s >= cap - 0.001 || height - natural * s <= height * ScaleHysteresis))
 		{
+			return s;
+		}
+		if (!stretchContent)
+		{
+			// A horizontal card can change its number of metric columns as its logical width changes.
+			// The ratio iteration below can get stuck at an unnecessarily small scale after that reflow.
+			// Search the bounded interval for the largest scale that actually fits instead.
+			double low = 0.05, high = cap;
+			for (int pass = 0; pass < 16; pass++)
+			{
+				double candidate = (low + high) / 2;
+				double measured = MeasureAll(colWidth, candidate, out _);
+				if (Fits(measured, candidate, height)) low = candidate; else high = candidate;
+			}
+			s = low;
+			natural = MeasureAll(colWidth, s, out parts);
 			return s;
 		}
 		for (int i = 0; i < 4 && !Fits(natural, s, height); i++)

@@ -1,8 +1,20 @@
 # Lumen — all widget designs
 
-All 36 selectable designs of Lumen 4.0.0, rendered from the application with demo readings. Every widget can use its own design, and every register can have its own design.
+All 45 selectable designs of Lumen 4.0.3, rendered from the application with demo readings. Every widget can use its own design, and every register can have its own design.
 
-[Back to the README](../README.md) · [Release notes](release-notes/v4.0.0.md) · [Download](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.0.2)
+[Back to the README](../README.md) · [Release notes](release-notes/v4.0.3.md) · [Download](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.0.3)
+
+## Added in 4.0.3
+
+[Pure and the new sidebar designs](neue-sidebar-designs.md) · [Pure load indicators](pure-lastanzeigen.md) · [Pure Widgets Right](pure-widgets-rechts.md) · [Horizontal layouts](horizontale-darstellung.md)
+
+![New designs, dark](images/neue-sidebar-designs/favorites-dark.png)
+
+![New designs, light](images/neue-sidebar-designs/favorites-light.png)
+
+![Pure load indicators](images/pure-lastanzeigen/pure-load-comparison-dark.png)
+
+![Pure Widgets Right](images/pure-widgets-rechts/pure-widgets-right-comparison-dark.png)
 
 ## Hardware widgets, dark theme
 

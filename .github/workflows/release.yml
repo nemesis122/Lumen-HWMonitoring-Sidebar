@@ -51,7 +51,7 @@ jobs:
           Copy-Item licenses portable/licenses -Recurse
           Compress-Archive -Path portable/* -DestinationPath "out/Lumen-$v-Portable.zip"
           git archive --format=zip -o "out/Lumen-$v-Source.zip" HEAD
-          Compress-Archive -Path docs/images/v4.0.0/* -DestinationPath "out/Lumen-$v-Screenshots.zip"
+          Compress-Archive -Path docs/images/* -DestinationPath "out/Lumen-$v-Screenshots.zip"
           Get-FileHash out/* -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $([IO.Path]::GetFileName($_.Path))" } | Set-Content out/SHA256SUMS.txt
       - name: Publish Lumen release
         shell: pwsh

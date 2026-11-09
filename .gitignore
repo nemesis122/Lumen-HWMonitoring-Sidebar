@@ -19,3 +19,6 @@ lumen-previous-session.json
 docs/images/styles-3.0.0/card-*.png
 portable/
 
+
+# Avalonia build diagnostics
+AvaloniaUI/

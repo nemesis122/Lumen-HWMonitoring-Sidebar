@@ -82,6 +82,7 @@ public static class L
     Purple dashboard|Lila-Dashboard|Tableau violet|Dashboard viola|Panel morado|Painel roxo
     Capsule row graph|Kapselreihe-Graph|Graphe en rangée de capsules|Grafico a capsule in fila|Gráfico de cápsulas en fila|Gráfico de cápsulas em fila
     List graph|Liste-Graph|Graphe en liste|Grafico a elenco|Gráfico de lista|Gráfico de lista
+    Pure widgets|Pure-Widgets|Widgets Pure|Widget Pure|Widgets Pure|Widgets Pure
     Neon HUD graph|Neon-HUD-Graph|Graphe HUD néon|Grafico HUD neon|Gráfico HUD neón|Gráfico HUD néon
     Fill bars graph|Füllbalken-Graph|Graphe à barres pleines|Grafico a barre piene|Gráfico de barras llenas|Gráfico de barras cheias
     Table graph|Tabelle-Graph|Graphe en tableau|Grafico a tabella|Gráfico de tabla|Gráfico em tabela

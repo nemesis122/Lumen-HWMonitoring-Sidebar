@@ -79,7 +79,7 @@ public abstract class DashTile : FreshTile
 		taken.Add("v:" + Key(sum.SecondLabel));
 		return Summaries.Extras(Kind, Index, snap, history, S)
 			.Where(e => e.Value.Length > 0 && e.Value != "—" && !taken.Contains("l:" + Key(e.Label)))
-			.Select(e => (e.Label, taken.Contains("v:" + Key(e.Value)) ? Ghost : e.Value))
+			.Select(e => (e.Label, Kind == WidgetKind.Network && e.Label == L.T("2-min peak") ? e.Value : taken.Contains("v:" + Key(e.Value)) ? Ghost : e.Value))
 			.Take(max).ToList();
 	}
 

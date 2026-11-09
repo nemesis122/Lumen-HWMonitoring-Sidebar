@@ -24,6 +24,10 @@ public static class Cards
 			}
 			switch (Settings.Successor(style))
 			{
+            case WidgetStyle.CleanDark:
+            case WidgetStyle.CompactPro:
+            case WidgetStyle.PerformanceView:
+                return new FavoriteTile(kind, index, p, m, s, style);
             case WidgetStyle.Clarity:
             case WidgetStyle.ClarityColor:
             case WidgetStyle.ClarityRows:
@@ -90,6 +94,16 @@ public static class Cards
 				return DialTile.Fits(kind) ? new PurpleTile(kind, index, p, m, s) : new EvolutionTile(kind, index, p, m, s);
 			case WidgetStyle.PurpleList:
 				return DialTile.Fits(kind) ? new PurpleTile(kind, index, p, m, s, list: true) : new EvolutionTile(kind, index, p, m, s);
+			case WidgetStyle.Pure:
+				return DialTile.Fits(kind) ? new PureTile(kind, index, p, m, s) : new EvolutionTile(kind, index, p, m, s);
+			case WidgetStyle.PureBar:
+			case WidgetStyle.PureNumber:
+			case WidgetStyle.PureSegments:
+				return new PureTile(kind, index, p, m, s, style);
+			case WidgetStyle.PureWidgets:
+				return DialTile.Fits(kind) ? new WidgetsTile(kind, index, p, m, s) : new EvolutionTile(kind, index, p, m, s);
+			case WidgetStyle.PureWidgetsRight:
+				return kind is WidgetKind.Cpu or WidgetKind.Gpu ? new RightWidgetsTile(kind, index, p, m, s) : new WidgetsTile(kind, index, p, m, s);
 			case WidgetStyle.SciFi:
 				return DialTile.Fits(kind) ? new SciFiTile(kind, index, p, m, s) : new EvolutionTile(kind, index, p, m, s);
 			}

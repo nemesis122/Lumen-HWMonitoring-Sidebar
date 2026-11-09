@@ -487,7 +487,7 @@ public sealed class SidebarView : Border
 				barRows.RowDefinitions.Add(new RowDefinition(metrics.Gap, GridUnitType.Pixel));
 			}
 			barRows.RowDefinitions.Add(new RowDefinition(1.0, GridUnitType.Star));
-			FitPanel fitPanel = new FitPanel(list5, settings.TextScale, fill: true, metrics.Gap);
+			FitPanel fitPanel = new FitPanel(list5, settings.TextScale, fill: true, metrics.Gap, stretchContent: false);
 			fitPanel.Fitted += Squeezed;
 			Grid.SetRow(fitPanel, num5 * 2);
 			barRows.Children.Add(fitPanel);

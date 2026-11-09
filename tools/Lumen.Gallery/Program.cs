@@ -37,6 +37,127 @@ void Save(Control content,string name,double width,double? height=null,Palette? 
     using var image=window.CaptureRenderedFrame()??throw new InvalidOperationException("No rendered frame: "+name);
     image.Save(Path.Combine(output,name+".png"));window.Close();
 }
+if(args.Contains("--horizontal-check")) {
+    L.Use("de");Application.Current!.RequestedThemeVariant=Avalonia.Styling.ThemeVariant.Dark;
+    foreach(var style in FavoriteTile.Styles.Concat(PureLoadIndicator.Styles).Concat(new[]{WidgetStyle.PureWidgets,WidgetStyle.PureWidgetsRight})) {
+        foreach(var dimensions in new[]{new Size(1280,240),new Size(1920,320),new Size(2560,376)}) {
+            var config=Settings.Starter();config.Edge=Edge.Top;config.BarHeight=dimensions.Height;config.BarFullWidth=true;
+            foreach(var slot in config.Widgets)if(Settings.HasStyles(slot.Kind))slot.Style=style;
+            var view=new SidebarView(config,Palette.For(true,false));view.Update(snapshot,history);
+            Save(view,$"horizontal-{style}-{dimensions.Width:0}x{dimensions.Height:0}",dimensions.Width,dimensions.Height);
+
+        }
+    }
+    Console.WriteLine("Rendered eight designs at three horizontal sizes.");return;
+}
+if(args.Contains("--widgets-right")) {
+    L.Use("de");
+    foreach(bool dark in new[]{true,false}) {
+        Application.Current!.RequestedThemeVariant=dark?Avalonia.Styling.ThemeVariant.Dark:Avalonia.Styling.ThemeVariant.Light;
+        var rightPalette=Palette.For(dark,false);
+        var rightSettings=new Settings{Language="de",Glass=false};
+        var rightColumn=Ui.Stack(12,Ui.Text("lumen · Pure-Widgets rechts",22,rightPalette.Ink,FontWeight.Bold),Ui.Text("Native Vorschau · Demodaten",11,rightPalette.Soft));
+        foreach(var kind in new[]{WidgetKind.Cpu,WidgetKind.Gpu,WidgetKind.Memory,WidgetKind.Drives,WidgetKind.Network}) {
+            var card=Cards.Create(kind,WidgetStyle.PureWidgetsRight,0,rightPalette,Metrics.For(Density.Fit),rightSettings);
+            ((IWidget)card).Update(snapshot,history);rightColumn.Children.Add(card);
+        }
+        Save(new Border{Padding=new Thickness(14),Child=rightColumn},"pure-widgets-right"+(dark?"-dark":"-light"),375,theme:rightPalette);
+        var rightComparison=new Grid{ColumnDefinitions=new ColumnDefinitions("*,*")};
+        foreach(var style in new[]{WidgetStyle.PureWidgets,WidgetStyle.PureWidgetsRight}) {
+            var col=Ui.Stack(12,Ui.Text(SettingsWindow.StyleName(style),19,rightPalette.Ink,FontWeight.Bold),Ui.Text("Native Vorschau · Demodaten",11,rightPalette.Soft));
+            foreach(var kind in new[]{WidgetKind.Cpu,WidgetKind.Gpu}) {
+                var card=Cards.Create(kind,style,0,rightPalette,Metrics.For(Density.Fit),new Settings{Language="de"});
+                ((IWidget)card).Update(snapshot,history);col.Children.Add(card);
+            }
+            var frame=new Border{Padding=new Thickness(14),Child=col};
+            Grid.SetColumn(frame,style==WidgetStyle.PureWidgets?0:1);rightComparison.Children.Add(frame);
+        }
+        Save(rightComparison,"pure-widgets-right-comparison"+(dark?"-dark":"-light"),750,theme:rightPalette);
+    }
+    Console.WriteLine("Rendered Pure Widgets Right and comparison with original.");return;
+}
+if(args.Contains("--integrated-option")) {
+    L.Use("de");
+    Application.Current!.RequestedThemeVariant=Avalonia.Styling.ThemeVariant.Dark;
+    var optionPalette=Palette.For(true,false);
+    var optionSettings=Settings.Starter();optionSettings.Language="de";
+    typeof(SettingsWindow).GetField("pageIndex",BindingFlags.Static|BindingFlags.NonPublic)!.SetValue(null,0);
+    var optionWindow=new SettingsWindow(optionSettings,optionPalette,()=>{},()=>new[]{"Demo"},new GalleryPlatform(),snapshot:()=>snapshot);
+    ((HashSet<WidgetKind>)typeof(SettingsWindow).GetField("expanded",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(optionWindow)!).Add(WidgetKind.Cpu);
+    typeof(SettingsWindow).GetMethod("Build",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(optionWindow,null);
+    var optionContent=(Control)typeof(SettingsWindow).GetField("content",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(optionWindow)!;
+    var optionCheck=optionContent.GetLogicalDescendants().OfType<CheckBox>().Single(c=>c.Name=="sensor-integrated-graphics");
+    var optionSensors=(StackPanel)optionCheck.Parent!;
+    ((StackPanel)optionSensors.Parent!).Children.Remove(optionSensors);
+    Save(new Border{Padding=new Thickness(20),Child=Ui.Stack(12,Ui.Text("Widgets → Prozessor → Anpassen",20,optionPalette.Ink,FontWeight.Bold),optionSensors)},"integrated-graphics-widget-option",560,theme:optionPalette);
+    optionWindow.Close();Console.WriteLine("Rendered integrated graphics option in processor sensor values.");return;
+}
+if(args.Contains("--pure-alternatives")) {
+    L.Use("de");
+    var menuPalette=Palette.For(true,false);
+    var menuConfig=Settings.Starter();menuConfig.Language="de";
+    var menuWindow=new SettingsWindow(menuConfig,menuPalette,()=>{},()=>new[]{"Demo"},new GalleryPlatform(),snapshot:()=>snapshot);
+    var menuParts=(Control[])typeof(SettingsWindow).GetMethod("WidgetsPage",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(menuWindow,null)!;
+    Save(new Border{Padding=new Thickness(20),Child=Ui.Stack(14,Ui.Text("Einstellungen · Widgets",24,menuPalette.Ink,FontWeight.Bold),menuParts[0],menuParts[1])},"settings-pure-designs",660,theme:menuPalette);
+    menuWindow.Close();
+    foreach(bool dark in new[]{true,false}) {
+        var p=Palette.For(dark,false);
+        var pureLoadBoard=new Grid{ColumnDefinitions=new ColumnDefinitions("*,*,*")};
+        foreach(var style in PureLoadIndicator.Styles){
+            var card=Cards.Create(WidgetKind.Cpu,style,0,p,Metrics.For(Density.Fit),new Settings{Language="de"});
+            ((IWidget)card).Update(snapshot,history);
+            var section=new Border{Padding=new Thickness(14),Child=Ui.Stack(12,Ui.Text(SettingsWindow.StyleName(style),18,p.Ink,FontWeight.Bold),card)};
+            Grid.SetColumn(section,Array.IndexOf(PureLoadIndicator.Styles,style));pureLoadBoard.Children.Add(section);
+        }
+        Save(pureLoadBoard,"pure-load-comparison"+(dark?"-dark":"-light"),1125,theme:p);
+        var board=new Grid{ColumnDefinitions=new ColumnDefinitions("*,*,*")};
+        foreach(var style in PureLoadIndicator.Styles) {
+            var settings=new Settings{Language="de",Glass=false};
+            var column=Ui.Stack(12,
+                Ui.Columns("*,Auto",Ui.Text("lumen",26,p.Ink,FontWeight.Bold),Ui.Text("● LIVE",11,p.Calm)),
+                Ui.Text(SettingsWindow.StyleName(style),16,p.Soft,FontWeight.SemiBold),
+                Ui.Text("Native Vorschau · Demodaten",10,p.Faint));
+            foreach(var kind in new[]{WidgetKind.Cpu,WidgetKind.Gpu,WidgetKind.Memory,WidgetKind.Drives,WidgetKind.Network}) {
+                var card=Cards.Create(kind,style,0,p,Metrics.For(Density.Fit),settings);
+                ((IWidget)card).Update(snapshot,history);column.Children.Add(card);
+            }
+            var panel=new Border{Padding=new Thickness(14),Background=Palette.Brush(p.Surface),Child=column};
+            Save(panel,"pure-alternative-"+style+(dark?"-dark":"-light"),375,theme:p);
+            // Save() attaches content to a window; detach before reusing it in the pureLoadBoard board.
+            panel.Child=null;
+            var copy=new Border{Padding=new Thickness(14),Background=Palette.Brush(p.Surface),Child=column};
+            Grid.SetColumn(copy,Array.IndexOf(PureLoadIndicator.Styles,style));board.Children.Add(copy);
+        }
+        Save(board,"pure-alternatives"+(dark?"-dark":"-light"),1125,theme:p);
+    }
+    Console.WriteLine("Rendered all three native favorite designs in dark and light.");return;
+}
+if(args.Contains("--favorites")) {
+    L.Use("de");
+    foreach(bool dark in new[]{true,false}) {
+        var p=Palette.For(dark,false);
+        var board=new Grid{ColumnDefinitions=new ColumnDefinitions("*,*,*")};
+        foreach(var style in FavoriteTile.Styles) {
+            var settings=new Settings{Language="de",Glass=false};
+            var column=Ui.Stack(12,
+                Ui.Columns("*,Auto",Ui.Text("lumen",26,p.Ink,FontWeight.Bold),Ui.Text("● LIVE",11,p.Calm)),
+                Ui.Text(SettingsWindow.StyleName(style),16,p.Soft,FontWeight.SemiBold),
+                Ui.Text("Native Vorschau · Demodaten",10,p.Faint));
+            foreach(var kind in new[]{WidgetKind.Cpu,WidgetKind.Gpu,WidgetKind.Memory,WidgetKind.Drives,WidgetKind.Network}) {
+                var card=Cards.Create(kind,style,0,p,Metrics.For(Density.Fit),settings);
+                ((IWidget)card).Update(snapshot,history);column.Children.Add(card);
+            }
+            var panel=new Border{Padding=new Thickness(14),Background=Palette.Brush(p.Surface),Child=column};
+            Save(panel,"favorite-"+style+(dark?"-dark":"-light"),375,theme:p);
+            // Save() attaches content to a window; detach before reusing it in the comparison board.
+            panel.Child=null;
+            var copy=new Border{Padding=new Thickness(14),Background=Palette.Brush(p.Surface),Child=column};
+            Grid.SetColumn(copy,Array.IndexOf(FavoriteTile.Styles,style));board.Children.Add(copy);
+        }
+        Save(board,"favorites"+(dark?"-dark":"-light"),1125,theme:p);
+    }
+    Console.WriteLine("Rendered all three native favorite designs in dark and light.");return;
+}
 if(args.Contains("--autofit-verify")) {
     L.Use("de");var p=Palette.For(true,false);
     var demo=snapshot with{Gpus=snapshot.Gpus.Take(1).ToArray(),Disks=snapshot.Disks.Concat(new[]{snapshot.Disks[0] with{Id="third-demo",Letters="F:",Name="Demo SSD 4 TB"}}).ToArray()};
@@ -91,7 +212,7 @@ if(args.Contains("--insights-only") || args.Contains("--color-registers")) {
     var settingsCheck=new Settings{Language="de"};var settingsUi=new SettingsWindow(settingsCheck,p,()=>{},()=>new[]{"Demo"},new GalleryPlatform(),snapshot:()=>snapshot);
     var parts=(Control[])typeof(SettingsWindow).GetMethod("WidgetsPage",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(settingsUi,null)!;
     var picker=parts.SelectMany(c=>c.GetLogicalDescendants().Prepend(c)).OfType<Avalonia.Controls.Primitives.UniformGrid>().Single();
-    if(picker.Children.Count!=18)throw new Exception("Design picker must offer exactly 18 styles");
+    if(picker.Children.Count!=styles.Length)throw new Exception("Design picker must offer every selectable style");
     foreach(var style in designs){var button=picker.Children.OfType<Button>().Single(b=>b.GetLogicalDescendants().OfType<TextBlock>().Any(t=>t.Text==L.T(style.ToString())));button.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));if(settingsCheck.Widgets.Where(w=>Settings.HasStyles(w.Kind)).Any(w=>w.Style!=style))throw new Exception("Global design choice failed");}
     settingsUi.Width=1000;settingsUi.Height=900;settingsUi.Show();for(int i=0;i<3;i++){Dispatcher.UIThread.RunJobs();settingsUi.CaptureRenderedFrame();}
     using(var frame=settingsUi.CaptureRenderedFrame()!)frame.Save(Path.Combine(output,"settings-design-library.png"));settingsUi.Close();

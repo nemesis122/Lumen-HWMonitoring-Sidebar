@@ -105,7 +105,7 @@ public sealed class Settings
 
 	public bool WarningPopup { get; set; } = true;
 
-	public bool ShowIntegratedGpu { get; set; } = true;
+	public bool ShowIntegratedGpu { get; set; } = false;
 
 	public SensorSource SensorSource { get; set; }
 
@@ -191,7 +191,16 @@ public sealed class Settings
         WidgetStyle.FillBarsGraph,
         WidgetStyle.PillRowGraph,
         WidgetStyle.BadgeListGraph,
-        WidgetStyle.NeonHudGraph
+        WidgetStyle.NeonHudGraph,
+        WidgetStyle.Pure,
+        WidgetStyle.PureWidgets,
+        WidgetStyle.CleanDark,
+        WidgetStyle.CompactPro,
+        WidgetStyle.PerformanceView,
+        WidgetStyle.PureBar,
+        WidgetStyle.PureNumber,
+        WidgetStyle.PureSegments,
+        WidgetStyle.PureWidgetsRight
 	};
 
 	public int ColumnCount

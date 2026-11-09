@@ -19,7 +19,7 @@ namespace Lumen.App;
 /// </summary>
 public sealed class InfoTile : Border, IWidget, INamed
 {
-	private enum Head { Badge, Dot, Chip, Mono, Caps, Purple, SciFi, Capsule, Plain, Status }
+	private enum Head { Badge, Dot, Chip, Mono, Caps, Purple, SciFi, Capsule, Plain, Status, Apple }
 
 	private static readonly FontFamily Mono = new FontFamily("Cascadia Mono, Consolas, DejaVu Sans Mono, fonts:Inter#Inter, $Default");
 
@@ -88,6 +88,7 @@ public sealed class InfoTile : Border, IWidget, INamed
 		S = s;
 		(head, font, ring) = style switch
 		{
+			WidgetStyle.CleanDark or WidgetStyle.CompactPro or WidgetStyle.PerformanceView => (Head.Dot, (FontFamily?)null, false),
 			WidgetStyle.Dial => (Head.Chip, (FontFamily?)null, true),
 			WidgetStyle.RingPair => (Head.Badge, null, true),
 			WidgetStyle.Thermostat => (Head.Caps, null, true),
@@ -99,6 +100,8 @@ public sealed class InfoTile : Border, IWidget, INamed
 			WidgetStyle.Pill => (Head.Capsule, null, false),
 			WidgetStyle.Evolution or WidgetStyle.HistoryGraph or WidgetStyle.LevelColumns => (Head.Dot, null, false),
 			WidgetStyle.TwinFocus => (Head.Plain, null, false),
+			WidgetStyle.Pure or WidgetStyle.PureBar or WidgetStyle.PureNumber or WidgetStyle.PureSegments => (Head.Apple, null, false),
+			WidgetStyle.PureWidgets or WidgetStyle.PureWidgetsRight => (Head.Apple, null, true),
 			_ => (Head.Badge, null, false)
 		};
 		Frame();
@@ -157,6 +160,14 @@ public sealed class InfoTile : Border, IWidget, INamed
 		Padding = new Thickness(M.Pad, M.Pad - 4, M.Pad, M.Pad - 2);
 		switch (style)
 		{
+		case WidgetStyle.CleanDark:
+		case WidgetStyle.CompactPro:
+		case WidgetStyle.PerformanceView:
+			CornerRadius = new CornerRadius(style == WidgetStyle.CleanDark ? 24 : style == WidgetStyle.CompactPro ? 12 : 14);
+			BorderThickness = new Thickness(style == WidgetStyle.PerformanceView ? 1 : 0);
+			Padding = new Thickness(M.Pad, style == WidgetStyle.CompactPro ? 10 : 14);
+			if (style == WidgetStyle.PerformanceView) Background = Palette.Brush(Dark("#101925"));
+			break;
 		case WidgetStyle.Pill:
 			Background = Brushes.Transparent;
 			BorderThickness = new Thickness(0);
@@ -182,6 +193,17 @@ public sealed class InfoTile : Border, IWidget, INamed
 			BorderThickness = new Thickness(1);
 			CornerRadius = new CornerRadius(10);
 			Padding = new Thickness(13, 11, 13, 12);
+			break;
+		case WidgetStyle.PureBar:
+        case WidgetStyle.PureNumber:
+        case WidgetStyle.PureSegments:
+        case WidgetStyle.Pure:
+		case WidgetStyle.PureWidgets:
+        case WidgetStyle.PureWidgetsRight:
+			Background = Palette.Brush(Dark("#1c1c1e"));
+			BorderThickness = new Thickness(0);
+			CornerRadius = new CornerRadius(22);
+			Padding = new Thickness(18, 14, 18, 16);
 			break;
 		case WidgetStyle.NeonTiles:
 			Background = Palette.Brush(Dark("#090c12"));
@@ -290,6 +312,10 @@ public sealed class InfoTile : Border, IWidget, INamed
 			title.VerticalAlignment = VerticalAlignment.Center;
 			return new Border { Height = h, CornerRadius = new CornerRadius(h / 2), Background = Palette.Brush(P.Card), Child = Ui.Columns("Auto,*", icon, title) };
 		}
+		case Head.Apple:
+			title.FontSize = 13.5;
+			title.Foreground = Palette.Brush(tint);
+			return title;
 		case Head.Plain:
 		{
 			title.FontSize = 13;
