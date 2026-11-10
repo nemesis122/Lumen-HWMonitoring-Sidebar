@@ -80,6 +80,7 @@ public sealed class PillTile : SummaryTile
             stackPanel2.Children.Clear();
             var downloadRow = TrafficRow("DL", value, unit);
             uploadValue = Ui.Text("", value.FontSize, p.Ink, FontWeight.Bold, numbers: true);
+            SensorDetails.Value(uploadValue, "net.up");
             uploadUnit = Ui.Text("", 10.5, p.Soft, FontWeight.DemiBold, numbers: true);
             uploadUnit.VerticalAlignment = VerticalAlignment.Bottom;
             uploadUnit.Margin = new Thickness(0, 0, 0, 2);
@@ -101,8 +102,19 @@ public sealed class PillTile : SummaryTile
                 return row;
             }
         }
-		Grid item = Ui.Columns(kind == WidgetKind.Network ? "Auto,0.8*,1.4*" : "Auto,*,Auto", icon, stackPanel, stackPanel2);
+		Grid item = Ui.Columns("Auto,*,Auto", icon, stackPanel, stackPanel2);
+		if (kind == WidgetKind.Network)
+		{
+			// Keep the hardware title across the capsule instead of squeezing it between icon and rates.
+			Grid.SetColumnSpan(stackPanel, 2);
+			stackPanel.Margin = new Thickness(0, 0, 18, 6);
+			item.RowDefinitions = RowDefinitions.Parse("Auto,Auto");
+			Grid.SetRow(stackPanel2, 1);
+			Grid.SetColumnSpan(stackPanel2, 2);
+			Grid.SetRowSpan(icon, 2);
+		}
 		Grid.SetColumn(stackPanel2, 2);
+		if (kind == WidgetKind.Network) Grid.SetColumn(stackPanel2, 1);
         item.Margin = new Thickness(0, 9);
 		base.Child = new Panel
 		{
@@ -154,7 +166,7 @@ public sealed class PillTile : SummaryTile
 		name.Text = Naming.Title(base.Slot, Index, sum.Title);
 		// For drives the big number is the hottest one; the line below names it, its row is not repeated.
 		sub.Text = all ? "" : ((sum.Second.HasValue && sum.SecondLabel.Length > 0) ? (L.T("Load") + " " + sum.SecondLabel) : sum.Caption);
-		sub.IsVisible = sub.Text.Length > 0;
+		sub.IsVisible = Kind != WidgetKind.Network && sub.Text.Length > 0;
 		Motion.Text(value, sum.Value);
 		unit.Text = ((sum.Value == "—") ? "" : sum.Unit);
         if (uploadValue != null && uploadUnit != null)

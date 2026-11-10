@@ -444,19 +444,19 @@ public sealed class DialTile : SummaryTile
 
 		}
 		var legend = new Grid { ColumnDefinitions = ColumnDefinitions.Parse("*,*") };
-		void Lane(int col, string label, double? rate, Color color)
+		void Lane(int col, string label, string key, double? rate, Color color)
 		{
 			var dot = new Border { Width = 9, Height = 9, CornerRadius = new CornerRadius(2.5), Background = Palette.Brush(color), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 5, 0) };
 			var (number, unit) = Format.Split(Format.Rate(rate));
-			var value = Ui.Row(0, Ui.Text(number, 24, P.Ink, FontWeight.DemiBold, numbers: true), Ui.Text(" " + unit, 11, P.Soft));
+			var value = Ui.Row(0, SensorDetails.Value(Ui.Text(number, 24, P.Ink, FontWeight.DemiBold, numbers: true), key), Ui.Text(" " + unit, 11, P.Soft));
 			((Control)value.Children[1]).VerticalAlignment = VerticalAlignment.Bottom;
 			((Control)value.Children[1]).Margin = new Thickness(0, 0, 0, 3);
 			var lane = Ui.Stack(1, Ui.Row(0, dot, Ui.Text(label, 11, P.Soft)), value);
 			Grid.SetColumn(lane, col);
 			legend.Children.Add(lane);
 		}
-		if (down) Lane(0, L.T("Download"), n?.DownloadBytesPerSecond, tint);
-		if (upShown) Lane(down ? 1 : 0, L.T("Upload"), n?.UploadBytesPerSecond, up);
+		if (down) Lane(0, L.T("Download"), "net.down", n?.DownloadBytesPerSecond, tint);
+		if (upShown) Lane(down ? 1 : 0, L.T("Upload"), "net.up", n?.UploadBytesPerSecond, up);
 		if (down || upShown)
 		{
 			network.Children.Add(legend);

@@ -33,7 +33,7 @@ public class NoRepeatTests
                 var window = new Window { Content = card, Width = 320, Height = 900 };
                 window.Show();
                 for (int i = 0; i < 3; i++) { Dispatcher.UIThread.RunJobs(); window.CaptureRenderedFrame(); }
-                if (kind == WidgetKind.Drives)
+                if (kind is WidgetKind.Drives or WidgetKind.Network)
                 {
                     // Distinct devices and read/write counters may legitimately have equal numbers.
                     // Check source identity so that real duplicates still fail, including detail rows.
@@ -41,7 +41,7 @@ public class NoRepeatTests
                         .Where(t => SensorDetails.Visible(t, card) && t.FontFeatures != null && !string.IsNullOrWhiteSpace(t.Text)
                             && (t.Text.Any(char.IsDigit) || t.Text == "—"))
                         .Select(t => new[] { SensorDetails.KeyOf(t) }.Concat(t.GetLogicalAncestors().OfType<Control>().Select(SensorDetails.KeyOf))
-                            .FirstOrDefault(k => k.StartsWith("drive:")))
+                            .FirstOrDefault(k => k.StartsWith(kind == WidgetKind.Drives ? "drive:" : "net.")))
                         .Where(k => !string.IsNullOrEmpty(k) && !k.EndsWith(":model"));
                     found.AddRange(keys.GroupBy(k => k).Where(g => g.Count() > 1).Select(g => $"{kind}: {g.Key} ×{g.Count()}"));
                     window.Close(); continue;

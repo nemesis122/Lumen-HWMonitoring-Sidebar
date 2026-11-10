@@ -500,6 +500,7 @@ public sealed class EvolutionTile : SummaryTile
 			((Control)lane.Value.Parent!.Parent!).IsVisible = show;
 			var (number, unit) = Format.Split(Format.Rate(rate));
 			lane.Value.Text = number;
+			SensorDetails.Value(lane.Value, key);
 			lane.Value.Foreground = Palette.Brush(color);
 			// The number keeps the widest width it has had and stands right-aligned in it, so the unit
 			// beside it stays in place when the rate changes from "292" to "1.9".
