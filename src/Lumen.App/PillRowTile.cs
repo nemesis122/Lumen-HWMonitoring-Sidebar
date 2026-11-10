@@ -11,6 +11,13 @@ namespace Lumen.App;
 
 public sealed class PillRowTile : SummaryTile
 {
+    public double CapsuleHeight => M.Subtitles ? 44 : 38;
+    public static Panel Bubble(TextBlock caption, Control value, FillBack fill, double height, Thickness margin)
+    {
+        var fit = SteadyHeight.Of(new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Child = value, HorizontalAlignment = HorizontalAlignment.Center });
+        var content = Ui.Stack(0, fit, caption); content.VerticalAlignment = VerticalAlignment.Center; content.Margin = new Thickness(8, 0);
+        return new Panel { Height = height, Margin = margin, Children = { fill, content } };
+    }
 	private readonly Grid row = new Grid
 	{
 		Margin = new Thickness(0.0, 8.0, 0.0, 0.0)
@@ -59,22 +66,19 @@ public sealed class PillRowTile : SummaryTile
 			return items;
 		}
 		double h = (M.Subtitles ? 44 : 38);
+        more.Columns = Kind == WidgetKind.Drives && items.Count > 8 ? 2 : 3;
 		foreach (var (label, value) in items)
 		{
-			double? fraction = SegmentScale.Fraction(Kind, label, value, Last.Snap);
+			double? fraction = ExtraFraction(label, value);
 			Color color = value.Contains('°') && fraction is double heat ? P.At(heat) : P.Cool;
 			var back = new FillBack { Radius = h / 2.0, Track = Palette.Mix(P.Card, P.Ink, P.Dark ? 0.06 : 0.05) };
 			back.Animate(fraction ?? 0, Palette.Alpha(color, P.Dark ? 0.34 : 0.28));
-			var v = Ui.Text(value.Replace(" °C", "°").Replace(" °F", "°"), 13.5, value.Contains('°') ? color : P.Ink, FontWeight.Bold, numbers: true);
+			var v = Ui.Text(value.Replace(" °C", "°").Replace(" °F", "°F"), 13.5, value.Contains('°') ? color : P.Ink, FontWeight.Bold, numbers: true);
 			var l = Ui.Text(label.ToUpper(L.Culture), 9.5, P.Soft, FontWeight.DemiBold);
 			l.LetterSpacing = 0.5;
 			l.HorizontalAlignment = HorizontalAlignment.Center;
 			l.TextTrimming = TextTrimming.CharacterEllipsis;
-			var fit = SteadyHeight.Of(new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Child = v, HorizontalAlignment = HorizontalAlignment.Center });
-			var stack = Ui.Stack(0, fit, l);
-			stack.VerticalAlignment = VerticalAlignment.Center;
-			stack.Margin = new Thickness(8, 0);
-			more.Children.Add(new Panel { Height = h, Margin = new Thickness(3, 0, 3, 6), Children = { back, stack } });
+            more.Children.Add(Bubble(l, v, back, h, new Thickness(3, 0, 3, 6)));
 		}
 		more.IsVisible = more.Children.Count > 0;
 		return new List<(string Label, string Value)>();
@@ -85,20 +89,24 @@ public sealed class PillRowTile : SummaryTile
 		// Capsules of the last update must not count as "already shown" when the values are picked again.
 		more.Children.Clear();
 		more.IsVisible = false;
-		row.IsVisible = Kind != WidgetKind.Drives;
+		row.IsVisible = Kind != WidgetKind.Drives || graph;
 		drives.IsVisible = false;
-		if (Kind == WidgetKind.Drives)
+		if (Kind == WidgetKind.Drives && !graph)
 		{
 			drives.Show(DriveRows.Of(Index, Last.Snap, Last.History, S, P));
 			return;
 		}
-		List<Reading> list = Readings.For(Kind, Index, base.Last.Snap, base.Last.History, S, P).Take(4).ToList();
+        List<Reading> list = Kind == WidgetKind.Drives
+            ? DriveRows.Of(Index, Last.Snap, Last.History, S, P).Select(r => r with { Label = r.Label + " · " + L.T("Temp") }).ToList()
+            : Readings.For(Kind, Index, base.Last.Snap, base.Last.History, S, P).Take(4).ToList();
 		double num = (M.Subtitles ? 44 : 38);
 		if (pills.Count != list.Count)
 		{
 			row.Children.Clear();
 			pills.Clear();
-			row.ColumnDefinitions = new ColumnDefinitions(string.Join(",", Enumerable.Repeat("*", Math.Max(1, list.Count))));
+            int columns = Kind == WidgetKind.Drives ? Math.Clamp(list.Count, 1, 2) : Math.Max(1, list.Count);
+			row.ColumnDefinitions = new ColumnDefinitions(string.Join(",", Enumerable.Repeat("*", columns)));
+            row.RowDefinitions = new RowDefinitions(string.Join(",", Enumerable.Repeat("Auto", Math.Max(1, (int)Math.Ceiling(list.Count / (double)columns)))));
 			for (int i = 0; i < list.Count; i++)
 			{
 				FillBack fillBack = new FillBack
@@ -114,19 +122,8 @@ public sealed class PillRowTile : SummaryTile
 				{
 					array[j].HorizontalAlignment = HorizontalAlignment.Center;
 				}
-				StackPanel stackPanel = Ui.Stack(0.0, textBlock, textBlock2);
-				stackPanel.VerticalAlignment = VerticalAlignment.Center;
-				Panel panel = new Panel
-				{
-					Height = num,
-					Children = 
-					{
-						(Control)fillBack,
-						(Control)stackPanel
-					},
-					Margin = new Thickness((i != 0) ? 3 : 0, 0.0, (i != list.Count - 1) ? 3 : 0, 0.0)
-				};
-				Grid.SetColumn(panel, i);
+                Panel panel = Bubble(textBlock2, textBlock, fillBack, num, new Thickness(3, 0, 3, Kind == WidgetKind.Drives ? 6 : 0));
+				Grid.SetColumn(panel, i % columns); Grid.SetRow(panel, i / columns);
 				row.Children.Add(panel);
 				pills.Add((fillBack, textBlock2, textBlock));
 			}
@@ -134,8 +131,9 @@ public sealed class PillRowTile : SummaryTile
 		for (int k = 0; k < list.Count; k++)
 		{
 			Reading reading = list[k];
+            BindReading(pills[k].Value, reading);
 			pills[k].Back.Animate(reading.Fraction, Palette.Alpha(reading.Color, P.Dark ? 0.34 : 0.28));
-			pills[k].Value.Text = reading.Value.Replace(" °C", "°").Replace(" °F", "°");
+			pills[k].Value.Text = reading.Value.Replace(" °C", "°").Replace(" °F", "°F");
 			pills[k].Value.Foreground = Palette.Brush((reading.Color == P.Cool) ? P.Ink : reading.Color);
 			pills[k].Label.Text = reading.Label.ToUpper(L.Culture);
 			pills[k].Label.IsVisible = reading.Label.Length > 0;

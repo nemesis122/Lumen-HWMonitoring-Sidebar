@@ -65,6 +65,7 @@ public sealed class CoolingCard : Card
 		List<TempReading> others = list2.Where((TempReading t) => t != tempReading).ToList();
 		heroName.Text = (((object)tempReading == null) ? L.T("Board") : Names.Temp(tempReading.Name, S)).ToUpper(L.Culture);
 		hero.Set(Temp(tempReading?.Celsius), base.TempUnit, HeatColor(((object)tempReading != null) ? new double?(tempReading.Celsius + 5.0) : ((double?)null)));
+        SensorDetails.Value(hero, tempReading == null ? "" : "temp:" + tempReading.Name);
 		Motion.Text(active, (list.Count == 0) ? "—" : $"{list.Count((FanInfo f) => f.Rpm > 0.0)}/{list.Count}");
 		base.Aside = "";
 		if (fans != null)
@@ -96,6 +97,7 @@ public sealed class CoolingCard : Card
 				}
 				((Control)value.Item1.Parent).IsVisible = true;
 				value.Item1.Text = Names.Fan(item.Name, S);
+                SensorDetails.Value(value.Item2, "fan:" + item.Name);
 				Motion.Text(value.Item2, (item.Rpm > 0.0) ? Format.Rpm(item.Rpm) : L.T("Stopped"));
 				value.Item2.Foreground = Palette.Brush((item.Rpm > 0.0) ? P.Ink : P.Faint);
 				value.Item3.Set(item.Rpm / num, P.Cool);
@@ -129,6 +131,7 @@ public sealed class CoolingCard : Card
 		{
 			TempReading tempReading2 = list2.FirstOrDefault((TempReading x) => x.Name == (string)st.Tag);
 			st.Value = TempWithUnit(tempReading2?.Celsius);
+            SensorDetails.Value(st, "temp:" + st.Tag);
 			st.Color = (((object)tempReading2 == null) ? P.Ink : HeatColor(tempReading2.Celsius + 5.0));
 		}
 	}

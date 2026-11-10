@@ -68,6 +68,7 @@ public abstract class SummaryTile : Border, IWidget, INamed
 		Caption.VerticalAlignment = VerticalAlignment.Center;
         Caption.IsVisible = false;
 		Head = Ui.Stack(0.0, Ui.Columns("Auto,*", glyph, title), name);
+        HardwareWidgetTitle.Register(this, title, name);
 	}
 
 	public void Update(Snapshot snap, History h)
@@ -88,7 +89,20 @@ public abstract class SummaryTile : Border, IWidget, INamed
 		Caption.Text = summary.Caption;
         Caption.IsVisible = false;
 		Show(summary);
-		Extras.Set(AdjustExtras(WithoutShown(Summaries.Extras(Kind, Index, snap, h, S)).Where(i => ShowsEmpty || i.Value != "—").ToList()));
+        var extraRows = WithoutShown(Summaries.Extras(Kind, Index, snap, h, S)).Where(i => ShowsEmpty || i.Value != "—").ToList();
+        var design = SensorDetails.StyleOf(this, S);
+        if (Kind == WidgetKind.Drives && design is WidgetStyle.SegmentGraph or WidgetStyle.TableGraph or WidgetStyle.FillBarsGraph or WidgetStyle.PillRowGraph or WidgetStyle.BadgeListGraph)
+        {
+            // Use this renderer's existing row/capsule/bar code for every additional drive metric.
+            // It owns the geometry, opacity, palette, typography and layout; no approximation layer.
+            var missing = SensorDetails.Apply(this, Kind, Index, snap, h, S, P, collectOnly: true, excluded: Extras);
+            foreach (var row in missing.Where(r => r.Key.StartsWith("drive:") && !r.Key.EndsWith(":model") && !DriveTransferPairs.IsRate(r)))
+                if (!extraRows.Any(e => e.Label == row.Label)) extraRows.Add((row.Label, row.Value));
+        }
+        Extras.Set(AdjustExtras(extraRows));
+        WidgetPresentation.Apply(this, S);
+
+        SensorDetails.Apply(this, Kind, Index, snap, h, S, P);
         WidgetPresentation.Apply(this, S);
 	}
 
@@ -97,7 +111,28 @@ public abstract class SummaryTile : Border, IWidget, INamed
 
 	protected virtual List<(string Label, string Value)> AdjustExtras(List<(string Label, string Value)> items) => items;
 
+    protected double? ExtraFraction(string label, string value)
+    {
+        var row = Kind == WidgetKind.Drives ? CompleteReadings.For(Kind, Index, Last.Snap, Last.History, S, P)
+            .FirstOrDefault(r => r.Label == label) : null;
+        return row?.Fraction ?? SegmentScale.Fraction(Kind, label, value, Last.Snap);
+    }
+
 	protected abstract void Show(Summary sum);
+
+    protected void BindPrimary(Control control)
+    {
+        string key = WidgetSensors.PrimaryKey(Kind);
+        if (Kind == WidgetKind.Cooling) key = Summaries.CoolingHero(Last.Snap) is { } t ? "temp:" + t.Name : "";
+        if (Kind == WidgetKind.Drives) key = DriveOrdering.Order(Last.Snap.Disks, DriveOrdering.Mode(S)).FirstOrDefault(d => S.Shows("drive:" + d.Id)) is { } d ? "drive:" + d.Id + ":temp" : "";
+        SensorDetails.Value(control, key);
+        if (control is BoldValue bold && bold.Children.Count > 0) SensorDetails.Value(bold.Children[0], key);
+    }
+
+    protected void BindSecondary(Control control) => SensorDetails.Value(control, WidgetSensors.SecondaryKey(Kind));
+
+    protected void BindReading(Control control, Reading reading) => SensorDetails.Value(control, reading.Key.Length > 0 ? reading.Key
+        : SensorDetails.LabelKey(Kind, reading.Label, CompleteReadings.For(Kind, Index, Last.Snap, Last.History, S, P)));
 
 	// A reading that the upper part of the card already shows (bar, big number, second value) is not
 	// repeated in the extras below. Readings are matched by their label, so a value that is still
@@ -116,7 +151,7 @@ public abstract class SummaryTile : Border, IWidget, INamed
 				continue;
 			}
 			List<ILogical> ancestors = text.GetLogicalAncestors().ToList();
-			if (ancestors.Contains(Extras) || ancestors.Contains(Head))
+			if (ancestors.Contains(Extras) || ancestors.Contains(Head) || ancestors.OfType<SensorDetails>().Any())
 			{
 				continue;
 			}

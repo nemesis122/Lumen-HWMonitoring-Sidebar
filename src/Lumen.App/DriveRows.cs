@@ -54,6 +54,32 @@ public sealed class DriveRows : StackPanel
 	public static List<Reading> Of(int index, Snapshot s, History h, Settings set, Palette p) =>
 		Readings.For(WidgetKind.Drives, index, s, h, set, p).Where(r => r.Label.Length > 0 && r.Value.Length > 0).ToList();
 
+    // Supplemental metrics use the exact factory and painting delegate of the drive rows above.
+    // This also covers design-specific gradients, segmented bars, tracks and value colours.
+    public (Control Root, Control Bar, Action<Reading> Update) Detail(TextBlock label, TextBlock value)
+    {
+        label.FontSize = labelSize; label.Foreground = Palette.Brush(labelColor);
+        label.FontWeight = FontWeight.Medium; label.MaxWidth = labelSize * 9;
+        label.TextWrapping = TextWrapping.Wrap; label.VerticalAlignment = VerticalAlignment.Center;
+        value.FontSize = valueSize; value.FontWeight = weight;
+        value.MinWidth = valueSize * 6.6; value.TextWrapping = TextWrapping.NoWrap;
+        value.TextAlignment = TextAlignment.Right; value.VerticalAlignment = VerticalAlignment.Center;
+        if (font != null) label.FontFamily = value.FontFamily = font;
+        var bar = makeBar(); bar.Margin = new Thickness(8, 0, 12, 0);
+        bar.VerticalAlignment = VerticalAlignment.Center;
+        var line = AlignedLine(label, bar, value);
+        return (line, bar, reading => { setBar(bar, reading); value.Foreground = Palette.Brush(valueColor(reading)); });
+    }
+
+    private static Grid AlignedLine(TextBlock label, Control bar, TextBlock value)
+    {
+        label.HorizontalAlignment = HorizontalAlignment.Left;
+        var line = new Grid { ColumnDefinitions = { new ColumnDefinition(GridLength.Auto) { SharedSizeGroup = "LumenName" }, new ColumnDefinition(1, GridUnitType.Star), new ColumnDefinition(GridLength.Auto) { SharedSizeGroup = "LumenValue" } } };
+        Grid.SetColumn(bar, 1); Grid.SetColumn(value, 2);
+        line.Children.Add(label); line.Children.Add(bar); line.Children.Add(value);
+        return line;
+    }
+
 	public void Show(IReadOnlyList<Reading> drives)
 	{
 		if (rows.Count != drives.Count)
@@ -79,12 +105,7 @@ public sealed class DriveRows : StackPanel
 				bar.VerticalAlignment = VerticalAlignment.Center;
 				bar.Margin = new Thickness(8, 0, 12, 0);
 				// Names and values share one width in every row, so all bars start and end at the same place.
-				var row = new Grid { ColumnDefinitions = { new ColumnDefinition(GridLength.Auto) { SharedSizeGroup = "LumenName" }, new ColumnDefinition(1, GridUnitType.Star), new ColumnDefinition(GridLength.Auto) { SharedSizeGroup = "LumenValue" } } };
-				Grid.SetColumn(bar, 1);
-				Grid.SetColumn(value, 2);
-				row.Children.Add(label);
-				row.Children.Add(bar);
-				row.Children.Add(value);
+				var row = AlignedLine(label, bar, value);
 				Children.Add(row);
 				rows.Add((label, bar, value));
 			}
@@ -95,6 +116,7 @@ public sealed class DriveRows : StackPanel
 			Reading r = drives[i];
 			label.Text = r.Label;
 			value.Text = r.Value;
+            SensorDetails.Value(value, r.Key);
 			value.Foreground = Palette.Brush(valueColor(r));
 			// The value column keeps the widest value seen, so the bars do not get longer and shorter as the
 			// digits change ("9.6 MB/s" ↔ "61 MB/s").

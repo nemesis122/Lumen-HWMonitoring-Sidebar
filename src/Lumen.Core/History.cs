@@ -74,6 +74,7 @@ public sealed class History
 		}
 		foreach (DiskInfo disk in s.Disks)
 		{
+            Add("disk." + disk.Id + ".temp", disk.Temperature);
 			Add("disk." + disk.Id + ".read", disk.ReadBytesPerSecond);
 			Add("disk." + disk.Id + ".write", disk.WriteBytesPerSecond);
 		}

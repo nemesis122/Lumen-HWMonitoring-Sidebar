@@ -8,6 +8,13 @@ public static class Cards
 {
 	public static Control Create(WidgetKind kind, WidgetStyle style, int index, Palette p, Metrics m, Settings s)
 	{
+        var control = CreateNative(kind, style, index, p, m, s);
+        SensorDetails.Design(control, Settings.Successor(style));
+        return control;
+    }
+
+    private static Control CreateNative(WidgetKind kind, WidgetStyle style, int index, Palette p, Metrics m, Settings s)
+	{
         s = s.ForWidget(kind);
 		// The overview is a list in every design (name, bar, value), drawn in that design's look.
 		if (kind == WidgetKind.Overview)
@@ -16,6 +23,8 @@ public static class Cards
 		}
 		if (Settings.HasStyles(kind))
 		{
+			if (LocalDesigns.Contains(style) && !InfoTile.Handles(kind))
+				return new LocalDesignTile(kind, index, p, m, s, style);
 			// Clock, world clocks, calendar, weather, now playing and the top apps: drawn in the design's frame,
 			// fonts and colours, but with content that fits them (no bar for a time, a list of apps).
 			if (InfoTile.Handles(kind) && Settings.Successor(style) != WidgetStyle.Standard)

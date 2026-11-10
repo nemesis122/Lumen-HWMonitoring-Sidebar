@@ -9,6 +9,13 @@ namespace Lumen.App;
 public static class L
 {
 	private const string Table = """
+    Drive order|Laufwerksreihenfolge|Ordre des disques|Ordine delle unità|Orden de unidades|Ordem das unidades
+    C: first|C: zuerst|C: en premier|C: prima|C: primero|C: primeiro
+    Drive letter A–Z|Laufwerksbuchstabe A–Z|Lettre du lecteur A–Z|Lettera unità A–Z|Letra de unidad A–Z|Letra da unidade A–Z
+    Detection order|Erkennungsreihenfolge|Ordre de détection|Ordine di rilevamento|Orden de detección|Ordem de deteção
+    Recommended selection|Empfohlene Auswahl|Sélection recommandée|Selezione consigliata|Selección recomendada|Seleção recomendada
+    Select the essential values for this widget. Additional values remain individually selectable.|Wählt die wichtigsten Werte für dieses Widget aus. Weitere Werte bleiben einzeln auswählbar.|Sélectionne les valeurs essentielles ; les autres restent disponibles.|Seleziona i valori essenziali; gli altri restano selezionabili.|Selecciona los valores esenciales; los demás siguen disponibles.|Seleciona os valores essenciais; os restantes continuam disponíveis.
+    Not available|Nicht verfügbar|Indisponible|Non disponibile|No disponible|Indisponível
     Nord|Nord|Nord|Nord|Nord|Nord
     Emerald|Smaragd|Émeraude|Smeraldo|Esmeralda|Esmeralda
     Copper|Kupfer|Cuivre|Rame|Cobre|Cobre

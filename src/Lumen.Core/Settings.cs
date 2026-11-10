@@ -118,6 +118,7 @@ public sealed class Settings
 	public List<WidgetSlot> Widgets { get; set; } = DefaultWidgets();
 
 	public List<string> HiddenValues { get; set; } = new List<string>();
+    public int SensorSelectionVersion { get; set; }
 
 	public int Columns { get; set; } = 1;
 
@@ -200,7 +201,22 @@ public sealed class Settings
         WidgetStyle.PureBar,
         WidgetStyle.PureNumber,
         WidgetStyle.PureSegments,
-        WidgetStyle.PureWidgetsRight
+        WidgetStyle.PureWidgetsRight,
+        WidgetStyle.Meridian,
+        WidgetStyle.Strata,
+        WidgetStyle.Vector,
+        WidgetStyle.Orbit,
+        WidgetStyle.Lucent,
+        WidgetStyle.Circuit,
+        WidgetStyle.Panorama,
+        WidgetStyle.Terminal,
+        WidgetStyle.Thermal,
+        WidgetStyle.MosaicPro,
+        WidgetStyle.RibbonFlow,
+        WidgetStyle.SplitLens,
+        WidgetStyle.Aperture,
+        WidgetStyle.PixelDeck,
+        WidgetStyle.HorizonSync
 	};
 
 	public int ColumnCount
@@ -267,13 +283,15 @@ public sealed class Settings
 			select new WidgetSlot
 			{
 				Kind = k,
+
+                HiddenSensors = SensorDefaults.For(k),
 				Visible = VisibleByDefault(k)
 			}).ToList();
 	}
 
 	public bool Shows(string value)
 	{
-		return !HiddenValues.Contains(value);
+		return !HiddenValues.Contains(value) && !(ActiveWidget?.HiddenSensors.Contains(value) ?? false);
 	}
 
     [JsonIgnore]
@@ -283,7 +301,8 @@ public sealed class Settings
     {
         var scoped = (Settings)MemberwiseClone();
         scoped.ActiveWidget = Widgets.FirstOrDefault(w => w.Kind == kind);
-        scoped.HiddenValues = HiddenValues.Concat(scoped.ActiveWidget?.HiddenSensors ?? new List<string>()).Distinct().ToList();
+        // Keep the two layers separate so an explicit per-widget change is effective immediately.
+        scoped.HiddenValues = HiddenValues;
         return scoped;
     }
 
@@ -465,6 +484,7 @@ public sealed class Settings
 		s.Widgets = (s.Widgets ?? new List<WidgetSlot>()).Where((WidgetSlot w) => w != null && Enum.IsDefined(w.Kind) && seen.Add(w.Kind)).ToList();
 		foreach (WidgetSlot widget in s.Widgets)
 		{
+            if (!DriveOrdering.Modes.Contains(widget.DriveOrder)) widget.DriveOrder = "system";
             widget.GraphicScale = double.IsFinite(widget.GraphicScale) ? Math.Clamp(widget.GraphicScale, 0.5, 2.0) : 1.0;
             widget.ValueScale = double.IsFinite(widget.ValueScale) ? Math.Clamp(widget.ValueScale, 0.5, 2.0) : 1.0;
             widget.LabelScale = double.IsFinite(widget.LabelScale) ? Math.Clamp(widget.LabelScale, 0.5, 2.0) : 1.0;
@@ -472,6 +492,16 @@ public sealed class Settings
             widget.HeroScale = double.IsFinite(widget.HeroScale) ? Math.Clamp(widget.HeroScale, 0.5, 2.0) : 1.0;
             widget.HiddenSensors = (widget.HiddenSensors ?? new List<string>()).Where(k => !string.IsNullOrWhiteSpace(k)).Distinct().ToList();
             widget.HiddenSensors.RemoveAll(k => k.StartsWith("cpu.core:", StringComparison.Ordinal));
+            // Earlier versions treated every newly offered SMART statistic as selected. Apply the
+            // requested compact drive selection once, independently of the chosen design.
+            if (s.SensorSelectionVersion < SensorDefaults.SelectionVersion && widget.Kind == WidgetKind.Drives)
+                foreach (string key in SensorDefaults.For(WidgetKind.Drives))
+                    if (!widget.HiddenSensors.Contains(key)) widget.HiddenSensors.Add(key);
+            if (s.SensorSelectionVersion < 1)
+                foreach (var group in SensorDefaults.Groups)
+                    if (widget.HiddenSensors.Contains(group.Key))
+                        foreach (string key in group.Value)
+                            if (!widget.HiddenSensors.Contains(key)) widget.HiddenSensors.Add(key);
 			widget.Column = Math.Clamp(widget.Column, 0, 6);
 			widget.Page = Math.Clamp(widget.Page, 1, 6);
 			widget.Name = (widget.Name ?? "").Trim();
@@ -507,9 +537,17 @@ public sealed class Settings
 			s.Widgets.Insert(index, new WidgetSlot
 			{
 				Kind = widgetKind,
+
+                HiddenSensors = SensorDefaults.For(widgetKind),
 				Visible = VisibleByDefault(widgetKind)
 			});
 		}
+        if (s.SensorSelectionVersion < 1)
+            foreach (var group in SensorDefaults.Groups)
+                if (s.HiddenValues.Contains(group.Key))
+                    foreach (string key in group.Value)
+                        if (!s.HiddenValues.Contains(key)) s.HiddenValues.Add(key);
+        s.SensorSelectionVersion = SensorDefaults.SelectionVersion;
 		return s;
 	}
 

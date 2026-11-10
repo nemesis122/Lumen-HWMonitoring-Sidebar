@@ -917,6 +917,11 @@ public sealed class SettingsWindow : Window
 		return style switch
 		{
 			WidgetStyle.CleanDark => "Clean Dark",
+			WidgetStyle.PixelDeck => "Pixel Deck",
+			WidgetStyle.HorizonSync => "Horizon Sync",
+			WidgetStyle.MosaicPro => "Mosaic Pro",
+			WidgetStyle.RibbonFlow => "Ribbon Flow",
+			WidgetStyle.SplitLens => "Split Lens",
 			WidgetStyle.CompactPro => "Compact Pro",
 			WidgetStyle.PerformanceView => "Performance View",
 			WidgetStyle.HistoryGraph => L.T("History graph"),
@@ -957,6 +962,73 @@ public sealed class SettingsWindow : Window
 		IBrush brush3 = Palette.Brush(p.Track);
 		IBrush fill = Palette.Brush(p.Dark ? Color.Parse("#262E3B") : Color.Parse("#E4E9F0"));
 		IBrush fill2 = Palette.Brush(p.Soft);
+		if (LocalDesigns.Signature.Contains(style))
+		{
+			Rect(2, 2, 60, 30, fill, style == WidgetStyle.PixelDeck ? 2 : 7);
+			if (style == WidgetStyle.Aperture)
+			{
+				foreach (double x in new[] { 8d, 37d })
+				{
+					var ring = new Avalonia.Controls.Shapes.Ellipse { Width = 19, Height = 19, Stroke = x < 20 ? brush : brush2, StrokeThickness = 1.7 };
+					Canvas.SetLeft(ring, x); Canvas.SetTop(ring, 8); c.Children.Add(ring); Rect(x + 5, 15, 9, 5, fill2, 1);
+				}
+			}
+			else if (style == WidgetStyle.PixelDeck)
+			{
+				Rect(7, 11, 19, 10, fill2, 1);
+				for (int i = 0; i < 50; i++) Rect(35 + i % 10 * 2.2, 8 + i / 10 * 3.5, 1.5, 2.5, i < 23 ? brush : brush3);
+			}
+			else
+			{
+				Rect(7, 5, 14, 6, fill2, 1); Rect(43, 5, 14, 6, fill2, 1); Rect(7, 21, 50, 1, brush3);
+				c.Children.Add(Line("M7,19 L17,14 L27,18 L37,12 L47,16 L57,13", brush));
+				c.Children.Add(Line("M7,24 L17,29 L27,25 L37,30 L47,26 L57,29", brush2));
+			}
+			return c;
+		}
+		if (LocalDesigns.Distinct.Contains(style))
+		{
+			Rect(2, 2, 60, 30, fill, style == WidgetStyle.Terminal ? 0 : 5);
+			if (style == WidgetStyle.Panorama)
+			{
+				Rect(7, 7, 15, 8, fill2, 1); c.Children.Add(Line("M6,25 L15,19 L23,22 L33,12 L43,18 L58,8", brush));
+			}
+			else if (style == WidgetStyle.Terminal)
+				for (int row = 0; row < 4; row++) { Rect(6, 6 + row * 6, 22, 2, brush3); Rect(42, 6 + row * 6, 15, 2, row < 2 ? brush : fill2); }
+			else if (style == WidgetStyle.Thermal)
+			{
+				Rect(7, 6, 4, 22, brush3, 1); Rect(7, 15, 4, 13, brush, 1); Rect(16, 12, 13, 8, fill2);
+				Rect(37, 6, 4, 22, brush3, 1); Rect(37, 22, 4, 6, brush2, 1); Rect(45, 12, 12, 8, fill2);
+			}
+			else if (style == WidgetStyle.MosaicPro)
+			{
+				Rect(6, 6, 29, 18, brush3, 3); Rect(38, 6, 20, 8, brush, 2); Rect(38, 17, 20, 7, brush3, 2); Rect(6, 27, 52, 2, fill2);
+			}
+			else if (style == WidgetStyle.RibbonFlow)
+				for (int row = 0; row < 2; row++) { Rect(6, 6 + row * 12, 52, 9, brush3, 2); Rect(6, 6 + row * 12, row == 0 ? 29 : 13, 9, row == 0 ? brush : brush2, 2); }
+			else
+			{
+				Rect(6, 6, 23, 23, brush3, 3); Rect(34, 6, 24, 23, brush3, 3); Rect(9, 10, 15, 6, brush); Rect(38, 10, 15, 6, brush2);
+				c.Children.Add(Line("M9,24 L15,21 L22,24 L26,20", brush)); c.Children.Add(Line("M38,24 L44,20 L50,23 L55,21", brush2));
+			}
+			return c;
+		}
+		if (LocalDesigns.Contains(style))
+		{
+			Rect(2, 2, 60, 30, fill, style == WidgetStyle.Vector ? 2 : 7);
+			Rect(7, 6, 4, 4, brush, 1); Rect(14, 6, 19, 3, fill2, 1); Rect(45, 6, 13, 3, fill2, 1);
+			Rect(7, 13, 19, 9, style is WidgetStyle.Vector or WidgetStyle.Lucent or WidgetStyle.Circuit ? brush : fill2, 1);
+			if (style == WidgetStyle.Orbit)
+			{
+				var ring = new Avalonia.Controls.Shapes.Ellipse { Width = 15, Height = 15, Stroke = brush2, StrokeThickness = 2 };
+				Canvas.SetLeft(ring, 42); Canvas.SetTop(ring, 11); c.Children.Add(ring);
+			}
+			else Rect(43, 14, 13, 7, brush2, style == WidgetStyle.Lucent ? 3 : 1);
+			if (style == WidgetStyle.Strata) Rect(5, 11, 54, 1, brush3);
+			if (style == WidgetStyle.Circuit) { Rect(2, 2, 60, 1, brush); c.Children.Add(Line("M7,24 L17,22 L27,24 L37,21 L47,23 L57,20", brush)); }
+			else for (int col = 0; col < 3; col++) Rect(7 + col * 18, 27, 13, 2, fill2, 1);
+			return c;
+		}
 		switch (style)
 		{
         case WidgetStyle.PureBar:
@@ -1523,6 +1595,15 @@ public sealed class SettingsWindow : Window
 			{
 				stackPanel.Children.Add(wrapPanel);
 			}
+            if (slot.Kind == WidgetKind.Drives)
+            {
+                var order = Choice(new[] { L.T("C: first"), L.T("Drive letter A–Z"), L.T("Detection order") },
+                    Math.Max(0, Array.IndexOf(DriveOrdering.Modes, slot.DriveOrder)), i => slot.DriveOrder = DriveOrdering.Modes[i]);
+                order.Name = "drive-order";
+                var orderRow = Row(L.T("Drive order"), order);
+                orderRow.Margin = new Thickness(28, 8, 0, 8);
+                stackPanel.Children.Add(orderRow);
+            }
             var sizing = Ui.Stack(8,
                 Ui.Columns("140,*", Ui.Text(L.T("Widget size"), 12.5, p.Soft), Slide(0.5, 2.0, 0.05, slot.WidgetScale, v => slot.WidgetScale = v, v => $"{v * 100:0} %")),
                 Ui.Columns("140,*", Ui.Text(L.T("Graphic size"), 12.5, p.Soft), Slide(0.5, 2.0, 0.05, slot.GraphicScale, v => slot.GraphicScale = v, v => $"{v * 100:0} %")),
@@ -1533,6 +1614,21 @@ public sealed class SettingsWindow : Window
             stackPanel.Children.Add(sizing);
             var sensors = new StackPanel { Spacing = 2, Margin = new Thickness(28, 4, 0, 8) };
             sensors.Children.Add(SectionTitle(L.T("Sensor values")));
+            var recommended = new Button { Name = "sensor-recommended-" + slot.Kind, Content = L.T("Recommended selection"), Padding = new Thickness(10, 5), Margin = new Thickness(0, 4, 0, 8) };
+            ToolTip.SetTip(recommended, L.T("Select the essential values for this widget. Additional values remain individually selectable."));
+            recommended.Click += (_, _) =>
+            {
+                s.SensorSelectionVersion = SensorDefaults.SelectionVersion;
+                if (slot.Kind == WidgetKind.Cpu) s.ShowIntegratedGpu = false;
+                foreach (var option in WidgetSensors.Options(slot.Kind, this.snapshot()))
+                {
+                    s.HiddenValues.Remove(option.Key);
+                    slot.HiddenSensors.Remove(option.Key);
+                    if (!SensorDefaults.Recommended(option.Key)) slot.HiddenSensors.Add(option.Key);
+                }
+                changed(); Build();
+            };
+            sensors.Children.Add(recommended);
             if (slot.Kind == WidgetKind.Cpu)
             {
                 var integrated = new CheckBox
@@ -1553,9 +1649,13 @@ public sealed class SettingsWindow : Window
                 };
                 sensors.Children.Add(integrated);
             }
-            foreach (var option in WidgetSensors.Options(slot.Kind, this.snapshot()))
+            var sensorSnapshot = this.snapshot();
+            var availableSettings = new Settings();
+            availableSettings.Widgets.ForEach(widget => widget.HiddenSensors.Clear());
+            var sensorAvailability = sensorSnapshot == null ? new List<CompleteReading>()
+                : CompleteReadings.For(slot.Kind, 0, sensorSnapshot, new History(), availableSettings.ForWidget(slot.Kind), p);
+            foreach (var option in WidgetSensors.Options(slot.Kind, sensorSnapshot))
             {
-                if (slot.Kind == WidgetKind.Cpu && (ComparisonTile.Styles.Contains(slot.Style) || InsightTile.Styles.Contains(slot.Style)) && option.Key == "cpu.cores") continue;
                 string sensorKey = option.Key;
                 var sensorCheck = new CheckBox
                 {
@@ -1566,15 +1666,15 @@ public sealed class SettingsWindow : Window
                     Margin = new Thickness(0, 1),
                     Tag = sensorKey
                 };
+                var supplied = sensorAvailability.Where(reading => reading.SensorKey == sensorKey).ToArray();
+                if (supplied.Length > 0 && supplied.All(reading => !reading.Available))
+                    ToolTip.SetTip(sensorCheck, L.T("Not available") + " · " + option.Label);
                 sensorCheck.IsCheckedChanged += (_, _) =>
                 {
-                    if (sensorCheck.IsChecked == true)
-                    {
-                        slot.HiddenSensors.Remove(sensorKey);
-                        s.HiddenValues.Remove(sensorKey);
-                    }
-                    else if (!slot.HiddenSensors.Contains(sensorKey)) slot.HiddenSensors.Add(sensorKey);
+                    WidgetSensors.Select(s, slot, sensorKey, sensorCheck.IsChecked == true, this.snapshot());
                     changed();
+                    // Refresh group checkboxes too; enabling a child also opens its legacy parent.
+                    Build();
                 };
                 sensors.Children.Add(sensorCheck);
             }

@@ -22,7 +22,6 @@ public class RightWidgetsTests
         card.Update(snap, history);
         var expected = CompleteReadings.For(kind, 0, snap, history, settings.ForWidget(kind), palette)
             .Where(r => r.Key != WidgetSensors.PrimaryKey(kind) && r.Key != WidgetSensors.SecondaryKey(kind)).Select(r => r.Key).ToArray();
-        if (kind == WidgetKind.Gpu && snap.Gpus.First().MemoryJunction.HasValue) expected = expected.Append("gpu.junction").ToArray();
         Assert.Equal(expected, card.RightKeys);
         var right = card.GetLogicalDescendants().OfType<Border>().Single(c => Equals(c.Tag, "right-widgets-values"));
         var left = card.GetLogicalDescendants().OfType<Border>().Single(c => Equals(c.Tag, "right-widgets-ring"));

@@ -107,13 +107,15 @@ public sealed class TableTile : SummaryTile
 		for (int i = 0; i < list.Count; i++)
 		{
 			Fill(i, list[i].Label, list[i].Value, list[i].Fraction, list[i].Color);
+            BindReading(rows[i].Value, list[i]);
 		}
 	}
 
 	private void Fill(int i, string label, string value, double? fraction, Color color)
 	{
 		rows[i].Label.Text = label;
-		rows[i].Bar.IsVisible = fraction.HasValue;
+		rows[i].Bar.IsVisible = fraction.HasValue || Kind == WidgetKind.Drives && value == "—";
+        rows[i].Bar.Opacity = value == "—" ? .3 : 1;
 		rows[i].Bar.Set(fraction ?? 0, color);
 		rows[i].Value.Text = value;
 		rows[i].Value.Foreground = Palette.Brush((color == P.Cool) ? P.Ink : color);
@@ -132,12 +134,13 @@ public sealed class TableTile : SummaryTile
 			for (int i = 0; i < shown.Count; i++)
 			{
 				Fill(i, shown[i].Label, shown[i].Value, shown[i].Fraction, shown[i].Color);
+                BindReading(rows[i].Value, shown[i]);
 			}
 		}
 		for (int k = 0; k < items.Count; k++)
 		{
 			var (label, value) = items[k];
-			double? fraction = SegmentScale.Fraction(Kind, label, value, Last.Snap);
+			double? fraction = ExtraFraction(label, value);
 			Color color = value.Contains('°') && fraction is double heat ? P.At(heat) : P.Cool;
 			Fill(shown.Count + k, label, value, fraction, color);
 		}

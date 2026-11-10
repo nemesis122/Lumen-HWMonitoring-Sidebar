@@ -23,6 +23,7 @@ public sealed class TwinFocusTile : SummaryTile
         ClipToBounds = true;
         label = Ui.Text("", 13, p.Ink, FontWeight.Bold);
         hardware = Ui.Text("", 11.5, p.Soft);
+        HardwareWidgetTitle.Register(this, label, hardware);
         label.MaxLines = hardware.MaxLines = 1;
         double size = m.Subtitles ? 44 : 40;
         value = new BoldValue(size, p);
@@ -55,6 +56,7 @@ public sealed class TwinFocusTile : SummaryTile
         hardware.IsVisible = Naming.ShowHardware(Slot, S) && hardware.Text.Length > 0;
         ToolTip.SetTip(hardware, hardware.Text);
         value.Set(sum.Value, sum.Unit, accent, sum.Color == P.Ramp[^1]);
+        BindPrimary(value);
         var pair = TwinFocusMetrics.Pair(Kind, Index, sum, Last.Snap, Last.History, S);
         secondColumn.IsVisible = pair.Secondary.Value.Length > 0 && pair.Secondary.Value != "—" && S.Shows(WidgetSensors.SecondaryKey(Kind));
         firstLabel.Text = pair.Primary.Label;

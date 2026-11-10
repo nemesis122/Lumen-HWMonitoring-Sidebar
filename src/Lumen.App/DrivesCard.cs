@@ -47,7 +47,7 @@ public sealed class DrivesCard : Card
                 WidgetPresentation.Sensor(textBlock4, "drives.read");
                 WidgetPresentation.Sensor(textBlock5, "drives.write");
 				Grid grid = Ui.Columns("Auto,Auto,Auto,Auto", Letter("R", 0.0), textBlock4, Letter("W", 10.0), textBlock5);
-				grid.IsVisible = Shows("drives.io");
+				grid.IsVisible = false; // Transfer values use the shared per-device pair, without bars.
 				textBlock2.IsVisible = Shows("drives.temp");
 				meter.IsVisible = Shows("drives.bar");
 				textBlock3.IsVisible = Shows("drives.used");
@@ -56,7 +56,7 @@ public sealed class DrivesCard : Card
 				rows.Children.Add(Ui.Stack(5.0, Ui.Columns("*,Auto", textBlock, textBlock2), meter, grid2));
 				value = (map[item2.Id] = (textBlock, textBlock2, meter, textBlock3, textBlock4, textBlock5));
 			}
-			string text = ((Shows("drives.model") || item2.Letters.Length == 0) ? ShortName(item2.Name) : "");
+			string text = item2.Letters.Length == 0 ? ShortName(item2.Name) : "";
 			value.Item1.Text = ((item2.Letters.Length > 0) ? ((text.Length > 0) ? (text + " · " + item2.Letters) : item2.Letters) : text);
 			Motion.Text(value.Item2, TempWithUnit(item2.Temperature));
 			value.Item2.Foreground = Palette.Brush((!item2.Temperature.HasValue) ? P.Faint : HeatColor(item2.Temperature + 10.0));
@@ -65,7 +65,18 @@ public sealed class DrivesCard : Card
 			value.Item4.Text = ((!item2.UsedPercent.HasValue) ? "" : (Format.Percent(item2.UsedPercent) + " " + L.T("used")));
 			value.Item5.Text = Format.Rate(Recent(h.Read("disk." + item2.Id + ".read"), item2.ReadBytesPerSecond));
 			value.Item6.Text = Format.Rate(Recent(h.Read("disk." + item2.Id + ".write"), item2.WriteBytesPerSecond));
+            string identity = "drive:" + item2.Id + ":";
+            SensorDetails.Value(value.Item1, "");
+            SensorDetails.Value(value.Item2, identity + "temp");
+            SensorDetails.Value(value.Item4, identity + "used");
+            SensorDetails.Value(value.Item5, identity + "read");
+            SensorDetails.Value(value.Item6, identity + "write");
 		}
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (map[list[i].Id].name.Parent?.Parent is Control row && rows.Children.IndexOf(row) != i)
+            { rows.Children.Remove(row); rows.Children.Insert(i, row); }
+        }
 		TextBlock Letter(string text2, double left)
 		{
 			TextBlock textBlock6 = Ui.Text(text2, 11.5, P.Faint, FontWeight.DemiBold);
@@ -74,7 +85,7 @@ public sealed class DrivesCard : Card
 		}
 		TextBlock Rate()
 		{
-			TextBlock textBlock6 = Ui.Text("", 11.5, P.Soft, FontWeight.Normal, numbers: true);
+			TextBlock textBlock6 = Ui.Text("", 11.5, P.Ink, FontWeight.Normal, numbers: true);
 			textBlock6.Width = 64.0;
 			textBlock6.TextAlignment = TextAlignment.Right;
 			return textBlock6;

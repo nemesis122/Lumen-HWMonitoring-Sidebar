@@ -131,15 +131,12 @@ public static class Summaries
 		}
 		case WidgetKind.Drives:
 		{
-			List<DiskInfo> list = s.Disks.Where((DiskInfo d) => set.Shows("drive:" + d.Id)).ToList();
-			DiskInfo diskInfo = (from d in list
-				where d.Temperature.HasValue
-				orderby d.Temperature descending
-				select d).FirstOrDefault();
+			List<DiskInfo> list = DriveOrdering.Order(s.Disks, DriveOrdering.Mode(set)).Where((DiskInfo d) => set.Shows("drive:" + d.Id)).ToList();
+			DiskInfo diskInfo = list.FirstOrDefault();
 			string caption = $"{list.Count} {((list.Count == 1) ? L.T("drive") : L.T("drives"))}";
 			return new Summary("M2,4 A1.5,1.5 0 0 1 3.5,2.5 H12.5 A1.5,1.5 0 0 1 14,4 V12 A1.5,1.5 0 0 1 12.5,13.5 H3.5 A1.5,1.5 0 0 1 2,12 Z M2,9.5 H14 M11,11.5 H12", L.T("Drives"), T(diskInfo?.Temperature), unit, Heat(diskInfo?.Temperature), Format.Heat(diskInfo?.Temperature), caption, Array.Empty<double>(), null)
 			{
-				HeroLabel = ((object)diskInfo == null || list.Count < 2) ? "" : (L.T("Hottest") + " · " + DriveName(diskInfo))
+				HeroLabel = diskInfo == null ? "" : DriveName(diskInfo) + " · " + L.T("Temp")
 			};
 		}
 		case WidgetKind.Volumes:
@@ -273,13 +270,13 @@ public static class Summaries
 	{
 		return kind switch
 		{
-			WidgetKind.Cpu => "cpu.chart", 
-			WidgetKind.Gpu => "gpu.chart", 
-			WidgetKind.Network => "net.chart", 
-			WidgetKind.Fps => "fps.chart", 
-			WidgetKind.Ping => "ping.chart", 
-			WidgetKind.Power => "power.chart", 
-			_ => null, 
+			WidgetKind.Cpu => "cpu.chart",
+			WidgetKind.Gpu => "gpu.chart",
+			WidgetKind.Network => "net.chart",
+			WidgetKind.Fps => "fps.chart",
+			WidgetKind.Ping => "ping.chart",
+			WidgetKind.Power => "power.chart",
+			_ => null,
 		};
 	}
 
@@ -413,15 +410,15 @@ public static class Summaries
 		case WidgetKind.Drives:
 			if (set.Shows("drives.temps"))
 			{
-				List<DiskInfo> drives = s.Disks.Where((DiskInfo d) => set.Shows("drive:" + d.Id)).ToList();
-				DiskInfo? hottest = set.Shows("drives.temp") ? drives.Where((DiskInfo d) => d.Temperature.HasValue).OrderByDescending((DiskInfo d) => d.Temperature).FirstOrDefault() : null;
+				List<DiskInfo> drives = DriveOrdering.Order(s.Disks, DriveOrdering.Mode(set)).Where((DiskInfo d) => set.Shows("drive:" + d.Id)).ToList();
+				DiskInfo? hottest = set.Shows("drives.temp") ? drives.FirstOrDefault() : null;
 				foreach (DiskInfo item in drives.Where((DiskInfo d) => d != hottest))
 				{
 					list.Add((DriveName(item), Tc(item.Temperature)));
 				}
 			}
-			Add("drives.io", L.T("Read"), Format.Rate(s.Disks.Where((DiskInfo d) => set.Shows("drive:" + d.Id)).Sum((DiskInfo d) => d.ReadBytesPerSecond.GetValueOrDefault())));
-			Add("drives.io", L.T("Write"), Format.Rate(s.Disks.Where((DiskInfo d) => set.Shows("drive:" + d.Id)).Sum((DiskInfo d) => d.WriteBytesPerSecond.GetValueOrDefault())));
+            // Read/write belong to each disk in CompleteReadings. Do not add a second, unlabelled
+            // aggregate pair here: every design already receives the selected per-device rates.
 			break;
 		case WidgetKind.Volumes:
 			if (!set.Shows("volumes.each"))

@@ -173,6 +173,7 @@ public sealed class NeonHudTile : DashTile
 		CornerRadius = new CornerRadius(10);
 		Padding = new Thickness(13, 11, 13, 12);
 		title = Text("", 11, Ink, FontWeight.Bold, Mono);
+        HardwareWidgetTitle.Register(this, title);
 		title.LetterSpacing = 0.6;
 		title.TextTrimming = TextTrimming.CharacterEllipsis;
 		title.VerticalAlignment = VerticalAlignment.Center;
@@ -201,6 +202,7 @@ public sealed class NeonHudTile : DashTile
 		title.Text = (Naming.ShowHardware(Own, S) && device.Length > 0 ? name + " · " + device : name).ToUpper(L.Culture);
 		title.Foreground = Palette.Brush(main);
 		badge.Text = sum.Value == "—" ? "" : (Which(sum).Length > 0 ? Which(sum).Split('·')[^1].Trim() + "  " : "") + HeroText(sum);
+        BindPrimary(badge);
 		badge.Foreground = Palette.Brush(main);
 		badgeBox.BorderBrush = Palette.Brush(Color.FromArgb(150, main.R, main.G, main.B));
 		badgeBox.Background = Palette.Brush(Color.FromArgb(28, main.R, main.G, main.B));
@@ -271,6 +273,14 @@ public sealed class NeonHudTile : DashTile
 // tiles with a coloured caption each.
 public sealed class NeonTilesTile : DashTile
 {
+    public static Border MetricTile(TextBlock caption, Control number, Palette palette) => new()
+    {
+        Margin = new Thickness(4, 0, 4, 8), MinHeight = 62, CornerRadius = new CornerRadius(10),
+        BorderThickness = new Thickness(1), BorderBrush = Palette.Brush(palette.Dark ? Color.Parse("#1e2636") : palette.Stroke),
+        Background = Palette.Brush(palette.Dark && !palette.OwnBackground ? Color.Parse("#111723") : Palette.Mix(palette.Card, palette.Ink, .03)),
+        Padding = new Thickness(6, 8), Child = Ui.Stack(6, caption, Fit(number, HorizontalAlignment.Center))
+    };
+
 	private readonly Avalonia.Controls.Shapes.Ellipse dot = new Avalonia.Controls.Shapes.Ellipse { Width = 7, Height = 7, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 7, 0) };
 
 	private readonly TextBlock status;
@@ -290,6 +300,7 @@ public sealed class NeonTilesTile : DashTile
 		status = Text("", 9.5, Ink, FontWeight.Bold, Mono);
 		status.LetterSpacing = 0.8;
 		headline = Text("", 17, Ink, FontWeight.Bold);
+        HardwareWidgetTitle.Register(this, status, headline);
 		headline.TextWrapping = TextWrapping.Wrap;
 		headline.TextTrimming = TextTrimming.None;
 		tiles.Margin = new Thickness(-4, 0, -4, 0);
@@ -322,17 +333,8 @@ public sealed class NeonTilesTile : DashTile
 			cap.HorizontalAlignment = HorizontalAlignment.Center;
 			cap.TextTrimming = TextTrimming.CharacterEllipsis;
 			var val = Text(value, 16, Ink, FontWeight.Bold, null, true);
-			tiles.Children.Add(Mark(new Border
-			{
-				Margin = new Thickness(4, 0, 4, 8),
-				MinHeight = 62,
-				CornerRadius = new CornerRadius(10),
-				BorderThickness = new Thickness(1),
-				BorderBrush = Palette.Brush(Line("#1e2636")),
-				Background = Palette.Brush(P.Dark && !P.OwnBackground ? Color.Parse("#111723") : Palette.Mix(P.Card, P.Ink, 0.03)),
-				Padding = new Thickness(6, 8),
-				Child = Ui.Stack(6, cap, Fit(val, HorizontalAlignment.Center))
-			}, value));
+            if (i < readings.Count) BindReading(val, readings[i]);
+			tiles.Children.Add(Mark(MetricTile(cap, val, P), value));
 		}
 		tiles.Columns = Math.Clamp(items.Count, 1, 3);
 		tiles.IsVisible = items.Count > 0;
@@ -372,6 +374,7 @@ public sealed class ThermostatTile : DashTile
 	private readonly StackPanel side = new StackPanel { Spacing = 7, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
 
 	private readonly Grid body = new Grid { ColumnDefinitions = ColumnDefinitions.Parse("1*,1*") };
+    private readonly DesignValueFaces valueFaces = new();
 
 	private readonly HashSet<string> wrapped = new HashSet<string>();
 
@@ -384,8 +387,10 @@ public sealed class ThermostatTile : DashTile
 		CornerRadius = new CornerRadius(14);
 		Padding = new Thickness(14, 12, 14, 12);
 		head = Text("", 9.5, Soft, FontWeight.Medium);
+        HardwareWidgetTitle.Register(this, head);
 		head.LetterSpacing = 1.2;
 		device = Text("", 9.5, Soft, FontWeight.Medium);
+        HardwareWidgetTitle.Register(this, head, device);
 		device.LetterSpacing = 1.2;
 		device.Opacity = 0.7;
 		device.HorizontalAlignment = HorizontalAlignment.Right;
@@ -412,7 +417,7 @@ public sealed class ThermostatTile : DashTile
 		body.Children.Add(face);
 		Grid.SetColumn(side, 1);
 		body.Children.Add(side);
-		var root = Ui.Stack(10, Ui.Columns("*,Auto", head, device), body, drives, footer);
+		var root = Ui.Stack(10, Ui.Columns("*,Auto", head, device), body, valueFaces, drives, footer);
 		root.Tag = "elastic";
 		Child = root;
 	}
@@ -422,10 +427,20 @@ public sealed class ThermostatTile : DashTile
 		head.Text = Naming.Title(Own, Index, sum.Title).ToUpper(L.Culture);
 		string name = Naming.Hardware(Own, Index, sum.Name);
 		device.Text = Naming.ShowHardware(Own, S) ? name.ToUpper(L.Culture) : "";
+        if (Kind is WidgetKind.Drives or WidgetKind.Network)
+        {
+            if (AllDrives) drives.Show(DriveList());
+            drives.IsVisible = body.IsVisible = face.IsVisible = footer.IsVisible = false;
+            footer.Children.Clear(); side.Children.Clear();
+            valueFaces.Show(WidgetStyle.Thermostat, DesignValueFaces.Readings(Kind, Index, Last.Snap, Last.History, S, P), P);
+            return;
+        }
+        valueFaces.IsVisible = false;
 		bool none = sum.Value == "—";
 		caption.Text = (sum.HeroLabel.Length > 0 ? sum.HeroLabel : WidgetSensors.PrimaryLabel(Kind)).ToUpper(L.Culture);
 		caption.IsVisible = caption.Text.Length > 0;
 		value.Text = sum.Value;
+		BindPrimary(value);
 		unit.Text = none ? "" : sum.Unit.Replace("°C", "°").Replace("°F", "°");
 		sub.Text = sum.SecondLabel.Length > 0 ? sum.SecondLabel + " " + WidgetSensors.SecondaryLabel(Kind) : "";
 		sub.IsVisible = sub.Text.Length > 0;
@@ -553,6 +568,7 @@ public sealed class SmartPanelTile : DashTile
 		CornerRadius = new CornerRadius(14);
 		Padding = new Thickness(14, 12, 14, 14);
 		head = Text("", 9.5, Soft, FontWeight.Medium);
+        HardwareWidgetTitle.Register(this, head);
 		head.LetterSpacing = 1.2;
 		head.TextTrimming = TextTrimming.CharacterEllipsis;
 		heroLabel = Text("", 10, Soft);
@@ -576,9 +592,12 @@ public sealed class SmartPanelTile : DashTile
 	protected override void Show(Summary sum)
 	{
 		head.Text = ("◆  " + Naming.Title(Own, Index, sum.Title)).ToUpper(L.Culture);
+        string hardwareName = Naming.Hardware(Own, Index, sum.Name);
+        if (Naming.ShowHardware(Own, S) && hardwareName.Length > 0) head.Text += " · " + hardwareName.ToUpper(L.Culture);
 		bool none = sum.Value == "—";
 		heroLabel.Text = sum.HeroLabel.Length > 0 ? sum.HeroLabel : WidgetSensors.PrimaryLabel(Kind);
 		heroValue.Text = sum.Value;
+		BindPrimary(heroValue);
 		heroUnit.Text = none ? "" : sum.Unit;
 		Color green = Accent("#4ade80");
 		level.IsVisible = !none && Kind is WidgetKind.Memory or WidgetKind.Battery or WidgetKind.Volumes;
@@ -588,14 +607,14 @@ public sealed class SmartPanelTile : DashTile
 		}
 		Color[] marks = { Accent("#f59e0b"), Accent("#f472b6"), Accent("#60a5fa") };
 		var rates = Rates();
-		right.IsVisible = rates == null;
+		right.IsVisible = rates == null && !AllDrives;
 		pairHost.IsVisible = rates != null;
 		// Network: download and upload both large, side by side, instead of one big value.
 		pairHost.Child = rates is var (down, up) ? RatePair(down, up, 30, null, Ink, Ink, stacked: false) : null;
-		var shown = AllBut(sum);
+		var shown = AllDrives ? All() : AllBut(sum);
 		var rest = WithoutRates(shown);
 		var items = rest.Select(r => (r.Label, r.Value, Heat: Heat(r.Value) ? (Color?)Opaque(r.Color) : null))
-			.Concat(Facts(sum, shown, 3).Select(f => (f.Label, f.Value, Heat: (Color?)null))).ToList();
+			.Concat((AllDrives ? new List<(string Label, string Value)>() : Facts(sum, shown, 3)).Select(f => (f.Label, f.Value, Heat: (Color?)null))).ToList();
 		stats.Children.Clear();
 		for (int i = 0; i < items.Count; i++)
 		{
@@ -605,6 +624,7 @@ public sealed class SmartPanelTile : DashTile
 			cap.TextTrimming = TextTrimming.CharacterEllipsis;
 			var (num, u) = Format.Split(value);
 			var big = Ui.Row(0, Text(num, 19, heat ?? Ink, FontWeight.DemiBold, null, true), Text(u.Length > 0 ? " " + u : "", 10, Soft, FontWeight.Medium));
+            SensorDetails.Value(big.Children[0], SensorDetails.LabelKey(Kind, label, CompleteReadings.For(Kind, Index, Last.Snap, Last.History, S, P)));
 			((Control)big.Children[1]).VerticalAlignment = VerticalAlignment.Bottom;
 			((Control)big.Children[1]).Margin = new Thickness(0, 0, 0, 3);
 			stats.Children.Add(Mark(new Border { Padding = new Thickness(0, 0, 8, 8), Child = Ui.Stack(3, Ui.Columns("Auto,*", mark, cap), Fit(big)) }, value));
@@ -618,6 +638,7 @@ public sealed class SmartPanelTile : DashTile
 // the main value, thick purple bars with name and value on the right.
 public sealed class PurpleTile : DashTile
 {
+    private readonly DesignValueFaces valueFaces = new();
 	private readonly Avalonia.Controls.Shapes.Path icon = new Avalonia.Controls.Shapes.Path { Width = 18, Height = 18, Stretch = Stretch.Uniform, StrokeThickness = 1.4, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
 
 	private readonly TextBlock bold;
@@ -655,6 +676,7 @@ public sealed class PurpleTile : DashTile
 		icon.Stroke = Palette.Brush(Ink);
 		bold = Text("", 15, Ink, FontWeight.Bold);
 		name = Text("", 15, Ink, FontWeight.Normal);
+        HardwareWidgetTitle.Register(this, bold, name);
 		name.Opacity = 0.85;
 		name.TextTrimming = TextTrimming.CharacterEllipsis;
 		name.Margin = new Thickness(6, 0, 0, 0);
@@ -699,7 +721,7 @@ public sealed class PurpleTile : DashTile
 			grid.Children.Add(bars);
 			body = grid;
 		}
-		var root = Ui.Stack(12, header, body);
+		var root = Ui.Stack(12, header, body, valueFaces);
 		root.Tag = "elastic";
 		Child = root;
 	}
@@ -707,18 +729,26 @@ public sealed class PurpleTile : DashTile
 	protected override void Show(Summary sum)
 	{
 		icon.Data = Geometry.Parse(sum.Glyph);
-		bold.Text = Short(Kind);
+		bold.Text = Naming.Title(Own, Index, string.IsNullOrWhiteSpace(Own?.Name) ? Short(Kind) : sum.Title);
 		string device = Naming.Hardware(Own, Index, sum.Name);
 		name.Text = Naming.ShowHardware(Own, S) && device.Length > 0 ? device : Naming.Title(Own, Index, sum.Title);
 		// "FPS FPS", "PING Ping": the short name is left out when the title already says it.
 		bold.IsVisible = !string.Equals(bold.Text, name.Text, StringComparison.OrdinalIgnoreCase);
 		bool none = sum.Value == "—";
 		value.Text = sum.Value;
+		BindPrimary(value);
 		unit.Text = none ? "" : sum.Unit;
 		label.Text = sum.HeroLabel.Length > 0 ? sum.HeroLabel : WidgetSensors.PrimaryLabel(Kind);
 		Color purple = Own?.Accent.Length > 0 ? Tint : Accent("#8b2cf5");
 		Color pink = Accent("#e64bd3");
 		ring.Set(none ? 0 : sum.Fraction, purple, pink);
+        if (!list && Kind is WidgetKind.Drives or WidgetKind.Network)
+        {
+            gauge.IsVisible = bars.IsVisible = false; bars.Children.Clear();
+            valueFaces.Show(WidgetStyle.PurpleDash, DesignValueFaces.Readings(Kind, Index, Last.Snap, Last.History, S, P), P);
+            return;
+        }
+        valueFaces.IsVisible = false;
 		gauge.IsVisible = sum.Value.Length > 0 && !AllDrives;
 		Color track = P.Dark ? Color.Parse("#3a3a3e") : P.Track;
 		var rates = Rates();
@@ -773,13 +803,15 @@ public sealed class PurpleTile : DashTile
 // from pink to blue, a large digital number with the load below and two readings at the foot.
 public sealed class SciFiTile : DashTile
 {
+    private readonly DesignValueFaces valueFaces = new();
 	private readonly Border lineLeft = new Border { Height = 2, Width = 26, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
 
 	private readonly Border lineRight = new Border { Height = 2, Width = 26, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 0, 0) };
+    private readonly TextBlock hardwareLabel;
 
 	private readonly TextBlock title;
 
-	private readonly TickRing ring = new TickRing { Width = 200, Height = 200, TickLength = 0.06 };
+	private readonly TickRing ring = new TickRing { Width = 240, Height = 240, TickLength = 0.06 };
 
 	// Network: upload on a second, smaller ring inside the download ring.
 	private readonly TickRing upRing = new TickRing { Width = 158, Height = 158, TickLength = 0.06, IsVisible = false, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
@@ -815,6 +847,9 @@ public sealed class SciFiTile : DashTile
 		title = Text("", 15, Ink, FontWeight.DemiBold, Digital);
 		title.LetterSpacing = 2;
 		var header = Ui.Row(0, lineLeft, title, lineRight);
+        hardwareLabel = Text("", 11, Soft, FontWeight.Medium, Digital);
+        HardwareWidgetTitle.Register(this, title, hardwareLabel);
+        hardwareLabel.TextWrapping = TextWrapping.Wrap;
 		header.HorizontalAlignment = HorizontalAlignment.Center;
 		value = Text("", 66, Palette.Mix(Ink, Soft, 0.15), FontWeight.DemiBold, Digital, true);
 		unit = Text("", 18, Palette.Mix(Ink, Soft, 0.15), FontWeight.Medium, Digital);
@@ -836,11 +871,11 @@ public sealed class SciFiTile : DashTile
 		center.HorizontalAlignment = HorizontalAlignment.Center;
 		center.VerticalAlignment = VerticalAlignment.Center;
 		// Slightly lower than before: thinner ticks, larger numbers, more room for the list below.
-		face = new Viewbox { Stretch = Stretch.Uniform, MaxWidth = 210, HorizontalAlignment = HorizontalAlignment.Center, Child = new Panel { Width = 200, Height = 200, Children = { ring, upRing, center } } };
+		face = new Viewbox { Stretch = Stretch.Uniform, MaxWidth = 260, HorizontalAlignment = HorizontalAlignment.Center, Child = new Panel { Width = 240, Height = 240, Children = { ring, upRing, center } } };
 		// Drives: every drive as a segmented line instead of the ring for the hottest one.
 		drives = new DriveRows(8, 11, 13, Soft, () => new SegmentBar { Height = 10 },
 			(c, r) => ((SegmentBar)c).Set(r.Fraction, Accent("#ec4899"), Accent("#3b82f6"), P.Dark ? Color.Parse("#25272e") : P.Track), r => Heat(r.Value) ? Opaque(r.Color) : Ink, Digital);
-		var inner = Ui.Stack(10, header, face, drives, segments, rows);
+		var inner = Ui.Stack(10, header, hardwareLabel, face, valueFaces, drives, segments, rows);
 		inner.Tag = "elastic";
 		Child = new ChamferFrame
 		{
@@ -865,10 +900,22 @@ public sealed class SciFiTile : DashTile
 		Color blue = Accent("#3b82f6");
 		((ChamferFrame)Child!).Accent = main;
 		lineLeft.Background = lineRight.Background = divider.Background = Palette.Brush(main);
-		title.Text = Short(Kind);
+		title.Text = Naming.Title(Own, Index, string.IsNullOrWhiteSpace(Own?.Name) ? Short(Kind) : sum.Title);
+        hardwareLabel.Text = Naming.Hardware(Own, Index, sum.Name);
+        hardwareLabel.IsVisible = Naming.ShowHardware(Own, S) && hardwareLabel.Text.Length > 0;
+        if (Kind is WidgetKind.Drives or WidgetKind.Network)
+        {
+            if (AllDrives) drives.Show(DriveList());
+            drives.IsVisible = face.IsVisible = segments.IsVisible = rows.IsVisible = false;
+            rows.Children.Clear();
+            valueFaces.Show(WidgetStyle.SciFi, DesignValueFaces.Readings(Kind, Index, Last.Snap, Last.History, S, P), P);
+            return;
+        }
+        valueFaces.IsVisible = false;
 		bool none = sum.Value == "—";
 		bool level = Kind is WidgetKind.Memory or WidgetKind.Volumes or WidgetKind.Battery;
 		value.Text = sum.Value;
+		BindPrimary(value);
 		value.FontSize = 66;
 		unit.Text = none ? "" : sum.Unit;
 		bool second = sum.Second.HasValue && sum.SecondLabel.Length > 0;
@@ -986,6 +1033,7 @@ public sealed class SciFiTile : DashTile
 // A thin bar with a colour gradient over the filled part.
 public sealed class GradientBar : Control
 {
+    internal void CopyAppearanceTo(GradientBar target, double value) => target.Set(value, from, to, track);
 	private double fraction;
 
 	private Color from = Colors.Cyan;
@@ -1186,6 +1234,7 @@ public sealed class TickRing : Control
 // A level made of small segments that fade from pink to blue.
 public sealed class SegmentBar : Control
 {
+    internal void CopyAppearanceTo(SegmentBar target, double value) => target.Set(value, from, to, off);
 	private double fraction;
 
 	private Color from = Colors.HotPink;

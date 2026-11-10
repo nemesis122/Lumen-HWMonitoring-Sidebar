@@ -165,6 +165,7 @@ public sealed class DriveHealthCard : Card
 				var bar = new FillBack { Height = 6, Radius = 3, Track = P.Track, VerticalAlignment = VerticalAlignment.Center };
 				bar.Animate(Math.Clamp(life / 100.0, 0, 1), life < 10 ? Palette.Alpha(P.Ramp[^1], 1) : life < 30 ? Palette.Alpha(P.Ramp[2], 1) : P.Calm);
 				var lifeText = Ui.Text(Format.Number(life, "0") + " %", 12, P.Ink, FontWeight.DemiBold, numbers: true);
+                SensorDetails.Value(lifeText, "drive:" + d.Id + ":life");
 				lifeText.Margin = new Thickness(8, 0, 0, 0);
 				block.Children.Add(Ui.Columns("Auto,*,Auto", Label(L.T("Life left"), P), new Border { Padding = new Thickness(8, 0, 0, 0), Child = bar }, lifeText));
 			}
@@ -174,7 +175,13 @@ public sealed class DriveHealthCard : Card
 			if (Shows("health.temp") && d.Temperature is double t) facts.Add(Format.Temperature(t, S.Fahrenheit) + " " + TempUnit);
 			if (facts.Count > 0)
 			{
-				block.Children.Add(Ui.Text(string.Join("  ·  ", facts), 11.5, P.Soft, FontWeight.Medium, numbers: true));
+                var factsText = Ui.Text(string.Join("  ·  ", facts), 11.5, P.Soft, FontWeight.Medium, numbers: true);
+                var keys = new List<string>();
+                if (Shows("health.hours") && d.PowerOnHours.HasValue) keys.Add("drive:" + d.Id + ":hours");
+                if (Shows("health.count") && d.PowerOnCount.HasValue) keys.Add("drive:" + d.Id + ":powercount");
+                if (Shows("health.temp") && d.Temperature.HasValue) keys.Add("drive:" + d.Id + ":temp");
+                SensorDetails.Value(factsText, string.Join('|', keys));
+                block.Children.Add(factsText);
 			}
 			else if (!d.Life.HasValue)
 			{

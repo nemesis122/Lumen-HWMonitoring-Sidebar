@@ -79,6 +79,7 @@ public sealed class EvolutionTile : SummaryTile
 		heading = Ui.Text("", 13, p.Ink, FontWeight.DemiBold);
 		heading.Margin = new Thickness(8, 0, 8, 0);
 		device = Ui.Text("", 11, p.Soft);
+        HardwareWidgetTitle.Register(this, heading, device);
 		device.HorizontalAlignment = HorizontalAlignment.Right;
 		device.MaxWidth = 150;
 		Grid header = Ui.Columns("Auto,*,Auto", dot, heading, device);
@@ -213,6 +214,8 @@ public sealed class EvolutionTile : SummaryTile
 		}
 
 		big.Text = sum.Value;
+
+		BindPrimary(big);
 		// The big number keeps its widest width (right-aligned), so the unit and the bar beside it stay in
 		// place when it goes from "35" to "9".
 		big.TextAlignment = TextAlignment.Right;
@@ -229,7 +232,7 @@ public sealed class EvolutionTile : SummaryTile
 
 		// Right of the big number: the load for processors and graphics, a level bar for memory and the like.
 		bool load = Kind is WidgetKind.Cpu or WidgetKind.Gpu && sum.Second.HasValue && S.Shows(WidgetSensors.SecondaryKey(Kind));
-		second.Text = load ? Format.Number(sum.Second * 100.0) : "";
+		second.Text = load ? Format.Number(sum.Second * 100.0) : ""; BindSecondary(second);
 		second.Foreground = Palette.Brush(accent);
 		secondLabel.Text = load ? "% " + L.T("Load") : "";
 		if (Kind == WidgetKind.Clock && S.Shows("clock.week"))
@@ -244,7 +247,7 @@ public sealed class EvolutionTile : SummaryTile
 		cores.IsVisible = coreLoads.Length > 1;
 		if (cores.IsVisible)
 		{
-			cores.Set(coreLoads.Take(16).ToArray(), accent, Palette.Alpha(P.Ramp[^1], 1));
+			cores.Set(coreLoads.ToArray(), accent, Palette.Alpha(P.Ramp[^1], 1));
 		}
 		bool sparkline = !cores.IsVisible && Kind is not WidgetKind.Cpu and not WidgetKind.Gpu and not WidgetKind.Memory && sum.Series.Length > 1 && (Summaries.ChartKey(Kind) is not string chart || S.Shows(chart));
 		spark.IsVisible = sparkline;
@@ -307,10 +310,10 @@ public sealed class EvolutionTile : SummaryTile
 					fanPeaks[f.Name] = peak;
 					if (f.Rpm <= 0)
 					{
-						return new Reading(name, L.T("Off"), 0, P.Faint);
+						return new Reading(name, L.T("Off"), 0, P.Faint) { Key = "fan:" + f.Name };
 					}
 					double fraction = f.Percent is double pc ? Math.Clamp(pc / 100.0, 0, 1) : Math.Clamp(f.Rpm / peak, 0, 1);
-					return new Reading(name, Format.Rpm(f.Rpm), fraction, accent);
+					return new Reading(name, Format.Rpm(f.Rpm), fraction, accent) { Key = "fan:" + f.Name };
 				}).ToList();
 			}
 			return readings.Where(r => r.Value != heroText).ToList();
@@ -472,6 +475,7 @@ public sealed class EvolutionTile : SummaryTile
 			Color fill = heat ? Opaque(r.Color) : accent;
 			rowItems[i].Label.Text = r.Label;
 			rowItems[i].Value.Text = r.Value;
+            BindReading(rowItems[i].Value, r);
 			rowItems[i].Value.Foreground = Palette.Brush(heat ? fill : P.Ink);
 			rowItems[i].Bar.Animate(r.Fraction, fill);
 		}
@@ -544,8 +548,8 @@ public sealed class CoreBars : Control
 		{
 			return;
 		}
-		double gap = 2;
-		double w = Math.Max(1, (b.Width - gap * (values.Length - 1)) / values.Length);
+		double gap = Math.Min(2, b.Width / (values.Length * 3.0));
+		double w = (b.Width - gap * (values.Length - 1)) / values.Length;
 		for (int i = 0; i < values.Length; i++)
 		{
 			double v = double.IsFinite(values[i]) ? Math.Clamp(values[i] / 100.0, 0, 1) : 0;

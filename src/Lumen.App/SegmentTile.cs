@@ -126,7 +126,7 @@ public sealed class SegmentTile : SummaryTile
 			v.VerticalAlignment = VerticalAlignment.Center;
 			// The same spacing as the main lines and the drive lines, so every bar starts and ends together.
 			var meter = new Meter { Height = 12.0, Palette = palette, Segments = 20, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 12, 0) };
-			double? fraction = SegmentScale.Fraction(Kind, label, value, Last.Snap);
+			double? fraction = ExtraFraction(label, value);
 			if (fraction is double fr)
 			{
 				bool heat = value.Contains('°');
@@ -140,7 +140,8 @@ public sealed class SegmentTile : SummaryTile
 			else
 			{
 				// Text without a scale (an address, a model name): no bar.
-				meter.IsVisible = false;
+				meter.IsVisible = Kind == WidgetKind.Drives && value == "—";
+                meter.Opacity = .3;
 			}
 			more.Children.Add(Share(Ui.Columns("Auto,*,Auto", l, meter, v)));
 		}
@@ -234,6 +235,7 @@ public sealed class SegmentTile : SummaryTile
 		}
 		firstLabel.IsVisible = firstLabel.Text.Length > 0;
 		firstValue.Text = ((sum.Value == "—") ? sum.Value : (sum.Value + " " + sum.Unit).Trim());
+        BindPrimary(firstValue);
 		firstValue.Foreground = Palette.Brush(sum.Color);
 		first.RampBySegment = true;
 		first.Set(sum.Fraction, Shade(sum));
@@ -298,6 +300,11 @@ public static class SegmentScale
 			return total is double t && t > 0 ? Clamp(gb / t) : 1;
 		}
 		if (v.EndsWith("ms")) return Log(n, 1, 1000);
+        if (kind == WidgetKind.Drives && (v.EndsWith(" h") || v.Trim().All(char.IsDigit)))
+        {
+            double maximum = Math.Pow(10, Math.Max(1, Math.Ceiling(Math.Log10(Math.Max(1, Math.Abs(n))))));
+            return Clamp(n / maximum);
+        }
 		return null;
 	}
 }

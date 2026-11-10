@@ -35,6 +35,7 @@ public sealed class FavoriteTile : SummaryTile
         if (Performance) Background = Palette.Brush(p.DesignBack("#101925"));
         title = Ui.Text("", 13, p.Ink, FontWeight.SemiBold);
         device = Ui.Text("", 10.5, p.Soft);
+        HardwareWidgetTitle.Register(this, title, device);
         device.TextWrapping = TextWrapping.Wrap;
         dot = new Border { Width = 8, Height = 8, CornerRadius = new CornerRadius(3), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
         var header = Ui.Columns("Auto,*", dot, Ui.Stack(3, title, device));
@@ -50,7 +51,7 @@ public sealed class FavoriteTile : SummaryTile
         device.Text = Naming.Hardware(Slot, Index, summary.Name);
         device.IsVisible = Naming.ShowHardware(Slot, S) && device.Text.Length > 0;
         dot.Background = Palette.Brush(Accent);
-        var rows = CompleteReadings.For(Kind, Index, Last.Snap, Last.History, S, P);
+        var rows = CompleteReadings.Body(Kind, Index, Last.Snap, Last.History, S, P, style);
         RenderedKeys = rows.Select(r => r.Key).ToArray();
         string next = string.Join("\n", rows.Select(r => r.Key + "|" + r.Label));
         if (shape != next) { shape = next; Build(rows); }
@@ -111,7 +112,8 @@ public sealed class FavoriteTile : SummaryTile
         units[row.Key] = unit;
         var readout = Ui.Row(0, number, unit);
         var label = Ui.Text(row.Key == "net.down" ? "↓ " + L.T("Download") : row.Key == "net.up" ? "↑ " + L.T("Upload") : row.Label, 10, P.Soft);
-        var cell = Ui.Stack(4, label, readout);
+        Control face = Kind == WidgetKind.Drives ? SteadyHeight.Of(new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Left, Child = readout }) : readout;
+        var cell = Ui.Stack(4, label, face);
         cell.Margin = new Thickness(0, 0, 8, 0);
         return cell;
     }
@@ -160,10 +162,11 @@ public sealed class FavoriteTile : SummaryTile
         body.Children.Clear(); values.Clear(); units.Clear(); bars.Clear(); charts.Clear();
         string primary = WidgetSensors.PrimaryKey(Kind), secondary = WidgetSensors.SecondaryKey(Kind);
         var leads = rows.Where(r => r.Key == primary || r.Key == secondary && Kind is WidgetKind.Cpu or WidgetKind.Gpu or WidgetKind.Network).ToList();
-        if (Kind is WidgetKind.Drives or WidgetKind.Volumes or WidgetKind.Cooling) leads.Clear();
+        if (Kind == WidgetKind.Drives) leads = rows.Where(r => r.Key.StartsWith("drive:") && r.Key.EndsWith(":temp")).ToList();
+        if (Kind is WidgetKind.Volumes or WidgetKind.Cooling) leads.Clear();
         if (Compact && leads.Count > 0) body.Children.Add(Rule());
         if (leads.Count > 0)
-            body.Children.Add(new StatPanel(Array.Empty<double>(), leads.Select(r => Hero(r, r.Key != primary)).ToArray()) { MaxColumns = 2, MinimumColumnWidth = 112 });
+            body.Children.Add(new StatPanel(Array.Empty<double>(), leads.Select(r => Hero(r, Kind != WidgetKind.Drives && r.Key != primary)).ToArray()) { MaxColumns = 2, MinimumColumnWidth = 112 });
         if (Kind == WidgetKind.Memory && rows.FirstOrDefault(r => r.Key == primary) is { } memory && S.Shows("mem.bar"))
         {
             var bar = WidgetPresentation.Sensor(new FillBack { Height = Compact ? 5 : 8, Radius = 4, Track = P.Track }, primary);

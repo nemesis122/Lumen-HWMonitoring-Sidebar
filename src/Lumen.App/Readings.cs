@@ -8,10 +8,14 @@ namespace Lumen.App;
 
 public static class Readings
 {
-    public static List<Reading> For(WidgetKind kind, int index, Snapshot s, History h, Settings set, Palette p) =>
-        Steady.Keep("readings|" + kind + "|" + index, set, s,
+    public static List<Reading> For(WidgetKind kind, int index, Snapshot s, History h, Settings set, Palette p)
+    {
+        var rows = CompleteReadings.For(kind, index, s, h, set, p);
+        return Steady.Keep("readings|" + kind + "|" + index, set, s,
             Raw(kind, index, s, h, set, p).Where(r => set.Shows(WidgetSensors.ReadingKey(kind, r.Label))).ToList(),
-            r => r.Label, r => r.Value.Length == 0 || r.Value.StartsWith("—"));
+            r => r.Label, r => r.Value.Length == 0 || r.Value.StartsWith("—"))
+            .Select(r => r.Key.Length > 0 ? r : r with { Key = r.Label.Length == 0 ? WidgetSensors.PrimaryKey(kind) : SensorDetails.LabelKey(kind, r.Label, rows) }).ToList();
+    }
 
 	private static List<Reading> Raw(WidgetKind kind, int index, Snapshot s, History h, Settings set, Palette p)
 	{
@@ -94,7 +98,7 @@ public static class Readings
 					{
 						fraction = Share(item.Rpm, 3000.0);
 					}
-					list.Add(new Reading(label, value, fraction, (item.Rpm > 0.0) ? p.Cool : p.Faint));
+					list.Add(new Reading(label, value, fraction, (item.Rpm > 0.0) ? p.Cool : p.Faint) { Key = "fan:" + item.Name });
 				}
 				return list;
 			}
@@ -105,14 +109,14 @@ public static class Readings
 			{
 				foreach (TempReading item2 in s.BoardTemps.Take(6))
 				{
-					list.Add(new Reading(Names.Temp(item2.Name, set), Tc(item2.Celsius), Format.Heat(item2.Celsius), Heat(item2.Celsius)));
+					list.Add(new Reading(Names.Temp(item2.Name, set), Tc(item2.Celsius), Format.Heat(item2.Celsius), Heat(item2.Celsius)) { Key = "temp:" + item2.Name });
 				}
 				return list;
 			}
 		case WidgetKind.Drives:
-			foreach (DiskInfo item3 in s.Disks.Where((DiskInfo d) => set.Shows("drive:" + d.Id)))
+			foreach (DiskInfo item3 in DriveOrdering.Order(s.Disks, DriveOrdering.Mode(set)).Where((DiskInfo d) => set.Shows("drive:" + d.Id)))
 			{
-				list.Add(new Reading((item3.Letters.Length > 0) ? item3.Letters : Names.Short(item3.Name), Tc(item3.Temperature), Format.Heat(item3.Temperature), Heat(item3.Temperature)));
+				list.Add(new Reading((item3.Letters.Length > 0) ? item3.Letters : Names.Short(item3.Name), Tc(item3.Temperature), Format.Heat(item3.Temperature), Heat(item3.Temperature)) { Key = "drive:" + item3.Id + ":temp" });
 			}
 			if (list.Count > 0)
 			{

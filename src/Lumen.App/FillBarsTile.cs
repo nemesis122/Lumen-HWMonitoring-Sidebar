@@ -110,6 +110,7 @@ public sealed class FillBarsTile : SummaryTile
 		for (int i = 0; i < list.Count; i++)
 		{
 			Fill(i, list[i].Label, list[i].Value, list[i].Fraction, list[i].Color);
+            BindReading(rows[i].Value, list[i]);
 		}
 	}
 
@@ -126,12 +127,13 @@ public sealed class FillBarsTile : SummaryTile
 			for (int i = 0; i < shown.Count; i++)
 			{
 				Fill(i, shown[i].Label, shown[i].Value, shown[i].Fraction, shown[i].Color);
+                BindReading(rows[i].Value, shown[i]);
 			}
 		}
 		for (int k = 0; k < items.Count; k++)
 		{
 			var (label, value) = items[k];
-			double? fraction = SegmentScale.Fraction(Kind, label, value, Last.Snap);
+			double? fraction = ExtraFraction(label, value);
 			Color color = value.Contains('°') && fraction is double heat ? P.At(heat) : P.Cool;
 			Fill(shown.Count + k, label, value, fraction ?? 0, color);
 		}

@@ -98,6 +98,21 @@ public sealed class OverviewTile : Border, IWidget, INamed
 		S = s;
 		(head, visual, font) = style switch
 		{
+			WidgetStyle.Aperture => (Head.Chip, Visual.DoubleRing, (FontFamily?)null),
+			WidgetStyle.PixelDeck => (Head.Status, Visual.Bar, null),
+			WidgetStyle.HorizonSync => (Head.Plain, Visual.Spark, null),
+			WidgetStyle.Panorama => (Head.Plain, Visual.Spark, (FontFamily?)null),
+			WidgetStyle.Terminal => (Head.Mono, Visual.Text, null),
+			WidgetStyle.Thermal => (Head.Caps, Visual.Level, null),
+			WidgetStyle.MosaicPro => (Head.Apple, Visual.Pill, null),
+			WidgetStyle.RibbonFlow => (Head.Capsule, Visual.Pill, null),
+			WidgetStyle.SplitLens => (Head.Plain, Visual.Spark, null),
+			WidgetStyle.Meridian => (Head.Plain, Visual.Spark, (FontFamily?)null),
+			WidgetStyle.Strata => (Head.Apple, Visual.Bar, null),
+			WidgetStyle.Vector => (Head.Plain, Visual.Level, null),
+			WidgetStyle.Orbit => (Head.Chip, Visual.DialRing, null),
+			WidgetStyle.Lucent => (Head.Apple, Visual.Pill, null),
+			WidgetStyle.Circuit => (Head.Mono, Visual.Bar, null),
 			WidgetStyle.CleanDark or WidgetStyle.CompactPro or WidgetStyle.PerformanceView => (Head.Dot, Visual.Spark, (FontFamily?)null),
 			WidgetStyle.Dial => (Head.Chip, Visual.DialRing, (FontFamily?)null),
 			WidgetStyle.RingPair => (Head.Badge, Visual.DoubleRing, null),
@@ -145,6 +160,7 @@ public sealed class OverviewTile : Border, IWidget, INamed
 
 	private void Frame()
 	{
+		if (LocalDesigns.Contains(style)) { LocalDesigns.Frame(this, style, P, M); return; }
 		Background = Palette.Brush(P.Card);
 		BorderBrush = Palette.Brush(P.Stroke);
 		BorderThickness = Ui.CardEdge;
@@ -348,6 +364,7 @@ public sealed class OverviewTile : Border, IWidget, INamed
 
 	private TextBlock Text(string text, double size, Color color, FontWeight weight = FontWeight.Normal, bool numbers = false)
 	{
+		if (LocalDesigns.Contains(style)) size = Math.Max(size, numbers ? 14 : 11.5);
 		var t = Ui.Text(text, size, color, weight, numbers);
 		t.TextWrapping = TextWrapping.NoWrap;
 		if (font != null)

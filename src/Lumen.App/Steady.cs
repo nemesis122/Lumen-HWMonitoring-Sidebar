@@ -33,7 +33,8 @@ public static class Steady
 	{
 		// The same list is asked for several times per update (each design part asks again); one answer per
 		// update, so a missing line is counted once.
-		key += "|" + string.Join(",", set.HiddenValues) + "|" + L.Language;
+		key += "|" + string.Join(",", set.HiddenValues) + "|" + string.Join(",", set.ActiveWidget?.HiddenSensors ?? new List<string>())
+            + "|names:" + set.ShowNames + ":" + (set.ActiveWidget?.ShowHardware ?? true) + "|" + L.Language + "|drive-order:" + set.ActiveWidget?.DriveOrder;
 		var memory = memories.GetOrCreateValue(set);
 		lock (memory)
 		{

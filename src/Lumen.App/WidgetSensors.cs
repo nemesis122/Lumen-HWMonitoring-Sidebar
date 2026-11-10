@@ -4,6 +4,26 @@ namespace Lumen.App;
 
 public static class WidgetSensors
 {
+    private static IReadOnlyDictionary<string, string[]> Groups => SensorDefaults.Groups;
+
+    public static void Select(Settings settings, WidgetSlot slot, string key, bool selected, Snapshot? snapshot)
+    {
+        settings.SensorSelectionVersion = SensorDefaults.SelectionVersion;
+        void Set(string sensor, bool show)
+        {
+            settings.HiddenValues.Remove(sensor);
+            slot.HiddenSensors.Remove(sensor);
+            if (!show) slot.HiddenSensors.Add(sensor);
+        }
+        Set(key, selected);
+        if (Groups.TryGetValue(key, out var children)) foreach (string child in children) Set(child, selected);
+        if (selected) foreach (var group in Groups.Where(g => g.Value.Contains(key))) Set(group.Key, true);
+        string? prefix = key == "cooling.fans" ? "fan:" : key == "cooling.board" ? "temp:" : null;
+        if (prefix != null) foreach (var option in Options(slot.Kind, snapshot).Where(o => o.Key.StartsWith(prefix))) Set(option.Key, selected);
+        if (selected && key.StartsWith("fan:")) Set("cooling.fans", true);
+        if (selected && key.StartsWith("temp:")) Set("cooling.board", true);
+    }
+
     public static string PrimaryKey(WidgetKind kind) => kind switch
     {
         WidgetKind.Cpu => "cpu.temp", WidgetKind.Gpu => "gpu.temp", WidgetKind.Memory => "mem.load",
@@ -81,7 +101,7 @@ public static class WidgetSensors
             foreach (var fan in snap.Fans) Add("fan:" + fan.Name, L.T("Fan") + " · " + Names.Fan(fan.Name, new Settings()));
             foreach (var temp in snap.BoardTemps) Add("temp:" + temp.Name, L.T("Temperature") + " · " + Names.Temp(temp.Name, new Settings()));
         }
-        if (kind == WidgetKind.Drives && snap != null)
+        if (kind is WidgetKind.Drives or WidgetKind.DriveHealth && snap != null)
             foreach (var disk in snap.Disks) Add("drive:" + disk.Id, disk.Name + " " + disk.Letters);
         if (kind == WidgetKind.Volumes && snap != null)
             foreach (var volume in snap.Volumes) Add("volume:" + volume.Name, volume.Name + " " + volume.Label);
@@ -110,6 +130,7 @@ public static class WidgetSensors
 
     public static Snapshot FilterSnapshot(Snapshot snap, Settings settings) => snap with
     {
+        Disks = settings.ActiveWidget?.Kind == WidgetKind.Drives ? DriveOrdering.Order(snap.Disks, settings.ActiveWidget.DriveOrder) : snap.Disks,
         Fans = settings.Shows("cooling.fans") ? snap.Fans.Where(f => settings.Shows("fan:" + f.Name)).ToArray() : Array.Empty<FanInfo>(),
         BoardTemps = settings.Shows("cooling.board") ? snap.BoardTemps.Where(t => settings.Shows("temp:" + t.Name)).ToArray() : Array.Empty<TempReading>(),
     };

@@ -47,6 +47,8 @@ public abstract class Card : Border, IWidget, INamed
 		set
 		{
 			aside.Text = value;
+            if (S.ActiveWidget is { } widget)
+                SensorDetails.Value(aside, widget.Kind switch { WidgetKind.Cpu => "cpu.clock", WidgetKind.Gpu => "gpu.clock", WidgetKind.Network => "net.link", WidgetKind.Drives => "drives.count", _ => "" });
             if (S.ActiveWidget?.Kind is WidgetKind.Cpu or WidgetKind.Gpu)
                 aside.IsVisible = S.Shows(S.ActiveWidget.Kind == WidgetKind.Cpu ? "cpu.clock" : "gpu.clock");
             if (S.ActiveWidget?.Kind is WidgetKind.Clock or WidgetKind.Calendar or WidgetKind.Drives)
@@ -87,6 +89,7 @@ public abstract class Card : Border, IWidget, INamed
 		Grid grid = Ui.Columns("Auto,*,Auto", Ui.Badge(glyph, p, p.Cool), title, aside);
 		title.Margin = new Thickness(Ui.Modern ? 10 : 8, 0.0, 8.0, 0.0);
 		subtitle = Ui.Text("", 11.5, p.Soft);
+        HardwareWidgetTitle.Register(this, title, subtitle);
 		subtitle.IsVisible = false;
 		Body = Ui.Stack(m.Gap, Ui.Stack(1.0, grid, subtitle));
 		Body.Tag = "elastic";
@@ -141,6 +144,9 @@ public abstract class Card : Border, IWidget, INamed
     {
         var filtered = WidgetSensors.FilterSnapshot(s, S);
         UpdateReadings(filtered, h);
+        WidgetPresentation.Apply(this, S);
+        if (S.ActiveWidget is { } active)
+            SensorDetails.Apply(this, active.Kind, slotIndex, s, h, S, P);
         WidgetPresentation.Apply(this, S);
     }
 
@@ -198,7 +204,7 @@ public abstract class Card : Border, IWidget, INamed
 
 	protected Dictionary<string, Stat> Stats(params (string key, string label)[] items)
 	{
-		Dictionary<string, Stat> dictionary = items.Where(((string key, string label) i) => Shows(i.key)).ToList().ToDictionary(((string key, string label) i) => i.key, ((string key, string label) i) => new Stat(i.label, P));
+		Dictionary<string, Stat> dictionary = items.Where(((string key, string label) i) => Shows(i.key)).ToList().ToDictionary(((string key, string label) i) => i.key, ((string key, string label) i) => SensorDetails.Value(new Stat(i.label, P), i.key));
 		if (dictionary.Count > 0)
 		{
 			Body.Children.Add(StatGrid.Of(dictionary.Values.ToArray()));

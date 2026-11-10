@@ -6,6 +6,17 @@ namespace Lumen.App;
 
 public static class Names
 {
+    public static string CompactDrive(string name)
+    {
+        string text = Clean(name);
+        text = Regex.Replace(text, @"^(?:Samsung|Western Digital|WDC|WD|Seagate|Crucial|Kingston|SK hynix|Toshiba|Kioxia|Micron|Intel|Corsair|Sabrent|Solidigm|SanDisk|PNY|ADATA)\s+", "", RegexOptions.IgnoreCase);
+        text = Regex.Replace(text, @"\b(?:SSD|HDD|NVMe|ATA|SCSI|Disk Device)\b", "", RegexOptions.IgnoreCase);
+        text = Regex.Replace(text, @"(\d)\s*(TB|GB)\b", "$1 $2", RegexOptions.IgnoreCase);
+        text = Regex.Replace(text, @"\s{2,}", " ").Trim();
+        if (text.Length == 0) text = Clean(name);
+        return text.Length > 24 ? text[..15].TrimEnd() + "…" + text[^8..].TrimStart() : text;
+    }
+
 	public static string Clean(string? name)
 	{
 		if (string.IsNullOrWhiteSpace(name))

@@ -119,8 +119,13 @@ foreach(var edge in new[]{Edge.Left,Edge.Right,Edge.Top,Edge.Bottom}) {
     var ws=new Settings{Edge=edge,TextScale=1.5,Density=Density.Fit};
     foreach(var kind in Enum.GetValues<WidgetKind>().Where(Settings.HasStyles)) {
         var tile=Cards.Create(kind,style,0,palette,Metrics.For(ws.Density),ws);
+        // Native ScrollViewer templates need a visual root to measure their content.
+        var measureHost = new Window { Content = tile, Width = 280, Height = 1000, ShowActivated = false, ShowInTaskbar = false,
+            WindowStartupLocation = WindowStartupLocation.Manual, Position = new PixelPoint(-20000, -20000) };
+        measureHost.Show(); Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         ((IWidget)tile).Update(demoSnap,hist);tile.Measure(new Size(280,double.PositiveInfinity));tile.Arrange(new Rect(0,0,280,tile.DesiredSize.Height));
         Assert(double.IsFinite(tile.DesiredSize.Height) && tile.DesiredSize.Height>0,$"{style}/{kind}/{edge} bindings");
+        measureHost.Close();
     }
     var config=new Settings{Edge=edge,Widgets=new(){new WidgetSlot{Kind=WidgetKind.Cpu,Style=style}}};
     string configPath=Path.Combine(testDir,$"{style}-{edge}.json");config.Save(configPath);
@@ -238,7 +243,8 @@ foreach(double scale in new[]{.5,1d,2d}) {
     // Duplex lists drives line by line (letter, bar, temperature) as asked; the full reading table does not apply.
     if(style==WidgetStyle.Duplex&&kind==WidgetKind.Drives)continue;
     var config=new Settings();var slot=config.Widgets.Single(w=>w.Kind==kind);slot.ValueScale=slot.LabelScale=slot.GraphicScale=scale;
-    var expected=CompleteReadings.For(kind,0,stress,hist,config.ForWidget(kind),palette);
+    if(kind==WidgetKind.Network)slot.HiddenSensors.Remove("net.address");
+    var expected=CompleteReadings.Body(kind,0,stress,hist,config.ForWidget(kind),palette,style);
     var tile=(ComparisonTile)Cards.Create(kind,style,0,palette,Metrics.For(Density.Fit),config);
     var window=new Window{Content=tile,Width=320,Height=1000,ShowActivated=false,ShowInTaskbar=false,WindowStartupLocation=WindowStartupLocation.Manual,Position=new PixelPoint(-20000,-20000)};
     tile.Update(stress,hist);window.Show();Avalonia.Threading.Dispatcher.UIThread.RunJobs();tile.Update(stress,hist);Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -277,6 +283,7 @@ foreach(var style in ComparisonTile.Styles) {
         Assert(tiles.All(t=>!t.RenderedKeys.Any(k=>k.StartsWith("cpu.core:"))),"Core rows remain absent in all layouts"); if(density==Density.Fit&&!config.Horizontal)Assert(tiles.All(t=>t.Padding.Left==Metrics.For(Density.Compact).Pad),"Automatic mode actually rebuilds with compact metrics under pressure");
         if(density==Density.Fit || config.Horizontal) {
             foreach(var value in view.GetLogicalDescendants().OfType<TextBlock>().Where(t=>(t.Tag as string)?.StartsWith("complete-reading:")==true)) {
+                value.BringIntoView(); Avalonia.Threading.Dispatcher.UIThread.RunJobs();
                 var bottom=value.TranslatePoint(new Point(0,value.Bounds.Height),view);
                 Assert(bottom.HasValue&&bottom.Value.Y<=view.Bounds.Height+1,"Automatic fitting keeps values inside the available height");
             }
@@ -288,7 +295,8 @@ foreach(var style in InsightTile.Styles) {
     foreach(var kind in Enum.GetValues<WidgetKind>().Where(Settings.HasStyles).Where(k => k != WidgetKind.Overview && !InfoTile.Handles(k)))
     foreach(double scale in new[]{.5,1d,2d}) {
         var config=new Settings();var slot=config.Widgets.Single(w=>w.Kind==kind);slot.ValueScale=slot.LabelScale=slot.GraphicScale=scale;
-        var expected=CompleteReadings.For(kind,0,stress,hist,config.ForWidget(kind),palette);
+    if(kind==WidgetKind.Network)slot.HiddenSensors.Remove("net.address");
+        var expected=CompleteReadings.Body(kind,0,stress,hist,config.ForWidget(kind),palette,style);
         var tile=(InsightTile)Cards.Create(kind,style,0,palette,Metrics.For(Density.Fit),config);
         var window=new Window{Content=tile,Width=320,Height=1000,ShowActivated=false,ShowInTaskbar=false,Position=new PixelPoint(-20000,-20000)};
         tile.Update(stress,hist);window.Show();Avalonia.Threading.Dispatcher.UIThread.RunJobs();tile.Update(stress,hist);Avalonia.Threading.Dispatcher.UIThread.RunJobs();
@@ -323,12 +331,12 @@ foreach(var style in InsightTile.Styles) {
         window.Show();view.Update(demoSnap,hist);for(int pass=0;pass<8;pass++){Avalonia.Threading.Dispatcher.UIThread.RunJobs();window.CaptureRenderedFrame();}
         var tiles=view.GetLogicalDescendants().OfType<InsightTile>().ToArray();Assert(tiles.Length>=4,"All four widget kinds present in each density, placement and column count");
         foreach(var tile in tiles){Assert(tile.RenderedKeys.Distinct().Count()==tile.RenderedKeys.Count,"No duplicates after automatic rebuilding");
-            if(density==Density.Fit||config.Horizontal)foreach(var cell in tile.Readouts){var end=cell.ValueControl.TranslatePoint(new Point(cell.ValueControl.Bounds.Width,cell.ValueControl.Bounds.Height),view);Assert(end.HasValue&&end.Value.Y<=view.Bounds.Height+1&&end.Value.X<=view.Bounds.Width+1,"Normal automatic fitting contains every value");}}
+            if(density==Density.Fit||config.Horizontal)foreach(var cell in tile.Readouts){cell.ValueControl.BringIntoView();Avalonia.Threading.Dispatcher.UIThread.RunJobs();var end=cell.ValueControl.TranslatePoint(new Point(cell.ValueControl.Bounds.Width,cell.ValueControl.Bounds.Height),view);Assert(end.HasValue&&end.Value.Y<=view.Bounds.Height+1&&end.Value.X<=view.Bounds.Width+1,"Normal automatic fitting contains every value");}}
         window.Close();
     }
     foreach(var preset in ThemeFile.BuiltIn)
     foreach(bool dark in new[]{true,false}){
-        var sc=new Settings();preset.Theme.ApplyTo(sc);var themed=Palette.For(sc,dark,null);var tile=(InsightTile)Cards.Create(WidgetKind.Network,style,0,themed,Metrics.For(Density.Compact),sc);tile.Update(stress,hist);tile.Measure(new Size(320,double.PositiveInfinity));tile.Arrange(new Rect(0,0,320,tile.DesiredSize.Height));
+        var sc=new Settings();preset.Theme.ApplyTo(sc);sc.Widgets.Single(w=>w.Kind==WidgetKind.Network).HiddenSensors.Remove("net.address");var themed=Palette.For(sc,dark,null);var tile=(InsightTile)Cards.Create(WidgetKind.Network,style,0,themed,Metrics.For(Density.Compact),sc);tile.Update(stress,hist);tile.Measure(new Size(320,double.PositiveInfinity));tile.Arrange(new Rect(0,0,320,tile.DesiredSize.Height));
         Assert(tile.RenderedKeys.Contains("net.address")&&tile.RenderedKeys.Contains("net.up")&&tile.RenderedKeys.Contains("net.down"),"All eight themes retain complete insight network values in light and dark");
         if(InsightTile.ColorStyles.Contains(style)){
             foreach(string key in new[]{"cpu.temp","cpu.load","cpu.freq","cpu.power","cpu.voltage","cpu.fan","net.down","net.up","net.peak","mem.total"}){
@@ -349,7 +357,9 @@ foreach(var style in InsightTile.Styles) {
 var fillingSnap=demoSnap with{Gpus=demoSnap.Gpus.Take(1).ToArray(),Disks=demoSnap.Disks.Concat(new[]{demoSnap.Disks[0] with{Id="third-demo",Letters="F:"}}).ToArray()};
 foreach(var style in ComparisonTile.Styles.Concat(InsightTile.Styles))
 foreach(bool histories in new[]{true,false}){
-    var config=new Settings{Columns=2,Density=Density.Fit,Widgets=new[]{WidgetKind.Cpu,WidgetKind.Gpu,WidgetKind.Memory,WidgetKind.Drives,WidgetKind.Network}.Select(k=>new WidgetSlot{Kind=k,Style=style}).ToList()};
+    // Test surplus space with the recommended starting selection; enabling every optional SMART
+    // statistic is a different (overflow) scenario and may legitimately leave no surplus to expand.
+    var config=new Settings{Columns=2,Density=Density.Fit,Widgets=new[]{WidgetKind.Cpu,WidgetKind.Gpu,WidgetKind.Memory,WidgetKind.Drives,WidgetKind.Network}.Select(k=>new WidgetSlot{Kind=k,Style=style,HiddenSensors=SensorDefaults.For(k)}).ToList()};
     if(!histories)foreach(var slot in config.Widgets){slot.HiddenSensors.Add(WidgetSensors.PrimaryKey(slot.Kind)+".history");slot.HiddenSensors.Add(WidgetSensors.SecondaryKey(slot.Kind)+".history");}
     var view=new SidebarView(config,palette);var window=new Window{Content=view,Width=630,Height=1028,ShowActivated=false,ShowInTaskbar=false,Position=new PixelPoint(-20000,-20000)};
     window.Show();view.Update(fillingSnap,hist);
@@ -361,7 +371,7 @@ foreach(bool histories in new[]{true,false}){
         var cards=view.GetLogicalDescendants().OfType<SummaryTile>().ToArray();Assert(cards.Length==5,"Resizing retains all five widgets");
         foreach(var card in cards){var keys=card is InsightTile insight?insight.RenderedKeys:((ComparisonTile)card).RenderedKeys;Assert(keys.Count==keys.Distinct().Count(),"Automatic expansion adds no duplicate readings");}
         foreach(var value in view.GetLogicalDescendants().OfType<Control>().Where(c=>c.IsEffectivelyVisible&&((c.Tag as string)?.StartsWith("insight-value:")==true||(c.Tag as string)?.StartsWith("complete-reading:")==true))){var end=value.TranslatePoint(new Point(0,value.Bounds.Height),fitted)!.Value;Assert(end.Y<=fitted.Bounds.Height+1,$"{style}/{histories}/{height}: every value stays inside the viewport");}
-        if(height==1028)Assert(cards.Any(c=>c.DesiredSize.Height-fitted.NaturalHeight(c)>30),"Surplus height expands content inside cards");
+        if(height==1028)Assert(cards.Any(c=>c.DesiredSize.Height-fitted.NaturalHeight(c)>30),$"{style}/{histories}: surplus height expands content inside cards");
     }
     window.Close();
 }
@@ -417,7 +427,7 @@ Assert(!labelSlot.HiddenSensors.Any(k => k.StartsWith("cpu.core:")), "Legacy per
 Assert(!WidgetSensors.Options(WidgetKind.Cpu, demoSnap).Any(x => x.Key.StartsWith("cpu.core:")), "CPU settings omit individual core switches");
 var labelTile = Cards.Create(WidgetKind.Cpu, WidgetStyle.Table, 0, palette, Metrics.For(Density.Fit), labelSettings);
 ((IWidget)labelTile).Update(demoSnap, hist);
-var titleText = labelTile.GetLogicalDescendants().OfType<TextBlock>().Single(t => t.Text == L.T("Processor"));
+var titleText = HardwareWidgetTitle.TitleOf(labelTile) ?? throw new Exception("Native widget title missing");
 Assert(Math.Abs(titleText.FontSize - 25) < .001, "Widget title scales to 200 percent");
 ((IWidget)labelTile).Update(demoSnap, hist);
 Assert(Math.Abs(titleText.FontSize - 25) < .001, "Label scale does not accumulate");

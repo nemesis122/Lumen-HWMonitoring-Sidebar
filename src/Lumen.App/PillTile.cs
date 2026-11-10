@@ -13,6 +13,7 @@ public sealed class PillTile : SummaryTile
 	private readonly Border icon;
 
 	private readonly TextBlock name;
+    private readonly TextBlock hardware;
 
 	private readonly TextBlock sub;
 
@@ -51,6 +52,10 @@ public sealed class PillTile : SummaryTile
 			Margin = new Thickness(9.0, 0.0, 12.0, 0.0)
 		};
 		name = Ui.Text("", 13.5, p.Ink, FontWeight.DemiBold);
+        hardware = Ui.Text("", 11, p.Soft);
+        HardwareWidgetTitle.Register(this, name, hardware);
+        hardware.TextWrapping = TextWrapping.Wrap;
+        hardware.Margin = new Thickness(12, 0);
 		sub = Ui.Text("", 11.5, p.Soft, FontWeight.Normal, numbers: true);
 		value = Ui.Text("", m.Subtitles ? 24 : 21, p.Ink, FontWeight.Bold, numbers: true);
 		value.LetterSpacing = -0.5;
@@ -103,7 +108,7 @@ public sealed class PillTile : SummaryTile
 		{
             MinHeight = num,
             Classes = { "pill-surface" },
-			Children = 
+			Children =
 			{
 				(Control)fill,
 				(Control)item
@@ -116,11 +121,14 @@ public sealed class PillTile : SummaryTile
             (c, r) => ((FillBack)c).Animate(r.Fraction, r.Color), r => r.Color) { Margin = new Thickness(12, 6, 12, 2), Tag = null };
         // Fixed line spacing: the drive lines are the only stretchable part of this design, so they would
         // otherwise take all the free height of the sidebar and drift far apart.
-        base.Child = Ui.Stack(4, capsule, drives, Extras);
+        base.Child = Ui.Stack(4, capsule, hardware, drives, Extras);
 	}
 
 	protected override void Show(Summary sum)
 	{
+        BindPrimary(value);
+        hardware.Text = Naming.Hardware(Slot ?? S.ActiveWidget, Index, sum.Name);
+        hardware.IsVisible = Naming.ShowHardware(Slot ?? S.ActiveWidget, S) && hardware.Text.Length > 0;
 		Color c = Shade(sum);
 		bool all = Kind == WidgetKind.Drives;
 		number.IsVisible = !all;

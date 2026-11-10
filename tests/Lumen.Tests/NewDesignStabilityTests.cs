@@ -82,7 +82,9 @@ public class NewDesignStabilityTests
         L.Use("en");
         var (demo, _) = Render.Demo();
         var history = new History();
-        var card = Cards.Create(WidgetKind.Network, style, 0, Palette.For(true, false), Metrics.For(Density.Fit), new Settings { Language = "en" });
+        var settings = new Settings { Language = "en" };
+        settings.Widgets.Single(w => w.Kind == WidgetKind.Network).HiddenSensors.Remove("net.peak");
+        var card = Cards.Create(WidgetKind.Network, style, 0, Palette.For(true, false), Metrics.For(Density.Fit), settings);
         var window = new Window { Content = card, Width = 320, Height = 1000 };
         window.Show();
         int tick = 0;
@@ -106,7 +108,9 @@ public class NewDesignStabilityTests
         L.Use("en");
         var (demo, _) = Render.Demo();
         var history = new History();
-        var card = Cards.Create(WidgetKind.Network, style, 0, Palette.For(true, false), Metrics.For(Density.Fit), new Settings { Language = "en" });
+        var settings = new Settings { Language = "en" };
+        settings.Widgets.Single(w => w.Kind == WidgetKind.Network).HiddenSensors.Remove("net.peak");
+        var card = Cards.Create(WidgetKind.Network, style, 0, Palette.For(true, false), Metrics.For(Density.Fit), settings);
         var window = new Window { Content = card, Width = 320, Height = 1000 };
         window.Show();
         double? rowTop = null, cardHeight = null;

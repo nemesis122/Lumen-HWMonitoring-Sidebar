@@ -44,14 +44,14 @@ public sealed class Skyline : Control
 		if (Palette != null && shown.Length != 0 && !(bounds.Width < 4.0))
 		{
 			int num = shown.Length;
-			double num2 = ((num > 24) ? 1.5 : 2.5);
+			double num2 = Math.Min(num > 24 ? 1.5 : 2.5, bounds.Width / (num * 3.0));
 			double num3 = (bounds.Width - num2 * (double)(num - 1)) / (double)num;
 			double radius = Math.Min(2.0, num3 / 2.0);
 			SolidColorBrush brush = new SolidColorBrush(Palette.Track);
 			for (int i = 0; i < num; i++)
 			{
 				double x = (double)i * (num3 + num2);
-				double num4 = Math.Clamp(shown[i], 0.0, 100.0) / 100.0;
+				double num4 = double.IsFinite(shown[i]) ? Math.Clamp(shown[i], 0.0, 100.0) / 100.0 : 0;
 				context.DrawRectangle(brush, null, new RoundedRect(new Rect(x, 0.0, num3, bounds.Height), radius));
 				double num5 = Math.Max(2.0, num4 * bounds.Height);
 				context.DrawRectangle(new SolidColorBrush(Palette.At(num4)), null, new RoundedRect(new Rect(x, bounds.Height - num5, num3, num5), radius));

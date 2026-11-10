@@ -56,7 +56,8 @@ public sealed class RightWidgetsTile : AppleTile
     {
         ShowHeader(name, hardware, sum);
         main.Text = sum.Value == "—" ? "—" : sum.Value + (sum.Unit is "°C" or "°F" ? "°" : sum.Unit);
-        secondary.Text = sum.Second is double load ? Format.Percent(load * 100) : "—";
+        BindPrimary(main);
+        secondary.Text = sum.Second is double load ? Format.Percent(load * 100) : "—"; BindSecondary(secondary);
         secondary.IsVisible = S.Shows(WidgetSensors.SecondaryKey(Kind));
         temperatureRing.IsVisible = S.Shows(WidgetSensors.PrimaryKey(Kind));
         loadRing.IsVisible = secondary.IsVisible;
@@ -64,7 +65,7 @@ public sealed class RightWidgetsTile : AppleTile
         loadRing.Set(sum.Second ?? 0, Tint, RingTrack);
         var rows = CompleteReadings.For(Kind, Index, Last.Snap, Last.History, S, P)
             .Where(r => r.Key != WidgetSensors.PrimaryKey(Kind) && r.Key != WidgetSensors.SecondaryKey(Kind)).ToList();
-        if (Kind == WidgetKind.Gpu && S.Shows("gpu.junction") && GpuGroup.Visible(Last.Snap, S).ElementAtOrDefault(Index)?.MemoryJunction is double junction)
+        if (Kind == WidgetKind.Gpu && S.Shows("gpu.junction") && !rows.Any(r => r.Key == "gpu.junction") && GpuGroup.Visible(Last.Snap, S).ElementAtOrDefault(Index)?.MemoryJunction is double junction)
             rows.Add(new("gpu.junction", L.T("Memory junction"), Format.Temperature(junction, S.Fahrenheit) + " " + Format.TemperatureUnit(S.Fahrenheit)));
         rows = Lumen.App.Steady.Keep("right-widget-readings|" + Kind + "|" + Index, S, Last.Snap, rows, r => r.Key, r => r.Value.Length == 0 || r.Value.StartsWith("—"));
         RightKeys = rows.Select(r => r.Key).ToArray();
@@ -78,7 +79,7 @@ public sealed class RightWidgetsTile : AppleTile
                 label.TextWrapping = TextWrapping.Wrap;
                 label.TextTrimming = TextTrimming.None;
                 var value = Text("—", 15.5, Ink, FontWeight.DemiBold, null, true);
-                value.Tag = "right-reading:" + row.Key;
+                value.Tag = "right-reading:" + row.Key; SensorDetails.Value(value, row.Key);
                 cells.Add(row.Key, value);
                 readings.Children.Add(Ui.Stack(1, label, Fit(value)));
             }

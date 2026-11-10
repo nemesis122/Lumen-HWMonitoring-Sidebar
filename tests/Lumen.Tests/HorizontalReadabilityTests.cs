@@ -17,6 +17,8 @@ public class HorizontalReadabilityTests
     public void Wide_flat_bar_keeps_readings_legible_instead_of_shrinking_around_squares(WidgetStyle style) => UiHost.Run(() =>
     {
         L.Use("de");
+        // Other register tests may leave the app-wide selection on INFO. Measure HW explicitly.
+        typeof(SidebarView).GetField("page", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!.SetValue(null, 1);
         var (snap, history) = Render.Demo();
         var problems = new List<string>();
         foreach (var edge in new[] { Edge.Top, Edge.Bottom })

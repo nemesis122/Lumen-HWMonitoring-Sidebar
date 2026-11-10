@@ -187,7 +187,7 @@ public class WidgetOptionsTests
             sliders[0].Value = 1.25; sliders[1].Value = 1.5; sliders[2].Value = 1.75; sliders[3].Value = .75;
             var cpu = settings.Widgets.Single(w => w.Kind == WidgetKind.Cpu);
             Assert.Contains("cpu.chart", cpu.HiddenSensors); Assert.Equal(1.25, cpu.WidgetScale); Assert.Equal(1.5, cpu.GraphicScale); Assert.Equal(1.75, cpu.HeroScale); Assert.Equal(.75, cpu.ValueScale);
-            Assert.Empty(settings.Widgets.Single(w => w.Kind == WidgetKind.Gpu).HiddenSensors);
+            Assert.Equal(SensorDefaults.For(WidgetKind.Gpu), settings.Widgets.Single(w => w.Kind == WidgetKind.Gpu).HiddenSensors);
             if (Environment.GetEnvironmentVariable("LUMEN_OPTIONS_SCREENSHOT") is string file)
             {
                 window.Width = 1120; window.Height = 1200; window.Show(); Dispatcher.UIThread.RunJobs();

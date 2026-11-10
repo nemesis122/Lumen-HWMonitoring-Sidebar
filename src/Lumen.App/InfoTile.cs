@@ -88,6 +88,18 @@ public sealed class InfoTile : Border, IWidget, INamed
 		S = s;
 		(head, font, ring) = style switch
 		{
+			WidgetStyle.Aperture => (Head.Chip, (FontFamily?)null, true),
+			WidgetStyle.PixelDeck => (Head.Status, null, false),
+			WidgetStyle.HorizonSync => (Head.Plain, null, false),
+			WidgetStyle.Panorama or WidgetStyle.SplitLens => (Head.Plain, (FontFamily?)null, false),
+			WidgetStyle.Terminal => (Head.Mono, null, false),
+			WidgetStyle.Thermal => (Head.Caps, null, false),
+			WidgetStyle.MosaicPro => (Head.Apple, null, false),
+			WidgetStyle.RibbonFlow => (Head.Capsule, null, false),
+			WidgetStyle.Meridian or WidgetStyle.Vector => (Head.Plain, (FontFamily?)null, false),
+			WidgetStyle.Strata or WidgetStyle.Lucent => (Head.Apple, null, false),
+			WidgetStyle.Orbit => (Head.Chip, null, true),
+			WidgetStyle.Circuit => (Head.Mono, null, false),
 			WidgetStyle.CleanDark or WidgetStyle.CompactPro or WidgetStyle.PerformanceView => (Head.Dot, (FontFamily?)null, false),
 			WidgetStyle.Dial => (Head.Chip, (FontFamily?)null, true),
 			WidgetStyle.RingPair => (Head.Badge, null, true),
@@ -106,8 +118,10 @@ public sealed class InfoTile : Border, IWidget, INamed
 		};
 		Frame();
 		title = Ui.Text("", 12.5, p.Ink, FontWeight.DemiBold);
+        HardwareWidgetTitle.Register(this, title);
 		title.TextTrimming = TextTrimming.CharacterEllipsis;
 		glyphHost = Header();
+		if (LocalDesigns.Contains(style)) title.FontSize = 14;
 		var body = Body();
 		var root = Ui.Stack(head is Head.Capsule ? 8 : 10, glyphHost, body);
 		if (head == Head.SciFi)
@@ -153,6 +167,7 @@ public sealed class InfoTile : Border, IWidget, INamed
 
 	private void Frame()
 	{
+		if (LocalDesigns.Contains(style)) { LocalDesigns.Frame(this, style, P, M); return; }
 		Background = Palette.Brush(P.Card);
 		BorderBrush = Palette.Brush(P.Stroke);
 		BorderThickness = Ui.CardEdge;
@@ -332,6 +347,7 @@ public sealed class InfoTile : Border, IWidget, INamed
 
 	private TextBlock Text(string text, double size, Color color, FontWeight weight = FontWeight.Normal, bool numbers = false)
 	{
+		if (LocalDesigns.Contains(style)) size = Math.Max(size, numbers ? 14 : 11.5);
 		var t = Ui.Text(text, size, color, weight, numbers);
 		t.TextWrapping = TextWrapping.NoWrap;
 		t.TextTrimming = TextTrimming.CharacterEllipsis;
@@ -749,6 +765,9 @@ public sealed class InfoTile : Border, IWidget, INamed
 			break;
 		}
 		WidgetPresentation.Apply(this, S);
+
+        SensorDetails.Apply(this, kind, index, s, h, S, P);
+        WidgetPresentation.Apply(this, S);
 	}
 
 	private static string Capital(string text) => text.Length == 0 ? text : char.ToUpper(text[0], L.Culture) + text[1..];
@@ -802,6 +821,7 @@ public sealed class InfoTile : Border, IWidget, INamed
 			var (label, value) = facts[3 + i];
 			label.Text = i < days.Count ? Caption(days[i].Date.ToString("ddd", L.Culture)) : "⁠";
 			value.Text = i < days.Count ? Degrees(days[i].MinC) + " / " + Degrees(days[i].MaxC) : "⁠";
+            SensorDetails.Value(value, i < days.Count ? "weather:" + days[i].Date.ToString("yyyy-MM-dd") : "");
 		}
 		double fraction = Math.Clamp(sum.Fraction, 0, 1);
 		Color color = sum.Color;
@@ -910,12 +930,18 @@ public sealed class InfoTile : Border, IWidget, INamed
 			}
 			row.Name.Text = (d.Letters.Length > 0 ? d.Letters + "  " : "") + d.Name;
 			row.Value.Text = d.Life is double life ? Format.Number(life, "0") + " %" : "—";
+            SensorDetails.Value(row.Value, "drive:" + d.Id + ":life");
 			row.Value.Foreground = Palette.Brush(color == P.Calm ? P.Ink : color);
 			var facts = new List<string> { verdict };
 			if (S.Shows("health.hours") && d.PowerOnHours is double hours) facts.Add(Format.Number(hours, "0") + " h");
 			if (S.Shows("health.count") && d.PowerOnCount is double count) facts.Add(Format.Number(count, "0") + "× " + L.T("started"));
 			if (S.Shows("health.temp") && d.Temperature is double t) facts.Add(Format.Temperature(t, S.Fahrenheit) + " " + Format.TemperatureUnit(S.Fahrenheit));
 			row.Sub.Text = string.Join("  ·  ", facts);
+            var healthKeys = new List<string>();
+            if (S.Shows("health.hours") && d.PowerOnHours.HasValue) healthKeys.Add("drive:" + d.Id + ":hours");
+            if (S.Shows("health.count") && d.PowerOnCount.HasValue) healthKeys.Add("drive:" + d.Id + ":powercount");
+            if (S.Shows("health.temp") && d.Temperature.HasValue) healthKeys.Add("drive:" + d.Id + ":temp");
+            SensorDetails.Value(row.Sub, string.Join('|', healthKeys));
 			row.Sub.Foreground = Palette.Brush(color == P.Calm ? P.Soft : color);
 			double fraction = Math.Clamp((d.Life ?? 0) / 100.0, 0, 1);
 			Color fill = d.Life is < 10 ? Palette.Alpha(P.Ramp[^1], 1) : d.Life is < 30 ? Palette.Alpha(P.Ramp[2], 1) : P.Calm;

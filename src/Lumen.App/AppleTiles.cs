@@ -51,6 +51,7 @@ public abstract class AppleTile : DashTile
 		hw.HorizontalAlignment = HorizontalAlignment.Right;
 		hw.Margin = new Thickness(10, 0, 0, 0);
 		var row = Ui.Columns("Auto,*", name, hw);
+        HardwareWidgetTitle.Register(this, name, hw);
 		hw.VerticalAlignment = name.VerticalAlignment = VerticalAlignment.Center;
 		return (row, name, hw);
 	}
@@ -133,6 +134,8 @@ public abstract class AppleTile : DashTile
 
 public sealed class PureTile : AppleTile
 {
+    private readonly DesignValueFaces valueFaces = new();
+    private readonly WidgetStyle variant;
 	private readonly TextBlock name, hardware, number, unit, caption, ringText;
 
 	private readonly AppleRing ring = new AppleRing { Width = 60, Height = 60 };
@@ -158,6 +161,7 @@ public sealed class PureTile : AppleTile
 	public PureTile(WidgetKind kind, int index, Palette p, Metrics m, Settings s, WidgetStyle style = WidgetStyle.Pure)
 		: base(kind, index, p, m, s)
 	{
+        variant = style;
 		(var head, name, hardware) = Header();
 		(var big, number, unit) = Big(46);
 		caption = Text("", 12.5, Soft);
@@ -179,7 +183,7 @@ public sealed class PureTile : AppleTile
 		drives = new DriveRows(10, 13, 14, p.Soft, () => new RingBar { Height = 6 },
 			(c, r) => ((RingBar)c).Set(r.Fraction, Opaque(r.Color), RingTrack), r => Opaque(r.Color));
 		pair = new RatePairView(p, 34);
-		var root = Ui.Stack(14, head, hero, level, pair, drives, list);
+		var root = Ui.Stack(14, head, hero, level, pair, valueFaces, drives, list);
 		root.Tag = "elastic";
 		Child = root;
 	}
@@ -187,6 +191,14 @@ public sealed class PureTile : AppleTile
 	protected override void Show(Summary sum)
 	{
 		ShowHeader(name, hardware, sum);
+        if (AllDrives)
+        {
+            drives.Show(DriveList()); drives.IsVisible = hero.IsVisible = level.IsVisible = pair.IsVisible = list.IsVisible = false;
+            list.Children.Clear();
+            valueFaces.Show(variant, DesignValueFaces.Readings(Kind, Index, Last.Snap, Last.History, S, P), P);
+            return;
+        }
+        valueFaces.IsVisible = false;
 		var rates = Rates();
 		hero.IsVisible = rates == null && !AllDrives;
 		pair.IsVisible = rates != null;
@@ -203,7 +215,7 @@ public sealed class PureTile : AppleTile
 		}
 		else
 		{
-			SetBig(number, unit, sum.Value, sum.Unit);
+			SetBig(number, unit, sum.Value, sum.Unit); BindPrimary(number);
 			string which = Which(sum);
 			caption.Text = which.Length > 0 ? which : sum.HeroLabel.Length > 0 ? sum.HeroLabel : WidgetSensors.PrimaryLabel(Kind);
 			// The ring shows the load beside the temperature; a fill level (memory, battery) gets a
@@ -214,7 +226,7 @@ public sealed class PureTile : AppleTile
 			var (fraction, text) = RingValue(sum);
 			ring.Set(fraction, Tint, RingTrack);
 			level.Set(sum.Value == "—" ? 0 : sum.Fraction, Tint, RingTrack);
-			ringText.Text = text;
+			ringText.Text = text; if (sum.Second.HasValue) BindSecondary(ringText);
 			loadIndicator?.Set(sum.Second, Tint, RingTrack);
 			ringShown = ringBox.IsVisible ? Key(text) : "";
 		}
@@ -303,7 +315,7 @@ public sealed class WidgetsTile : AppleTile
 		{
 			// A fill level: one wide tile with the number and a capsule bar, the rest as figures.
 			var (row, number, unit) = Big(38);
-			SetBig(number, unit, sum.Value, sum.Unit);
+			SetBig(number, unit, sum.Value, sum.Unit); BindPrimary(number);
 			var bar = new RingBar { Height = 10 };
 			bar.Set(sum.Value == "—" ? 0 : sum.Fraction, Tint, RingTrack);
 			var cap = Text(sum.HeroLabel.Length > 0 ? sum.HeroLabel : WidgetSensors.PrimaryLabel(Kind), 12, Soft);
@@ -337,8 +349,10 @@ public sealed class WidgetsTile : AppleTile
 		ring.Set(sum.Value == "—" ? 0 : sum.Fraction, Opaque(Shade(sum)), RingTrack);
 		string u = sum.Unit is "°C" or "°F" ? "°" : sum.Unit.Length <= 2 ? sum.Unit : "";
 		var value = Text(sum.Value == "—" ? "—" : sum.Value + u, 28, Ink, FontWeight.DemiBold, null, true);
+        BindPrimary(value);
 		value.HorizontalAlignment = HorizontalAlignment.Center;
 		var sub = Text(sum.Second != null ? sum.SecondLabel : sum.HeroLabel, 11, Soft);
+        if (sum.Second != null) BindSecondary(sub);
 		sub.HorizontalAlignment = HorizontalAlignment.Center;
 		sub.TextTrimming = TextTrimming.CharacterEllipsis;
 		sub.IsVisible = sub.Text.Length > 0;
@@ -362,6 +376,7 @@ public sealed class WidgetsTile : AppleTile
 		var (row, number, unit) = Big(36);
 		var (num, u) = Format.Split(d.Value);
 		SetBig(number, unit, num, u);
+        BindReading(number, d);
 		number.Foreground = Palette.Brush(Opaque(d.Color));
 		var bar = new RingBar { Height = 8 };
 		bar.Set(d.Fraction, Opaque(d.Color), RingTrack);

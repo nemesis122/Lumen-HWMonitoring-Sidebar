@@ -33,6 +33,19 @@ public class NoRepeatTests
                 var window = new Window { Content = card, Width = 320, Height = 900 };
                 window.Show();
                 for (int i = 0; i < 3; i++) { Dispatcher.UIThread.RunJobs(); window.CaptureRenderedFrame(); }
+                if (kind == WidgetKind.Drives)
+                {
+                    // Distinct devices and read/write counters may legitimately have equal numbers.
+                    // Check source identity so that real duplicates still fail, including detail rows.
+                    var keys = card.GetLogicalDescendants().OfType<TextBlock>()
+                        .Where(t => SensorDetails.Visible(t, card) && t.FontFeatures != null && !string.IsNullOrWhiteSpace(t.Text)
+                            && (t.Text.Any(char.IsDigit) || t.Text == "—"))
+                        .Select(t => new[] { SensorDetails.KeyOf(t) }.Concat(t.GetLogicalAncestors().OfType<Control>().Select(SensorDetails.KeyOf))
+                            .FirstOrDefault(k => k.StartsWith("drive:")))
+                        .Where(k => !string.IsNullOrEmpty(k) && !k.EndsWith(":model"));
+                    found.AddRange(keys.GroupBy(k => k).Where(g => g.Count() > 1).Select(g => $"{kind}: {g.Key} ×{g.Count()}"));
+                    window.Close(); continue;
+                }
                 var texts = card.GetLogicalDescendants().OfType<TextBlock>()
                     .Where(t => t.IsEffectivelyVisible && t.Bounds.Width > 0 && !string.IsNullOrWhiteSpace(t.Text)).Select(t => t.Text!.Trim()).ToList();
                 var values = new List<string>();
@@ -72,20 +85,23 @@ public class NoRepeatTests
     }
 
     [Fact]
-    public void Hottest_drive_is_named_and_not_repeated()
+    public void First_drive_is_named_without_hottest_and_not_repeated()
     {
         var summary = UiHost.Run(() =>
         {
             L.Use("de");
-            var (snapshot, history) = Render.Demo();
+            var (demo, history) = Render.Demo();
+            var snapshot = demo with { Disks = demo.Disks.Take(2).Select((d, i) => d with { Letters = i == 0 ? "G:" : "C:", Temperature = i == 0 ? 80 : 30 }).ToArray() };
             var set = new Settings { Language = "de" };
             var sum = Summaries.For(WidgetKind.Drives, 0, snapshot, history, set, Palette.For(true, false));
             var extras = Summaries.Extras(WidgetKind.Drives, 0, snapshot, history, set);
-            return (sum.HeroLabel, extras.Select(e => e.Label).ToList());
+            return (sum.HeroLabel, sum.Value, Labels: extras.Select(e => e.Label).ToList());
         });
-        Assert.StartsWith("Wärmstes · ", summary.HeroLabel);
-        string drive = summary.HeroLabel.Split('·')[^1].Trim();
-        Assert.DoesNotContain(drive, summary.Item2);
+        Assert.StartsWith("C: · ", summary.HeroLabel);
+        Assert.DoesNotContain("Wärmstes", summary.HeroLabel);
+        Assert.Equal("30", summary.Value);
+        Assert.DoesNotContain("C:", summary.Labels);
+        Assert.Contains("G:", summary.Labels);
     }
 
     [Fact]

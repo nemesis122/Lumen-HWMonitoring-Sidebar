@@ -21,7 +21,7 @@ public class FavoriteDesignTests
             var palette = Palette.For(dark, false);
             var card = Assert.IsType<FavoriteTile>(Cards.Create(kind, style, 0, palette, Metrics.For(Density.Fit), settings));
             card.Update(snap, history);
-            var expected = CompleteReadings.For(kind, 0, snap, history, settings.ForWidget(kind), palette).Select(r => r.Key).ToArray();
+            var expected = CompleteReadings.Body(kind, 0, snap, history, settings.ForWidget(kind), palette, style).Select(r => r.Key).ToArray();
             Assert.Equal(expected, card.RenderedKeys);
             var rendered = card.GetLogicalDescendants().OfType<TextBlock>()
                 .Where(t => t.Tag is string tag && tag.StartsWith("favorite-value:")).ToArray();

@@ -55,6 +55,7 @@ public sealed class DialTile : SummaryTile
 	private readonly StackPanel network = new StackPanel { Spacing = 6 };
 
 	private readonly DriveRows drives;
+    private readonly DesignValueFaces driveFaces = new();
 
 	public DialTile(WidgetKind kind, int index, Palette p, Metrics m, Settings s)
 		: base(kind, index, p, m, s, half: false)
@@ -63,6 +64,7 @@ public sealed class DialTile : SummaryTile
 		chip = Ui.Text("", 10, p.Ink, FontWeight.Bold);
 		chipBox = new Border { CornerRadius = new CornerRadius(5), Padding = new Thickness(6, 2), Child = chip, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
 		device = Ui.Text("", 13, p.Ink, FontWeight.DemiBold);
+        HardwareWidgetTitle.Register(this, device);
 		pager = Ui.Text("", 11, p.Soft, FontWeight.Medium, numbers: true);
 		pagerBox = new Border { Child = pager, Padding = new Thickness(8, 2), CornerRadius = new CornerRadius(6), Background = Brushes.Transparent, IsVisible = false, Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand) };
 		ToolTip.SetTip(pagerBox, L.T("Next drive"));
@@ -107,7 +109,7 @@ public sealed class DialTile : SummaryTile
 		// Free height goes between the parts below the header, never between the header and the gauge:
 		// a widget with only a gauge (memory) then keeps it at the top like the others, with the space
 		// below, instead of pushing it to the bottom of the card.
-		StackPanel body = Ui.Stack(10, drives, hero, more, bottom, network);
+		StackPanel body = Ui.Stack(10, drives, driveFaces, hero, more, bottom, network);
 		body.Tag = "elastic";
 		StackPanel root = Ui.Stack(10, header, body);
 		Child = root;
@@ -156,7 +158,7 @@ public sealed class DialTile : SummaryTile
 	{
 		var (snap, history) = Last;
 		Color tint = Tint;
-		chip.Text = Chip(Kind);
+		chip.Text = Naming.Title(Own, Index, string.IsNullOrWhiteSpace(Own?.Name) ? Chip(Kind) : sum.Title);
 		chip.Foreground = Palette.Brush(ChipColor);
 		chipBox.Background = Palette.Brush(P.Dark && P.Chosen == null ? Color.Parse("#0e2f3a") : Color.FromArgb(40, ChipColor.R, ChipColor.G, ChipColor.B));
 		Background = Palette.Brush(CardBack);
@@ -165,6 +167,15 @@ public sealed class DialTile : SummaryTile
 		device.Text = Naming.ShowHardware(Own, S) && name.Length > 0 ? name : title;
 
 		drives.IsVisible = false;
+        driveFaces.IsVisible = false;
+        if (Kind == WidgetKind.Drives)
+        {
+            drives.Show(DriveRows.Of(Index, snap, history, S, P)); drives.IsVisible = false;
+            hero.IsVisible = more.IsVisible = bottom.IsVisible = network.IsVisible = pagerBox.IsVisible = false;
+            bottom.Children.Clear(); grid.Children.Clear(); more.Children.Clear();
+            driveFaces.Show(WidgetStyle.Dial, DesignValueFaces.Readings(Kind, Index, snap, history, S, P), P);
+            return;
+        }
 		bool net = Kind == WidgetKind.Network;
 		network.IsVisible = net;
 		hero.IsVisible = !net;
@@ -260,7 +271,7 @@ public sealed class DialTile : SummaryTile
 		{
 			bottom.Children.Add(Caption(L.T("Load per thread")));
 			var bars = new ThreadBars { Height = 52 };
-			bars.Set(cpu.CoreLoads.Take(32).ToArray(), Tint, TileBack, Opaque(P.Ramp[^1]));
+			bars.Set(cpu.CoreLoads.ToArray(), Tint, TileBack, Opaque(P.Ramp[^1]));
 			bottom.Children.Add(bars);
 		}
 	}
@@ -321,13 +332,15 @@ public sealed class DialTile : SummaryTile
 			return;
 		}
 		// All drives the same way, coloured like the dial's temperatures; no gauge for one of them.
-		drives.Show(disks.Select(x => new Reading(x.Letters.Length > 0 ? x.Letters : Names.Short(x.Name),
-			x.Temperature.HasValue && S.Shows("drives.temp") ? Format.Temperature(x.Temperature, S.Fahrenheit) + " " + Format.TemperatureUnit(S.Fahrenheit) : "—",
-			Format.Heat(x.Temperature), Heat(x.Temperature))).ToList());
+        // Bind the drive rows to their source IDs, including equal temperatures on different disks.
+        drives.Show(disks.Select(x => new Reading(x.Letters.Length > 0 ? x.Letters : Names.Short(x.Name),
+            S.Shows("drives.temp") ? Format.Temperature(x.Temperature, S.Fahrenheit) + " " + Format.TemperatureUnit(S.Fahrenheit) : "",
+            Format.Heat(x.Temperature), Heat(x.Temperature)) { Key = "drive:" + x.Id + ":temp" }).ToList());
 		int page = ((drivePage.GetValueOrDefault(Index) % disks.Count) + disks.Count) % disks.Count;
 		DiskInfo d = disks[page];
 		pager.Text = (d.Letters.Length > 0 ? d.Letters + "  " : "") + (page + 1) + "/" + disks.Count + "  ›";
-		device.Text = d.Name;
+        device.Text = Naming.Title(Own, Index, L.T("Drives"));
+        SensorDetails.Value(device, "");
 		string id = "disk:" + d.Id + ":";
 		TempDial(id + "temp", null, snap.Time, L.T("Temperature"));
 		Func<double, string> pct = v => Format.Number(v, "0.0") + " %";
@@ -343,8 +356,7 @@ public sealed class DialTile : SummaryTile
 			if (S.Shows("drives.free")) specs.Add(Value(id + "free", L.T("Free space"), free, snap.Time, v => Format.Size(v * 1e9)));
 			if (S.Shows("drives.total")) specs.Add(new Spec(id + "total", L.T("Total space"), Format.Size(total * 1e9), null, null, null));
 		}
-		if (S.Shows("drives.read")) specs.Add(Value(id + "read", L.T("Read rate"), d.ReadBytesPerSecond, snap.Time, v => Format.Rate(v)));
-		if (S.Shows("drives.write")) specs.Add(Value(id + "write", L.T("Write rate"), d.WriteBytesPerSecond, snap.Time, v => Format.Rate(v)));
+        // Transfer values are shown once per device in the compact read/write pair below.
 		if (S.Shows("drives.powercount") && d.PowerOnCount is double count) specs.Add(new Spec(id + "count", L.T("Power-on count"), Format.Number(count, "0"), null, null, null));
 		if (S.Shows("drives.hours") && d.PowerOnHours is double hours) specs.Add(new Spec(id + "hours", L.T("Power-on hours"), Format.Number(hours, "0"), null, null, null));
 		if (S.Shows("drives.life") && d.Life is double life) specs.Add(new Spec(id + "life", L.T("Life left"), Format.Number(life, "0") + " %", null, null, life < 20 ? Opaque(P.Ramp[^1]) : null));
@@ -493,7 +505,7 @@ public sealed class DialTile : SummaryTile
 			Row("VPN", L.T(vpn ? "On" : "Off"));
 		}
 		if (n?.LinkBitsPerSecond is double link && link > 0 && S.Shows("net.link")) Row(L.T("Link speed"), Format.Link(link));
-		if (n != null && n.Name.Length > 0 && Naming.ShowHardware(Own, S)) device.Text = n.Name;
+		if (n != null && n.Name.Length > 0 && Naming.ShowHardware(Own, S)) device.Text = Naming.Hardware(Own, Index, n.Name);
 		if (!string.IsNullOrEmpty(n?.Address) && S.Shows("net.address")) Row(L.T("Address"), n!.Address!);
 		if (network.Children.Count == before + 1)
 		{
@@ -542,12 +554,15 @@ public sealed class DialTile : SummaryTile
 			Background = Palette.Brush(back);
 			label.Text = s.Label.ToUpper(L.Culture);
 			value.Text = s.Value;
+            if (s.Key.StartsWith("drive:")) SensorDetails.Value(value, s.Key);
 			value.Foreground = Palette.Brush(s.Color ?? p.Ink);
 			bool curve = s.Series != null && s.Series.Count(double.IsFinite) > 1;
 			// A tile of a value that has a curve keeps the curve's room while it has none for a moment (a fan
 			// that stops), so the tiles below do not move up and down.
 			if (curve) hadCurve.Add(s.Key);
-			chart.IsVisible = curve || hadCurve.Contains(s.Key);
+			// Reserve the native trend lane from the first sample, including static/missing curves.
+            // Otherwise the second sample inserts 22 pixels and moves the whole sidebar.
+            chart.IsVisible = true;
 			chart.Opacity = curve ? 1 : 0;
 			if (curve)
 			{
@@ -633,7 +648,7 @@ public sealed class ThreadBars : Control
 		{
 			return;
 		}
-		double gap = values.Length > 16 ? 2 : 3;
+		double gap = Math.Min(values.Length > 16 ? 2 : 3, Bounds.Width / (values.Length * 3.0));
 		double w = (Bounds.Width - gap * (values.Length - 1)) / values.Length;
 		double h = Bounds.Height;
 		for (int i = 0; i < values.Length; i++)

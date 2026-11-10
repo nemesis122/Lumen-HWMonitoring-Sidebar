@@ -111,7 +111,8 @@ public sealed class BadgeListTile : SummaryTile
 		rows[i].Badge.IsVisible = true;
 		if (graph)
 		{
-			lineBars[i].IsVisible = fraction.HasValue;
+			lineBars[i].IsVisible = fraction.HasValue || Kind == WidgetKind.Drives && value == "—";
+            lineBars[i].Opacity = value == "—" ? .3 : 1;
 			lineBars[i].Animate(fraction ?? 0, Color.FromArgb(255, color.R, color.G, color.B));
 		}
 	}
@@ -138,6 +139,7 @@ public sealed class BadgeListTile : SummaryTile
 		for (int j = 0; j < list.Count; j++)
 		{
 			Fill(j, list[j].Label, list[j].Value, list[j].Fraction, list[j].Color);
+            BindReading(rows[j].Value, list[j]);
 		}
 	}
 
@@ -154,12 +156,13 @@ public sealed class BadgeListTile : SummaryTile
 			for (int i = 0; i < shown.Count; i++)
 			{
 				Fill(i, shown[i].Label, shown[i].Value, shown[i].Fraction, shown[i].Color);
+                BindReading(rows[i].Value, shown[i]);
 			}
 		}
 		for (int k = 0; k < items.Count; k++)
 		{
 			var (label, value) = items[k];
-			double? fraction = SegmentScale.Fraction(Kind, label, value, Last.Snap);
+			double? fraction = ExtraFraction(label, value);
 			Color color = value.Contains('°') && fraction is double heat ? P.At(heat) : P.Cool;
 			Fill(shown.Count + k, label, value, fraction, color);
 		}

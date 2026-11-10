@@ -29,6 +29,8 @@ public static class WidgetPresentation
         return control;
     }
 
+    public static string SensorKey(Control control) => originals.TryGetValue(control, out var original) ? original.Key : "";
+
     /// <summary>Numbers drawn at least this large are the widget's main value.</summary>
     public const double HeroFont = 20;
 
@@ -152,6 +154,34 @@ public static class WidgetPresentation
                     panel2.Height = container.Height * Math.Max(labels, Math.Max(values, graphics));
                 }
             }
+        }
+        AlignRegisterColumns(root);
+    }
+
+    private static void AlignRegisterColumns(Control root)
+    {
+        if (root is not (TableTile or BadgeListTile) && !root.GetLogicalDescendants().OfType<DriveRows>().Any()) return;
+        var rows = root.GetLogicalDescendants().OfType<Grid>().Where(g => g.ColumnDefinitions.Count == 3 && g.ColumnDefinitions[1].Width.IsStar
+            && g.Children.Any(c => Grid.GetColumn(c) == 1 && c is Meter or FillBack or GradientBar or SegmentBar or RingBar)
+            && g.IsVisible && g.GetLogicalAncestors().OfType<Control>().All(c => c.IsVisible)).ToArray();
+        if (rows.Length < 2) return;
+        double Measure(int column)
+        {
+            double width = 0, font = 0;
+            foreach (var row in rows)
+            foreach (var child in row.Children.Where(c => Grid.GetColumn(c) == column && c.IsVisible))
+            {
+                child.Measure(Size.Infinity); width = Math.Max(width, Math.Ceiling(child.DesiredSize.Width));
+                foreach (var text in child.GetLogicalDescendants().OfType<TextBlock>().Prepend(child as TextBlock).OfType<TextBlock>()) font = Math.Max(font, text.FontSize);
+            }
+            var memory = widest.GetOrCreateValue(root); string key = "register-column|" + column + "|" + font.ToString("0.0");
+            memory[key] = Math.Max(memory.GetValueOrDefault(key), width); return memory[key];
+        }
+        double name = Measure(0), value = Measure(2);
+        foreach (var row in rows)
+        {
+            row.ColumnDefinitions[0].Width = new GridLength(name);
+            row.ColumnDefinitions[2].Width = new GridLength(value);
         }
     }
 }

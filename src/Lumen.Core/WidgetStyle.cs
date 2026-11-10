@@ -123,7 +123,36 @@ public enum WidgetStyle
     PureBar,
     PureNumber,
     PureSegments,
-    PureWidgetsRight
+    PureWidgetsRight,
+    // Removed local prototypes: IDs/names retained solely to migrate saved settings.
+    Atelier,
+    RailLocal,
+    Observatory,
+    Canvas,
+    Ledger,
+    Instrument,
+    Matrix,
+    Solace,
+    Forma,
+    Axis,
+    Aurora,
+    Flux,
+    Halo,
+    Meridian,
+    Strata,
+    Vector,
+    Orbit,
+    Lucent,
+    Circuit,
+    Panorama,
+    Terminal,
+    Thermal,
+    MosaicPro,
+    RibbonFlow,
+    SplitLens,
+    Aperture,
+    PixelDeck,
+    HorizonSync
 }
 
 

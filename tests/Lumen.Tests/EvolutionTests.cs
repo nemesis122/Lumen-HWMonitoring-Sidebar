@@ -219,7 +219,9 @@ public class DialTests
             var window = new Window { Content = card, Width = 330, Height = 900 };
             window.Show();
             for (int i = 0; i < 3; i++) { Avalonia.Threading.Dispatcher.UIThread.RunJobs(); window.CaptureRenderedFrame(); }
-            var shown = card.GetLogicalDescendants().OfType<TextBlock>().Where(t => t.IsEffectivelyVisible && t.Bounds.Width > 0).Select(t => t.Text ?? "").ToList();
+            // Native tiles stay empty-free; explicitly selected unavailable sensors now have a labelled
+            // dash in SensorDetails, as required by the common sensor contract.
+            var shown = card.GetLogicalDescendants().OfType<TextBlock>().Where(t => t.IsEffectivelyVisible && t.Bounds.Width > 0 && !t.GetLogicalAncestors().OfType<SensorDetails>().Any()).Select(t => t.Text ?? "").ToList();
             window.Close();
             return shown;
         });

@@ -17,7 +17,10 @@ public class StyleSelectionTests
         WidgetStyle.Duplex, WidgetStyle.SignalRows, WidgetStyle.OpenPanel, WidgetStyle.Clarity, WidgetStyle.ControlDeck, WidgetStyle.ClarityColor, WidgetStyle.ClarityRows, WidgetStyle.ClarityTiles, WidgetStyle.Evolution, WidgetStyle.Dial, WidgetStyle.HistoryGraph, WidgetStyle.RingPair, WidgetStyle.LevelColumns, WidgetStyle.NeonHud, WidgetStyle.NeonTiles, WidgetStyle.Thermostat, WidgetStyle.SmartPanel, WidgetStyle.PurpleDash, WidgetStyle.SciFi, WidgetStyle.PurpleList, WidgetStyle.SegmentGraph, WidgetStyle.TableGraph, WidgetStyle.FillBarsGraph, WidgetStyle.PillRowGraph, WidgetStyle.BadgeListGraph, WidgetStyle.NeonHudGraph, WidgetStyle.Pure, WidgetStyle.PureWidgets,
         WidgetStyle.CleanDark,
         WidgetStyle.CompactPro,
-        WidgetStyle.PerformanceView, WidgetStyle.PureBar, WidgetStyle.PureNumber, WidgetStyle.PureSegments, WidgetStyle.PureWidgetsRight
+        WidgetStyle.PerformanceView, WidgetStyle.PureBar, WidgetStyle.PureNumber, WidgetStyle.PureSegments, WidgetStyle.PureWidgetsRight,
+        WidgetStyle.Meridian, WidgetStyle.Strata, WidgetStyle.Vector, WidgetStyle.Orbit, WidgetStyle.Lucent, WidgetStyle.Circuit,
+        WidgetStyle.Panorama, WidgetStyle.Terminal, WidgetStyle.Thermal, WidgetStyle.MosaicPro, WidgetStyle.RibbonFlow, WidgetStyle.SplitLens,
+        WidgetStyle.Aperture, WidgetStyle.PixelDeck, WidgetStyle.HorizonSync
     };
     const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
 
@@ -89,7 +92,7 @@ public class StyleSelectionTests
             string Name(Button button) => button.GetLogicalDescendants().OfType<TextBlock>().Single().Text!;
             Assert.Equal(Expected.Select(SettingsWindow.StyleName), buttons.Select(Name));
             buttons.Last().RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            Assert.All(settings.Widgets.Where(w => Settings.HasStyles(w.Kind)), w => Assert.Equal(WidgetStyle.PureWidgetsRight, w.Style));
+            Assert.All(settings.Widgets.Where(w => Settings.HasStyles(w.Kind)), w => Assert.Equal(WidgetStyle.HorizonSync, w.Style));
 
             ((HashSet<WidgetKind>)typeof(SettingsWindow).GetField("expanded", Private)!.GetValue(window)!).Add(WidgetKind.Cpu);
             typeof(SettingsWindow).GetMethod("Build", Private)!.Invoke(window, null);
@@ -99,7 +102,7 @@ public class StyleSelectionTests
             Assert.Equal(Expected.Select(SettingsWindow.StyleName), choices.Children.OfType<Button>().Select(Name));
             choices.Children.OfType<Button>().Single(b => Name(b) == "Capsule").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Assert.Equal(WidgetStyle.Pill, settings.Widgets.Single(w => w.Kind == WidgetKind.Cpu).Style);
-            Assert.Equal(WidgetStyle.PureWidgetsRight, settings.Widgets.Single(w => w.Kind == WidgetKind.Gpu).Style);
+            Assert.Equal(WidgetStyle.HorizonSync, settings.Widgets.Single(w => w.Kind == WidgetKind.Gpu).Style);
         }
         finally { window.Close(); }
         return true;

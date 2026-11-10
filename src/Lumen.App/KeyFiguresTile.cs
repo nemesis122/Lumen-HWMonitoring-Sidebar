@@ -80,7 +80,8 @@ public sealed class KeyFiguresTile : SummaryTile
 		for (int j = 0; j < list.Count; j++)
 		{
 			Reading reading = list[j];
-			cells[j].Value.Text = reading.Value.Replace(" °C", "°").Replace(" °F", "°");
+            BindReading(cells[j].Value, reading);
+			cells[j].Value.Text = reading.Value.Replace(" °C", "°").Replace(" °F", "°F");
 			cells[j].Value.Foreground = Palette.Brush((reading.Color == P.Cool) ? P.Ink : reading.Color);
 			cells[j].Label.Text = reading.Label.ToUpper(L.Culture);
 			cells[j].Bar.Animate(reading.Fraction, reading.Color);

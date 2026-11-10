@@ -72,7 +72,8 @@ public sealed class SplitTile : SummaryTile
 		}
 		for (int j = 0; j < list.Count; j++)
 		{
-			cells[j].Value.Text = list[j].Value.Replace(" °C", "°").Replace(" °F", "°");
+            BindReading(cells[j].Value, list[j]);
+			cells[j].Value.Text = list[j].Value.Replace(" °C", "°").Replace(" °F", "°F");
 			cells[j].Value.Foreground = Palette.Brush((list[j].Color == P.Cool) ? P.Ink : list[j].Color);
 			cells[j].Label.Text = list[j].Label.ToUpper(L.Culture);
 		}

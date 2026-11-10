@@ -44,11 +44,11 @@ public sealed class ComparisonTile : SummaryTile
     protected override void Show(Summary sum)
     {
         if(drives!=null){drives.Show(DriveRows.Of(Index,Last.Snap,Last.History,S,P));RenderedKeys=Array.Empty<string>();return;}
-        var data=CompleteReadings.For(Kind,Index,Last.Snap,Last.History,S,P);
+        var data=CompleteReadings.Body(Kind,Index,Last.Snap,Last.History,S,P,style);
         RenderedKeys=data.Select(r=>r.Key).ToArray();
         string next=string.Join("\n",RenderedKeys);
         if(shape!=next || cells.Count!=data.Count){shape=next;Build(data);}
-        for(int i=0;i<data.Count;i++){cells[i].Label.Text=DisplayLabel(data[i]);cells[i].Value.Text=data[i].Value;}
+        for(int i=0;i<data.Count;i++){cells[i].Label.Text=DisplayLabel(data[i]);cells[i].Value.Text=data[i].Value;SensorDetails.Value(cells[i].Value,data[i].Key);}
         var pair=TwinFocusMetrics.Pair(Kind,Index,sum,Last.Snap,Last.History,S);
         UpdateChart(WidgetSensors.PrimaryKey(Kind),pair.Primary,P.Cool);
         UpdateChart(WidgetSensors.SecondaryKey(Kind),pair.Secondary,P.Calm);
@@ -107,9 +107,11 @@ public sealed class ComparisonTile : SummaryTile
         {
             bool main=row.Key==primaryKey||row.Key==secondaryKey;
             bool first=row.Key==primaryKey;
+            bool driveFocus=Kind==WidgetKind.Drives&&(style is WidgetStyle.SignalRows or WidgetStyle.OpenPanel)&&(row.Key.EndsWith(":temp")||row.Key.EndsWith(":used"));
             var label=Text(DisplayLabel(row),M.Subtitles?10.5:10,false,P.Soft);
             double mainSize=style==WidgetStyle.OpenPanel?(M.Subtitles?14:12.5):M.Hero*(Kind==WidgetKind.Network?.45:.5);
-            var value=Text(row.Value,main?mainSize:M.Subtitles?12.5:11.5,true,main?(first?P.Cool:P.Calm):P.Ink);
+            var value=Text(row.Value,main||driveFocus?mainSize:M.Subtitles?12.5:11.5,true,driveFocus?(row.Key.EndsWith(":temp")?P.Cool:P.Calm):main?(first?P.Cool:P.Calm):P.Ink);
+            if(driveFocus)value.TextAlignment=TextAlignment.Right;
             value.Tag="complete-reading:"+row.Key;
             cells.Add((label,value));
             Control block;
@@ -129,8 +131,10 @@ public sealed class ComparisonTile : SummaryTile
             else if(Kind==WidgetKind.Drives&&row.Key.StartsWith("drive:"))
             {
                 bool model=row.Key.EndsWith(":model");
-                block=model?Ui.Stack(gap*.4,label,value):Details(label,value);
-                block.Margin=new Thickness(0,gap*.5,gap,0);
+                // A drive register uses the same label/value columns in every row. Tiny independent
+                // cells previously put "41 °C" directly beside the next field's "Used" label.
+                block=model?Ui.Stack(gap*.4,label,value):new StableReadingRow(label,value,S,M,100);
+                block.Margin=new Thickness(0,gap*.5,model?0:16,0);
                 string disk=row.Key[..row.Key.LastIndexOf(':')];
                 if(!drives.TryGetValue(disk,out var group))drives[disk]=group=new();
                 group.Add((block,model));
@@ -157,7 +161,7 @@ public sealed class ComparisonTile : SummaryTile
         {
             var group=Ui.Stack(gap);
             foreach(var model in disk.Where(x=>x.Model))group.Children.Add(model.Block);
-            group.Children.Add(new StatPanel(Array.Empty<double>(),disk.Where(x=>!x.Model).Select(x=>x.Block).ToArray()){Tag="elastic",MaxColumns=6,MinimumColumnWidth=style==WidgetStyle.SignalRows||!M.Subtitles?132:90});
+            group.Children.Add(new StatPanel(Array.Empty<double>(),disk.Where(x=>!x.Model).Select(x=>x.Block).ToArray()){Tag="elastic",MaxColumns=2,MinimumColumnWidth=220,RowSpacing=2});
             body.Children.Add(group);
         }
         if(addresses.Count>0)body.Children.Add(new StatPanel(Array.Empty<double>(),addresses.ToArray()){Tag="elastic",MaxColumns=2,MinimumColumnWidth=160});

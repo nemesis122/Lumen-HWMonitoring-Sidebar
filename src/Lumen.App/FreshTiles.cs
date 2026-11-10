@@ -67,8 +67,15 @@ public abstract class FreshTile : SummaryTile
 	protected List<Reading> All()
 	{
 		var (snap, history) = Last;
+        if (Kind == WidgetKind.Drives && this is NeonTilesTile or ColumnsTile or SmartPanelTile)
+            return DriveMetrics();
 		return Readings.For(Kind, Index, snap, history, S, P).Where(r => r.Value.Length > 0 && r.Value != "—").Select(Fan).ToList();
 	}
+
+    private List<Reading> DriveMetrics() => CompleteReadings.For(Kind, Index, Last.Snap, Last.History, S, P)
+        .Where(r => r.Key.StartsWith("drive:") && !r.Key.EndsWith(":model") && !DriveTransferPairs.IsRate(r))
+        .Select(r => { double fraction = r.Fraction ?? SegmentScale.Fraction(Kind, r.Label, r.Value, Last.Snap) ?? 0;
+            return new Reading(r.Label, r.Value, fraction, r.Key.EndsWith(":temp") ? P.At(fraction) : P.Cool) { Key = r.Key }; }).ToList();
 
 	protected override bool ShowsEmpty => false;
 
@@ -101,13 +108,13 @@ public abstract class FreshTile : SummaryTile
 		var shown = new HashSet<string>();
 		foreach (TextBlock t in this.GetLogicalDescendants().OfType<TextBlock>())
 		{
-			if (string.IsNullOrWhiteSpace(t.Text) || !t.IsVisible || t.GetLogicalAncestors().Contains(Extras))
+			if (string.IsNullOrWhiteSpace(t.Text) || !t.IsVisible || t.GetLogicalAncestors().Contains(Extras) || t.GetLogicalAncestors().OfType<SensorDetails>().Any())
 			{
 				continue;
 			}
 			shown.Add(Key(t.Text));
 		}
-		foreach (TextBlock t in this.GetLogicalDescendants().OfType<TextBlock>().Where(t => t.IsVisible && !t.GetLogicalAncestors().Contains(Extras)))
+		foreach (TextBlock t in this.GetLogicalDescendants().OfType<TextBlock>().Where(t => t.IsVisible && !t.GetLogicalAncestors().Contains(Extras) && !t.GetLogicalAncestors().OfType<SensorDetails>().Any()))
 		{
 			// Value split into number and unit in two text blocks.
 			if (t.Parent is StackPanel row && row.Orientation == Orientation.Horizontal)
@@ -127,6 +134,7 @@ public abstract class FreshTile : SummaryTile
 // it, the other readings follow as small label/value pairs.
 public sealed class GraphTile : FreshTile
 {
+    private readonly DesignValueFaces driveFaces = new();
 	private readonly AreaChart chart = new AreaChart { Height = 84, FillOpacity = 0.28, LineWidth = 1.8, VerticalAlignment = VerticalAlignment.Bottom };
 
 	private readonly TextBlock value;
@@ -189,19 +197,29 @@ public sealed class GraphTile : FreshTile
 		drives = new DriveRows(8, 11.5, 13, p.Soft, () => new FillBack { Height = 6, Radius = 3, Track = Palette.Mix(p.Card, p.Ink, p.Dark ? 0.12 : 0.1) },
 			(c, r) => ((FillBack)c).Animate(r.Fraction, Opaque(r.Color)), r => Opaque(r.Color));
 		driveBox = new Border { CornerRadius = new CornerRadius(8), Padding = new Thickness(10, 9), Child = drives, IsVisible = false };
-		var root = Ui.Stack(8, Head, graph, driveBox, pairs, Extras);
+		var root = Ui.Stack(8, Head, graph, driveBox, driveFaces, pairs, Extras);
 		root.Tag = "elastic";
 		Child = root;
 	}
 
 	protected override void Show(Summary sum)
 	{
+        driveFaces.IsVisible = false;
+        if (AllDrives)
+        {
+            drives.Show(DriveList()); driveBox.IsVisible = graph.IsVisible = pairs.IsVisible = false;
+            pairs.Children.Clear();
+            driveFaces.Show(WidgetStyle.HistoryGraph, DesignValueFaces.Readings(Kind, Index, Last.Snap, Last.History, S, P), P, Last.History);
+            return;
+        }
 		Color tint = Kind is WidgetKind.Cpu or WidgetKind.Gpu or WidgetKind.Drives or WidgetKind.Cooling ? Opaque(Shade(sum)) : Tint;
 		value.Text = sum.Value;
+		BindPrimary(value);
 		value.Foreground = Palette.Brush(sum.Value == "—" ? P.Soft : P.Ink);
 		unit.Text = sum.Value == "—" ? "" : sum.Unit;
 		second.Text = sum.SecondLabel.Length > 0 && sum.Second.HasValue ? sum.SecondLabel + " " + L.T("Load") : Which(sum);
 		second.IsVisible = second.Text.Length > 0 && (Kind is WidgetKind.Cpu or WidgetKind.Gpu || Which(sum).Length > 0);
+        if (Kind is WidgetKind.Cpu or WidgetKind.Gpu && sum.Second.HasValue) BindSecondary(second);
 		// Drives: the panel lists every drive instead of the curve of the hottest one.
 		var rates = Rates();
 		downArrow.IsVisible = upBig.IsVisible = rates != null;
@@ -210,6 +228,7 @@ public sealed class GraphTile : FreshTile
 			second.IsVisible = false;
 			(value.Text, unit.Text) = Format.Split(down.Value);
 			(upValue.Text, upUnit.Text) = Format.Split(up.Value);
+            BindSecondary(upValue);
 			value.Foreground = upValue.Foreground = Palette.Brush(P.Ink);
 		}
 		bool curve = sum.Series.Length > 1;
@@ -245,6 +264,7 @@ public sealed class GraphTile : FreshTile
 // second value (load), with the remaining readings listed beside them.
 public sealed class RingsTile : FreshTile
 {
+    private readonly DesignValueFaces driveFaces = new();
 	private readonly RingPair rings = new RingPair { Width = 96, Height = 96 };
 
 	private readonly TextBlock value;
@@ -283,7 +303,7 @@ public sealed class RingsTile : FreshTile
 		body = Ui.Columns("Auto,*", ringBox, list);
 		drives = new DriveRows(8, 11.5, 12.5, p.Soft, () => new RingBar { Height = 6 },
 			(c, r) => ((RingBar)c).Set(r.Fraction, Opaque(r.Color), Palette.Mix(p.Card, p.Ink, p.Dark ? 0.1 : 0.08)), r => Opaque(r.Color));
-		var root = Ui.Stack(8, Head, body, drives, below, Extras);
+		var root = Ui.Stack(8, Head, body, drives, driveFaces, below, Extras);
 		root.Tag = "elastic";
 		Child = root;
 	}
@@ -300,16 +320,13 @@ public sealed class RingsTile : FreshTile
 		below.Children.Clear();
 		below.IsVisible = false;
 		lines.Clear();
+        driveFaces.IsVisible = false;
 		if (AllDrives)
 		{
-			// Every drive, then reading and writing, each a line with the same bar.
-			lines.AddRange(DriveList());
-			string read = L.T("Read"), write = L.T("Write");
-			foreach (var (l, v) in Summaries.Extras(Kind, Index, Last.Snap, Last.History, S).Where(i => i.Label == read || i.Label == write))
-			{
-				lines.Add(new Reading(l, v, SegmentScale.Fraction(Kind, l, v, Last.Snap) ?? 0, Tint));
-			}
-			drives.Show(lines);
+            drives.Show(DriveList()); drives.IsVisible = false;
+            var used = CompleteReadings.For(Kind, Index, Last.Snap, Last.History, S, P).Where(r => r.Key.EndsWith(":used"))
+                .Select(r => new Reading(r.Label, r.Value, r.Fraction ?? 0, P.Calm) { Key = r.Key }).ToList();
+            driveFaces.Show(WidgetStyle.RingPair, DesignValueFaces.Readings(Kind, Index, Last.Snap, Last.History, S, P), P, secondary: used);
 			return;
 		}
 		if (asLines && rates is var (d, u))
@@ -327,9 +344,11 @@ public sealed class RingsTile : FreshTile
 			return;
 		}
 		value.Text = sum.Value == "—" ? "—" : sum.Value + (sum.Unit.Length <= 2 ? sum.Unit : "");
+		BindPrimary(value);
 		value.Foreground = Palette.Brush(sum.Value == "—" ? P.Soft : main);
 		bool hasSecond = sum.Second.HasValue && sum.SecondLabel.Length > 0;
 		sub.Text = hasSecond ? sum.SecondLabel : Which(sum).Length > 0 ? Which(sum).Split('·')[^1].Trim() : (sum.Unit.Length > 2 ? sum.Unit : "");
+        if (hasSecond) BindSecondary(sub);
 		sub.IsVisible = sub.Text.Length > 0;
 		Color track = Palette.Mix(P.Card, P.Ink, P.Dark ? 0.1 : 0.08);
 		rings.Set(sum.Value == "—" ? 0 : sum.Fraction, main, hasSecond ? sum.Second : null, Tint, track);
@@ -476,6 +495,7 @@ public sealed class ColumnsTile : FreshTile
 			bool heat = r.Value.EndsWith("°C") || r.Value.EndsWith("°F");
 			Color c = heat ? Opaque(r.Color) : Tint;
 			var val = Ui.Text(r.Value, 11, P.Ink, FontWeight.DemiBold, numbers: true);
+            BindReading(val, r);
 			val.HorizontalAlignment = HorizontalAlignment.Center;
 			var bar = new LevelBar { Height = 64, Width = 14, HorizontalAlignment = HorizontalAlignment.Center };
 			bar.Set(r.Fraction, c, track);
@@ -486,7 +506,8 @@ public sealed class ColumnsTile : FreshTile
 			var fit = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Child = val, Height = 15, HorizontalAlignment = HorizontalAlignment.Center };
 			columns.Children.Add(new Border { Padding = new Thickness(2, 0), Child = Ui.Stack(4, fit, bar, label) });
 		}
-		columns.Columns = Math.Max(1, rest.Count);
+        columns.Rows = Kind == WidgetKind.Drives ? Math.Max(1, (int)Math.Ceiling(rest.Count / 4d)) : 1;
+		columns.Columns = Kind == WidgetKind.Drives ? Math.Clamp(rest.Count, 1, 4) : Math.Max(1, rest.Count);
 		columns.IsVisible = rest.Count > 0;
 	}
 }
@@ -494,6 +515,7 @@ public sealed class ColumnsTile : FreshTile
 // A straight bar with round caps, drawn like a piece of the rings (same thickness feel and colours).
 public sealed class RingBar : Control
 {
+    internal void CopyAppearanceTo(RingBar target, double value) => target.Set(value, fill, track);
 	private double fraction;
 
 	private Color fill = Colors.DeepSkyBlue;
@@ -589,6 +611,7 @@ public sealed class RingPair : Control
 // An upright bar filled from the bottom.
 public sealed class LevelBar : Control
 {
+    internal void CopyAppearanceTo(LevelBar target, double value) => target.Set(value, color, track);
 	private double fraction;
 
 	private Color color = Colors.DeepSkyBlue;

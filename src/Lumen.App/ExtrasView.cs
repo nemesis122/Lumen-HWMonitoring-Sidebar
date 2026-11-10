@@ -29,7 +29,7 @@ public sealed class ExtrasView : ContentControl
 	public void Set(List<(string Label, string Value)> items)
 	{
 		base.IsVisible = items.Count > 0;
-		List<(string Label, string Value)> shown = items.Take(wide ? 6 : 3).ToList();
+		List<(string Label, string Value)> shown = items.ToList();
 		string text = string.Join("|", shown.Select(((string Label, string Value) i) => i.Label + (Long(i.Value) ? "+" : "")));
 		if (text != shape)
 		{

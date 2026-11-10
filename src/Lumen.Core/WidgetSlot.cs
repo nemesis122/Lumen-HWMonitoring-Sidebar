@@ -6,7 +6,8 @@ public sealed class WidgetSlot
 
 	public bool Visible { get; set; } = true;
 
-	public WidgetStyle Style { get; set; }
+	public WidgetStyle Style { get; set; } = WidgetStyle.Standard;
+    public string DriveOrder { get; set; } = "system";
 
     public double GraphicScale { get; set; } = 1.0;
 

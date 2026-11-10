@@ -54,13 +54,14 @@ public sealed class InsightTile : SummaryTile
 
     protected override void Show(Summary summary)
     {
-        var rows=CompleteReadings.For(Kind,Index,Last.Snap,Last.History,S,P);
+        var rows=CompleteReadings.Body(Kind,Index,Last.Snap,Last.History,S,P,style);
         RenderedKeys=rows.Select(r=>r.Key).ToArray();
         string next=string.Join("\n",rows.Select(r=>r.Key+"|"+r.Label));
         if(shape!=next||cells.Count!=rows.Count){shape=next;Build(rows);}
         for(int i=0;i<rows.Count;i++)
         {
             var cell=cells[i];
+            SensorDetails.Value(cell.ValueControl, rows[i].Key);
             if(cell.Focus!=null)cell.Focus.Set(rows[i].Value);
             else cell.Text!.Text=rows[i].Value;
             ToolTip.SetTip(cell.ValueControl,rows[i].Label+": "+rows[i].Value);
@@ -142,6 +143,9 @@ public sealed class InsightTile : SummaryTile
 
     private void Build(List<CompleteReading> rows)
     {
+        // Selection changes rebuild the groups; release the reusable history lanes first.
+        if(firstLane.Parent is Panel firstParent)firstParent.Children.Remove(firstLane);
+        if(secondLane.Parent is Panel secondParent)secondParent.Children.Remove(secondLane);
         body.Children.Clear();cells.Clear();
         var primary=new List<Control>();
         var groups=new Dictionary<string,(string Title,List<Control> Metrics,List<Control> Meta)>();
@@ -220,15 +224,15 @@ internal sealed class StableReadingRow : Panel
         label.Measure(new Size(double.PositiveInfinity,double.PositiveInfinity));
         double word=LongestWord();
         double gap=metrics.Gap*.4;
+        double reserved=reservedWidth*(settings.ActiveWidget?.Values??1);
         if(stacked&&Math.Abs(w-stackedAt)>1)stacked=false;
-        if(!stacked&&word+gap+widest>w){stacked=true;stackedAt=w;}
+        if(!stacked&&word+gap+Math.Max(reserved,widest)>w){stacked=true;stackedAt=w;}
         if(stacked)
         {
             valueWidth=w;
             label.Measure(new Size(w,double.PositiveInfinity));value.Measure(new Size(w,double.PositiveInfinity));
             return new Size(w,label.DesiredSize.Height+value.DesiredSize.Height);
         }
-        double reserved=reservedWidth*(settings.ActiveWidget?.Values??1);
         valueWidth=Math.Min(w*.67,Math.Max(reserved,widest));
         valueWidth=Math.Max(widest,Math.Min(valueWidth,w-word-gap));
         double labelWidth=Math.Max(1,w-valueWidth-gap);
