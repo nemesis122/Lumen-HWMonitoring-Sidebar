@@ -11,11 +11,19 @@ public static class WidgetSensors
         settings.SensorSelectionVersion = SensorDefaults.SelectionVersion;
         void Set(string sensor, bool show)
         {
+            if(sensor.StartsWith("aio."))
+            {
+                slot.AioEnabledSensors ??= new();
+                slot.AioEnabledSensors.Remove(sensor);
+                if(show) slot.AioEnabledSensors.Add(sensor);
+            }
             settings.HiddenValues.Remove(sensor);
             slot.HiddenSensors.Remove(sensor);
             if (!show) slot.HiddenSensors.Add(sensor);
         }
         Set(key, selected);
+        if(selected&&key.StartsWith("aio."))
+            foreach(var group in AioReadings.Groups.Where(g=>key.StartsWith(g.Key+".")))Set(group.Key,true);
         if (Groups.TryGetValue(key, out var children)) foreach (string child in children) Set(child, selected);
         if (selected) foreach (var group in Groups.Where(g => g.Value.Contains(key))) Set(group.Key, true);
         string? prefix = key == "cooling.fans" ? "fan:" : key == "cooling.board" ? "temp:" : null;
@@ -105,6 +113,8 @@ public static class WidgetSensors
             foreach (var disk in snap.Disks) Add("drive:" + disk.Id, disk.Name + " " + disk.Letters);
         if (kind == WidgetKind.Volumes && snap != null)
             foreach (var volume in snap.Volumes) Add("volume:" + volume.Name, volume.Name + " " + volume.Label);
+        if (kind == WidgetKind.Overview)
+            foreach (var option in AioReadings.Options(snap)) Add(option.Key,option.Label);
         return result;
     }
 

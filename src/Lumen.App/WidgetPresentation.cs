@@ -156,6 +156,9 @@ public static class WidgetPresentation
             }
         }
         AlignRegisterColumns(root);
+        bool enlarged = Math.Max(Math.Max(values, labels), Math.Max(graphics, hero)) > 1.15;
+        foreach (var row in root.GetLogicalDescendants().OfType<ResponsiveGrid>()) row.Adapt = enlarged;
+        foreach (var face in root.GetLogicalDescendants().OfType<DesignValueFaces>()) face.Enlarged = enlarged;
     }
 
     private static void AlignRegisterColumns(Control root)

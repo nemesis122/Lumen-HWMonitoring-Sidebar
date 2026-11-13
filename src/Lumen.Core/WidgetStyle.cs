@@ -152,7 +152,28 @@ public enum WidgetStyle
     SplitLens,
     Aperture,
     PixelDeck,
-    HorizonSync
+    HorizonSync,
+    SplitFlap,
+    MeasureTape,
+    HardwareMap,
+    AioTypeBlock,
+    AioOrbitNetwork,
+    AioThermalGrid,
+    AioSignalRack,
+    AioIsometricCore,
+    AioPrecision,
+    AioChromatic,
+    AioStudioLight,
+    AioInstrument,
+    AioAuroraFusion,
+    AioPopConsole,
+    AioCarbonPulse,
+    AioIsometricAtlas,
+    AioIsometricTiles,
+    AioIsometricRig,
+    AioIsometricPedestals,
+    AioIsometricCompact,
+    AioIsometricRings
 }
 
 

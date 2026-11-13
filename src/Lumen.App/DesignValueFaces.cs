@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
+using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Lumen.Core;
 
@@ -13,6 +14,25 @@ public sealed class DesignValueFaces : UniformGrid
     private sealed record Cell(TextBlock Number, TextBlock Unit, Control? Graphic, TextBlock? Secondary);
     private readonly Dictionary<string, Cell> cells = new();
     private string shape = "";
+    private bool enlarged;
+    public bool Enlarged { get => enlarged; set { if (enlarged != value) { enlarged = value; InvalidateMeasure(); } } }
+
+    protected override Size MeasureOverride(Size available)
+    {
+        double minimum = 1;
+        foreach (var child in Children.Where(c => c.IsVisible))
+        {
+            child.Measure(Size.Infinity);
+            double request = child.GetLogicalDescendants().OfType<Viewbox>().Where(v => Equals(v.Tag,"graphic") && double.IsFinite(v.Width)).Select(v => v.Width + 6).DefaultIfEmpty(0).Max();
+            minimum = Math.Max(minimum, Math.Max(child.DesiredSize.Width, request));
+        }
+        int wanted = Children.Count > 1 && (!enlarged || !double.IsFinite(available.Width) || available.Width >= minimum * 2) ? 2 : 1;
+        if (Columns != wanted) Columns = wanted;
+        if (double.IsFinite(available.Width))
+            foreach (var box in Children.SelectMany(c => c.GetLogicalDescendants().OfType<Viewbox>()).Where(v => Equals(v.Tag,"graphic")))
+                box.MaxWidth = Math.Max(1, available.Width / wanted - 6);
+        return base.MeasureOverride(available);
+    }
 
     public static List<Reading> Readings(WidgetKind kind, int index, Snapshot snapshot, History history, Settings settings, Palette palette) =>
         CompleteReadings.For(kind, index, snapshot, history, settings, palette)

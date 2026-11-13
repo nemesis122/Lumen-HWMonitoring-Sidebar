@@ -501,6 +501,7 @@ public sealed class SidebarView : Border
 	private Control Make(WidgetSlot slot, int index)
 	{
 		Control control = Cards.Create(slot.Kind, slot.Style, index, p, metrics, settings);
+		if (control is AioTile aio) aio.SettingsRequested += () => SettingsRequested?.Invoke();
 		if (settings.Floating && control is Border card)
 		{
 			card.Background = Palette.Brush(Solid(p.Card));

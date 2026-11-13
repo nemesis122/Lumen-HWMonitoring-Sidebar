@@ -39,11 +39,11 @@ public sealed class EvolutionTile : SummaryTile
 
 	private readonly StackPanel side;
 
-	private readonly Grid net = new Grid { ColumnDefinitions = ColumnDefinitions.Parse("*,14,*") };
+	private readonly ResponsiveGrid net = new ResponsiveGrid { ColumnDefinitions = ColumnDefinitions.Parse("*,14,*") };
 
 	private readonly (TextBlock Value, TextBlock Unit, FillBack Bar, AreaChart Chart)[] lanes = new (TextBlock, TextBlock, FillBack, AreaChart)[2];
 
-	private readonly Grid rows = new Grid { ColumnDefinitions = ColumnDefinitions.Parse("Auto,*,Auto") };
+	private readonly Grid rows = new ResponsiveGrid { ColumnDefinitions = ColumnDefinitions.Parse("Auto,*,Auto") };
 
 	private readonly List<(TextBlock Label, FillBack Bar, TextBlock Value)> rowItems = new();
 
@@ -483,6 +483,7 @@ public sealed class EvolutionTile : SummaryTile
 
 	private void ShowNetwork(Snapshot snap, History history, Color accent)
 	{
+        net.RestoreForUpdate();
 		NetworkInfo? n = snap.Network;
 		double? link = n?.LinkBitsPerSecond;
 		Color up = Kind == WidgetKind.Network && (Own?.Accent.Length ?? 0) == 0 ? Accents.Readable(Color.Parse(Accents.Upload), P) : Palette.Mix(accent, P.Ink, 0.35);

@@ -1,10 +1,22 @@
-# Lumen 4.1.1 – Clear Network Values
+# Lumen 4.2.0 – All-in-One
 
-A portable hardware-monitoring sidebar for Windows 10 and 11 with **60 widget designs**. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
+A portable hardware-monitoring sidebar for Windows 10 and 11 with **81 designs**, including **18 All-in-One designs** that show the whole PC in one card. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
 
-**[Download Lumen 4.1.1](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.1.1)** · [All designs](docs/style-gallery.md) · [Release notes 4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
+**[Download Lumen 4.2.0](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.2.0)** · [All designs](docs/style-gallery.md) · [Release notes 4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
 
 ![Sci-Fi, Thermostat, Neon HUD and Evolution](docs/images/v4.0.0/hero-designs.png)
+
+## New in 4.2.0
+
+- **18 All-in-One (AIO) designs:** CPU, GPU, RAM, drives, cooling, power supply and network in one card. The widget switches show or hide each part, and every AIO value can be selected under *Customise*.
+- **Six isometric AIO designs** with 3D part illustrations: Atlas, Tiles, Rig, Pedestals, Compact and Rings.
+- **CPU core load** as bars below the CPU in every AIO design.
+- Three new widget designs: Splitflap, Measure Tape and Hardware Map.
+- Stable layout: values keep their place and size while they change.
+
+![Isometric AIO designs, demo data](docs/images/v4.2.0/aio-isometric-new.png)
+
+[Full 4.2.0 release notes](docs/release-notes/v4.2.0.md)
 
 ## New in 4.1.1
 
@@ -94,7 +106,7 @@ Logs and reports stay local. Nothing is uploaded automatically.
 
 ## Download and run
 
-Download **Lumen-4.1.1.exe** for the portable application, or the portable ZIP with licence files. No separate .NET installation is required. Close an older running instance before starting the new EXE. Settings are stored beside the EXE, with an AppData fallback when that folder is read-only.
+Download **Lumen-4.2.0.exe** for the portable application, or the portable ZIP with licence files. No separate .NET installation is required. Close an older running instance before starting the new EXE. Settings are stored beside the EXE, with an AppData fallback when that folder is read-only.
 
 The release also includes the complete source archive, all gallery images and SHA-256 checksums.
 

@@ -284,6 +284,7 @@ public sealed class WindowsSource : ISnapshotSource, IDisposable, ISensorReport
 			}),
 			Volumes = volumes,
 			BoardName = hardwareView.BoardName,
+            HardwareSensors = hardwareView.Nodes,
 			Fans = Spinning(hardwareView.Fans),
 			BoardTemps = hardwareView.BoardTemps,
 			Battery = ReadBattery(hardware),

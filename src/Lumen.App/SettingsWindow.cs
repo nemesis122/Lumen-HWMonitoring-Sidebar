@@ -742,10 +742,12 @@ public sealed class SettingsWindow : Window
 			}
 			button.Click += delegate
 			{
+				bool wasAio = s.Widgets.Any(w => w.Kind == WidgetKind.Overview && AioDesigns.Contains(w.Style));
 				foreach (WidgetSlot item in s.Widgets.Where(Target))
 				{
 					item.Style = style;
 				}
+				if (!wasAio && AioDesigns.Contains(style)) AioDesigns.ShowAllParts(s);
 				changed();
 				Build();
 			};
@@ -758,6 +760,11 @@ public sealed class SettingsWindow : Window
 		}
 		List<Control> list5 = new List<Control>();
 		list5.Add(textBlock);
+        if(s.Widgets.Any(w=>AioDesigns.Contains(w.Style)))
+        {
+            var aioHelp=Ui.Text(L.T("AIO combines the hardware into one card. The switches of CPU, GPU, Cooling, Power (voltages), Memory, Drives and Network show or hide its parts. Single values and fans are chosen under Overview → Customise."),12,p.Soft);
+            aioHelp.TextWrapping=TextWrapping.Wrap;list5.Add(aioHelp);
+        }
 		if (s.Pages > 1)
 		{
 			// A design per register: choose the register, then click the design.
@@ -914,8 +921,12 @@ public sealed class SettingsWindow : Window
 
 	public static string StyleName(WidgetStyle style)
 	{
+        if (AioDesigns.Contains(style)) return "AIO · " + AioDesigns.Name(style);
 		return style switch
 		{
+			WidgetStyle.SplitFlap => "Splitflap",
+			WidgetStyle.MeasureTape => L.Language == "de" ? "Messband" : "Measure Tape",
+			WidgetStyle.HardwareMap => "Hardware Map",
 			WidgetStyle.CleanDark => "Clean Dark",
 			WidgetStyle.PixelDeck => "Pixel Deck",
 			WidgetStyle.HorizonSync => "Horizon Sync",
@@ -962,6 +973,35 @@ public sealed class SettingsWindow : Window
 		IBrush brush3 = Palette.Brush(p.Track);
 		IBrush fill = Palette.Brush(p.Dark ? Color.Parse("#262E3B") : Color.Parse("#E4E9F0"));
 		IBrush fill2 = Palette.Brush(p.Soft);
+        if (AioDesigns.Contains(style))
+        {
+            Rect(4,1,56,32,fill,4);
+            if (style == WidgetStyle.AioOrbitNetwork)
+            {
+                foreach(var point in new[]{new Point(28,4),new Point(13,13),new Point(43,13),new Point(28,22)})
+                {var ring=new Avalonia.Controls.Shapes.Ellipse{Width=10,Height=10,Stroke=brush,StrokeThickness=1.5};Canvas.SetLeft(ring,point.X);Canvas.SetTop(ring,point.Y);c.Children.Add(ring);}
+            }
+            else if(style == WidgetStyle.AioThermalGrid)
+                for(int i=0;i<12;i++)Rect(8+i%4*12,5+i/4*9,10,7,i%2==0?brush:brush2,1);
+            else if(style==WidgetStyle.AioChromatic||style==WidgetStyle.AioPopConsole)
+                for(int i=0;i<6;i++)Rect(8+i%2*25,5+i/2*9,22,7,i%2==0?brush:brush2,2);
+            else for(int i=0;i<4;i++){Rect(8,5+i*7,16,3,fill2,1);Rect(29,5+i*7,25-i*3,3,i%2==0?brush:brush2,1);}
+            return c;
+        }
+		if (InstrumentDesigns.Contains(style))
+		{
+			if (style == WidgetStyle.SplitFlap)
+			{
+				Rect(2, 2, 60, 30, brush3, 2);
+				foreach (double x in new[] { 7d, 34d }) { Rect(x, 6, 23, 22, fill, 2); Rect(x + 7, 10, 8, 13, fill2); Rect(x, 16, 23, 1, brush3); }
+			}
+			else if (style == WidgetStyle.MeasureTape)
+			{
+				for (int r = 0; r < 3; r++) { Rect(3, 7 + r * 10, 42, 1, fill2); for (int k = 0; k < 11; k++) Rect(3 + k * 4, 7 + r * 10, 1, k % 5 == 0 ? 5 : 3, fill2); Rect(15 + r * 7, 3 + r * 10, 3, 4, brush); Rect(49, 5 + r * 10, 12, 4, fill2); }
+			}
+			else { Rect(9, 2, 1, 30, brush2); for (int r = 0; r < 3; r++) { Rect(6, 5 + r * 10, 7, 7, brush2, 3); Rect(13, 8 + r * 10, 7, 1, brush2); Rect(21, 5 + r * 10, 15, 5, fill2); Rect(40, 6 + r * 10, 19, 3, brush); } }
+			return c;
+		}
 		if (LocalDesigns.Signature.Contains(style))
 		{
 			Rect(2, 2, 60, 30, fill, style == WidgetStyle.PixelDeck ? 2 : 7);
@@ -1535,7 +1575,7 @@ public sealed class SettingsWindow : Window
 			if (Settings.HasStyles(slot.Kind))
 			{
 				WrapPanel wrapPanel2 = new WrapPanel();
-				foreach (WidgetStyle style in Settings.Selectable)
+				foreach (WidgetStyle style in Settings.Selectable.Where(design => slot.Kind == WidgetKind.Overview || !AioDesigns.Contains(design)))
 				{
 					bool flag2 = slot.Style == style;
 					Button button2 = new Button();
@@ -1552,6 +1592,7 @@ public sealed class SettingsWindow : Window
 					Button button3 = button2;
 					button3.Click += delegate
 					{
+						if (slot.Kind == WidgetKind.Overview && !AioDesigns.Contains(slot.Style) && AioDesigns.Contains(style)) AioDesigns.ShowAllParts(s);
 						slot.Style = style;
 						changed();
 						Build();
@@ -1619,6 +1660,12 @@ public sealed class SettingsWindow : Window
             recommended.Click += (_, _) =>
             {
                 s.SensorSelectionVersion = SensorDefaults.SelectionVersion;
+                if(slot.Kind==WidgetKind.Overview)
+                {
+                    slot.AioEnabledSensors.Clear();
+                    slot.HiddenSensors.RemoveAll(key=>key.StartsWith("aio."));
+                    s.HiddenValues.RemoveAll(key=>key.StartsWith("aio."));
+                }
                 if (slot.Kind == WidgetKind.Cpu) s.ShowIntegratedGpu = false;
                 foreach (var option in WidgetSensors.Options(slot.Kind, this.snapshot()))
                 {
@@ -1650,6 +1697,39 @@ public sealed class SettingsWindow : Window
                 sensors.Children.Add(integrated);
             }
             var sensorSnapshot = this.snapshot();
+            // AIO active for this hardware widget: its values live in the AIO card (stored on the Overview slot),
+            // so list and switch exactly those instead of the stand-alone widget's sensors.
+            var aioOverview = s.Widgets.FirstOrDefault(w => w.Kind == WidgetKind.Overview);
+            WidgetStyle? aioStyle = !AioDesigns.Switches.Contains(slot.Kind) || aioOverview == null ? null
+                : AioDesigns.Contains(aioOverview.Style) && aioOverview.Visible ? aioOverview.Style
+                : AioDesigns.Contains(slot.Style) ? slot.Style : null;
+            if (aioStyle is WidgetStyle aioCardStyle && aioOverview != null)
+            {
+                sensors.Children.Remove(recommended);
+                var aioSlot = new WidgetSlot { Kind = WidgetKind.Overview, Style = aioCardStyle, HiddenSensors = aioOverview.HiddenSensors, AioEnabledSensors = aioOverview.AioEnabledSensors ??= new() };
+                // General AIO switches (e.g. history graphs) belong to no widget: they are listed with the CPU.
+                // What the card shows right now: a fan that never turned is listed but unticked until the user ticks it.
+                var aioShown = sensorSnapshot == null ? new HashSet<string>() : AioReadings.For(sensorSnapshot, s.ForSlot(aioSlot)).Select(r => r.Key).ToHashSet();
+                foreach (var option in AioReadings.Options(sensorSnapshot).Where(o => AioDesigns.SwitchFor(o.Key) == slot.Kind || AioDesigns.SwitchFor(o.Key) == null && slot.Kind == WidgetKind.Cpu))
+                {
+                    string aioKey = option.Key;
+                    var aioCheck = new CheckBox
+                    {
+                        Name = "sensor-" + aioKey.Replace(':', '-').Replace('.', '-'),
+                        Content = option.Label.StartsWith("AIO · ") ? option.Label[6..] : option.Label,
+                        IsChecked = s.ForSlot(aioSlot).Shows(aioKey) && (!aioKey.StartsWith("aio.cooling.") || aioShown.Contains(aioKey)),
+                        FontSize = 12.5, Margin = new Thickness(0, 1), Tag = aioKey
+                    };
+                    aioCheck.IsCheckedChanged += (_, _) =>
+                    {
+                        WidgetSensors.Select(s, aioOverview, aioKey, aioCheck.IsChecked == true, this.snapshot());
+                        changed(); Build();
+                    };
+                    sensors.Children.Add(aioCheck);
+                }
+            }
+            else
+            {
             var availableSettings = new Settings();
             availableSettings.Widgets.ForEach(widget => widget.HiddenSensors.Clear());
             var sensorAvailability = sensorSnapshot == null ? new List<CompleteReading>()
@@ -1677,6 +1757,7 @@ public sealed class SettingsWindow : Window
                     Build();
                 };
                 sensors.Children.Add(sensorCheck);
+            }
             }
             if (sensors.Children.Count == 1) sensors.Children.Add(Ui.Text(L.T("No sensor values for this widget."), 12, p.Soft));
             stackPanel.Children.Add(sensors);
@@ -1909,9 +1990,9 @@ public sealed class SettingsWindow : Window
 		}
 		bool flag2 = s.Theme switch
 		{
-			ThemeMode.Dark => true, 
-			ThemeMode.Light => false, 
-			_ => Application.Current?.ActualThemeVariant != ThemeVariant.Light, 
+			ThemeMode.Dark => true,
+			ThemeMode.Light => false,
+			_ => Application.Current?.ActualThemeVariant != ThemeVariant.Light,
 		};
 		WrapPanel wrapPanel2 = new WrapPanel
 		{
@@ -2506,9 +2587,9 @@ public sealed class SettingsWindow : Window
 		string status = ExternalSensors.Status;
 		string text = source switch
 		{
-			SensorSource.Aida64 => L.T("In AIDA64: Preferences → Hardware Monitoring → External Applications → Enable shared memory."), 
-			SensorSource.HwInfo => L.T("In HWiNFO: Settings → Shared Memory Support (the free version turns it off after 12 hours)."), 
-			_ => L.T("Uses AIDA64 if it is running, otherwise HWiNFO, otherwise the built-in sensors."), 
+			SensorSource.Aida64 => L.T("In AIDA64: Preferences → Hardware Monitoring → External Applications → Enable shared memory."),
+			SensorSource.HwInfo => L.T("In HWiNFO: Settings → Shared Memory Support (the free version turns it off after 12 hours)."),
+			_ => L.T("Uses AIDA64 if it is running, otherwise HWiNFO, otherwise the built-in sensors."),
 		};
 		if (status.StartsWith("connected:"))
 		{

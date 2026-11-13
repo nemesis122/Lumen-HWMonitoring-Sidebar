@@ -20,7 +20,9 @@ public class StyleSelectionTests
         WidgetStyle.PerformanceView, WidgetStyle.PureBar, WidgetStyle.PureNumber, WidgetStyle.PureSegments, WidgetStyle.PureWidgetsRight,
         WidgetStyle.Meridian, WidgetStyle.Strata, WidgetStyle.Vector, WidgetStyle.Orbit, WidgetStyle.Lucent, WidgetStyle.Circuit,
         WidgetStyle.Panorama, WidgetStyle.Terminal, WidgetStyle.Thermal, WidgetStyle.MosaicPro, WidgetStyle.RibbonFlow, WidgetStyle.SplitLens,
-        WidgetStyle.Aperture, WidgetStyle.PixelDeck, WidgetStyle.HorizonSync
+        WidgetStyle.Aperture, WidgetStyle.PixelDeck, WidgetStyle.HorizonSync,
+        WidgetStyle.SplitFlap, WidgetStyle.MeasureTape, WidgetStyle.HardwareMap,
+        WidgetStyle.AioTypeBlock, WidgetStyle.AioOrbitNetwork, WidgetStyle.AioThermalGrid, WidgetStyle.AioSignalRack, WidgetStyle.AioIsometricCore, WidgetStyle.AioPrecision, WidgetStyle.AioChromatic, WidgetStyle.AioStudioLight, WidgetStyle.AioInstrument, WidgetStyle.AioAuroraFusion, WidgetStyle.AioPopConsole, WidgetStyle.AioCarbonPulse, WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings
     };
     const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
 
@@ -92,17 +94,18 @@ public class StyleSelectionTests
             string Name(Button button) => button.GetLogicalDescendants().OfType<TextBlock>().Single().Text!;
             Assert.Equal(Expected.Select(SettingsWindow.StyleName), buttons.Select(Name));
             buttons.Last().RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            Assert.All(settings.Widgets.Where(w => Settings.HasStyles(w.Kind)), w => Assert.Equal(WidgetStyle.HorizonSync, w.Style));
+            Assert.All(settings.Widgets.Where(w => Settings.HasStyles(w.Kind)), w => Assert.Equal(Expected.Last(), w.Style));
 
             ((HashSet<WidgetKind>)typeof(SettingsWindow).GetField("expanded", Private)!.GetValue(window)!).Add(WidgetKind.Cpu);
             typeof(SettingsWindow).GetMethod("Build", Private)!.Invoke(window, null);
             var content = (StackPanel)typeof(SettingsWindow).GetField("content", Private)!.GetValue(window)!;
+            var separate = Expected.Where(style=>!AioDesigns.Contains(style)).ToArray();
             var choices = content.GetLogicalDescendants().OfType<WrapPanel>()
-                .Single(p => p.Children.Count == Expected.Length && p.Children.All(c => c is Button));
-            Assert.Equal(Expected.Select(SettingsWindow.StyleName), choices.Children.OfType<Button>().Select(Name));
+                .Single(p => p.Children.Count == separate.Length && p.Children.All(c => c is Button));
+            Assert.Equal(separate.Select(SettingsWindow.StyleName), choices.Children.OfType<Button>().Select(Name));
             choices.Children.OfType<Button>().Single(b => Name(b) == "Capsule").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Assert.Equal(WidgetStyle.Pill, settings.Widgets.Single(w => w.Kind == WidgetKind.Cpu).Style);
-            Assert.Equal(WidgetStyle.HorizonSync, settings.Widgets.Single(w => w.Kind == WidgetKind.Gpu).Style);
+            Assert.Equal(Expected.Last(), settings.Widgets.Single(w => w.Kind == WidgetKind.Gpu).Style);
         }
         finally { window.Close(); }
         return true;

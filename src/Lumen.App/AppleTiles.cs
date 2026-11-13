@@ -418,7 +418,7 @@ public sealed class WidgetsTile : AppleTile
 
 /// <summary>Download and upload side by side in the same size; each number keeps the widest width it
 /// has shown (right-aligned), so the unit beside it stays in place while the rate changes.</summary>
-public sealed class RatePairView : Grid
+public sealed class RatePairView : ResponsiveGrid
 {
 	private readonly (TextBlock Caption, SteadyText Number, TextBlock Unit)[] cells = new (TextBlock, SteadyText, TextBlock)[2];
 

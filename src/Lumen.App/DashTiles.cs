@@ -373,7 +373,7 @@ public sealed class ThermostatTile : DashTile
 	// The values beside the dial (everything but drives, which keep their footer below the lines).
 	private readonly StackPanel side = new StackPanel { Spacing = 7, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
 
-	private readonly Grid body = new Grid { ColumnDefinitions = ColumnDefinitions.Parse("1*,1*") };
+	private readonly Grid body = new ResponsiveGrid { ColumnDefinitions = ColumnDefinitions.Parse("1*,1*") };
     private readonly DesignValueFaces valueFaces = new();
 
 	private readonly HashSet<string> wrapped = new HashSet<string>();
@@ -708,7 +708,7 @@ public sealed class PurpleTile : DashTile
 		{
 			// "Graphic size" also widens the ring's share of the card.
 			double g = Math.Clamp(s.ActiveWidget?.Graphics ?? 1, 0.5, 2);
-			var grid = new Grid { ColumnDefinitions = new ColumnDefinitions { new ColumnDefinition(5 * g, GridUnitType.Star), new ColumnDefinition(6, GridUnitType.Star) } };
+			var grid = new ResponsiveGrid { ColumnDefinitions = new ColumnDefinitions { new ColumnDefinition(5 * g, GridUnitType.Star), new ColumnDefinition(6, GridUnitType.Star) } };
 			grid.Children.Add(gauge);
 			// Drives: no ring for the hottest drive, the bars of all drives take the full width.
 			if (kind == WidgetKind.Drives)

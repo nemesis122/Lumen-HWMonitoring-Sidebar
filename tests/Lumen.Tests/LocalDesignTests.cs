@@ -19,7 +19,7 @@ public class LocalDesignTests
         var removed = new[] { WidgetStyle.Atelier, WidgetStyle.RailLocal, WidgetStyle.Observatory, WidgetStyle.Canvas,
             WidgetStyle.Ledger, WidgetStyle.Instrument, WidgetStyle.Matrix, WidgetStyle.Solace, WidgetStyle.Forma,
             WidgetStyle.Axis, WidgetStyle.Aurora, WidgetStyle.Flux, WidgetStyle.Halo };
-        Assert.Equal(60, Settings.Selectable.Count());
+        Assert.Equal(81, Settings.Selectable.Count()); // + Isometric Atlas, Tiles, Rig, Pedestals, Compact and Rings
         Assert.All(removed, style => { Assert.DoesNotContain(style, Settings.Selectable); Assert.Equal(WidgetStyle.Standard, Settings.Successor(style)); });
     }
 

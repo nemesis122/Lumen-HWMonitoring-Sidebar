@@ -168,7 +168,7 @@ foreach (var kind in Enum.GetValues<WidgetKind>().Where(Settings.HasStyles).Wher
 var twinFocus = Cards.Create(WidgetKind.Cpu, WidgetStyle.TwinFocus, 0, palette, Metrics.For(Density.Fit), new Settings());
 ((IWidget)twinFocus).Update(demoSnap, hist);
 Assert(twinFocus.GetLogicalDescendants().OfType<BoldValue>().Count() == 2, "TwinFocus retains both primary value blocks");
-foreach (var style in Settings.Selectable.Where(s => s is not (WidgetStyle.Standard or WidgetStyle.TwinFocus)))
+foreach (var style in Settings.Selectable.Where(s => s is not (WidgetStyle.Standard or WidgetStyle.TwinFocus) && !AioDesigns.Contains(s)))
 // (Clock, calendar, weather, now playing and top apps use InfoTile in every design; InfoWidgetTests cover them.)
 foreach (var kind in Enum.GetValues<WidgetKind>().Where(Settings.HasStyles).Where(k => k != WidgetKind.Overview && !InfoTile.Handles(k)))
 {
@@ -176,6 +176,17 @@ foreach (var kind in Enum.GetValues<WidgetKind>().Where(Settings.HasStyles).Wher
     tile.Update(demoSnap, hist); tile.Update(demoSnap, hist);
     var caption = (TextBlock)typeof(SummaryTile).GetField("Caption", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(tile)!;
     Assert(!caption.IsVisible, $"{style}/{kind}: no header reading after repeated updates");
+}
+// AIO is a complete Overview card, not a SummaryTile repeated for every hardware widget.
+foreach(var style in AioDesigns.Styles)
+{
+    var config=Settings.Starter();foreach(var slot in config.Widgets)slot.Style=style;
+    var only=config.Layout(null,1).SelectMany(c=>c).ToArray();
+    Assert(only.Length==1&&only[0].Kind==WidgetKind.Overview,$"{style}: one AIO card on HW register");
+    var tile=Cards.Create(WidgetKind.Overview,style,0,palette,Metrics.For(Density.Fit),config);
+    ((Lumen.App.INamed)tile).Own(only[0],0);((IWidget)tile).Update(demoSnap,hist);((IWidget)tile).Update(demoSnap,hist);
+    foreach(string key in new[]{"aio.cpu.temp","aio.network.down","aio.network.up"})
+        Assert(tile.GetLogicalDescendants().OfType<TextBlock>().Count(t=>SensorDetails.KeyOf(t)==key)==1,$"{style}: {key} displayed once");
 }
 var traffic = demoSnap with { Network = new NetworkInfo("Demo Ethernet", 4_000_000, 750_000, 100_000_000, "192.0.2.1") };
 foreach (var hidden in new[] { "", "net.down", "net.up" })

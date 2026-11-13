@@ -130,6 +130,8 @@ public sealed class Controller
 		timer.Tick += delegate
 		{
 			Tick();
+			// A fan was seen turning for the first time: keep it in the settings right away.
+			if (savedKnownFans >= 0 && settings.KnownFans.Count != savedKnownFans) Save();
 		};
 		timer.Interval = TimeSpan.FromMilliseconds(settings.IntervalMs);
 		timer.Start();
@@ -329,10 +331,12 @@ public sealed class Controller
 		Rebuild();
 	}
 
+	private int savedKnownFans = -1;
 	private void Save()
 	{
 		try
 		{
+			savedKnownFans = settings.KnownFans.Count;
 			settings.Save(platform.SettingsPath);
 		}
 		catch
@@ -450,6 +454,8 @@ public sealed class Controller
 		{
 			usage.Save(last.Time);
 		}
+		// Remember fans that turned during this run (AIO cards show them later even when stopped).
+		if (settings.KnownFans.Count != savedKnownFans) Save();
 		window?.Release();
 		tray?.Dispose();
 		source.Dispose();

@@ -88,6 +88,8 @@ public sealed class InfoTile : Border, IWidget, INamed
 		S = s;
 		(head, font, ring) = style switch
 		{
+            WidgetStyle.SplitFlap => (Head.Mono, Digital, false),
+            WidgetStyle.MeasureTape or WidgetStyle.HardwareMap => (Head.Plain, null, false),
 			WidgetStyle.Aperture => (Head.Chip, (FontFamily?)null, true),
 			WidgetStyle.PixelDeck => (Head.Status, null, false),
 			WidgetStyle.HorizonSync => (Head.Plain, null, false),
@@ -167,6 +169,7 @@ public sealed class InfoTile : Border, IWidget, INamed
 
 	private void Frame()
 	{
+        if (InstrumentDesigns.Contains(style)) { InstrumentDesigns.Frame(this, style, P, M); return; }
 		if (LocalDesigns.Contains(style)) { LocalDesigns.Frame(this, style, P, M); return; }
 		Background = Palette.Brush(P.Card);
 		BorderBrush = Palette.Brush(P.Stroke);

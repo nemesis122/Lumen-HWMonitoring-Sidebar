@@ -443,7 +443,7 @@ public sealed class DialTile : SummaryTile
 		{
 
 		}
-		var legend = new Grid { ColumnDefinitions = ColumnDefinitions.Parse("*,*") };
+		var legend = new ResponsiveGrid { ColumnDefinitions = ColumnDefinitions.Parse("*,*") };
 		void Lane(int col, string label, string key, double? rate, Color color)
 		{
 			var dot = new Border { Width = 9, Height = 9, CornerRadius = new CornerRadius(2.5), Background = Palette.Brush(color), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 5, 0) };

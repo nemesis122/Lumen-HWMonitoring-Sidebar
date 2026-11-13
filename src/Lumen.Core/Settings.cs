@@ -120,6 +120,14 @@ public sealed class Settings
 	public List<string> HiddenValues { get; set; } = new List<string>();
     public int SensorSelectionVersion { get; set; }
 
+    // Since 4.1.2 the hardware widget switches choose the parts of an AIO card. Earlier settings
+    // could have those widgets hidden while their AIO parts were shown; keep what the user saw.
+    public bool AioWidgetSwitches { get; set; }
+
+    // Fans that have turned at least once (sensor ids). Kept across restarts so an existing fan that is
+    // stopped right now still shows with 0 rpm; empty fan headers (always 0 rpm) never get in here.
+    public List<string> KnownFans { get; set; } = new();
+
 	public int Columns { get; set; } = 1;
 
 	public int Pages { get; set; } = 1;
@@ -216,7 +224,15 @@ public sealed class Settings
         WidgetStyle.SplitLens,
         WidgetStyle.Aperture,
         WidgetStyle.PixelDeck,
-        WidgetStyle.HorizonSync
+        WidgetStyle.HorizonSync,
+        WidgetStyle.SplitFlap,
+        WidgetStyle.MeasureTape,
+        WidgetStyle.HardwareMap,
+        WidgetStyle.AioTypeBlock, WidgetStyle.AioOrbitNetwork, WidgetStyle.AioThermalGrid,
+        WidgetStyle.AioSignalRack, WidgetStyle.AioIsometricCore, WidgetStyle.AioPrecision,
+        WidgetStyle.AioChromatic, WidgetStyle.AioStudioLight, WidgetStyle.AioInstrument,
+        WidgetStyle.AioAuroraFusion, WidgetStyle.AioPopConsole, WidgetStyle.AioCarbonPulse,
+        WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings
 	};
 
 	public int ColumnCount
@@ -291,6 +307,9 @@ public sealed class Settings
 
 	public bool Shows(string value)
 	{
+        if (value.StartsWith("aio.") && ActiveWidget is WidgetSlot aio && AioDesigns.Contains(aio.Style)
+            && !AioDesigns.SensorDefault(aio.Style,value) && !(aio.AioEnabledSensors?.Contains(value) ?? false)
+            && !(value.StartsWith("aio.cpu.core.")&&(aio.AioEnabledSensors?.Contains("aio.cpu.cores")??false))) return false;
 		return !HiddenValues.Contains(value) && !(ActiveWidget?.HiddenSensors.Contains(value) ?? false);
 	}
 
@@ -304,6 +323,11 @@ public sealed class Settings
         // Keep the two layers separate so an explicit per-widget change is effective immediately.
         scoped.HiddenValues = HiddenValues;
         return scoped;
+    }
+
+    public Settings ForSlot(WidgetSlot slot)
+    {
+        var scoped = (Settings)MemberwiseClone(); scoped.ActiveWidget = slot; return scoped;
     }
 
 	public string? Label(string key)
@@ -491,6 +515,7 @@ public sealed class Settings
             widget.WidgetScale = double.IsFinite(widget.WidgetScale) ? Math.Clamp(widget.WidgetScale, 0.5, 2.0) : 1.0;
             widget.HeroScale = double.IsFinite(widget.HeroScale) ? Math.Clamp(widget.HeroScale, 0.5, 2.0) : 1.0;
             widget.HiddenSensors = (widget.HiddenSensors ?? new List<string>()).Where(k => !string.IsNullOrWhiteSpace(k)).Distinct().ToList();
+            widget.AioEnabledSensors = (widget.AioEnabledSensors ?? new List<string>()).Where(k=>!string.IsNullOrWhiteSpace(k)&&k.StartsWith("aio.")).Distinct().ToList();
             widget.HiddenSensors.RemoveAll(k => k.StartsWith("cpu.core:", StringComparison.Ordinal));
             // Earlier versions treated every newly offered SMART statistic as selected. Apply the
             // requested compact drive selection once, independently of the chosen design.
@@ -548,6 +573,11 @@ public sealed class Settings
                     foreach (string key in group.Value)
                         if (!s.HiddenValues.Contains(key)) s.HiddenValues.Add(key);
         s.SensorSelectionVersion = SensorDefaults.SelectionVersion;
+        if (!s.AioWidgetSwitches)
+        {
+            if (s.Widgets.Any(w => w.Kind == WidgetKind.Overview && AioDesigns.Contains(w.Style))) AioDesigns.ShowAllParts(s);
+            s.AioWidgetSwitches = true;
+        }
 		return s;
 	}
 
@@ -598,7 +628,7 @@ public sealed class Settings
 		{
 			weight = Weight;
 		}
-		List<WidgetSlot> visible = WidgetsOnPage(page).ToList();
+		List<WidgetSlot> visible = AioDesigns.Group(WidgetsOnPage(page), Widgets.FirstOrDefault(w => w.Kind == WidgetKind.Overview));
 		if (Horizontal)
 		{
 			return BarRows(visible, cards ?? ((Func<WidgetSlot, int>)((WidgetSlot _) => 1)));

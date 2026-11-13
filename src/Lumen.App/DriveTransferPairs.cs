@@ -48,7 +48,14 @@ public sealed class DriveTransferPairs : StackPanel
                     value.MinWidth = 84; value.TextWrapping = TextWrapping.NoWrap;
                     values[row.Key] = value;
                     Control cell = Ui.Stack(local ? 0 : 2, label, value);
-                    if (style == WidgetStyle.NeonTiles)
+                    if (style == WidgetStyle.SplitFlap)
+                    {
+                        cell = new Border { Background = Palette.Brush(Palette.Mix(palette.Card,palette.Ink,.04)), BorderBrush = Palette.Brush(palette.Stroke), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(3), Padding = new Thickness(6,3), Child = cell };
+                        value.FontFamily = Ui.FamilyFor("mono");
+                    }
+                    else if (style == WidgetStyle.HardwareMap)
+                        cell = new Border { BorderBrush = Palette.Brush(palette.Stroke), BorderThickness = new Thickness(1,0,0,0), Padding = new Thickness(6,0,0,0), Child = cell };
+                    else if (style == WidgetStyle.NeonTiles)
                     {
                         ((StackPanel)cell).Children.Clear();
                         label.Text = label.Text?.ToUpper(L.Culture);
@@ -123,7 +130,7 @@ public sealed class DriveTransferPairs : StackPanel
                     cells.Add(cell);
                 }
                 {
-                    var pair = new Grid { ColumnDefinitions = new ColumnDefinitions(cells.Count == 2 ? "*,*" : "*") };
+                    var pair = new ResponsiveGrid { ColumnDefinitions = new ColumnDefinitions(cells.Count == 2 ? "*,*" : "*") };
                     for (int i = 0; i < cells.Count; i++) { cells[i].Margin = new Thickness(i == 0 ? 0 : 6, 0, 0, 0); Grid.SetColumn(cells[i], i); pair.Children.Add(cells[i]); }
                     group.Children.Add(pair);
                 }

@@ -19,6 +19,8 @@ public sealed class StatPanel : Panel
 	public bool Balanced { get; init; }
 
     public double MinimumColumnWidth { get; set; } = MinColumn;
+    public bool RespectIntrinsicWidth { get; init; }
+    private double intrinsicMinimum;
     public static readonly StyledProperty<double> RowSpacingProperty =
         AvaloniaProperty.Register<StatPanel,double>(nameof(RowSpacing));
     public double RowSpacing { get => GetValue(RowSpacingProperty); set => SetValue(RowSpacingProperty,value); }
@@ -40,7 +42,7 @@ public sealed class StatPanel : Panel
 			return Math.Min(val, MaxColumns);
 		}
 		int num = Math.Min(val, MaxColumns);
-		while (num > 1 && width / (double)num < MinimumColumnWidth)
+		while (num > 1 && width / (double)num < Math.Max(MinimumColumnWidth, intrinsicMinimum))
 		{
 			num--;
 		}
@@ -82,6 +84,11 @@ public sealed class StatPanel : Panel
 			RowGaps=0;
 			return default(Size);
 		}
+        if (RespectIntrinsicWidth)
+        {
+            intrinsicMinimum = 0;
+            foreach (var child in list) { child.Measure(Size.Infinity); intrinsicMinimum = Math.Max(intrinsicMinimum,child.DesiredSize.Width); }
+        }
 		double num = (double.IsFinite(available.Width) ? available.Width : ((double)(list.Count * 90)));
 		int num2 = Columns(num);
         RowGaps=Math.Max(0,(list.Count+num2-1)/num2-1);

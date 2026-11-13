@@ -11,7 +11,7 @@ namespace Lumen.App;
 
 public sealed class BadgeListTile : SummaryTile
 {
-	private readonly Grid table = new Grid
+	private readonly Grid table = new ResponsiveGrid
 	{
 		ColumnDefinitions = new ColumnDefinitions("*,Auto"),
 		Margin = new Thickness(0.0, 6.0, 0.0, 0.0)

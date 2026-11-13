@@ -31,6 +31,7 @@ public sealed class WidgetSlot
     [System.Text.Json.Serialization.JsonIgnore] public double Labels => LabelScale * WidgetScale;
 
     public List<string> HiddenSensors { get; set; } = new();
+    public List<string> AioEnabledSensors { get; set; } = new();
 
 	public int Column { get; set; }
 

@@ -39,7 +39,7 @@ public class FlushLayoutTests
                 view.Update(snap with { Gpus = snap.Gpus.Take(1).ToArray(), Battery = null }, history);
                 for (int k = 0; k < 3; k++) { Dispatcher.UIThread.RunJobs(); window.CaptureRenderedFrame(); }
                 if (i < 8) continue;
-                var cards = view.GetVisualDescendants().OfType<Control>().Where(c => (c is Card || c is SummaryTile || c is OverviewTile) && c.IsVisible).ToList();
+                var cards = view.GetVisualDescendants().OfType<Control>().Where(c => (c is Card || c is SummaryTile || c is OverviewTile || c is AioTile) && c.IsVisible).ToList();
                 for (int n = 0; n < cards.Count; n++)
                 {
                     var top = cards[n].TranslatePoint(default, view)!.Value.Y;
@@ -56,8 +56,8 @@ public class FlushLayoutTests
             window.Close();
             return (ends, most, h, string.Join("\n", log));
         });
-        Assert.Equal(2, bottoms.Count);
-        Assert.True(Math.Abs(bottoms[0] - bottoms[1]) <= 4.0, $"{style}: bottoms {bottoms[0]:0.0} / {bottoms[1]:0.0}");
+        Assert.Equal(AioDesigns.Contains(style)?1:2, bottoms.Count);
+        if(bottoms.Count==2)Assert.True(Math.Abs(bottoms[0] - bottoms[1]) <= 4.0, $"{style}: bottoms {bottoms[0]:0.0} / {bottoms[1]:0.0}");
         Assert.True(bottoms.Min() >= height - 20, $"{style}: columns end at {bottoms.Min():0.0} of {height:0}");
         Assert.True(move <= 4.0, $"{style}: widgets moved by {move:0.0} px between updates\n{trace}");
     }
@@ -89,7 +89,7 @@ public class OverviewFillTests
                 history.Record(snap);
                 view.Update(snap, history);
                 for (int k = 0; k < 3; k++) { Dispatcher.UIThread.RunJobs(); window.CaptureRenderedFrame(); }
-                var card = view.GetVisualDescendants().OfType<OverviewTile>().Single();
+                var card = view.GetVisualDescendants().OfType<Control>().Single(c=>c is OverviewTile or AioTile);
                 end = card.TranslatePoint(new Point(0, card.Bounds.Height), view)!.Value.Y;
                 // The rows inside the card must not move either.
                 var rows = card.GetVisualDescendants().OfType<Grid>().Where(g => g.ColumnDefinitions.Count == 2 && g.Parent is StackPanel).ToList();

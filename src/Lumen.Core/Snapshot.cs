@@ -5,6 +5,9 @@ namespace Lumen.Core;
 
 public sealed record Snapshot(DateTime Time, CpuInfo? Cpu, IReadOnlyList<GpuInfo> Gpus, MemoryInfo? Memory, IReadOnlyList<DiskInfo> Disks, NetworkInfo? Network, SensorAccess Access)
 {
+    // Original merged hardware nodes retain per-core temperatures, GPU voltage, rails and extra fans.
+    // No estimates are substituted when the driver/provider does not expose a reading.
+    public IReadOnlyList<SensorNode> HardwareSensors { get; init; } = Array.Empty<SensorNode>();
 	public IReadOnlyList<FanInfo> Fans { get; init; } = Array.Empty<FanInfo>();
 
 	public IReadOnlyList<TempReading> BoardTemps { get; init; } = Array.Empty<TempReading>();

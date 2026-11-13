@@ -74,7 +74,7 @@ public class IntegratedGraphicsOptionTests
         return true;
     });
 
-    private sealed class TestPlatform : Lumen.App.Platform
+    internal sealed class TestPlatform : Lumen.App.Platform
     {
         public override bool IsAdministrator => false;
         public override bool AutostartEnabled => false;

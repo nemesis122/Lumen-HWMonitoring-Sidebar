@@ -44,12 +44,12 @@ public static class Ui
 	{
 		return key switch
 		{
-			"segoe" => new FontFamily("Segoe UI, fonts:Inter#Inter, $Default"), 
-			"segoe-variable" => new FontFamily("Segoe UI Variable Text, Segoe UI Variable, Segoe UI, fonts:Inter#Inter, $Default"), 
-			"bahnschrift" => new FontFamily("Bahnschrift, fonts:Inter#Inter, $Default"), 
-			"bahnschrift-narrow" => new FontFamily("Bahnschrift SemiCondensed, Bahnschrift, fonts:Inter#Inter, $Default"), 
-			"mono" => new FontFamily("Cascadia Mono, Consolas, fonts:Inter#Inter, $Default"), 
-			_ => Inter, 
+			"segoe" => new FontFamily("Segoe UI, fonts:Inter#Inter, $Default"),
+			"segoe-variable" => new FontFamily("Segoe UI Variable Text, Segoe UI Variable, Segoe UI, fonts:Inter#Inter, $Default"),
+			"bahnschrift" => new FontFamily("Bahnschrift, fonts:Inter#Inter, $Default"),
+			"bahnschrift-narrow" => new FontFamily("Bahnschrift SemiCondensed, Bahnschrift, fonts:Inter#Inter, $Default"),
+			"mono" => new FontFamily("Cascadia Mono, Consolas, fonts:Inter#Inter, $Default"),
+			_ => Inter,
 		};
 	}
 
@@ -135,7 +135,7 @@ public static class Ui
 
 	public static Grid Columns(string definition, params Control[] children)
 	{
-		Grid grid = new Grid
+		Grid grid = new ResponsiveGrid
 		{
 			ColumnDefinitions = ColumnDefinitions.Parse(definition)
 		};

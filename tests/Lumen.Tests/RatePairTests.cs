@@ -35,7 +35,10 @@ public class RatePairTests
             double Size(string number) => blocks.Where(t => System.Text.RegularExpressions.Regex.IsMatch(t.Text!, @"(^|[^\d.])" + System.Text.RegularExpressions.Regex.Escape(number) + @"($|[^\d.])"))
                 .Select(t => t.FontSize).DefaultIfEmpty(0).Max();
             string Number(double v) => Format.Split(Format.Rate(v)).Item1;
-            var result = (Size(Number(47.3e6)), Size(Number(6.18e6)), string.Join(" | ", blocks.Select(t => $"{t.Text}@{t.FontSize:0.#}")));
+            // AIO follows the supplied references and uses Mbit/s. Read bindings instead of assuming MB/s.
+            double AioSize(string key)=>blocks.Where(t=>SensorDetails.KeyOf(t)==key).Select(t=>t.FontSize).DefaultIfEmpty(0).Max();
+            var result = (AioDesigns.Contains(style)?AioSize("aio.network.down"):Size(Number(47.3e6)),
+                AioDesigns.Contains(style)?AioSize("aio.network.up"):Size(Number(6.18e6)), string.Join(" | ", blocks.Select(t => $"{t.Text}@{t.FontSize:0.#}")));
             window.Close();
             return result;
         });
