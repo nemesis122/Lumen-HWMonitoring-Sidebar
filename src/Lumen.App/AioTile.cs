@@ -154,11 +154,15 @@ public sealed partial class AioTile : Border, IWidget, INamed
     private TextBlock Text(string text,double size=12,Color? color=null,bool number=false)
     {
         var t=Ui.Text(text,size,color??ink,number?FontWeight.SemiBold:FontWeight.Medium,numbers:number);
+        // Measured values keep the room of their widest form, so nothing beside them moves when the digits change.
+        if(number)t=new AioValueText{Text=t.Text,FontFamily=t.FontFamily,FontStretch=t.FontStretch,FontSize=t.FontSize,FontWeight=t.FontWeight,
+            Foreground=t.Foreground,FontFeatures=t.FontFeatures,VerticalAlignment=t.VerticalAlignment};
         t.TextWrapping=TextWrapping.Wrap; t.TextTrimming=TextTrimming.None; return t;
     }
     private TextBlock Value(AioReading r,double size=13,Color? color=null)
     {
         var t=SensorDetails.Value(Text(Display(r),size,color??ink,true),r.Key);
+        if(t is AioValueText value)value.Hint=AioValueText.HintFor(r.Key,r.Group);
         if(!fields.TryGetValue(r.Key,out var list)) fields[r.Key]=list=new(); list.Add(t); return t;
     }
     private Control Divider()=>new Border { Height=1,Background=Palette.Brush(track),Margin=new Thickness(0,5) };
@@ -234,7 +238,7 @@ public sealed partial class AioTile : Border, IWidget, INamed
         var face=Stack(2,Text(caption??(r.Group=="System"?r.Label:L.T(r.Label)),10,muted),Value(r,size>110?27:style is WidgetStyle.AioAuroraFusion or WidgetStyle.AioPopConsole?26:20,style==WidgetStyle.AioPopConsole?ink:Accent(r)));
         if(secondary!=null)face.Children.Add(Value(secondary,11));
         foreach(var text in face.Children.OfType<TextBlock>())text.TextAlignment=TextAlignment.Center;
-        var fit=new Viewbox {Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,Child=new AioWidest{Child=face},Margin=new Thickness(12)};
+        var fit=new AioFit{Child=new Viewbox {Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,Child=new AioWidest{Child=face},Margin=new Thickness(12)}};
         return new Viewbox {MaxWidth=size,MaxHeight=size,Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,
             Child=new Grid {Width=size,Height=size,Background=style==WidgetStyle.AioOrbitNetwork?Palette.Brush(back):null,Children={ring,fit}}};
     }

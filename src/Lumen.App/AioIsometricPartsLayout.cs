@@ -184,7 +184,7 @@ public sealed partial class AioTile
         if (ram != null)
         {
             var percent = V(ram, 32, Cyan); formats[percent] = row => Format.Percent(row.Number); percent.Text = formats[percent](ram);
-            var amount = Text(Amount(ram), 14, ink); fields[ram.Key].Add(amount); formats[amount] = Amount;
+            var amount = AmountText(ram, 14, ink); fields[ram.Key].Add(amount); formats[amount] = Amount;
             var side = Stack(5, PartTitle(L.T("Memory"), Cyan, ""), percent, amount, PartMeter(ram, Cyan));
             RefSection(ArtRow(Part("ram", 112, 88), side), Cyan);
         }
@@ -274,7 +274,7 @@ public sealed partial class AioTile
         if (ram != null)
         {
             var percent = V(ram, 26, Cyan); formats[percent] = row => Format.Percent(row.Number); percent.Text = formats[percent](ram);
-            var amount = Text(Amount(ram), 13, ink); fields[ram.Key].Add(amount); formats[amount] = Amount;
+            var amount = AmountText(ram, 13, ink); fields[ram.Key].Add(amount); formats[amount] = Amount;
             var ramHead = Ui.Columns("Auto,*", Text("RAM", 15, Cyan), FitRight(percent)); ramHead.ColumnSpacing = 6;
             pair.Add(Tile(Stack(5, Part("ram", 112, 76), ramHead, FitLeft(amount), PartMeter(ram, Cyan)), Cyan));
         }

@@ -54,6 +54,14 @@ public sealed partial class AioTile
         return parts;
     }
 
+    /// <summary>"14.4 / 93.7 GB": a value with a fixed room, like every other measured value.</summary>
+    private TextBlock AmountText(AioReading ram, double size, Color color)
+    {
+        var t = Text(Amount(ram), size, color, true); t.FontWeight = FontWeight.Medium;
+        if (t is AioValueText v) v.Hint = "88.8 / 88.8 GB";
+        return t;
+    }
+
     private static IEnumerable<IsoPart> Ordered(List<IsoPart> parts, params string[] kinds) =>
         kinds.SelectMany(k => parts.Where(p => p.Kind == k));
 
@@ -74,17 +82,35 @@ public sealed partial class AioTile
         return Align(Fit(value), alignment);
     }
 
+    /// <summary>
+    /// Download and upload as in Isometric Tiles and Rings: the arrow in its own column, the value left-aligned beside it.
+    /// The arrows never move, whatever the rates show, and both rates have the same size.
+    /// </summary>
+    private Control RateLines(IsoPart p, double size)
+    {
+        var lines = Stack(2);
+        foreach (var r in new[] { p.Main, p.Second! })
+        {
+            bool down = r.Key.EndsWith(".down");
+            var arrow = Text(down ? "↓" : "↑", size, down ? Cyan : Amber); arrow.TextWrapping = TextWrapping.NoWrap;
+            var line = Ui.Columns("Auto,*", arrow, FitLeft(V(r, size, down ? Cyan : Amber))); line.ColumnSpacing = 6;
+            lines.Children.Add(line);
+        }
+        return lines;
+    }
+
     private Control IsoMains(IsoPart p, double size, HorizontalAlignment alignment, bool arrow = true)
     {
+        if (p.Kind == "net" && p.Second != null) return RateLines(p, size);
         if (p.Second == null) return IsoMain(p.Main, size, p.Color, alignment, arrow);
         // One shared scale, so download and upload always appear at exactly the same size.
         TextBlock Rate(AioReading r, Color color)
         {
-            var t = V(r, size, color); t.TextWrapping = TextWrapping.NoWrap; t.HorizontalAlignment = alignment;
+            var t = V(r, size, color); t.TextWrapping = TextWrapping.NoWrap; t.HorizontalAlignment = HorizontalAlignment.Stretch;
             formats[t] = row => (r.Key.EndsWith(".up") ? "↑ " : "↓ ") + (L.Language == "de" ? row.Value.Replace('.', ',') : row.Value); t.Text = formats[t](r); return t;
         }
-        return new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = alignment,
-            Child = new AioWidest { Child = new StackPanel { Spacing = 0, Children = { Rate(p.Main, p.Color), Rate(p.Second, Amber) } } } };
+        return new AioFit{Child=new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = alignment,
+            Child = new AioWidest { Child = new StackPanel { Spacing = 0, Children = { Rate(p.Main, p.Color), Rate(p.Second, Amber) } } } }};
     }
 
     private string IsoLabel(AioReading r) => r.Group switch
@@ -100,19 +126,40 @@ public sealed partial class AioTile
     /// </summary>
     private Control IsoDetails(IEnumerable<AioReading> rows, bool center, double size = 12, AioReading? ram = null)
     {
-        var items = new List<Control>();
-        var align = center ? HorizontalAlignment.Center : HorizontalAlignment.Left;
-        void Add(Control item) => items.Add(new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = align, Child = new AioWidest { Child = item } });
-        if (ram != null) { var amount = Text(Amount(ram), size - 1, muted); amount.TextWrapping = TextWrapping.NoWrap; fields[ram.Key].Add(amount); formats[amount] = Amount; Add(amount); }
-        foreach (var r in rows)
+        var list = rows.ToArray();
+        TextBlock Label(AioReading r)
+        {
+            var label = Text(IsoLabel(r), size - 2, muted); label.TextWrapping = TextWrapping.NoWrap; label.VerticalAlignment = VerticalAlignment.Center;
+            label.MaxWidth = center ? 92 : 62; label.TextTrimming = TextTrimming.CharacterEllipsis; return label;
+        }
+        TextBlock Value(AioReading r)
         {
             var value = V(r, size, ink); value.TextWrapping = TextWrapping.NoWrap;
             if (r.Group == "Cooling") { formats[value] = row => row.Number.HasValue ? Format.Number(row.Number) : "—"; value.Text = formats[value](r); }
-            var label = Text(IsoLabel(r), size - 2, muted); label.TextWrapping = TextWrapping.NoWrap; label.VerticalAlignment = VerticalAlignment.Center;
-            label.MaxWidth = center ? 92 : 62; label.TextTrimming = TextTrimming.CharacterEllipsis;
-            Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { label, value } });
+            return value;
         }
-        if (center) return Stack(1, items.ToArray());
+        if (center)
+        {
+            // A small table in the middle of the cell: names left-aligned under each other, values left-aligned beside them.
+            var table = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto"), ColumnSpacing = 6, RowSpacing = 1 };
+            int row = 0;
+            void Row(Control? label, Control value)
+            {
+                table.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+                if (label != null) { Grid.SetRow(label, row); table.Children.Add(label); }
+                Grid.SetRow(value, row); Grid.SetColumn(value, label == null ? 0 : 1); if (label == null) Grid.SetColumnSpan(value, 2);
+                table.Children.Add(value); row++;
+            }
+            if (ram != null) { var amount = AmountText(ram, size - 1, muted); amount.TextWrapping = TextWrapping.NoWrap; amount.HorizontalAlignment = HorizontalAlignment.Center; fields[ram.Key].Add(amount); formats[amount] = Amount; Row(null, amount); }
+            foreach (var r in list) Row(Label(r), Value(r));
+            return new AioFit { Child = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Center, Child = new AioWidest { Child = table } } };
+        }
+        var items = new List<Control>();
+        void Add(Control item) => items.Add(new AioFit { Child = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Left, Child = new AioWidest { Child = item } } });
+        if (ram != null) { var amount = AmountText(ram, size - 1, muted); amount.TextWrapping = TextWrapping.NoWrap; fields[ram.Key].Add(amount); formats[amount] = Amount; Add(amount); }
+        foreach (var r in list) Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { Label(r), Value(r) } });
+        // Transfer rates need their room: one pair per line, so "Read 368 KB/s" keeps its full size.
+        if (list.Any(r => r.Key.EndsWith(".read") || r.Key.EndsWith(".write"))) return Stack(1, items.ToArray());
         var grid = FixedCols(2, items.ToArray()); grid.ColumnSpacing = 10; grid.RowSpacing = 1; return grid;
     }
 
@@ -147,7 +194,12 @@ public sealed partial class AioTile
         for (int i = 0; i < parts.Length; i++)
         {
             var p = parts[i];
-            var head = Ui.Columns("1*,1.3*", IsoTitle(p.Title, p.Color, 15, HorizontalAlignment.Left), IsoMains(p, 22, HorizontalAlignment.Right, false)); head.ColumnSpacing = 6;
+            // The value column is as wide as the widest value it can show ("↓ 88.8 Mbit/s"), from the start;
+            // the name beside it takes what is left. So the value never needs to shrink or move.
+            // Wide values (fan speed, network rates) get their own full-width line below the name.
+            Control head;
+            if (p.Kind is "net" or "fan") head = Stack(0, IsoTitle(p.Title, p.Color, 15, HorizontalAlignment.Left), IsoMains(p, 22, HorizontalAlignment.Right, false));
+            else { var g = Ui.Columns("*,Auto", IsoTitle(p.Title, p.Color, 15, HorizontalAlignment.Left), IsoMains(p, 22, HorizontalAlignment.Right, false)); g.ColumnSpacing = 6; head = g; }
             var side = Stack(2, head);
             if (p.Model.Length > 0) side.Children.Add(IsoModel(p.Model, false));
             if (p.Kind == "ram" || p.Details.Length > 0) side.Children.Add(IsoDetails(p.Details, false, 12, p.Kind == "ram" ? p.Main : null));
@@ -210,7 +262,7 @@ public sealed partial class AioTile
             line.Children.Add(Text(" · ", 10, muted));
             var v = V(extra, 10, muted); v.TextWrapping = TextWrapping.NoWrap; line.Children.Add(v);
         }
-        return new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Left, Child = new AioWidest { Child = line } };
+        return new AioFit{Child=new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Left, Child = new AioWidest { Child = line } }};
     }
 
     private void IsometricRig()
@@ -279,9 +331,9 @@ public sealed partial class AioTile
         if (ram != null)
         {
             var value = V(ram, 19, Cyan); formats[value] = row => Format.Percent(row.Number); value.Text = formats[value](ram);
-            var amount = Text(Amount(ram), 10, muted); amount.TextWrapping = TextWrapping.NoWrap; fields[ram.Key].Add(amount); formats[amount] = Amount;
-            var header = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Left,
-                Child = new AioWidest { Child = new StackPanel { Orientation = Orientation.Horizontal, Children = { Text("RAM · ", 10, muted), amount } } } };
+            var amount = AmountText(ram, 10, muted); amount.TextWrapping = TextWrapping.NoWrap; fields[ram.Key].Add(amount); formats[amount] = Amount;
+            var header = new AioFit{Child=new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Left,
+                Child = new AioWidest { Child = new StackPanel { Orientation = Orientation.Horizontal, Children = { Text("RAM · ", 10, muted), amount } } } }};
             Leader(new Point(248, 178), new Point(244, 142), Cyan);
             At(RigTag(header, Align(Fit(value), HorizontalAlignment.Right), Cyan, 104), 196, 178);
         }
@@ -298,8 +350,8 @@ public sealed partial class AioTile
                     var v = V(mains[i], 17, Amber); v.TextWrapping = TextWrapping.NoWrap; values.Children.Add(v);
                 }
                 Leader(new Point(150, 262), new Point(152, 228), Amber);
-                At(RigTag(new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Left, Child = new AioWidest { Child = names } },
-                    new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Right, Child = new AioWidest { Child = values } }, Amber, 132), 84, 262);
+                At(RigTag(new AioFit{Child=new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Left, Child = new AioWidest { Child = names } }},
+                    new AioFit{Child=new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Right, Child = new AioWidest { Child = values } }}, Amber, 132), 84, 262);
             }
         }
         RefSection(new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, MaxWidth = 340, Child = canvas }, Cyan);
@@ -327,23 +379,18 @@ public sealed partial class AioTile
                 return (Control)Stack(1, label, FitLeft(value));
             }).ToArray()), Cyan);
         }
+        // Network and power supply in the same grid as the values above: name on top, value below, fixed columns.
         var rates = Rs("Network"); var rails = Rs("Rails");
         if (rates.Length > 0 || rails.Length > 0)
         {
-            var bottom = Stack(6);
-            if (rates.Length > 0)
-                bottom.Children.Add(FixedCols(settings.Width < 330 ? Math.Min(2, rates.Length) : rates.Length, rates.Select(r =>
-                {
-                    bool link = r.Key.EndsWith(".link");
-                    var arrow = Text(link ? "⇄" : r.Key.EndsWith(".down") ? "↓" : "↑", 15, link ? Purple : r.Key.EndsWith(".down") ? Cyan : Amber);
-                    var line = Ui.Columns("Auto,*", arrow, FitLeft(V(r, 15, ink))); line.ColumnSpacing = 4; return (Control)line;
-                }).ToArray()));
-            if (rails.Length > 0)
-                bottom.Children.Add(FixedCols(rails.Length, rails.Select(r =>
-                {
-                    var line = Ui.Columns("Auto,*", Text(r.Label, 11, Amber), FitLeft(V(r, 13, ink))); line.ColumnSpacing = 5; return (Control)line;
-                }).ToArray()));
-            RefSection(bottom, Cyan, true);
+            Control Cell(string caption, Color tint, AioReading r)
+            {
+                var label = Text(caption, 11, tint); label.TextWrapping = TextWrapping.NoWrap; label.TextTrimming = TextTrimming.CharacterEllipsis;
+                return Stack(1, label, FitLeft(V(r, 14, ink)));
+            }
+            var cells = rates.Select(r => r.Key.EndsWith(".link") ? Cell("⇄ " + L.T("Link speed"), Purple, r) : r.Key.EndsWith(".down") ? Cell("↓ " + L.T("Download"), Cyan, r) : Cell("↑ " + L.T("Upload"), Amber, r))
+                .Concat(rails.Select(r => Cell(r.Label, Amber, r))).ToArray();
+            RefSection(FixedCols(3, cells), Cyan, true);
         }
     }
 }

@@ -31,7 +31,7 @@ public sealed partial class AioTile
         referenceUsed.Add(r.Key);var t=Value(r,size,color);
         if(r.Group=="Cooling"){formats[t]=row=>row.Number.HasValue?Format.Number(row.Number)+" rpm":"—";t.Text=formats[t](r);}return t;
     }
-    private Control Fit(Control c)=>c is TextBlock text?new AioReferenceValue(text):new Viewbox{Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,HorizontalAlignment=HorizontalAlignment.Stretch,Child=new AioWidest{Child=c}};
+    private Control Fit(Control c)=>c is TextBlock text?new AioReferenceValue(text):new AioFit{Child=new Viewbox{Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,HorizontalAlignment=HorizontalAlignment.Stretch,Child=new AioWidest{Child=c}}};
     /// <summary>A label that never breaks inside a word: it shrinks to its column instead, aligned left.</summary>
     private Control FitLeft(TextBlock text){var fit=Fit(text);if(fit is Decorator{Child:Viewbox box})box.HorizontalAlignment=HorizontalAlignment.Left;return fit;}
     private Control Cols(int count,params Control[] children)=>new StatPanel(Array.Empty<double>(),children){MaxColumns=count,MinimumColumnWidth=count>=4?48:count==3?70:105,RespectIntrinsicWidth=false,Balanced=false,RowSpacing=7};
@@ -49,16 +49,27 @@ public sealed partial class AioTile
         if(!bar)
         {
             bool sculpted=style is WidgetStyle.AioAuroraFusion or WidgetStyle.AioPopConsole or WidgetStyle.AioCarbonPulse;
-            if(sculpted)value.FontSize=13;var row=Ui.Columns("*,Auto",FitLeft(Text(RefLabel(r),sculpted?11:14)),value);row.ColumnSpacing=6;return row;
+            if(sculpted)value.FontSize=13;var row=Ui.Columns("*,Auto",Label(RefLabel(r),sculpted?11:14),value);row.ColumnSpacing=6;return row;
         }
         var m=new AioMeter(color??Accent(r),track,mode){Height=mode==1?20:mode==2?10:7,MinWidth=35};meters.Add((r.Key,m));
         if(r.Group=="Cooling")
         {
             value.FontSize=14;var fanLabel=Text(Translate(L.T(r.Label)),12);fanLabel.MaxWidth=105;fanLabel.MinWidth=52;var fan=Ui.Columns("Auto,*,Auto",fanLabel,m,value);fan.ColumnSpacing=6;return fan;
         }
-        Control label=FitLeft(Text(Translate(L.T(r.Label)),13));
+        Control label=Label(Translate(L.T(r.Label)),13);
         if(style==WidgetStyle.AioInstrument){var withGlyph=Ui.Columns("Auto,*",Ui.Glyph(RefGlyph(r),Accent(r),15),label);withGlyph.ColumnSpacing=3;label=withGlyph;}
-        var grid=Ui.Columns(".9*,1.4*,1.1*",label,Fit(value),m);grid.ColumnSpacing=6;return grid;
+        // Labels get enough room for "Schreiben", "Spannung" or "VRAM Temp." at full size; the meter is the part that narrows.
+        var grid=Ui.Columns("1.15*,1.35*,.75*",label,Fit(value),m);grid.ColumnSpacing=6;return grid;
+    }
+    /// <summary>
+    /// A row label: one word shrinks a little if it must ("Schreiben"); several words wrap between the words
+    /// ("NVIDIA GeForce RTX 3080") instead of becoming tiny.
+    /// </summary>
+    private Control Label(string text,double size)
+    {
+        var t=Text(text,size);
+        if(text.Contains(' ')&&text.Length>12)return t;
+        return FitLeft(t);
     }
     private static string RefGlyph(AioReading r)=>r.Group=="Cooling"?Glyphs.Fan:r.Group=="Drives"?Glyphs.Drive:r.Group=="Rails"||r.Key.EndsWith("voltage")||r.Key.EndsWith("power")?Glyphs.Power:r.Key.EndsWith("load")?Glyphs.Fps:r.Key.EndsWith("clock")?Glyphs.Ping:r.Key.EndsWith("vram")||r.Key.EndsWith("ram")?Glyphs.Memory:
         "M6,3 A2,2 0 0 1 10,3 V9 A4,4 0 1 1 6,9 Z M8,5 V11 M8,11 m-1,0 a1,1 0 1 0 2,0 a1,1 0 1 0 -2,0";
@@ -167,7 +178,9 @@ public sealed partial class AioTile
             if(temp!=null)body.Children.Add(Cols(2,Stack(0,heading,MainTemp(temp,99,Cyan)),new Border{Padding=new Thickness(5,5,0,0),Child=detail}));else body.Children.Add(Stack(3,heading,detail));
             foreach(var r in rs.Where(r=>r.Key.EndsWith(".hotspot")||r.Key.EndsWith(".junction")))
             {
-                var line=Ui.Columns("*,Auto",Text(RefLabel(r),23,r.Key.EndsWith(".hotspot")?C("#10131B"):ink),V(r,30,r.Key.EndsWith(".hotspot")?C("#10131B"):ink));
+                var label=Text(RefLabel(r),23,r.Key.EndsWith(".hotspot")?C("#10131B"):ink);
+                // A one-word label ("Hotspot") shrinks instead of breaking mid-word; "Memory junction" may wrap between its words.
+                var line=Ui.Columns("*,Auto",RefLabel(r).Contains(' ')?label:FitLeft(label),V(r,30,r.Key.EndsWith(".hotspot")?C("#10131B"):ink));
                 body.Children.Add(r.Key.EndsWith(".hotspot")?new AioReferenceSurface{Alpha=cardAlpha/255d,Mode="banner",Tint=Coral,Padding=new Thickness(12,4),Child=line}:line);
             }
             RefSection(body,Cyan);
@@ -337,7 +350,7 @@ public sealed partial class AioTile
             var secondary=R("load",r.Group,r.Device);if(secondary!=null&&secondary!=r)face.Children.Add(V(secondary,17));
             foreach(var t in face.Children.OfType<TextBlock>())t.TextAlignment=TextAlignment.Center;
             double diameter=r.Group=="System"?88:108;
-            var circle=new Border{Width=diameter,Height=diameter,CornerRadius=new CornerRadius(diameter/2),Background=Palette.Brush(Solid(back)),BorderBrush=Palette.Brush(color),BorderThickness=new Thickness(2),BoxShadow=new BoxShadows(new BoxShadow{Blur=10,Color=Color.FromArgb(70,color.R,color.G,color.B)}),Child=new Viewbox{Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,Margin=new Thickness(9),Child=new AioWidest{Child=face}}};
+            var circle=new Border{Width=diameter,Height=diameter,CornerRadius=new CornerRadius(diameter/2),Background=Palette.Brush(Solid(back)),BorderBrush=Palette.Brush(color),BorderThickness=new Thickness(2),BoxShadow=new BoxShadows(new BoxShadow{Blur=10,Color=Color.FromArgb(70,color.R,color.G,color.B)}),Child=new AioFit{Child=new Viewbox{Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,Margin=new Thickness(9),Child=new AioWidest{Child=face}}}};
             Canvas.SetLeft(circle,point.X);Canvas.SetTop(circle,point.Y);map.Children.Add(circle);
         }
         var satellites=referenceRows.Where(r=>r.Key.EndsWith(".voltage")||r.Key.EndsWith(".power")).ToArray();
@@ -364,7 +377,7 @@ public sealed partial class AioTile
                 Color tint=r.Key.EndsWith(".hotspot")?Coral:muted;
                 string caption=(gpuIds.Count>1?"GPU "+(gpuIds.IndexOf(r.Device)+1)+" · ":"")+RefLabel(r)+" ";
                 return (Control)new Border{BorderBrush=Palette.Brush(tint),BorderThickness=new Thickness(1),CornerRadius=new CornerRadius(16),Padding=new Thickness(9,3),Margin=new Thickness(3,0),Background=Palette.Brush(SeeThrough(back)),
-                    Child=new Viewbox{Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,Child=new AioWidest{Child=Ui.Columns("Auto,Auto",Text(caption,13,tint),V(r,16,tint))}}};
+                    Child=new AioFit{Child=new Viewbox{Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,Child=new AioWidest{Child=Ui.Columns("Auto,Auto",Text(caption,13,tint),V(r,16,tint))}}}};
             }).ToArray();
             var row=FixedCols(pills.Length,pills);row.Width=334;Canvas.SetLeft(row,0);Canvas.SetTop(row,pillTop);map.Children.Add(row);pillTop+=36;
         }

@@ -1,10 +1,19 @@
-# Lumen 4.2.0 – All-in-One
+# Lumen 4.2.1 – All-in-One
 
 A portable hardware-monitoring sidebar for Windows 10 and 11 with **81 designs**, including **18 All-in-One designs** that show the whole PC in one card. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
 
-**[Download Lumen 4.2.0](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.2.0)** · [All designs](docs/style-gallery.md) · [Release notes 4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
+**[Download Lumen 4.2.1](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.2.1)** · [All designs](docs/style-gallery.md) · [Release notes 4.2.1](docs/release-notes/v4.2.1.md) · [4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
 
 ![Sci-Fi, Thermostat, Neon HUD and Evolution](docs/images/v4.0.0/hero-designs.png)
+
+## New in 4.2.1
+
+- AIO values keep a fixed room: nothing moves when digits or units change.
+- Network arrows stay in place in Isometric Compact, Pedestals and Rig.
+- Labels and values are left-aligned in Isometric Rings and Pedestals; labels keep a readable size in Studio Light, Instrument and Precision.
+- Verified with 5,336 tests, including a new no-movement test for all 18 AIO designs.
+
+[Full 4.2.1 release notes](docs/release-notes/v4.2.1.md)
 
 ## New in 4.2.0
 
@@ -106,7 +115,7 @@ Logs and reports stay local. Nothing is uploaded automatically.
 
 ## Download and run
 
-Download **Lumen-4.2.0.exe** for the portable application, or the portable ZIP with licence files. No separate .NET installation is required. Close an older running instance before starting the new EXE. Settings are stored beside the EXE, with an AppData fallback when that folder is read-only.
+Download **Lumen-4.2.1.exe** for the portable application, or the portable ZIP with licence files. No separate .NET installation is required. Close an older running instance before starting the new EXE. Settings are stored beside the EXE, with an AppData fallback when that folder is read-only.
 
 The release also includes the complete source archive, all gallery images and SHA-256 checksums.
 

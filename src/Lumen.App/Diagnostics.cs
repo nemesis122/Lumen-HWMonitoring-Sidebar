@@ -10,7 +10,7 @@ namespace Lumen.App;
 
 public static class Diagnostics
 {
-    public const string Build = "4.2.0";
+    public const string Build = "4.2.1";
     private static readonly object Gate = new();
     private static string directory = "", context = "No layout captured yet.", stage = "startup", failure = "";
     private static readonly string SessionId = Guid.NewGuid().ToString("N");

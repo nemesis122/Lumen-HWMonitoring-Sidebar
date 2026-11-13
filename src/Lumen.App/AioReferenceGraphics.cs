@@ -13,14 +13,26 @@ public sealed class AioReferenceValue : Decorator
     public AioReferenceValue(TextBlock number,Control? face=null)
     {
         this.number=number;number.TextWrapping=TextWrapping.NoWrap;
-        Child=new Viewbox{Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,Child=new AioWidest{Child=face??number}};
+        Child=new Viewbox{Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,Child=widest=new AioWidest{Child=face??number}};
     }
+    private readonly AioWidest widest;
     protected override Size MeasureOverride(Size available)
     {
+        widest.Room=available.Width;
         double height=number.FontSize*1.35;Child!.Measure(new Size(available.Width,height));
         return new Size(double.IsFinite(available.Width)?available.Width:Child.DesiredSize.Width,height);
     }
     protected override Size ArrangeOverride(Size final){Child!.Arrange(new Rect(final));return final;}
+}
+
+/// <summary>Fits its content into the column (shrinking only when needed) and tells it how wide the column is.</summary>
+public sealed class AioFit : Decorator
+{
+    protected override Size MeasureOverride(Size available)
+    {
+        if(Child is Viewbox{Child:AioWidest w} box)w.Room=available.Width-box.Margin.Left-box.Margin.Right;
+        Child?.Measure(available);return Child?.DesiredSize??default;
+    }
 }
 
 /// <summary>
@@ -31,12 +43,47 @@ public sealed class AioReferenceValue : Decorator
 public sealed class AioWidest : Decorator
 {
     private double widest, highest;
+    /// <summary>The width of the column the content is shown in (set by <see cref="AioFit"/> or <see cref="AioReferenceValue"/>).</summary>
+    public double Room { get; set; } = double.PositiveInfinity;
     protected override Size MeasureOverride(Size available)
     {
         if(Child==null)return default;
+        // Values reserve room for their widest form, but only as much as the column has to spare: first the content
+        // at its natural width, then the spare room shared out among the values. A value never shrinks to make room
+        // for its own reserve, and the content fills the same width whatever the values show.
+        var values=Child.GetSelfAndVisualDescendants().OfType<AioValueText>().ToList();
+        double room=Room;
+        if(values.Count>0&&double.IsFinite(room))
+        {
+            foreach(var v in values){v.Cap=0;v.InvalidateMeasure();}
+            Child.InvalidateMeasure();Child.Measure(Size.Infinity);
+            double natural=Child.DesiredSize.Width;
+            foreach(var v in values){v.Cap=double.PositiveInfinity;v.InvalidateMeasure();}
+            Child.InvalidateMeasure();Child.Measure(Size.Infinity);
+            double reserved=Child.DesiredSize.Width;
+            if(reserved>room)
+            {
+                // The widest form of the values does not fit: it would have to shrink the moment such a value shows up.
+                // So it shrinks by that one steady amount right away instead of a little more or less with every value.
+            }
+            else
+            {
+                // Values side by side share the spare room; values stacked on top of each other each get all of it.
+                foreach(var v in values){v.Cap=v.Natural+(room-natural)/SideBySide(v,values);v.InvalidateMeasure();}
+            }
+            Child.InvalidateMeasure();
+        }
         Child.Measure(Size.Infinity);
         widest=Math.Max(widest,Child.DesiredSize.Width);highest=Math.Max(highest,Child.DesiredSize.Height);
         return new Size(widest,highest);
+    }
+    /// <summary>How many values share the line of this one (1 when it is alone on its line, e.g. in a stack of rates).</summary>
+    private int SideBySide(AioValueText value,List<AioValueText> values)
+    {
+        for(Visual? v=value.GetVisualParent();v!=null&&v!=this;v=v.GetVisualParent())
+            if(v is StackPanel{Orientation:Orientation.Horizontal}||v is Grid{ColumnDefinitions.Count:>1})
+                return Math.Max(1,values.Count(x=>x.GetVisualAncestors().Contains(v)));
+        return 1;
     }
     protected override Size ArrangeOverride(Size final)
     {
@@ -44,6 +91,14 @@ public sealed class AioWidest : Decorator
         var align=this.FindAncestorOfType<Viewbox>()?.HorizontalAlignment??HorizontalAlignment.Center;
         double w=Child.DesiredSize.Width,h=Child.DesiredSize.Height;
         double x=align switch{HorizontalAlignment.Left=>0,HorizontalAlignment.Right=>final.Width-w,_=>(final.Width-w)/2};
+        // Values keep a fixed room; their text sits on the side the value is aligned to. A number followed by its unit
+        // ("38 °C") hugs the unit, so the unit stays put.
+        foreach(var v in Child.GetSelfAndVisualDescendants().OfType<AioValueText>())
+        {
+            bool beforeUnit=v.Parent is StackPanel{Orientation:Orientation.Horizontal} row&&row.Children.IndexOf(v)<row.Children.Count-1&&row.Children[^1] is TextBlock unit&&unit is not AioValueText&&unit.Text is "°C" or "°F";
+            // In a small label/value table, values are left-aligned beside their names.
+            v.TextAlignment=beforeUnit?TextAlignment.Right:v.Parent is Grid g&&Grid.GetColumn(v)>0&&g.ColumnDefinitions.Count==2&&g.ColumnDefinitions[0].Width.IsAuto?TextAlignment.Left:align switch{HorizontalAlignment.Left=>TextAlignment.Left,HorizontalAlignment.Right=>TextAlignment.Right,_=>TextAlignment.Center};
+        }
         Child.Arrange(new Rect(x,(final.Height-h)/2,w,h));return final;
     }
 }
