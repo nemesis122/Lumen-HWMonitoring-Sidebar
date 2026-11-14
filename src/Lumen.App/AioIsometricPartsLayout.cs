@@ -185,7 +185,7 @@ public sealed partial class AioTile
         {
             var percent = V(ram, 32, Cyan); formats[percent] = row => Format.Percent(row.Number); percent.Text = formats[percent](ram);
             var amount = AmountText(ram, 14, ink); fields[ram.Key].Add(amount); formats[amount] = Amount;
-            var side = Stack(5, PartTitle(L.T("Memory"), Cyan, ""), percent, amount, PartMeter(ram, Cyan));
+            var side = Stack(5, PartTitle(L.T("Memory"), Cyan, ""), FitLeft(percent), FitLeft(amount), PartMeter(ram, Cyan));
             RefSection(ArtRow(Part("ram", 112, 88), side), Cyan);
         }
         var drives = PartDrives();
