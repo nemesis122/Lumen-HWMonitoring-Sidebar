@@ -138,8 +138,14 @@ public class InfoWidgetTests
     [MemberData(nameof(Styles))]
     public void Drive_health_follows_the_design(WidgetStyle style)
     {
-        var type = UiHost.Run(() => Cards.Create(WidgetKind.DriveHealth, style, 0, Palette.For(true, false), Metrics.For(Density.Fit), new Settings()).GetType());
-        Assert.Equal(style == WidgetStyle.Standard ? "DriveHealthCard" : "InfoTile", type.Name);
+        var card = UiHost.Run(() => Cards.Create(WidgetKind.DriveHealth, style, 0, Palette.For(true, false), Metrics.For(Density.Fit), new Settings()));
+        if(AioDesigns.Contains(style))
+        {
+            var companion=Assert.IsType<AioCompanionTile>(card);
+            Assert.Equal(style,companion.Design);
+            Assert.IsType<InfoTile>(companion.NativeContent);
+        }
+        else Assert.Equal(style == WidgetStyle.Standard ? "DriveHealthCard" : "InfoTile", card.GetType().Name);
     }
 
     // A row of the horizontal bar with the overview and drive health (as in the screenshot's second row):

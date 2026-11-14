@@ -1,59 +1,51 @@
-# Lumen 4.4.0 – Mainboard und Design-Auswahl
+# Lumen 4.4.0 — Mainboard and design selection
 
-Mainboard-Designs und die bereinigte Design-Auswahl von Lumen 4.4.0.
+## Choose a Mainboard design
 
-## Direkt als Design auswählen
+Open Settings → Widgets and scroll to the end of the design list. Mainboard, Mainboard Map, Mainboard Map Desktop and Mainboard Cores are grouped there. Choose a design for all widgets or for a selected register. There is no separate Mainboard Map entry in the tray menu.
 
-Lumen-Einstellungen öffnen → Widgets → bis ans Ende der Designliste scrollen. Dort stehen Mainboard, Mainboard Map, Mainboard Map Desktop und Mainboard Cores zusammen. Die Auswahl gilt wie bisher für alle Widgets oder das gewählte Register. Es gibt keinen zusätzlichen Mainboard-Map-Eintrag im Traymenü.
+Mainboard Cores places CPU and GPU in equal-height panels above a full-width core-load strip, followed by RAM/PSU, drives, fans and network. At 440 px, sixteen cores fit in one row. Narrower widths or larger scaling wrap them into more rows. All selected readings, including inline VRAM usage, remain available. The original Mainboard design is still available.
 
-Entfernt aus allen Design-Auswahlen: Mainboard Typografie, Mainboard Datenmatrix, Mainboard Instrumente, Mainboard Messstreifen, AIO Pop Console, AIO Chromatic und Aperture. Alte Einstellungen mit diesen Designs werden auf Standard umgestellt; andere Widget-Einstellungen bleiben erhalten. Die alten Design-IDs bleiben für das Einlesen bestehen, damit andere gespeicherte Designs nicht verschoben werden. Insgesamt sind noch 82 Designs auswählbar.
+Mainboard Map Desktop fills the working area of the selected monitor, using one column without floating widgets. The board is capped at 600 logical pixels high and the dashboard at 1400 logical pixels wide. CPU, GPU and network are on the left; RAM, PSU and drives are on the right; cores and fans are below. Choosing a sidebar design after the Desktop design disables whole-screen placement. Monitor and placement options remain under Placement.
 
-Mainboard Cores: CPU und GPU als gleich hohe Felder oben, anschließend die breite Core-Reihe, RAM/PSU, Laufwerke, Lüfter und Netzwerk. Bei 440 px stehen 16 Kerne in einer Reihe. Bei weniger Platz oder größerer Skalierung werden sie auf mehrere Reihen verteilt. Einzelwerte einschließlich der VRAM-Belegung bleiben enthalten, und die Leiterbahnen verlaufen außerhalb der breiten Felder. Das bisherige AIO · Mainboard bleibt erhalten.
+For Mainboard Cores, start with a sidebar width of 440 px. Close an older Lumen instance before launching the new executable. Keep your existing settings to retain your preferences.
 
+## Main-widget selections are stored per design
 
-## Haupt-Widgets je Design speichern
+A newly selected ordinary design starts with five HW widgets: CPU, GPU, RAM, drives and network. It also starts with four INFO widgets: clock, world clocks, calendar and weather. A newly selected AIO/Mainboard design adds cooling/mainboard and power, giving seven HW and four INFO widgets.
 
-Ein erstmals gewähltes normales Design startet mit CPU, GPU, RAM, Laufwerken, Netzwerk und den vier INFO-Widgets Uhr, Weltuhren, Kalender und Wetter. Ein erstmals gewähltes AIO-/Mainboard-Design zeigt zusätzlich Kühlung/Mainboard und Stromversorgung: sieben HW- plus vier INFO-Widgets.
+Your own checks for these eleven main widgets are stored for each design. A new design uses its defaults; returning to a customized design restores its saved selection. The active design and current checks survive restarts. Clicking the same design again does not reset your edits. A register-specific design change leaves other registers unchanged.
 
-Eigene Häkchen dieser elf Haupt-Widgets werden für das jeweilige Design gespeichert. Beim Wechsel zu einem neuen Design gilt dessen Vorgabe; beim Zurückwechseln zu einem bereits angepassten Design erscheint dessen eigene gespeicherte Auswahl wieder. Das aktive Design samt aktueller Auswahl bleibt auch nach einem Neustart erhalten. Derselbe Design-Knopf setzt bestehende Änderungen nicht zurück. Bei der Auswahl für nur ein Register bleibt das andere Register unverändert.
+This rule only covers these main widgets. Extra widgets such as FPS, ping or battery, individual sensor choices under Customise, widget order and register assignments are not reset.
 
-Die Regel betrifft ausschließlich diese Haupt-Widgets. Zusatz-Widgets wie FPS, Ping oder Akku, die Reihenfolge, Register und einzelne Sensorwerte unter Customise werden dadurch nicht zurückgesetzt.
+## Design cleanup
 
-„Mainboard Map Desktop“ aktiviert beim Auswählen die ganze Arbeitsfläche des ausgewählten Monitors, mit einer Spalte und ohne frei schwebende Widgets. Die Platine bleibt auf 600 logische Pixel Höhe begrenzt, das Dashboard auf 1400 logische Pixel Breite zentriert. Links stehen CPU, GPU und Netzwerk, rechts RAM, PSU und Laufwerke; darunter Kernsäulen und Lüfter. Beim Wechsel vom Desktop-Design zurück zu einem Sidebar-Design wird die Vollbildplatzierung deaktiviert. Bildschirmwahl und weitere Platzierungseinstellungen bleiben unter Placement erreichbar.
+Removed from all design selectors: Mainboard Typography, Mainboard Data Matrix, Mainboard Instruments, Mainboard Strips, AIO Pop Console, AIO Chromatic and Aperture. Old profiles using these designs switch to Standard while keeping their other widget preferences. The old design IDs remain readable so existing IDs do not shift. There are 82 selectable designs.
 
-Das originale Mainboard-Design hält Netzwerkwerte mit eigenem Innenabstand und passender Verkleinerung in drei getrennten Spalten. Geprüft wurden unter anderem Upload 32 kbit/s und Wechsel bis in Gbit/s.
+## Extra widgets in AIO designs
 
-Die mittleren Leiterbahnen werden vor breiten Feldern unterbrochen. Sie verlaufen nicht mehr hinter NETWORK, FANS oder deren Werten. Das funktioniert auch bei transparenten Karten, weil in diesen Bereichen keine Linien mehr gezeichnet werden. Die ursprünglichen Verbindungslinien zwischen den schmalen Hardware-Feldern bleiben erhalten.
+Clock, world clocks, calendar, weather, media, battery, FPS, top apps, system, storage space, ping, data usage, notes, drive health and timer have matching extra cards in every available AIO design. They keep their existing live data, sensor switches and controls. They no longer silently use the Standard frame while the selector displays an AIO name.
 
-## INFO und Zusatz-Widgets bei allen AIO-Designs
+Enable an extra widget with its checkbox under Widgets. Notes and Timer, which have no individual style picker, automatically follow a uniform AIO design on their register, including in older profiles. Mixed registers do not override these two widgets. Overview remains the combined hardware card.
 
-Uhr, Weltuhren, Kalender, Wetter, Medien, Akku, FPS, Prozesse, System, Speicherplatz, Ping, Datennutzung, Notizen, Laufwerkszustand und Timer erhalten jetzt passende Zusatzkarten. Sie behalten ihre vorhandenen Live-Daten, Sensor-Schalter und Bedienelemente. Sie fallen nicht mehr pauschal auf die Standard-Darstellung zurück, während die Einstellungen einen AIO-Namen anzeigen. Rahmen und Farben folgen dem gewählten AIO; die enthaltene Darstellung nutzt die passenden vorhandenen Tabellen-, Zahlen- oder Instrumentelemente.
+## Connections and readings
 
-Ausgeblendete Widgets bleiben ausgeblendet. Zum Anzeigen unter Widgets das jeweilige Häkchen setzen. Auch auf INFO folgt die Gestaltung dem dort ausgewählten AIO-Design. Notizen und Timer ohne eigene Designauswahl übernehmen ein einheitliches AIO ihres Registers automatisch, auch bei älteren Profilen. Gemischte Register überschreiben diese beiden Widgets nicht. Overview bleibt die gemeinsame Hardware-Ansicht.
+Mainboard network values stay within three separate download/upload/link cells, with padding and values that fit their available width. PCB traces are interrupted around wide panels such as NETWORK and FANS. They are not drawn behind titles or readings, including when the card background is transparent.
 
-Für Mainboard Cores empfiehlt sich zunächst eine Sidebar-Breite von 440 px. ZIP in einen neuen Ordner entpacken, laufende ältere Lumen-Instanz schließen und Lumen.exe starten. Bestehende Einstellungen weiterverwenden, um eigene Präferenzen zu behalten.
+In the Map designs, cyan identifies CPU/RAM and violet identifies GPU/PSU. Card numbers, component outlines and connections match. ATX identifies the power connector, not a separate physical PSU on the board. The board image is a generic illustration, not a detected motherboard model.
 
-## Gestaltung
+The application uses Lumen's existing live sensor sources. Screenshots use demo data. Sensor availability depends on hardware, permissions and the selected source; missing readings appear as “—”.
 
-Cyan: 1 CPU und 3 RAM. Violett: 2 GPU und 4 PSU. Kästen, dickere Verbindungspfeile und Bauteil-Konturen folgen derselben Farbe und Nummer. Auf der Platine bezeichnet 4 ATX den Stromanschluss des PSU-Kastens.
-
-Die ganze Platine steht oben in einer eigenen Reihe. Darunter folgen CPU/GPU und RAM/PSU im 2×2-Raster. Die VRAM-Belegung steht wieder in einer Zeile rechts neben VRAM. Die zwei Laufwerkskästen, Netzwerk, Kernsäulen und Lüfter folgen darunter. Oben gibt es nur HW und INFO.
-
-Bei 16 Kernen werden zwei Reihen mit je acht Säulen angezeigt, farblich passend in Cyan und Violett. Alle Messwerte und die bestehenden Sensor-/Widget-Schalter bleiben erhalten. Die ursprüngliche Mainboard-Sidebar bleibt ebenfalls als eigenes Design verfügbar.
-
-## Daten
-
-Die Anwendung nutzt die vorhandenen Live-Sensorquellen von Lumen. Vorschaubilder verwenden ausdrücklich Beispieldaten. Die tatsächliche Sensorverfügbarkeit hängt von Hardware, Berechtigungen und gewählter Quelle ab; fehlende Werte erscheinen als „—“. Die Platine ist eine generische Illustration, nicht das erkannte Mainboard-Modell.
-
-## Quellcode bauen (.NET 8 SDK)
+## Build from source with the .NET 8 SDK
 
     dotnet test tests/Lumen.Tests -c Release -m:1
     dotnet publish src/Lumen.App -c Release -r win-x64 --self-contained -m:1 -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:IncludeAllContentForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o publish
 
-Programm-Vorschauen:
+Render native previews:
 
     dotnet build tools/Lumen.Preview -c Release -m:1
     dotnet tools/Lumen.Preview/bin/Release/net8.0/Lumen.Preview.dll preview --mainboard --en
 
-Basis: https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar
-Lizenzhinweise: LICENSE und licenses/.
+Repository: https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar
+
+Licence notices are in LICENSE and licenses/.

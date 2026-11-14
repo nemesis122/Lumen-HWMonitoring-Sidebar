@@ -11,7 +11,8 @@ public static class HardwareWidgetTitle
 {
     private sealed record Parts(TextBlock Title, TextBlock? Hardware);
     private static readonly ConditionalWeakTable<Control, Parts> parts = new();
-    public static TextBlock? TitleOf(Control root) => parts.TryGetValue(root, out var entry) ? entry.Title : null;
+    public static TextBlock? TitleOf(Control root) => root is AioCompanionTile companion ? TitleOf(companion.NativeContent)
+        : parts.TryGetValue(root, out var entry) ? entry.Title : null;
     public static void Register(Control root, TextBlock title, TextBlock? hardware = null)
     {
         parts.Remove(root); parts.Add(root, new(title, hardware));

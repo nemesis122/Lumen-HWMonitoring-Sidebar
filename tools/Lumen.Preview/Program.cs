@@ -87,13 +87,13 @@ if (args.Contains("--mainboard"))
     foreach(var w in networkPreset.Widgets.Where(w=>Settings.HasStyles(w.Kind)))w.Style=WidgetStyle.AioMainboard;
     var networkView=new SidebarView(networkPreset,sidebarPalette);
     networkView.Update(snapshot with{Network=snapshot.Network! with{DownloadBytesPerSecond=24_000/8d,UploadBytesPerSecond=32_000/8d}},history);
-    Shot(networkView,"netzwerk-32-kbit-korrigiert",380,1400,sidebarPalette);
+    Shot(networkView,"network-32-kbit-fixed",380,1400,sidebarPalette);
     networkPreset.Glass=true;networkPreset.ShowNames=true;
     networkPreset.Widgets.Single(w=>w.Kind==WidgetKind.Cooling).Visible=false;
     networkPreset.Widgets.Single(w=>w.Kind==WidgetKind.Power).Visible=false;
     var glassPalette=Palette.For(true,true);var glassView=new SidebarView(networkPreset,glassPalette);
     glassView.Update(snapshot with{Network=snapshot.Network! with{DownloadBytesPerSecond=39_000/8d,UploadBytesPerSecond=25_000/8d}},history);
-    Shot(glassView,"netzwerk-ohne-linien-im-feld",360,1400,glassPalette);
+    Shot(glassView,"network-clear-panel",360,1400,glassPalette);
     var variants=new[]{WidgetStyle.AioMainboard,WidgetStyle.AioMainboardCores,WidgetStyle.AioMainboardMap,WidgetStyle.AioMainboardDesktop};
     var comparison=new Grid{ColumnDefinitions=new ColumnDefinitions("*,*,*,*"),ColumnSpacing=12};
     for(int i=0;i<variants.Length;i++)
@@ -107,7 +107,7 @@ if (args.Contains("--mainboard"))
         DockPanel.SetDock(title,Dock.Top);column.Children.Add(title);column.Children.Add(compareView);
         Grid.SetColumn(column,i);comparison.Children.Add(column);
     }
-    Shot(comparison,"vier-designs-echte-app",1796,1440,sidebarPalette);
+    Shot(comparison,"four-designs-app",1796,1440,sidebarPalette);
     var infoComparison=new Grid{ColumnDefinitions=new ColumnDefinitions("*,*,*,*"),ColumnSpacing=12};
     for(int i=0;i<variants.Length;i++)
     {
@@ -122,9 +122,9 @@ if (args.Contains("--mainboard"))
         Grid.SetColumn(column,i);infoComparison.Children.Add(column);
     }
     infoComparison.Measure(new Size(1796,double.PositiveInfinity));
-    Shot(new StackPanel{Children={infoComparison}},"info-vier-designs",1796,Math.Ceiling(infoComparison.DesiredSize.Height),sidebarPalette);
+    Shot(new StackPanel{Children={infoComparison}},"info-designs",1796,Math.Ceiling(infoComparison.DesiredSize.Height),sidebarPalette);
     var extrasGrid=new Grid{ColumnDefinitions=new ColumnDefinitions("*,*,*"),ColumnSpacing=12,RowSpacing=12};int extraIndex=0;
-    var extraSettings=Settings.Starter();extraSettings.Notes="Demo: Backup prüfen";
+    var extraSettings=Settings.Starter();extraSettings.Notes="Demo: Check backup";
     foreach(var kind in Enum.GetValues<WidgetKind>().Where(k=>!AioDesigns.Hardware(k)))
     {
         var slot=extraSettings.Widgets.Single(w=>w.Kind==kind);slot.Style=WidgetStyle.AioMainboardMap;slot.Visible=true;
@@ -134,7 +134,7 @@ if (args.Contains("--mainboard"))
         Grid.SetColumn(card,extraIndex%3);Grid.SetRow(card,extraIndex/3);extrasGrid.Children.Add(card);extraIndex++;
     }
     extrasGrid.Measure(new Size(1200,double.PositiveInfinity));
-    Shot(new StackPanel{Children={extrasGrid}},"alle-zusatz-widgets",1200,Math.Ceiling(extrasGrid.DesiredSize.Height),sidebarPalette);
+    Shot(new StackPanel{Children={extrasGrid}},"extra-widgets",1200,Math.Ceiling(extrasGrid.DesiredSize.Height),sidebarPalette);
     var desktop=System.Text.Json.JsonSerializer.Deserialize<Settings>(System.Text.Json.JsonSerializer.Serialize(preset,Settings.Json),Settings.Json)!;desktop.FullScreen=true;desktop.Columns=1;desktop.Floating=false;
     foreach(var w in desktop.Widgets.Where(w=>Settings.HasStyles(w.Kind)))w.Style=WidgetStyle.AioMainboardDesktop;
     desktop.Save(Path.Combine(output,"lumen-desktop-settings.json"));
@@ -167,10 +167,10 @@ if (args.Contains("--mainboard"))
         for(int i=0;i<3;i++){Dispatcher.UIThread.RunJobs();window.CaptureRenderedFrame();}
         using(var shot=window.CaptureRenderedFrame()!)shot.Save(Path.Combine(output,name+".png"));window.Close();
     }
-    SelectionShot(corePreset,"hauptwidgets-aio-7-plus-4");
+    SelectionShot(corePreset,"main-widgets-aio-7-plus-4");
     var normalPreset=System.Text.Json.JsonSerializer.Deserialize<Settings>(System.Text.Json.JsonSerializer.Serialize(corePreset,Settings.Json),Settings.Json)!;
     DesignWidgetSelection.Apply(normalPreset,WidgetStyle.MeasureTape);
-    SelectionShot(normalPreset,"hauptwidgets-normal-5-plus-4");
+    SelectionShot(normalPreset,"main-widgets-normal-5-plus-4");
     Console.WriteLine("Mainboard rendered: " + output);
     return;
 }

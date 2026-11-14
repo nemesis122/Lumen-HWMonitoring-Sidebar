@@ -23,7 +23,7 @@ public static class LocalDesigns
         WidgetStyle.MosaicPro, WidgetStyle.RibbonFlow, WidgetStyle.SplitLens,
         WidgetStyle.PixelDeck, WidgetStyle.HorizonSync
     };
-    public static readonly WidgetStyle[] Signature = { WidgetStyle.Aperture, WidgetStyle.PixelDeck, WidgetStyle.HorizonSync };
+    public static readonly WidgetStyle[] Signature = { WidgetStyle.PixelDeck, WidgetStyle.HorizonSync };
     public static bool Contains(WidgetStyle style) => Styles.Contains(style);
 
     public static void Frame(Border frame, WidgetStyle style, Palette p, Metrics m)

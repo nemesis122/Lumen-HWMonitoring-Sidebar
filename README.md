@@ -4,7 +4,7 @@ A portable hardware-monitoring sidebar for Windows 10 and 11 with **82 designs**
 
 **[Download Lumen 4.4.0](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.4.0)** · [All designs](docs/style-gallery.md) · [Release notes 4.4.0](docs/release-notes/v4.4.0.md) · [4.3.0](docs/release-notes/v4.3.0.md) · [4.2.1](docs/release-notes/v4.2.1.md) · [4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
 
-![Sci-Fi, Thermostat, Neon HUD and Evolution](docs/images/v4.0.0/hero-designs.png)
+![AIO designs: Isometric Rig, Isometric Rings and Signal Rack (demo readings)](docs/images/v4.4.0/aio-designs.png)
 
 ## New in 4.4.0
 
@@ -16,6 +16,16 @@ A portable hardware-monitoring sidebar for Windows 10 and 11 with **82 designs**
 - Removed from the selectors: Mainboard Typography, Data Matrix, Instruments, Strips; AIO Pop Console, AIO Chromatic; Aperture. Existing profiles migrate these designs to Standard while keeping their other widget settings.
 
 [4.4.0 release notes and screenshots](docs/release-notes/v4.4.0.md) · [Mainboard guide](docs/mainboard.md)
+
+### Mainboard previews
+
+All screenshots use demo readings.
+
+| Mainboard | Mainboard Cores | Mainboard Map |
+| --- | --- | --- |
+| <img src="docs/images/v4.4.0/mainboard-sidebar.png" width="220" alt="Mainboard sidebar"> | <img src="docs/images/v4.4.0/mainboard-cores.png" width="220" alt="Mainboard Cores sidebar"> | <img src="docs/images/v4.4.0/mainboard-map.png" width="220" alt="Mainboard Map sidebar"> |
+
+![Mainboard Map Desktop with demo readings](docs/images/v4.4.0/mainboard-desktop.png)
 
 ## New in 4.3.0
 

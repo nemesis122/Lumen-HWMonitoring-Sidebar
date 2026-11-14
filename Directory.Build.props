@@ -10,6 +10,7 @@
     <FileVersion>4.4.0.0</FileVersion>
     <InformationalVersion>4.4.0</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
     <Product>Lumen</Product>
     <Company>Lumen</Company>
     <NuGetAudit>false</NuGetAudit>
