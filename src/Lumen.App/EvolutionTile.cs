@@ -195,7 +195,9 @@ public sealed class EvolutionTile : SummaryTile
 		slim.IsVisible = compact;
 		if (compact)
 		{
-			var parts = new List<string> { (sum.Value + " " + sum.Unit).Trim() };
+			// Without a temperature the big number is the load already: it is named once.
+			var parts = new List<string>();
+			if (!LoadIsHero && sum.Value.Length > 0 && sum.Value != "—") parts.Add((sum.Value + " " + sum.Unit).Trim());
 			if (idleGpu!.Load is double l) parts.Add(Format.Percent(l) + " " + L.T("Load"));
 			if (WidgetSensors.Vram(idleGpu, S) is { Length: > 0 } vram && idleGpu.MemoryTotalMb > 0) parts.Add(vram);
 			slim.Text = string.Join("  ·  ", parts);

@@ -10,6 +10,7 @@ public static class Readings
 {
     public static List<Reading> For(WidgetKind kind, int index, Snapshot s, History h, Settings set, Palette p)
     {
+        Unreported.Note(set, s);
         var rows = CompleteReadings.For(kind, index, s, h, set, p);
         return Steady.Keep("readings|" + kind + "|" + index, set, s,
             Raw(kind, index, s, h, set, p).Where(r => set.Shows(WidgetSensors.ReadingKey(kind, r.Label))).ToList(),

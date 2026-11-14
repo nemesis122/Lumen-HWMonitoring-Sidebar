@@ -24,6 +24,9 @@ public static class WidgetSensors
         Set(key, selected);
         if(selected&&key.StartsWith("aio."))
             foreach(var group in AioReadings.Groups.Where(g=>key.StartsWith(g.Key+".")))Set(group.Key,true);
+        // A value of a further graphics card (integrated graphics too) brings that card into the AIO card.
+        if(selected&&key.StartsWith("aio.gpu.")&&!key.EndsWith(".extra")&&key.LastIndexOf('.')>"aio.gpu.".Length)
+            Set(key[..key.LastIndexOf('.')]+".extra",true);
         if (Groups.TryGetValue(key, out var children)) foreach (string child in children) Set(child, selected);
         if (selected) foreach (var group in Groups.Where(g => g.Value.Contains(key))) Set(group.Key, true);
         string? prefix = key == "cooling.fans" ? "fan:" : key == "cooling.board" ? "temp:" : null;

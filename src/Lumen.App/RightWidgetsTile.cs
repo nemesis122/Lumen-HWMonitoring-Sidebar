@@ -58,8 +58,9 @@ public sealed class RightWidgetsTile : AppleTile
         main.Text = sum.Value == "—" ? "—" : sum.Value + (sum.Unit is "°C" or "°F" ? "°" : sum.Unit);
         BindPrimary(main);
         secondary.Text = sum.Second is double load ? Format.Percent(load * 100) : "—"; BindSecondary(secondary);
-        secondary.IsVisible = S.Shows(WidgetSensors.SecondaryKey(Kind));
-        temperatureRing.IsVisible = S.Shows(WidgetSensors.PrimaryKey(Kind));
+        // Without a temperature the load is the big number already: one ring, no second line.
+        secondary.IsVisible = S.Shows(WidgetSensors.SecondaryKey(Kind)) && !LoadIsHero;
+        temperatureRing.IsVisible = S.Shows(WidgetSensors.PrimaryKey(Kind)) || LoadIsHero;
         loadRing.IsVisible = secondary.IsVisible;
         temperatureRing.Set(sum.Value == "—" ? 0 : sum.Fraction, Opaque(Shade(sum)), RingTrack);
         loadRing.Set(sum.Second ?? 0, Tint, RingTrack);

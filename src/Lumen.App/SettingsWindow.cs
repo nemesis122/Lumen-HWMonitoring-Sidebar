@@ -81,6 +81,10 @@ public sealed class SettingsWindow : Window
 
 	private readonly Func<Snapshot?> snapshot;
 
+	// The AIO choice that adds the integrated graphics of the current computer.
+	private bool IntegratedExtra(string key) =>
+		snapshot()?.Gpus.Any(g => g.Integrated && GpuGroup.ExtraKey(g) == key) == true;
+
 	private WidgetSlot? dragging;
 
 	private double dragStart;
@@ -1722,6 +1726,10 @@ public sealed class SettingsWindow : Window
                 integrated.IsCheckedChanged += (_, _) =>
                 {
                     s.ShowIntegratedGpu = integrated.IsChecked == true;
+                    // The AIO card follows the same switch.
+                    if (s.Widgets.FirstOrDefault(w => w.Kind == WidgetKind.Overview) is WidgetSlot overview && this.snapshot() is Snapshot current)
+                        foreach (var g in current.Gpus.Where(g => g.Integrated && g != GpuGroup.Main(GpuGroup.All(current))))
+                            WidgetSensors.Select(s, overview, GpuGroup.ExtraKey(g), s.ShowIntegratedGpu, current);
                     changed();
                     Build();
                 };
@@ -1748,11 +1756,15 @@ public sealed class SettingsWindow : Window
                     {
                         Name = "sensor-" + aioKey.Replace(':', '-').Replace('.', '-'),
                         Content = option.Label.StartsWith("AIO · ") ? option.Label[6..] : option.Label,
-                        IsChecked = s.ForSlot(aioSlot).Shows(aioKey) && (!aioKey.StartsWith("aio.cooling.") || aioShown.Contains(aioKey)),
+                        IsChecked = s.ForSlot(aioSlot).Shows(aioKey) && (!aioKey.StartsWith("aio.cooling.") || aioShown.Contains(aioKey))
+                            || IntegratedExtra(aioKey) && s.ShowIntegratedGpu,
                         FontSize = 12.5, Margin = new Thickness(0, 1), Tag = aioKey
                     };
                     aioCheck.IsCheckedChanged += (_, _) =>
                     {
+                        // The integrated graphics in the AIO card and the "Integrated graphics" switch are one choice.
+                        if (IntegratedExtra(aioKey)) s.ShowIntegratedGpu = aioCheck.IsChecked == true;
+                        else if (aioCheck.IsChecked == true && IntegratedExtra(aioKey[..Math.Max(0, aioKey.LastIndexOf('.'))] + ".extra")) s.ShowIntegratedGpu = true;
                         WidgetSensors.Select(s, aioOverview, aioKey, aioCheck.IsChecked == true, this.snapshot());
                         changed(); Build();
                     };

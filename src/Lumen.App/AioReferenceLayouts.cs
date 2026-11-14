@@ -169,7 +169,7 @@ public sealed partial class AioTile
         if(diagram || style is WidgetStyle.AioMainboardStrips or WidgetStyle.AioMainboardGauges or WidgetStyle.AioMainboardMatrix or WidgetStyle.AioMainboardType)
         {
             if(snapshot.Cpu!=null)Add(WidgetKind.Cpu,"CPU","CPU",snapshot.Cpu.Name);
-            var gpus=GpuGroup.Visible(snapshot,settings).Where(g=>referenceRows.Any(r=>r.Group=="GPU"&&r.Device==g.Id)).ToList();for(int i=0;i<gpus.Count;i++)Add(WidgetKind.Gpu,"GPU","GPU",gpus[i].Name,i);
+            var gpus=GpuGroup.All(snapshot).Where(g=>referenceRows.Any(r=>r.Group=="GPU"&&r.Device==g.Id)).ToList();for(int i=0;i<gpus.Count;i++)Add(WidgetKind.Gpu,"GPU","GPU",gpus[i].Name,i);
         }
         // Drive and network model names are not listed in AIO cards (user request); drives are named by their letters.
         if(names.Children.Count>0)content.Children.Add(new Border{Padding=new Thickness(9,2,9,7),Child=names});

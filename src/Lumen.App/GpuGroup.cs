@@ -8,11 +8,20 @@ public static class GpuGroup
 {
 	public static IReadOnlyList<GpuInfo> Visible(Snapshot snap, Settings settings)
 	{
+		Unreported.Note(settings, snap);
+		return Listed(snap, settings);
+	}
+
+	internal static IReadOnlyList<GpuInfo> Listed(Snapshot snap, Settings settings)
+	{
 		return (from g in snap.Gpus
 			where settings.ShowIntegratedGpu || !g.Integrated || snap.Gpus.All((GpuInfo x) => x.Integrated)
 			orderby g.Integrated ? 1 : 0
 			select g).ToList();
 	}
+
+	/// <summary>Every graphics card, integrated ones included, dedicated ones first (the AIO card lists them all).</summary>
+	public static IReadOnlyList<GpuInfo> All(Snapshot snap) => snap.Gpus.OrderBy(g => g.Integrated ? 1 : 0).ToList();
 
 	/// <summary>The main graphics card: a dedicated one before an integrated one, the one with the most memory first.</summary>
 	public static GpuInfo? Main(IEnumerable<GpuInfo> gpus) =>

@@ -80,7 +80,13 @@ public sealed class GpuCard : Card
 					}
 				}
 			}
-			vram.Text = "—";
+			// Integrated graphics share the main memory and often have no total of their own: show the used part alone.
+			if (g?.MemoryUsedMb.HasValue == true && !S.Shows("gpu.vram.total") && S.Shows("gpu.vram.used"))
+			{
+				Motion.Text(vram, WidgetSensors.Vram(g, S));
+				vramBar.IsVisible = false;
+			}
+			else vram.Text = "—";
 			vramBar.Set(0.0, P.Cool);
 		}
 		goto IL_0243;

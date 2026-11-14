@@ -16,6 +16,7 @@ public static class CompleteReadings
             && !(style.HasValue && DriveTransferPairs.Applies(style.Value) && DriveTransferPairs.IsRate(r))).ToList();
     public static List<CompleteReading> For(WidgetKind kind, int index, Snapshot s, History h, Settings set, Palette p)
     {
+        Unreported.Note(set, s);
         var rows = new List<CompleteReading>();
         void Add(string key, string label, string value, double? fraction = null, string? identity = null, bool address = false)
         {

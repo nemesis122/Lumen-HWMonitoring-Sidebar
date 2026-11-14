@@ -32,17 +32,21 @@ public static class AioReadings
         var c=s.Cpu;
         Add("aio.cpu.temp","CPU","Temp.",Temp(c?.Temperature),c?.Temperature,100,"cpu.temp");
         Add("aio.cpu.load","CPU","Load",Format.Percent(c?.Load),c?.Load,100,"cpu.load");
-        Add("aio.cpu.clock","CPU","Clock",Format.Clock(c?.ClockMhz),c?.ClockMhz,6000);
-        Add("aio.cpu.voltage","CPU","Vcore",Volts(c?.Voltage),c?.Voltage,2);
-        Add("aio.cpu.power","CPU","Package",Format.Watts(c?.PowerW),c?.PowerW,250);
+        // A value the processor never reported (no Vcore on many laptops) is left out instead of "—".
+        bool cpuNone(double? x,string what)=>c!=null&&!x.HasValue&&(c.Temperature??c.Load).HasValue&&!Unreported.Reported("cpu:"+c.Name,what,x);
+        if(!cpuNone(c?.ClockMhz,"clock"))Add("aio.cpu.clock","CPU","Clock",Format.Clock(c?.ClockMhz),c?.ClockMhz,6000);
+        if(!cpuNone(c?.Voltage,"voltage"))Add("aio.cpu.voltage","CPU","Vcore",Volts(c?.Voltage),c?.Voltage,2);
+        if(!cpuNone(c?.PowerW,"power"))Add("aio.cpu.power","CPU","Package",Format.Watts(c?.PowerW),c?.PowerW,250);
         var nodes=Flatten(s.HardwareSensors).ToList();
         foreach (var node in nodes.Where(n=>n.Type=="Cpu"))
             foreach(var sensor in node.Sensors.Where(v=>v.Type=="Temperature" && Regex.IsMatch(v.Name,@"(?:Core|Kern)\s*#?\s*\d+",RegexOptions.IgnoreCase)
                 && !Regex.IsMatch(v.Name,"Max|Average|Distance|Tj",RegexOptions.IgnoreCase)).OrderBy(v=>v.Index))
                 Add("aio.cpu.core."+Identity(node,sensor),"Cores",sensor.Name,Temp(sensor.Value),sensor.Value,100);
         // Only the main graphics card by default; a further card appears when it is ticked in the settings.
-        var visibleGpus=GpuGroup.Visible(s,settings);var mainGpu=GpuGroup.Main(visibleGpus);
-        var gpus=visibleGpus.Where(g=>g==mainGpu||listingAllFans||Selected(settings,GpuGroup.ExtraKey(g))).OrderBy(g=>g==mainGpu?0:1).ToArray();
+        // Integrated graphics are a further card too: shown when ticked here or under "Integrated graphics".
+        var visibleGpus=GpuGroup.All(s);var mainGpu=GpuGroup.Main(visibleGpus);
+        var gpus=visibleGpus.Where(g=>g==mainGpu||listingAllFans||Selected(settings,GpuGroup.ExtraKey(g))
+            ||g.Integrated&&settings.ShowIntegratedGpu&&settings.Shows("aio.gpu")).OrderBy(g=>g==mainGpu?0:1).ToArray();
         foreach(var g in gpus)
         {
             string k="aio.gpu."+g.Id+".";
@@ -50,7 +54,10 @@ public static class AioReadings
             var v=node?.All.Where(x=>x.Type=="Voltage" && Regex.IsMatch(x.Name,"Core|GPU|VDDC",RegexOptions.IgnoreCase)).FirstOrDefault();
             // Integrated graphics often have no temperature or voltage sensors at all: those rows are left out
             // instead of showing an empty big number ("— °C"); the load then becomes the main value.
-            bool none(double? x)=>g.Integrated&&!x.HasValue;
+            // The same for any card without such a sensor (many cards report no core voltage): a value the card
+            // never reported is left out, one that drops out for a moment keeps its place.
+            bool none(double? x,[System.Runtime.CompilerServices.CallerArgumentExpression(nameof(x))]string what="")=>
+                !x.HasValue&&(g.Integrated||(g.Temperature??g.Load).HasValue)&&!Unreported.Reported(g.Id,what,x);
             if(!none(g.Temperature))Add(k+"temp","GPU","Temp.",Temp(g.Temperature),g.Temperature,100,"gpu."+g.Id+".temp",g.Id);
             if(!none(g.HotSpot))Add(k+"hotspot","GPU","Hotspot",Temp(g.HotSpot),g.HotSpot,110,device:g.Id);
             if(!none(g.MemoryJunction))Add(k+"junction","GPU","VRAM Temp.",Temp(g.MemoryJunction),g.MemoryJunction,110,device:g.Id);
@@ -58,7 +65,9 @@ public static class AioReadings
             if(!none(v?.Value))Add(k+"voltage","GPU","Voltage",Volts(v?.Value),v?.Value,2,device:g.Id);
             Add(k+"power","GPU","Power",Format.Watts(g.PowerW),g.PowerW,450,"aio.power."+g.Id,g.Id);
             Add(k+"clock","GPU","Clock",g.ClockMhz.HasValue?Format.Number(g.ClockMhz)+" MHz":"—",g.ClockMhz,3500,device:g.Id);
-            Add(k+"vram","GPU","VRAM",g.MemoryUsedMb.HasValue && g.MemoryTotalMb.HasValue ? Format.Number(g.MemoryUsedMb/1024,"0.#")+" / "+Format.Gigabytes(g.MemoryTotalMb/1024) : "—",g.MemoryUsedMb,Math.Max(1,g.MemoryTotalMb??16384),device:g.Id);
+            // Integrated graphics share the main memory and often report no total: the used part alone.
+            if(!none(g.MemoryUsedMb))Add(k+"vram","GPU","VRAM",g.MemoryUsedMb.HasValue && g.MemoryTotalMb.HasValue ? Format.Number(g.MemoryUsedMb/1024,"0.#")+" / "+Format.Gigabytes(g.MemoryTotalMb/1024)
+                : g.MemoryUsedMb.HasValue && !Unreported.Reported(g.Id,"total",g.MemoryTotalMb) ? Format.Gigabytes(g.MemoryUsedMb/1024) : "—",g.MemoryUsedMb,Math.Max(1,g.MemoryTotalMb??16384),device:g.Id);
         }
         var fans=new List<(string Id,string Name,double? Rpm)>();
         var skippedFans=new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -146,7 +155,7 @@ public static class AioReadings
         yield return ("aio.cpu.coreloads","AIO · CPU · "+L.T("Core load"));
         yield return ("aio.cpu.cores","AIO · "+L.T("Core temperatures"));
         if(snapshot==null)yield break;
-        var cards=GpuGroup.Visible(snapshot,new Settings());var main=GpuGroup.Main(cards);
+        var cards=GpuGroup.All(snapshot);var main=GpuGroup.Main(cards);
         int number=2;
         foreach(var g in cards.Where(g=>g!=main))yield return (GpuGroup.ExtraKey(g),"AIO · GPU "+number+++" · "+g.Name);
         // The choices list every fan that reports a reading – also one that never turned, so it can be ticked.

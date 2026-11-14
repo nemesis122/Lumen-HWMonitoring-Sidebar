@@ -47,6 +47,8 @@ public sealed class SidebarView : Border
 
 	private int gpuCount = 1;
 
+	private string unreported = "";
+
 	private Metrics metrics;
 
 	private bool compacted;
@@ -661,9 +663,12 @@ public sealed class SidebarView : Border
 		statusText.Text = text;
 		hint.IsVisible = s.Access == SensorAccess.Limited;
 		int num = Math.Max(1, GpuGroup.Visible(s, settings).Count);
-		if (num != gpuCount)
+		// Values a processor or graphics card does not have are left out of every design: rebuild once they are known.
+		string missing = Unreported.Signature(s, settings);
+		if (num != gpuCount || missing != unreported)
 		{
 			gpuCount = num;
+			unreported = missing;
 			BuildCards();
 		}
 		foreach (IWidget widget in widgets)

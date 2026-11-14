@@ -372,7 +372,9 @@ public static class SensorPicker
 		{
 			if (h.Type == "GpuAmd")
 			{
-				return Regex.IsMatch(h.Name, "Radeon(\\(TM\\))? (Graphics|Vega)|Radeon \\d{3}M|Radeon\\(TM\\) \\d{3}M", RegexOptions.IgnoreCase);
+				// Processor graphics: "Radeon(TM) Graphics", "Radeon Vega 8 Graphics", "Radeon RX Vega 11 Graphics",
+				// "Radeon 780M", "Radeon(TM) 8060S Graphics" – not "Radeon RX 7900 XTX" or "Radeon RX 6600M".
+				return Regex.IsMatch(h.Name, "Radeon(\\(TM\\))? (Graphics|Vega)|Radeon.*\\bGraphics\\s*$|Radeon(\\(TM\\))?\\s+\\d{3,4}[MS]\\b", RegexOptions.IgnoreCase);
 			}
 			return false;
 		}

@@ -22,7 +22,9 @@ public static class SensorMerge
 		foreach (GpuInfo p in primary)
 		{
 			GpuInfo gpuInfo = list2.FirstOrDefault((GpuInfo e) => Key(e.Name) == Key(p.Name));
-			if (gpuInfo == null && !p.Integrated && primary.Count((GpuInfo x) => !x.Integrated) == 1 && list2.Count == 1)
+			// The one card Open Hardware Monitor found is only taken for a differently named dedicated card when it is
+			// not the integrated graphics, whose readings would otherwise be mixed into the dedicated card.
+			if (gpuInfo == null && !p.Integrated && primary.Count((GpuInfo x) => !x.Integrated) == 1 && list2.Count == 1 && !list2[0].Integrated)
 			{
 				gpuInfo = list2[0];
 			}
@@ -155,12 +157,15 @@ public static class SensorMerge
 	{
 		List<GpuInfo> list = ext.ToList();
 		List<GpuInfo> list2 = new List<GpuInfo>();
-		foreach (GpuInfo p in local)
+		// Dedicated cards first: AIDA64 names its cards only "GPU 1", "GPU 2", so the integrated graphics get the
+		// card that is left over (fewest dedicated-card readings) instead of appearing twice – once empty and
+		// once as an unnamed dedicated card.
+		foreach (GpuInfo p in local.OrderBy((GpuInfo g) => g.Integrated ? 1 : 0))
 		{
 			GpuInfo gpuInfo = list.FirstOrDefault((GpuInfo e) => Key(e.Name) == Key(p.Name));
 			if ((object)gpuInfo == null)
 			{
-				gpuInfo = (p.Integrated ? (list.FirstOrDefault((GpuInfo e) => e.Integrated) ?? ((local.Count((GpuInfo x) => !x.Integrated) == 0) ? list.FirstOrDefault() : null)) : list.Where((GpuInfo e) => !e.Integrated).OrderByDescending(Dedicated).FirstOrDefault());
+				gpuInfo = (p.Integrated ? (list.FirstOrDefault((GpuInfo e) => e.Integrated) ?? list.OrderBy(Dedicated).ThenBy((GpuInfo e) => e.MemoryTotalMb ?? 0).FirstOrDefault()) : list.Where((GpuInfo e) => !e.Integrated).OrderByDescending(Dedicated).FirstOrDefault());
 			}
 			if (gpuInfo == null)
 			{

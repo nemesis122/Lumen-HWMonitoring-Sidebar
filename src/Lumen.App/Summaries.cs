@@ -21,6 +21,7 @@ public static class Summaries
 
     public static Summary For(WidgetKind kind, int index, Snapshot s, History h, Settings set, Palette p)
     {
+        Unreported.Note(set, s);
         var summary = Raw(kind, index, s, h, set, p);
         return WidgetSensors.FilterSummary(kind, summary, set);
     }
@@ -308,8 +309,11 @@ public static class Summaries
 		return d.Letters;
 	}
 
-	public static List<(string Label, string Value)> Extras(WidgetKind kind, int index, Snapshot s, History h, Settings set) =>
-		Steady.Keep("extras|" + kind + "|" + index, set, s, RawExtras(kind, index, s, h, set), e => e.Label, e => e.Value.Length == 0 || e.Value.StartsWith("—"));
+	public static List<(string Label, string Value)> Extras(WidgetKind kind, int index, Snapshot s, History h, Settings set)
+	{
+		Unreported.Note(set, s);
+		return Steady.Keep("extras|" + kind + "|" + index, set, s, RawExtras(kind, index, s, h, set), e => e.Label, e => e.Value.Length == 0 || e.Value.StartsWith("—"));
+	}
 
 	private static List<(string Label, string Value)> RawExtras(WidgetKind kind, int index, Snapshot s, History h, Settings set)
 	{

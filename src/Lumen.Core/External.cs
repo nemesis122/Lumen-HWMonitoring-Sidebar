@@ -462,6 +462,12 @@ public static class External
 						tuple = ("Load", "GPU Memory");
 						break;
 					}
+					// Integrated graphics report their load only as Direct3D usage.
+					if (label2.Equals("GPU D3D Usage", StringComparison.OrdinalIgnoreCase))
+					{
+						tuple = ("Load", "D3D 3D");
+						break;
+					}
 					goto default;
 				case 6:
 					if (label2.Equals("GPU Clock", StringComparison.OrdinalIgnoreCase) || label2.Equals("GPU Core Clock", StringComparison.OrdinalIgnoreCase))

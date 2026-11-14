@@ -76,6 +76,12 @@ public abstract class SummaryTile : Border, IWidget, INamed
 		snap = WidgetSensors.FilterSnapshot(snap, S);
 		Last = (Snap: snap, History: h);
 		Summary summary = Summaries.For(Kind, Index, snap, h, S, P);
+		// No temperature (unticked, or not reported as with many integrated graphics): the load becomes the
+		// big number with its own caption, instead of an empty "Temp" field beside it.
+		LoadIsHero = Kind is WidgetKind.Cpu or WidgetKind.Gpu && summary.Value.Length == 0 && summary.Second is double;
+		if (LoadIsHero && summary.Second is double load)
+			summary = summary with { Value = Format.Number(load * 100), Unit = "%", Fraction = System.Math.Clamp(load, 0, 1), Color = P.Cool,
+				HeroLabel = WidgetSensors.SecondaryLabel(Kind), Second = null, SecondLabel = "" };
 		Color tint = Shade(summary);
 		string text = summary.Glyph + "|" + tint;
 		if (glyph.Tag as string != text)
@@ -120,9 +126,12 @@ public abstract class SummaryTile : Border, IWidget, INamed
 
 	protected abstract void Show(Summary sum);
 
+    /// <summary>The big number shows the load because the widget has no temperature.</summary>
+    protected bool LoadIsHero { get; private set; }
+
     protected void BindPrimary(Control control)
     {
-        string key = WidgetSensors.PrimaryKey(Kind);
+        string key = LoadIsHero ? WidgetSensors.SecondaryKey(Kind) : WidgetSensors.PrimaryKey(Kind);
         if (Kind == WidgetKind.Cooling) key = Summaries.CoolingHero(Last.Snap) is { } t ? "temp:" + t.Name : "";
         if (Kind == WidgetKind.Drives) key = DriveOrdering.Order(Last.Snap.Disks, DriveOrdering.Mode(S)).FirstOrDefault(d => S.Shows("drive:" + d.Id)) is { } d ? "drive:" + d.Id + ":temp" : "";
         SensorDetails.Value(control, key);
