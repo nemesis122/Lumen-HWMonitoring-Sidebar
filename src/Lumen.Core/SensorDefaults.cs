@@ -4,7 +4,7 @@ namespace Lumen.Core;
 // Once migrated, individually enabled advanced readings survive subsequent loads.
 public static class SensorDefaults
 {
-    public const int SelectionVersion = 2;
+    public const int SelectionVersion = 3;
     public static readonly IReadOnlyDictionary<string, string[]> Groups = new Dictionary<string, string[]>
     {
         ["gpu.vram"] = new[] { "gpu.vram.used", "gpu.vram.total" },
@@ -19,13 +19,13 @@ public static class SensorDefaults
         "mem.peak", "drives.count", "drives.used",
         "drives.readactivity", "drives.writeactivity", "drives.totalactivity",
         "drives.free", "drives.total", "drives.powercount", "drives.hours", "drives.life",
-        "gpu.junction", "net.use", "net.peak", "net.address", "net.external", "net.quality"
+        "gpu.junction", "cooling.fancount", "net.use", "net.peak", "net.address", "net.external", "net.quality"
     };
 
     public static bool Recommended(string key) => !Optional.Contains(key);
     public static List<string> For(WidgetKind kind)
     {
-        string prefix = kind switch { WidgetKind.Cpu => "cpu.", WidgetKind.Memory => "mem.", WidgetKind.Drives => "drives.", WidgetKind.Gpu => "gpu.", WidgetKind.Network => "net.", _ => "" };
+        string prefix = kind switch { WidgetKind.Cpu => "cpu.", WidgetKind.Memory => "mem.", WidgetKind.Drives => "drives.", WidgetKind.Gpu => "gpu.", WidgetKind.Network => "net.", WidgetKind.Cooling => "cooling.", _ => "" };
         return prefix.Length == 0 ? new() : Optional.Where(k => k.StartsWith(prefix)).ToList();
     }
 }

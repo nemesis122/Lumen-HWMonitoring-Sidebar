@@ -339,7 +339,8 @@ public sealed partial class AioTile
         }
         if (drives.Length > 0)
         {
-            var mains = drives.Select(d => Take(d.Temp ?? d.Rows.FirstOrDefault(r => r.Key.EndsWith(".used")))).Where(r => r != null).Select(r => r!).ToArray();
+            // Only the drives drawn on the board (two) get the tag; further drives are listed in the grid below.
+            var mains = drives.Take(2).Select(d => Take(d.Temp ?? d.Rows.FirstOrDefault(r => r.Key.EndsWith(".used")))).Where(r => r != null).Select(r => r!).ToArray();
             if (mains.Length > 0)
             {
                 var names = Text(string.Join(" · ", drives.Where(d => mains.Any(m => m.Device == d.Id)).Select(d => AioReadings.DriveName(snapshot, d.Id))), 10, muted); names.TextWrapping = TextWrapping.NoWrap;
@@ -361,7 +362,8 @@ public sealed partial class AioTile
         {
             var label = IsoLabel(r);
             if (r.Group == "GPU" && gpuIds.Count > 1) return "GPU " + (gpuIds.IndexOf(r.Device) + 1) + " " + label;
-            if (r.Group == "Drives" || r.Key.StartsWith("aio.system.disk.")) return label + " " + AioReadings.DriveName(snapshot, r.Device ?? "");
+            if (r.Key.StartsWith("aio.system.disk.")) return "Temp " + AioReadings.DriveName(snapshot, r.Device ?? "");
+            if (r.Group == "Drives") return label + " " + AioReadings.DriveName(snapshot, r.Device ?? "");
             if (r.Group == "CPU" && r.Key.EndsWith(".power")) return "CPU " + label;
             if (r.Group == "GPU" && r.Key.EndsWith(".power")) return "GPU " + label;
             return label;

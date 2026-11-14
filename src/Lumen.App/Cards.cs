@@ -223,9 +223,10 @@ public static class Cards
 				("gpu.hotspot", L.T("Hot spot")),
 				("gpu.fan", L.T("Fan"))
 			},
-			WidgetKind.Cooling => new(string, string)[2]
+			WidgetKind.Cooling => new(string, string)[3]
 			{
 				("cooling.fans", L.T("Fans")),
+				("cooling.fancount", L.T("Running fans")),
 				("cooling.board", L.T("Board temperatures"))
 			},
 			WidgetKind.Memory => new(string, string)[4]

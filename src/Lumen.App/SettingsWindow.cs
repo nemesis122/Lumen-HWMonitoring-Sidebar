@@ -518,10 +518,8 @@ public sealed class SettingsWindow : Window
 		};
 		list.Add((L.T("System"), "M8,1.5 L13.5,3.5 V7.5 C13.5,11 11,13.5 8,14.5 C5,13.5 2.5,11 2.5,7.5 V3.5 Z M8,5 V8.5 M8,10.5 V11", new Control[2]
 		{
-			Section(L.T("System"), Row(L.T("Language"), Choice(list2, selected, delegate(int i)
-			{
-				s.Language = ((i == 0) ? "auto" : L.Choices[i - 1].Code);
-			}, rebuild: true), null, "Language"), Row(L.T("Start with Windows"), editor, L.T("Starts with administrator rights, without a prompt.")), Ui.Stack(0.0, textBlock, button), ExecutableLocation.Create(p, true), Row(L.T("Sensors"), button2, L.T("Lists everything LibreHardwareMonitor and Open Hardware Monitor found.")), Row(L.T("Error report"), button3, (reportMessage.Length > 0) ? reportMessage : L.T("One ZIP file with error log, sensor lists and settings – without notes, places or own names. Nothing is sent."))),
+			// Lumen is English only: no language choice.
+			Section(L.T("System"), Row(L.T("Start with Windows"), editor, L.T("Starts with administrator rights, without a prompt.")), Ui.Stack(0.0, textBlock, button), ExecutableLocation.Create(p, true), Row(L.T("Sensors"), button2, L.T("Lists everything LibreHardwareMonitor and Open Hardware Monitor found.")), Row(L.T("Error report"), button3, (reportMessage.Length > 0) ? reportMessage : L.T("One ZIP file with error log, sensor lists and settings – without notes, places or own names. Nothing is sent."))),
 			Ui.Text("Lumen " + typeof(SettingsWindow).Assembly.GetName().Version?.ToString(3) + " · " + L.F("Settings stored in {0}", System.IO.Path.GetFileName(platform.SettingsPath)), 11.0, p.Faint)
 		}));
 		pageIndex = Math.Clamp(pageIndex, 0, list.Count - 1);

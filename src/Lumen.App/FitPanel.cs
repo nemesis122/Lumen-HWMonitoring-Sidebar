@@ -485,7 +485,7 @@ public sealed class FitPanel : Panel
 					Remeasure(column, changed, colWidth / s);
 				}
 				double over = stretch ? column.DesiredSize.Height - goal : 0.0;
-				if (over < -2.5 && p.Cards.Count > 0 && attempt < 7)
+				if (over < -1.0 && p.Cards.Count > 0 && attempt < 7)
 				{
 					// Still short (rows that did not take their share, charts at their limit): the
 					// widgets take the rest, so the column ends on the bottom line.

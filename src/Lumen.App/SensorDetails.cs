@@ -61,6 +61,16 @@ public sealed class SensorDetails : StackPanel
     // Used only by legacy layout adapters: a label resolves to a stable ID, never by comparing numbers.
     public static string LabelKey(WidgetKind kind, string label, IReadOnlyList<CompleteReading> rows, string unitHint = "")
     {
+        // Labels may be shown with their short names ("Clk", "W", "Hot" …): try the full names too.
+        var key = LabelKeyOf(kind, label, rows, unitHint);
+        if (key.Length > 0) return key;
+        foreach (var longer in ShortNames.Longer(label))
+            if (LabelKeyOf(kind, longer, rows, unitHint) is { Length: > 0 } found) return found;
+        return "";
+    }
+
+    private static string LabelKeyOf(WidgetKind kind, string label, IReadOnlyList<CompleteReading> rows, string unitHint)
+    {
         // A Celsius unit is not the drive letter C: when legacy rows reuse their controls.
         if (label.Trim() is "°C" or "°F") return "";
         string Norm(string x) => new(x.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());

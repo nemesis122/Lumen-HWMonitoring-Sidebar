@@ -115,7 +115,7 @@ public class NoRepeatTests
             var sum = Summaries.For(WidgetKind.Cooling, 0, snapshot, history, set, Palette.For(true, false));
             return (sum.HeroLabel, Summaries.Extras(WidgetKind.Cooling, 0, snapshot, history, set).Select(e => e.Label).ToList());
         });
-        Assert.Equal("Mainboard", label);
-        Assert.DoesNotContain("Mainboard", extras);
+        Assert.Equal("Board", label);
+        Assert.DoesNotContain("Board", extras);
     }
 }

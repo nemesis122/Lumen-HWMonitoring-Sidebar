@@ -1,10 +1,22 @@
-# Lumen 4.2.1 – All-in-One
+# Lumen 4.3.0 – All-in-One
 
 A portable hardware-monitoring sidebar for Windows 10 and 11 with **81 designs**, including **18 All-in-One designs** that show the whole PC in one card. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
 
-**[Download Lumen 4.2.1](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.2.1)** · [All designs](docs/style-gallery.md) · [Release notes 4.2.1](docs/release-notes/v4.2.1.md) · [4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
+**[Download Lumen 4.3.0](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.3.0)** · [All designs](docs/style-gallery.md) · [Release notes 4.3.0](docs/release-notes/v4.3.0.md) · [4.2.1](docs/release-notes/v4.2.1.md) · [4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
 
 ![Sci-Fi, Thermostat, Neon HUD and Evolution](docs/images/v4.0.0/hero-designs.png)
+
+## New in 4.3.0
+
+- **English only** with short labels: CPU, GPU, RAM, DL/UP, Temp, Volt, R/W. Hotspot, Clock and Power keep their full names.
+- **Only the main graphics card** is shown by default; the "Fans 2/2" count is off by default.
+- Narrow AIO designs show drives in two columns; Isometric Rig no longer squeezes all drives into one tag.
+- Widget fixes: no repeated "C:" in drives, "Chip Fan" instead of a second "Chip", "0 rpm" for stopped fans everywhere, no broken words in Split Lens, readable captions in Dial, Sci-Fi and Thermostat.
+- Verified with 4,615 tests.
+
+![Before and after in the widget designs (demo data)](docs/images/v4.3.0/widget-fixes.png)
+
+[Full 4.3.0 release notes](docs/release-notes/v4.3.0.md)
 
 ## New in 4.2.1
 
@@ -105,7 +117,7 @@ Automatic selection and fallback are supported. Hardware, permissions and availa
 - Automatic density, adjustable text size, custom titles and hardware names.
 - CPU, discrete/integrated GPU, memory, drives, storage space, network, cooling, power, FPS, ping, battery, system, weather, clocks, calendar, media, usage and notes.
 - Colour presets, state colours, Windows accent, theme files, glass and several typefaces.
-- English, German, French, Italian, Spanish and Portuguese.
+- English interface with short, compact labels.
 
 ## Diagnostics
 
@@ -115,7 +127,7 @@ Logs and reports stay local. Nothing is uploaded automatically.
 
 ## Download and run
 
-Download **Lumen-4.2.1.exe** for the portable application, or the portable ZIP with licence files. No separate .NET installation is required. Close an older running instance before starting the new EXE. Settings are stored beside the EXE, with an AppData fallback when that folder is read-only.
+Download **Lumen-4.3.0.exe** for the portable application, or the portable ZIP with licence files. No separate .NET installation is required. Close an older running instance before starting the new EXE. Settings are stored beside the EXE, with an AppData fallback when that folder is read-only.
 
 The release also includes the complete source archive, all gallery images and SHA-256 checksums.
 

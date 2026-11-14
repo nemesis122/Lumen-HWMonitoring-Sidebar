@@ -148,15 +148,15 @@ public class SegmentGraphTests
     public void Every_value_has_a_segment_line_and_hidden_ones_stay_away()
     {
         var all = Lines(WidgetKind.Cpu, _ => { });
-        Assert.Contains("Takt", all);
-        Assert.Contains("Spannung", all);
+        Assert.Contains("Clock", all);
+        Assert.Contains("Volt", all);
         int meters = int.Parse(all.Single(t => t.StartsWith("meters=")).Split('=')[1]);
         Assert.True(meters >= 5, string.Join(" | ", all));
         var options = WidgetSensors.Options(WidgetKind.Cpu, Render.Demo().Item1).ToList();
-        string voltage = options.First(o => o.Label.Contains("Spannung")).Key;
+        string voltage = options.First(o => o.Label.Contains("Voltage")).Key;
         var fewer = Lines(WidgetKind.Cpu, w => w.HiddenSensors.Add(voltage));
-        Assert.DoesNotContain("Spannung", fewer);
-        Assert.Contains("Takt", fewer);
+        Assert.DoesNotContain("Volt", fewer);
+        Assert.Contains("Clock", fewer);
     }
 }
 

@@ -31,7 +31,7 @@ public class AioJumpTests
     [MemberData(nameof(Styles))]
     public void Nothing_jumps_when_values_change(WidgetStyle style)
     {
-      foreach (var (width, lang, real) in new[] { (260, "en", true), (240, "de", true), (320, "de", false), (240, "de", false) })
+      foreach (var (width, lang, real, twoGpus) in new[] { (260, "en", true, false), (240, "de", true, false), (320, "de", false, false), (240, "de", false, false), (300, "en", false, true), (300, "en", true, true) })
       {
         var report = UiHost.Run(() =>
         {
@@ -47,6 +47,7 @@ public class AioJumpTests
                 foreach (var w in settings.Widgets.Where(w => w.Kind == WidgetKind.Overview)) w.AioEnabledSensors = AioReadings.Options(demo).Select(o => o.Key).ToList();
             }
             foreach (var w in settings.Widgets) if (Settings.HasStyles(w.Kind) && AioDesigns.Hardware(w.Kind)) w.Style = style;
+            if (twoGpus && !real) foreach (var w in settings.Widgets.Where(w => w.Kind == WidgetKind.Overview)) (w.AioEnabledSensors ??= new()).Add("aio.gpu.gpu0b.extra");
             L.Use(settings.Language);
             var source = new DemoSource(); var history = new History();
             var view = new SidebarView(settings, Palette.For(true, false));
@@ -56,7 +57,10 @@ public class AioJumpTests
             var log = new List<string>();
             for (int i = 0; i < 24; i++)
             {
-                var snap = source.Read(); history.Record(snap);
+                var snap = source.Read();
+                // A second graphics card (shown only when ticked: the main card is the default).
+                if (twoGpus) { var g = snap.Gpus.First(x => !x.Integrated); snap = snap with { Gpus = new[] { g, g with { Id = g.Id + "b", Name = "Second card", MemoryTotalMb = 8192 } } }; }
+                history.Record(snap);
                 view.Update(i < 6 ? snap with { Battery = null } : Vary(snap, i), history);
                 for (int k = 0; k < 3; k++) { Dispatcher.UIThread.RunJobs(); window.CaptureRenderedFrame(); }
                 // From the third changed reading on: by then each value has been shown at its widest once (a value too wide for

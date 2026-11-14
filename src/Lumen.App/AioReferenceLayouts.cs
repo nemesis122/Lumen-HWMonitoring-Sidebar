@@ -163,7 +163,7 @@ public sealed partial class AioTile
         if(diagram)
         {
             if(snapshot.Cpu!=null)Add(WidgetKind.Cpu,"CPU","CPU",snapshot.Cpu.Name);
-            var gpus=GpuGroup.Visible(snapshot,settings);for(int i=0;i<gpus.Count;i++)Add(WidgetKind.Gpu,"GPU","GPU",gpus[i].Name,i);
+            var gpus=GpuGroup.Visible(snapshot,settings).Where(g=>referenceRows.Any(r=>r.Group=="GPU"&&r.Device==g.Id)).ToList();for(int i=0;i<gpus.Count;i++)Add(WidgetKind.Gpu,"GPU","GPU",gpus[i].Name,i);
         }
         // Drive and network model names are not listed in AIO cards (user request); drives are named by their letters.
         if(names.Children.Count>0)content.Children.Add(new Border{Padding=new Thickness(9,2,9,7),Child=names});
@@ -295,6 +295,19 @@ public sealed partial class AioTile
             else
             {
                 bool sculpted=style is WidgetStyle.AioAuroraFusion or WidgetStyle.AioPopConsole or WidgetStyle.AioCarbonPulse;
+                // In a narrow card four columns make every value tiny: then two columns, rates on the first line
+                // (R · W) and temperature and fill level on the second, the same for every drive.
+                bool narrow=parts.Length>2&&settings.Width/Math.Max(.5,slot?.WidgetScale??1)<300;
+                if(narrow)
+                {
+                    var lines=new[]{new[]{"read","write"},new[]{"temp","used"}}.Select(line=>line.Where(parts.Contains).ToArray()).Where(line=>line.Length>0);
+                    foreach(var line in lines)
+                    {
+                        var pair=Ui.Columns("*,*",line.Select(part=>DriveCell(items,part,sculpted,Part)).Concat(line.Length==1?new Control[]{new Border()}:Array.Empty<Control>()).ToArray());
+                        pair.ColumnSpacing=6;body.Children.Add(pair);
+                    }
+                    continue;
+                }
                 // Rates need more room than temperature and fill level; the same weights for every drive keep the columns aligned.
                 var driveColumns=Ui.Columns(string.Join(',',parts.Select(part=>part is "read" or "write"?"1.2*":".8*")),parts.Select(part=>
                 {
@@ -311,6 +324,15 @@ public sealed partial class AioTile
         // A temperature row consumed here is the original reading; mark it so it is not repeated.
         foreach(var id in ids)referenceUsed.Add("aio.system.disk."+id);
         return body.Children.Count==0?null:body;
+    }
+    private Control DriveCell(List<AioReading> items,string part,bool sculpted,Func<AioReading,string> Part)
+    {
+        var r=items.FirstOrDefault(x=>Part(x)==part);if(r==null)return new Border();
+        var value=Fit(V(r,style==WidgetStyle.AioTypeBlock?17:15,style==WidgetStyle.AioPopConsole?ink:Accent(r)));
+        if(value is Decorator{Child:Viewbox box})box.HorizontalAlignment=HorizontalAlignment.Left;
+        Control cell=Stack(1,FitLeft(Text(Translate(L.T(r.Label)),sculpted?10:11,style==WidgetStyle.AioPopConsole?ink:muted)),value);
+        if(sculpted&&part=="used")cell=Stack(4,cell,Meter(r));
+        return cell;
     }
     private void ReferenceDrives()
     {
@@ -396,7 +418,7 @@ public sealed partial class AioTile
             left.Children.Add(Text("CPU · "+Translate("Core temperatures")+" ("+Format.TemperatureUnit(settings.Fahrenheit)+")",12));
             left.Children.Add(new StatPanel(Array.Empty<double>(),cores.Select((r,i)=>
             {
-                var label=Text("K"+(i+1),12);label.TextAlignment=TextAlignment.Center;var value=V(r,22);formats[value]=row=>Format.Temperature(row.Number,settings.Fahrenheit)+"°";value.Text=formats[value](r);value.TextAlignment=TextAlignment.Center;
+                var label=Text("C"+(i+1),12);label.TextAlignment=TextAlignment.Center;var value=V(r,22);formats[value]=row=>Format.Temperature(row.Number,settings.Fahrenheit)+"°";value.Text=formats[value](r);value.TextAlignment=TextAlignment.Center;
                 var box=new Border{Padding=new Thickness(2,12),Margin=new Thickness(0,0,3,0),BorderBrush=Palette.Brush(track),BorderThickness=new Thickness(1),CornerRadius=new CornerRadius(3),Child=Stack(1,label,value)};heat.Add((r.Key,box));return (Control)box;
             }).ToArray()){MaxColumns=4,MinimumColumnWidth=43,RespectIntrinsicWidth=false,RowSpacing=4});
         }
@@ -432,7 +454,7 @@ public sealed partial class AioTile
         var ram=R("ram","System");if(ram!=null)RefSection(Stack(4,Ui.Columns("*,Auto",Text((++index).ToString("00")+"   RAM · "+L.T("Load"),14),V(ram,18)),HistoryPlot(ram,29,"area",Purple)),Cyan);
         foreach(var r in referenceRows.Where(r=>r.Key.EndsWith(".voltage")))RefSection(Ui.Columns("*,Auto",Text((++index).ToString("00")+"   "+r.Group+" · "+L.T("Voltage"),13),V(r,18)),Cyan);
         var fans=Rs("Cooling");if(AioReadings.Selected(settings,"aio.cooling"))Band(L.T("Cooling")+" (rpm)",fans.Length==0?Text(L.T("No data"),12):Stack(7,fans.Select((r,i)=>RefRow(r,true,3,ColorsFor(i))).ToArray()));
-        var rails=Rs("Rails");if(rails.Length>0)Band(Translate(L.T("Voltages")),Cols(3,rails.Select((r,i)=>(Control)new Border{BorderBrush=Palette.Brush(ColorsFor(i)),BorderThickness=new Thickness(1),CornerRadius=new CornerRadius(6),Padding=new Thickness(4),Child=V(r,17)}).ToArray()));
+        var rails=Rs("Rails");if(rails.Length>0)Band(Translate(L.T("Voltages")),Cols(3,rails.Select((r,i)=>(Control)new Border{BorderBrush=Palette.Brush(ColorsFor(i)),BorderThickness=new Thickness(1),CornerRadius=new CornerRadius(6),Padding=new Thickness(4),Child=Stack(0,Text(r.Label,11,muted),Fit(V(r,17)))}).ToArray()));
         drivesPlaced=true;if(DrivesBody() is Control drives)Band(L.T("Drives"),drives);
         var down=R("down","Network");var up=R("up","Network");var link=R("link","Network");
         if(down!=null||up!=null)Band(L.T("Network"),Ui.Columns("2*,1*",HistoryPlot(down??up!,64,up!=null&&down!=null?"mirror":"area",Cyan,down!=null?up:null),Stack(12,Rs("Network").Where(r=>r!=link).Select(r=>FitLeft(V(r,13,r==down?Cyan:Amber))).ToArray())));

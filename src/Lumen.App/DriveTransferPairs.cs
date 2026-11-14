@@ -31,7 +31,8 @@ public sealed class DriveTransferPairs : StackPanel
             {
                 string driveName = disk.First().Label.Split(" · ")[0];
                 var group = Ui.Stack(local ? 1 : 3);
-                if (!local) group.Children.Add(Ui.Text(driveName, 10.5, palette.Soft));
+                // No separate drive line above the rates (it repeated the "C:" right under the temperature):
+                // every rate names its drive ("C: · R").
                 var cells = new List<Control>();
                 foreach (var row in disk)
                 {
@@ -43,7 +44,7 @@ public sealed class DriveTransferPairs : StackPanel
                     bool pure = style is WidgetStyle.Pure or WidgetStyle.PureBar or WidgetStyle.PureNumber or WidgetStyle.PureSegments or WidgetStyle.PureWidgets or WidgetStyle.PureWidgetsRight;
                     bool compact = style is WidgetStyle.CompactPro or WidgetStyle.Clarity or WidgetStyle.ClarityRows or WidgetStyle.ClarityColor
                         or WidgetStyle.Segments or WidgetStyle.SegmentGraph or WidgetStyle.Table or WidgetStyle.TableGraph;
-                    var label = Ui.Text((local ? driveName + " · " : "") + L.T(write ? "Write" : "Read"), local || mono ? 10 : pure ? 11 : 10.5, palette.Soft);
+                    var label = Ui.Text(driveName + " · " + L.T(write ? "Write" : "Read"), local || mono ? 10 : pure ? 11 : 10.5, palette.Soft);
                     var value = SensorDetails.Value(Ui.Text("", local ? 12 : mono ? 11 : compact ? 12.5 : pure ? 16 : 14, palette.Ink, pure ? FontWeight.DemiBold : FontWeight.SemiBold, numbers: true), row.Key);
                     value.MinWidth = 84; value.TextWrapping = TextWrapping.NoWrap;
                     values[row.Key] = value;

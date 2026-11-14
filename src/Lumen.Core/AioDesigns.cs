@@ -16,6 +16,7 @@ public static class AioDesigns
         or WidgetKind.Power or WidgetKind.Memory or WidgetKind.Drives or WidgetKind.Network or WidgetKind.Overview;
     public static bool SensorDefault(WidgetStyle style,string key)
     {
+        if(key.StartsWith("aio.gpu.")&&key.EndsWith(".extra")) return false; // a second graphics card is off by default
         if(key=="aio.cpu.cores"||key.StartsWith("aio.cpu.core.")) return style==WidgetStyle.AioThermalGrid;
         if(style==WidgetStyle.AioSignalRack)
             return !key.EndsWith("clock") && !key.EndsWith("hotspot") && !key.EndsWith("junction")

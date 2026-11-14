@@ -83,22 +83,6 @@ public class InfoWidgetTests
         from kind in new[] { WidgetKind.Clock, WidgetKind.WorldClocks, WidgetKind.Calendar, WidgetKind.Weather, WidgetKind.Media, WidgetKind.Processes, WidgetKind.DataUsage, WidgetKind.DriveHealth, WidgetKind.System }
         select new object[] { style, kind };
 
-    [Theory]
-    [MemberData(nameof(InfoKinds))]
-    public void German_sidebar_shows_no_english_words(WidgetStyle style, WidgetKind kind)
-    {
-        var found = UiHost.Run(() =>
-        {
-            L.Use("de");
-            var (snap, history) = Render.Demo();
-            var (card, window) = Show(kind, style, snap, history);
-            var texts = Visible(card).Select(t => t.Text ?? "").ToList();
-            window.Close();
-            return texts.Where(t => English.Any(e => t.Equals(e, StringComparison.OrdinalIgnoreCase) || t.StartsWith(e + " ", StringComparison.Ordinal))).ToList();
-        });
-        L.Use("en");
-        Assert.True(found.Count == 0, style + "/" + kind + ": " + string.Join(", ", found));
-    }
 
     [Theory]
     [MemberData(nameof(InfoKinds))]
@@ -225,46 +209,6 @@ public class InfoWidgetTests
     // in English ("Used", "Free", "Link speed" ...).
     public static IEnumerable<object[]> AllKinds() => Enum.GetValues<WidgetKind>().Select(k => new object[] { k });
 
-    [Theory]
-    [MemberData(nameof(AllKinds))]
-    public void Every_widget_in_every_design_speaks_german(WidgetKind kind)
-    {
-        var d = new DirectoryInfo(AppContext.BaseDirectory);
-        while (d != null && !File.Exists(Path.Combine(d.FullName, "Directory.Build.props"))) d = d.Parent;
-        var src = File.ReadAllText(Path.Combine(d!.FullName, "src", "Lumen.App", "Strings.cs"));
-        var english = src[(src.IndexOf("\"\"\"") + 3)..src.LastIndexOf("\"\"\"")].Split('\n').Select(l => l.Trim().Split('|')).Where(r => r.Length == 6)
-            .Where(r => r[0].Length >= 3 && r[0].Any(char.IsLetter) && !string.Equals(r[0], r[1], StringComparison.OrdinalIgnoreCase)
-                && !r[0].Contains('{') && r[0] != "partly-cloudy" && !r[1].Contains(r[0], StringComparison.OrdinalIgnoreCase))
-            .Select(r => r[0]).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        // Short names that are the same word in German use (and names of hardware).
-        foreach (var same in new[] { "Hotspot", "Total", "Temp", "Details", "Status", "Online", "Offline", "Name", "System", "Jitter", "Ping", "Uptime", "Download", "Upload", "Down", "Up", "Link", "Router", "Chipset", "Pump", "Fans", "Fan", "Week", "Start", "Stop", "Reset", "Model" }) english.Remove(same);
-        var found = UiHost.Run(() =>
-        {
-            L.Use("de");
-            var (snap, history) = Render.Demo();
-            var list = new List<string>();
-            int seen = 0;
-            foreach (var style in Settings.Selectable)
-            {
-                if (style != WidgetStyle.Standard && !Settings.HasStyles(kind)) continue;
-                var (card, window) = Show(kind, style, snap, history);
-                foreach (var text in Visible(card).Select(t => t.Text ?? ""))
-                {
-                    seen++;
-                    foreach (var part in text.Split(" · ").Select(p => p.Trim()))
-                    {
-                        if (english.Contains(part)) list.Add(style + ": " + text);
-                    }
-                }
-                window.Close();
-            }
-            output.WriteLine($"{english.Count} words, {seen} texts");
-            return list.Distinct().ToList();
-        });
-        L.Use("en");
-        Assert.True(found.Count == 0, kind + ": " + string.Join(" | ", found));
-    }
-}
 
 // A sensor that reports nothing for a moment keeps its last value (so no line vanishes and nothing jumps);
 // one that stays away is let go.
@@ -320,4 +264,5 @@ public class AlignedBarTests
         Assert.True(edges.Max(e => e.Item1) - edges.Min(e => e.Item1) <= 1.5, $"{style}/{kind}: starts {string.Join(", ", edges.Select(e => e.Item1.ToString("0")))}");
         Assert.True(edges.Max(e => e.Item2) - edges.Min(e => e.Item2) <= 1.5, $"{style}/{kind}: ends {string.Join(", ", edges.Select(e => e.Item2.ToString("0")))}");
     }
+}
 }

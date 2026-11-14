@@ -16,7 +16,7 @@ public sealed class Settings
 
 	public const string MonoColors = "mono";
 
-	public static readonly string[] Languages = new string[6] { "de", "en", "fr", "it", "es", "pt" };
+	public static readonly string[] Languages = new string[1] { "en" };
 
 	public static readonly string[] Fonts = new string[6] { "inter", "segoe", "segoe-variable", "bahnschrift", "bahnschrift-narrow", "mono" };
 
@@ -468,7 +468,7 @@ public sealed class Settings
 		{
 			s.Colors = "state";
 		}
-		s.Language = (Languages.Contains(s.Language) ? s.Language : "auto");
+		s.Language = "en";
 		s.Font = (Fonts.Contains(s.Font?.Trim().ToLowerInvariant()) ? s.Font.Trim().ToLowerInvariant() : "inter");
 		Settings settings = s;
 		if (settings.WeatherPlace == null)
@@ -522,6 +522,9 @@ public sealed class Settings
             if (s.SensorSelectionVersion < SensorDefaults.SelectionVersion && widget.Kind == WidgetKind.Drives)
                 foreach (string key in SensorDefaults.For(WidgetKind.Drives))
                     if (!widget.HiddenSensors.Contains(key)) widget.HiddenSensors.Add(key);
+            // Version 3: the running-fans count ("Fans 2/2") is off by default; switched off once for existing settings.
+            if (s.SensorSelectionVersion < 3 && widget.Kind == WidgetKind.Cooling && !widget.HiddenSensors.Contains("cooling.fancount"))
+                widget.HiddenSensors.Add("cooling.fancount");
             if (s.SensorSelectionVersion < 1)
                 foreach (var group in SensorDefaults.Groups)
                     if (widget.HiddenSensors.Contains(group.Key))

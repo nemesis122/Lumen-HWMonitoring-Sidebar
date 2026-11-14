@@ -152,7 +152,7 @@ public class NewFeatureTests
     {
         var s = Settings.Normalize(new Settings { Colors = "pink", Language = "xx", Opacity = 7, TextScale = 0, HiddenValues = new() { "cpu.fan", "cpu.fan", "" } });
         Assert.Equal(Settings.StateColors, s.Colors);
-        Assert.Equal("auto", s.Language);
+        Assert.Equal("en", s.Language); // English only
         Assert.Equal(1, s.Opacity);
         Assert.Equal(.5, s.TextScale);
         Assert.Equal(new[] { "cpu.fan" }, s.HiddenValues);
@@ -199,23 +199,6 @@ public class NewFeatureTests
     [InlineData(66, "freezing")] [InlineData(75, "snow")] [InlineData(81, "showers")] [InlineData(96, "storm")]
     public void WeatherGroups(int code, string group) => Assert.Equal(group, WeatherClient.Group(code));
 
-    [Fact] public void EveryTextIsTranslated()
-    {
-        var src = File.ReadAllText(Path.Combine(FindRoot(), "src", "Lumen.App", "Strings.cs"));
-        var lines = src[(src.IndexOf("\"\"\"") + 3)..src.LastIndexOf("\"\"\"")].Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0).ToList();
-        Assert.All(lines, l => Assert.Equal(6, l.Split('|').Length));
-        Assert.Equal(lines.Count, lines.Select(l => l.Split('|')[0]).Distinct().Count());
-        // Every T("...") and F("...") key used in the app exists in the table.
-        var keys = lines.Select(l => l.Split('|')[0]).ToHashSet();
-        var used = Directory.GetFiles(Path.Combine(FindRoot(), "src", "Lumen.App"), "*.cs")
-            .SelectMany(f => System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(f), @"\b[TF]\(""((?:[^""\\]|\\.)*)""").Select(m => m.Groups[1].Value))
-            .Distinct().ToList();
-        Assert.Equal(Array.Empty<string>(), used.Where(k => !keys.Contains(k)).ToArray());
-        Lumen.App.L.Use("de");
-        Assert.Equal("Prozessor", Lumen.App.L.T("Processor"));
-        Lumen.App.L.Use("en");
-        Assert.Equal("Processor", Lumen.App.L.T("Processor"));
-    }
 
     private static string FindRoot()
     {
@@ -375,7 +358,7 @@ public class LabelTests
         Assert.Equal("AMD Ryzen 9 5900X", Lumen.App.Names.Clean("AMD Ryzen 9 5900X 12-Core Processor"));
         var s = new Settings();
         Assert.Equal("Fan 2", Lumen.App.Names.Fan("Fan #2", s));
-        Assert.Equal("Chipset", Lumen.App.Names.Fan("Chipset Fan", s));
+        Assert.Equal("Chipset Fan", Lumen.App.Names.Fan("Chipset Fan", s)); // not just "Chipset": the board also has a chipset temperature
         s.Labels["fan:Fan #2"] = "Front";
         s.Labels["temp:VRM"] = "-";
         Assert.Equal("Front", Lumen.App.Names.Fan("Fan #2", s));

@@ -102,7 +102,9 @@ public sealed partial class AioTile
         var badges=rails.Select((r,i)=>
         {
             Color tint=new[]{Cyan,Purple,Amber}[i%3];
-            var body=Ui.Columns("Auto,*",Ui.Glyph(Glyphs.Power,tint,18),Fit(V(r,18,ink)));body.ColumnSpacing=4;
+            // Every rail says which one it is (+12 V, +5 V, +3.3 V), also before it has a value.
+            var head=Ui.Columns("Auto,*",Ui.Glyph(Glyphs.Power,tint,13),FitLeft(Text(r.Label,11,muted)));head.ColumnSpacing=3;
+            var body=Stack(1,head,Fit(V(r,17,ink)));
             return (Control)new Border{Margin=new Thickness(0,0,5,0),Padding=new Thickness(5,3),Background=IsometricGlass(),BorderBrush=Palette.Brush(Palette.Mix(tint,track,.75)),BorderThickness=new Thickness(1),CornerRadius=new CornerRadius(5),Child=body};
         }).ToArray();
         RefSection(Stack(10,Text(L.Language=="de"?"Versorgungsspannungen (Netzteil)":"Supply voltages (PSU)",13,muted),Cols(3,badges)),Cyan);

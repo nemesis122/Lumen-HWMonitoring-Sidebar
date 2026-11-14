@@ -40,7 +40,8 @@ public static class Names
 		string text2 = L.T(item);
 		if (item2.Length <= 0)
 		{
-			return text2;
+			// A fan named after a part that also has a temperature ("Chipset") says it is the fan.
+			return text2 == "Chipset" ? "Chipset Fan" : text2;
 		}
 		return text2 + " " + item2;
 	}

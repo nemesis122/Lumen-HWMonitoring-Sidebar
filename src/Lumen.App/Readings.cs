@@ -14,7 +14,7 @@ public static class Readings
         return Steady.Keep("readings|" + kind + "|" + index, set, s,
             Raw(kind, index, s, h, set, p).Where(r => set.Shows(WidgetSensors.ReadingKey(kind, r.Label))).ToList(),
             r => r.Label, r => r.Value.Length == 0 || r.Value.StartsWith("—"))
-            .Select(r => r.Key.Length > 0 ? r : r with { Key = r.Label.Length == 0 ? WidgetSensors.PrimaryKey(kind) : SensorDetails.LabelKey(kind, r.Label, rows) }).ToList();
+            .Select(r => r.Key.Length > 0 ? r : r with { Key = r.Label.Length == 0 ? WidgetSensors.PrimaryKey(kind) : SensorDetails.LabelKey(kind, r.Label, rows, r.Value) }).ToList();
     }
 
 	private static List<Reading> Raw(WidgetKind kind, int index, Snapshot s, History h, Settings set, Palette p)

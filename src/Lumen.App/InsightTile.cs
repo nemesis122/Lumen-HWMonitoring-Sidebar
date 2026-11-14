@@ -222,7 +222,8 @@ internal sealed class StableReadingRow : Panel
         // name and value do not fit side by side the value goes under the name (and stays there, so the
         // row does not switch back and forth).
         label.Measure(new Size(double.PositiveInfinity,double.PositiveInfinity));
-        double word=LongestWord();
+        // A one-word name is exactly as wide as the name measured without limit (the probe can miss inherited fonts).
+        double word=wordWidth=(label.Text??"").Trim().Contains(' ')?LongestWord():Math.Max(LongestWord(),Math.Ceiling(label.DesiredSize.Width));
         double gap=metrics.Gap*.4;
         double reserved=reservedWidth*(settings.ActiveWidget?.Values??1);
         if(stacked&&Math.Abs(w-stackedAt)>1)stacked=false;
@@ -240,6 +241,7 @@ internal sealed class StableReadingRow : Panel
         return new Size(w,Math.Max(label.DesiredSize.Height,value.DesiredSize.Height));
     }
     private bool stacked;
+    private double wordWidth;
     private double stackedAt;
     private double LongestWord()
     {
@@ -260,8 +262,15 @@ internal sealed class StableReadingRow : Panel
             label.Arrange(new Rect(0,0,final.Width,h));
             value.Arrange(new Rect(0,h,final.Width,Math.Max(0,final.Height-h)));return final;
         }
-        label.Arrange(new Rect(0,0,Math.Max(0,final.Width-valueWidth-metrics.Gap*.4),final.Height));
-        value.Arrange(new Rect(final.Width-valueWidth,0,valueWidth,final.Height));return final;
+        // Arranged narrower than measured (the parent measured with more room): the name keeps its longest word
+        // and the value gives up its reserve first, so "Power" never breaks into "Pow / er".
+        double gap=metrics.Gap*.4,valueRoom=valueWidth;
+        var probe=new TextBlock{Text=value.Text,FontSize=value.FontSize,FontFamily=value.FontFamily,FontWeight=value.FontWeight,FontFeatures=value.FontFeatures,LetterSpacing=value.LetterSpacing};
+        probe.Measure(Size.Infinity);
+        double needed=Math.Min(wordWidth,final.Width-Math.Ceiling(probe.DesiredSize.Width)-gap);
+        if(final.Width-valueRoom-gap<needed)valueRoom=Math.Max(0,final.Width-needed-gap);
+        label.Arrange(new Rect(0,0,Math.Max(0,final.Width-valueRoom-gap),final.Height));
+        value.Arrange(new Rect(final.Width-valueRoom,0,valueRoom,final.Height));return final;
     }
 }
 

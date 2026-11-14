@@ -189,4 +189,18 @@ public class SensorCompletenessTests
         Assert.Equal("—", CompleteReadings.For(WidgetKind.Drives, 0, absent, history, clean.ForWidget(WidgetKind.Drives), Palette.For(true, false)).Single(r => r.Key == prefix + "hours").Value);
         return true;
     });
+
+    [Fact]
+    public void The_running_fans_count_is_off_by_default_and_once_for_existing_settings()
+    {
+        var fresh = Settings.Starter();
+        Assert.Contains("cooling.fancount", fresh.Widgets.Single(w => w.Kind == WidgetKind.Cooling).HiddenSensors);
+        var old = new Settings { SensorSelectionVersion = 2 };
+        var cooling = old.Widgets.Single(w => w.Kind == WidgetKind.Cooling); cooling.HiddenSensors.Remove("cooling.fancount");
+        Settings.Normalize(old);
+        Assert.Contains("cooling.fancount", cooling.HiddenSensors);
+        // Switched back on by the user, it stays on.
+        cooling.HiddenSensors.Remove("cooling.fancount"); Settings.Normalize(old);
+        Assert.DoesNotContain("cooling.fancount", cooling.HiddenSensors);
+    }
 }

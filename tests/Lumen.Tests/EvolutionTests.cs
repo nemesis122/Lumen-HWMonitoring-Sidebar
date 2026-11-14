@@ -154,9 +154,9 @@ public class EvolutionPolishTests
     public void Fans_keep_their_order_and_a_stopped_fan_reads_off()
     {
         var texts = UiHost.Run(() => Show(WidgetKind.Cooling).Texts);
-        var rpm = texts.Where(t => t.EndsWith("U/⁠min")).Select(t => double.Parse(t.Split(' ')[0])).ToList();
+        var rpm = texts.Where(t => t.EndsWith("rpm")).Select(t => double.Parse(t.Split(' ')[0])).ToList();
         Assert.True(rpm.Count >= 4);
-        Assert.Contains("Aus", texts);
+        Assert.Contains(texts, t => t.Replace('\u00A0', ' ') is "0 rpm" or "0"); // a stopped fan reads "0 rpm" in every design
     }
 
     [Fact]
@@ -165,14 +165,14 @@ public class EvolutionPolishTests
         var texts = UiHost.Run(() => Show(WidgetKind.Drives).Texts);
         Assert.Contains("C:", texts);
         Assert.Contains("D:", texts);
-        Assert.DoesNotContain(texts, t => t.Contains("Wärmstes"));
+        Assert.DoesNotContain(texts, t => t.Contains("Warmest"));
     }
 
     [Fact]
     public void Idle_integrated_graphics_take_one_line()
     {
         var texts = UiHost.Run(() => Show(WidgetKind.Gpu).Texts);
-        Assert.Contains(texts, t => t.Contains("% Last") && t.Contains("°C"));
+        Assert.Contains(texts, t => t.Contains("% Load") && t.Contains("°C"));
         Assert.DoesNotContain(texts, t => t.StartsWith("Sensor"));
     }
 
@@ -225,9 +225,9 @@ public class DialTests
             window.Close();
             return shown;
         });
-        Assert.Contains("LAST", texts);
+        Assert.Contains("LOAD", texts);
         Assert.DoesNotContain("HOTSPOT", texts);
-        Assert.DoesNotContain("LEISTUNG", texts);
+        Assert.DoesNotContain("POWER", texts);
         Assert.DoesNotContain("—", texts);
     }
 
@@ -277,7 +277,7 @@ public class NewWidgetTests
     public void Overview_lists_every_part_once()
     {
         var t = Texts(WidgetKind.Overview);
-        foreach (string label in new[] { "PROZESSOR", "GRAFIK", "ARBEITSSPEICHER", "VIDEOSPEICHER", "NETZWERK" })
+        foreach (string label in new[] { "CPU", "GPU", "RAM", "VRAM", "NETWORK" })
             Assert.Contains(t, x => x.Equals(label, StringComparison.OrdinalIgnoreCase));
         // Every drive has its own line, none of them is singled out as the hottest.
         var (snap, _) = Render.Demo();
@@ -292,8 +292,8 @@ public class NewWidgetTests
     public void Drive_health_names_a_worn_out_drive()
     {
         var t = Texts(WidgetKind.DriveHealth, s => s with { Disks = s.Disks.Select((d, i) => i == 0 ? d with { Life = 3 } : d).ToArray() });
-        Assert.Contains("Kritisch", t);
-        Assert.Contains("1 prüfen", t);
+        Assert.Contains("Critical", t);
+        Assert.Contains("1 to check", t);
         Assert.Contains("3 %", t);
     }
 
@@ -302,6 +302,6 @@ public class NewWidgetTests
     {
         var t = Texts(WidgetKind.Timer);
         Assert.Contains("25:00", t);
-        Assert.Contains("Bereit", t);
+        Assert.Contains("Ready", t);
     }
 }

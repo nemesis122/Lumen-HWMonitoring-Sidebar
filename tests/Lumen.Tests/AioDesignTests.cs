@@ -376,4 +376,35 @@ public class AioDesignTests
         Assert.NotNull(Bars(260));
         return true;
     });
+
+    [Fact]
+    public void Only_the_main_graphics_card_is_shown_until_a_further_card_is_ticked()
+    {
+        var (snap,_)=Render.Demo();var g=snap.Gpus.First(x=>!x.Integrated);
+        // The main card is the dedicated one with the most memory, whatever order the cards are reported in.
+        snap=snap with{Gpus=new[]{g with{Id="small",Name="Small card",MemoryTotalMb=4096},g}};
+        var s=Settings.Starter();foreach(var w in s.Widgets)w.Style=WidgetStyle.AioIsometricCompact;AioDesigns.ShowAllParts(s);
+        var overview=s.Widgets.Single(w=>w.Kind==WidgetKind.Overview);var scoped=s.ForWidget(WidgetKind.Overview);
+        var rows=AioReadings.For(snap,scoped);
+        Assert.Contains(rows,r=>r.Group=="GPU"&&r.Device==g.Id);
+        Assert.DoesNotContain(rows,r=>r.Group=="GPU"&&r.Device=="small");
+        var option=Assert.Single(AioReadings.Options(snap),o=>o.Key=="aio.gpu.small.extra");
+        Assert.Contains("Small card",option.Label);
+        (overview.AioEnabledSensors??=new()).Add(option.Key);
+        rows=AioReadings.For(snap,s.ForWidget(WidgetKind.Overview));
+        Assert.Contains(rows,r=>r.Group=="GPU"&&r.Device=="small");
+        Assert.Equal(g.Id,rows.First(r=>r.Group=="GPU").Device);
+    }
+
+    [Fact]
+    public void Integrated_graphics_without_sensors_show_no_empty_values()
+    {
+        var (snap,_)=Render.Demo();
+        var igpu=snap.Gpus.First(g=>g.Integrated) with{Temperature=null,HotSpot=null,MemoryJunction=null};
+        snap=snap with{Gpus=new[]{igpu}};
+        var s=Settings.Starter();foreach(var w in s.Widgets)w.Style=WidgetStyle.AioTypeBlock;AioDesigns.ShowAllParts(s);
+        var rows=AioReadings.For(snap,s.ForWidget(WidgetKind.Overview)).Where(r=>r.Group=="GPU").ToList();
+        Assert.Contains(rows,r=>r.Key.EndsWith(".load"));
+        Assert.DoesNotContain(rows,r=>r.Key.EndsWith(".temp")||r.Key.EndsWith(".hotspot")||r.Key.EndsWith(".junction"));
+    }
 }

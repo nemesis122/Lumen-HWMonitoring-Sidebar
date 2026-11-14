@@ -51,7 +51,9 @@ public sealed class CoolingCard : Card
 			Body.Children.Add(temps);
 		}
         WidgetPresentation.Sensor((Control)hero.Parent!, "cooling.board");
-        WidgetPresentation.Sensor((Control)active.Parent!, "cooling.fans");
+        WidgetPresentation.Sensor((Control)active.Parent!, "cooling.fancount");
+        // The running-fans count ("2/2") is its own choice, off by default.
+        ((Control)active.Parent!).IsVisible = Shows("cooling.fancount");
 	}
 
 	protected override void UpdateReadings(Snapshot s, History h)
@@ -98,7 +100,7 @@ public sealed class CoolingCard : Card
 				((Control)value.Item1.Parent).IsVisible = true;
 				value.Item1.Text = Names.Fan(item.Name, S);
                 SensorDetails.Value(value.Item2, "fan:" + item.Name);
-				Motion.Text(value.Item2, (item.Rpm > 0.0) ? Format.Rpm(item.Rpm) : L.T("Stopped"));
+				Motion.Text(value.Item2, Format.Rpm(item.Rpm)); // "0 rpm" like every design
 				value.Item2.Foreground = Palette.Brush((item.Rpm > 0.0) ? P.Ink : P.Faint);
 				value.Item3.Set(item.Rpm / num, P.Cool);
 			}

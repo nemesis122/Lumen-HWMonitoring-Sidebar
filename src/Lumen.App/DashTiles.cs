@@ -396,7 +396,9 @@ public sealed class ThermostatTile : DashTile
 		device.HorizontalAlignment = HorizontalAlignment.Right;
 		device.TextTrimming = TextTrimming.CharacterEllipsis;
 		device.MaxWidth = 150;
-		caption = Text("", 10, Soft, FontWeight.DemiBold);
+		// The dial is drawn at 250 px and scaled down to the card (about half): captions are drawn larger so they
+		// stay readable after scaling.
+		caption = Text("", 15, Soft, FontWeight.DemiBold);
 		caption.LetterSpacing = 1;
 		caption.HorizontalAlignment = HorizontalAlignment.Center;
 		value = Text("", 46, Ink, FontWeight.DemiBold, null, true);
@@ -405,7 +407,7 @@ public sealed class ThermostatTile : DashTile
 		unit.Margin = new Thickness(2, 6, 0, 0);
 		number = Ui.Row(0, value, unit);
 		number.HorizontalAlignment = HorizontalAlignment.Center;
-		sub = Text("", 10.5, Soft);
+		sub = Text("", 15, Soft);
 		sub.HorizontalAlignment = HorizontalAlignment.Center;
 		var center = Ui.Stack(0, caption, number, sub, pairHost);
 		center.VerticalAlignment = VerticalAlignment.Center;
@@ -624,7 +626,7 @@ public sealed class SmartPanelTile : DashTile
 			cap.TextTrimming = TextTrimming.CharacterEllipsis;
 			var (num, u) = Format.Split(value);
 			var big = Ui.Row(0, Text(num, 19, heat ?? Ink, FontWeight.DemiBold, null, true), Text(u.Length > 0 ? " " + u : "", 10, Soft, FontWeight.Medium));
-            SensorDetails.Value(big.Children[0], SensorDetails.LabelKey(Kind, label, CompleteReadings.For(Kind, Index, Last.Snap, Last.History, S, P)));
+            SensorDetails.Value(big.Children[0], SensorDetails.LabelKey(Kind, label, CompleteReadings.For(Kind, Index, Last.Snap, Last.History, S, P), value));
 			((Control)big.Children[1]).VerticalAlignment = VerticalAlignment.Bottom;
 			((Control)big.Children[1]).Margin = new Thickness(0, 0, 0, 3);
 			stats.Children.Add(Mark(new Border { Padding = new Thickness(0, 0, 8, 8), Child = Ui.Stack(3, Ui.Columns("Auto,*", mark, cap), Fit(big)) }, value));
@@ -947,7 +949,7 @@ public sealed class SciFiTile : DashTile
 		// Every line in the ring says what it is ("POWER 81 W").
 		foot.Text = memoryFoot
 			? Format.Number(snap.Memory!.UsedGb, "0.0") + " / " + Format.Gigabytes(snap.Memory.TotalGb) + " " + L.T("Used").ToUpper(L.Culture)
-			: string.Join("  |  ", feet.Select(r => Short(r.Label).ToUpper(L.Culture) + " " + r.Value));
+			: string.Join(feet.Sum(r => Short(r.Label).Length + r.Value.Length) > 18 ? "\n" : "  |  ", feet.Select(r => Short(r.Label).ToUpper(L.Culture) + " " + r.Value)); // long pairs on two lines instead of tiny
 		foot.IsVisible = foot.Text.Length > 0;
 		divider.IsVisible = false;
 		var track = P.Dark ? Color.Parse("#2a2c33") : P.Track;

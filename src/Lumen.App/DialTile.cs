@@ -290,7 +290,7 @@ public sealed class DialTile : SummaryTile
 		// Fan as the fourth tile; a fan that stands still when idle reads "off".
 		if (S.Shows("gpu.fan") && gpu.FanRpm.HasValue)
 		{
-			specs.Add(gpu.FanRpm > 0 ? Value("fan", L.T("Fan"), gpu.FanRpm, snap.Time, v => Format.Rpm(v)) : new Spec("fan", L.T("Fan"), L.T("Off"), null, null, P.Soft));
+			specs.Add(gpu.FanRpm > 0 ? Value("fan", L.T("Fan"), gpu.FanRpm, snap.Time, v => Format.Rpm(v)) : new Spec("fan", L.T("Fan"), Format.Rpm(0), null, null, P.Soft));
 		}
 		if (S.Shows("gpu.clock") && gpu.ClockMhz is > 0)
 		{
@@ -370,11 +370,11 @@ public sealed class DialTile : SummaryTile
 		var fans = S.Shows("cooling.fans") ? snap.Fans.ToList() : new List<FanInfo>();
 		foreach (FanInfo fan in fans.Take(4))
 		{
-			specs.Add(fan.Rpm > 0 ? Value("fan:" + fan.Name, Names.Fan(fan.Name, S), fan.Rpm, snap.Time, v => Format.Rpm(v)) : new Spec("fan:" + fan.Name, Names.Fan(fan.Name, S), L.T("Off"), null, null, P.Soft));
+			specs.Add(fan.Rpm > 0 ? Value("fan:" + fan.Name, Names.Fan(fan.Name, S), fan.Rpm, snap.Time, v => Format.Rpm(v)) : new Spec("fan:" + fan.Name, Names.Fan(fan.Name, S), Format.Rpm(0), null, null, P.Soft));
 		}
 		foreach (FanInfo fan in fans.Skip(4))
 		{
-			bottom.Children.Add(Ui.Columns("*,Auto", Small(Names.Fan(fan.Name, S), P.Ink), Small(fan.Rpm > 0 ? Format.Rpm(fan.Rpm) : L.T("Off"))));
+			bottom.Children.Add(Ui.Columns("*,Auto", Small(Names.Fan(fan.Name, S), P.Ink), Small(Format.Rpm(fan.Rpm))));
 		}
 		foreach (TempReading t in snap.BoardTemps.Where(t => board == null || t.Name != board.Name))
 		{
@@ -417,7 +417,7 @@ public sealed class DialTile : SummaryTile
 
 	private TextBlock Caption(string text)
 	{
-		TextBlock t = Ui.Text(text.ToUpper(L.Culture), 9, P.Soft, FontWeight.Medium);
+		TextBlock t = Ui.Text(text.ToUpper(L.Culture), 10, P.Soft, FontWeight.Medium);
 		t.Margin = new Thickness(0, 2, 0, 0);
 		return t;
 	}
@@ -540,7 +540,7 @@ public sealed class DialTile : SummaryTile
 			Padding = new Thickness(8, 7, 8, 7);
 			CornerRadius = new CornerRadius(8);
 			label = Ui.Text("", 8, p.Soft, FontWeight.Medium);
-			label.TextTrimming = TextTrimming.CharacterEllipsis;
+			label.FontSize = 9; // short names ("CLOCK") keep the captions whole at a readable size
 			value = Ui.Text("", 14, p.Ink, FontWeight.DemiBold, numbers: true);
 			value.Margin = new Thickness(0, 2, 0, 0);
 			chart.Margin = new Thickness(0, 5, 0, 0);

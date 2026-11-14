@@ -40,17 +40,22 @@ public static class AioReadings
             foreach(var sensor in node.Sensors.Where(v=>v.Type=="Temperature" && Regex.IsMatch(v.Name,@"(?:Core|Kern)\s*#?\s*\d+",RegexOptions.IgnoreCase)
                 && !Regex.IsMatch(v.Name,"Max|Average|Distance|Tj",RegexOptions.IgnoreCase)).OrderBy(v=>v.Index))
                 Add("aio.cpu.core."+Identity(node,sensor),"Cores",sensor.Name,Temp(sensor.Value),sensor.Value,100);
-        var gpus=GpuGroup.Visible(s,settings).ToArray();
+        // Only the main graphics card by default; a further card appears when it is ticked in the settings.
+        var visibleGpus=GpuGroup.Visible(s,settings);var mainGpu=GpuGroup.Main(visibleGpus);
+        var gpus=visibleGpus.Where(g=>g==mainGpu||listingAllFans||Selected(settings,GpuGroup.ExtraKey(g))).OrderBy(g=>g==mainGpu?0:1).ToArray();
         foreach(var g in gpus)
         {
             string k="aio.gpu."+g.Id+".";
             var node=nodes.FirstOrDefault(n=>n.IsGpu && (n.Id==g.Id || n.Name==g.Name));
             var v=node?.All.Where(x=>x.Type=="Voltage" && Regex.IsMatch(x.Name,"Core|GPU|VDDC",RegexOptions.IgnoreCase)).FirstOrDefault();
-            Add(k+"temp","GPU","Temp.",Temp(g.Temperature),g.Temperature,100,"gpu."+g.Id+".temp",g.Id);
-            Add(k+"hotspot","GPU","Hotspot",Temp(g.HotSpot),g.HotSpot,110,device:g.Id);
-            Add(k+"junction","GPU","VRAM Temp.",Temp(g.MemoryJunction),g.MemoryJunction,110,device:g.Id);
+            // Integrated graphics often have no temperature or voltage sensors at all: those rows are left out
+            // instead of showing an empty big number ("— °C"); the load then becomes the main value.
+            bool none(double? x)=>g.Integrated&&!x.HasValue;
+            if(!none(g.Temperature))Add(k+"temp","GPU","Temp.",Temp(g.Temperature),g.Temperature,100,"gpu."+g.Id+".temp",g.Id);
+            if(!none(g.HotSpot))Add(k+"hotspot","GPU","Hotspot",Temp(g.HotSpot),g.HotSpot,110,device:g.Id);
+            if(!none(g.MemoryJunction))Add(k+"junction","GPU","VRAM Temp.",Temp(g.MemoryJunction),g.MemoryJunction,110,device:g.Id);
             Add(k+"load","GPU","Load",Format.Percent(g.Load),g.Load,100,"gpu."+g.Id+".load",g.Id);
-            Add(k+"voltage","GPU","Voltage",Volts(v?.Value),v?.Value,2,device:g.Id);
+            if(!none(v?.Value))Add(k+"voltage","GPU","Voltage",Volts(v?.Value),v?.Value,2,device:g.Id);
             Add(k+"power","GPU","Power",Format.Watts(g.PowerW),g.PowerW,450,"aio.power."+g.Id,g.Id);
             Add(k+"clock","GPU","Clock",g.ClockMhz.HasValue?Format.Number(g.ClockMhz)+" MHz":"—",g.ClockMhz,3500,device:g.Id);
             Add(k+"vram","GPU","VRAM",g.MemoryUsedMb.HasValue && g.MemoryTotalMb.HasValue ? Format.Number(g.MemoryUsedMb/1024,"0.#")+" / "+Format.Gigabytes(g.MemoryTotalMb/1024) : "—",g.MemoryUsedMb,Math.Max(1,g.MemoryTotalMb??16384),device:g.Id);
@@ -75,6 +80,7 @@ public static class AioReadings
             {
                 if(sensor.Value is not double rpm||!double.IsFinite(rpm)||rpm<0)continue;
                 string id=Identity(node,sensor);
+                if(node.IsGpu&&!gpus.Any(g=>g.Id==node.Id||g.Name==node.Name))continue; // fans of a card that is not shown
                 if(!node.IsGpu&&!FanExists(id,rpm)){skippedFans.Add(sensor.Name.Trim());continue;}
                 fans.Add((id,node.IsGpu && gpus.Length>1 ? node.Name+" · "+sensor.Name : sensor.Name,sensor.Value));
             }
@@ -140,6 +146,9 @@ public static class AioReadings
         yield return ("aio.cpu.coreloads","AIO · CPU · "+L.T("Core load"));
         yield return ("aio.cpu.cores","AIO · "+L.T("Core temperatures"));
         if(snapshot==null)yield break;
+        var cards=GpuGroup.Visible(snapshot,new Settings());var main=GpuGroup.Main(cards);
+        int number=2;
+        foreach(var g in cards.Where(g=>g!=main))yield return (GpuGroup.ExtraKey(g),"AIO · GPU "+number+++" · "+g.Name);
         // The choices list every fan that reports a reading – also one that never turned, so it can be ticked.
         List<AioReading> all;
         listingAllFans=true;try{all=For(snapshot,new Settings());}finally{listingAllFans=false;}

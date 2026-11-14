@@ -89,9 +89,9 @@ L.Use("de");
 var palette=Palette.For(true,false);
 var sysCard=new SystemCard(palette,Metrics.For(Density.Fit),ds);
 Assert(sysCard.GetLogicalDescendants().OfType<TextBlock>().Any(t=>t.Text==Platform.ExePath),"path in system widget");
-Assert(L.T("Executable")=="Programmdatei", "German path label");
+Assert(L.T("Executable")=="Executable", "English path label"); // English only
 var location=ExecutableLocation.Create(palette,true);
-Assert(location.GetLogicalDescendants().OfType<Button>().Any(b=>b.Content?.ToString()=="Ordner öffnen"),"open-folder button");
+Assert(location.GetLogicalDescendants().OfType<Button>().Any(b=>b.Content?.ToString()=="Open folder"),"open-folder button");
 typeof(SettingsWindow).GetField("pageIndex",BindingFlags.NonPublic|BindingFlags.Static)!.SetValue(null,5);
 var sw=new SettingsWindow(ds,palette,()=>{},()=>new[]{"Test monitor"},new FakePlatform{SettingsPath=Path.Combine(testDir,"lumen-settings.json")});
 Assert(sw.GetLogicalDescendants().OfType<TextBlock>().Any(t=>t.Text==Platform.ExePath),"path in System settings");

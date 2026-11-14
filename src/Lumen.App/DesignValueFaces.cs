@@ -64,7 +64,7 @@ public sealed class DesignValueFaces : UniformGrid
                 {
                     var chart = new AreaChart { Height = 84, FillOpacity = .28, LineWidth = 1.8, VerticalAlignment = VerticalAlignment.Bottom, Tag = "fixed" };
                     graphic = chart;
-                    label.FontSize = 10;
+                    label.FontSize = 12.5; // the face is drawn at 160 px and shown at about 112 px
                     host = new Border { MinHeight = 84, ClipToBounds = true, CornerRadius = new CornerRadius(8),
                         Background = Palette.Brush(Palette.Mix(palette.Card, palette.Cool, palette.Dark ? .08 : .06)),
                         Child = new Panel { Children = { chart, new Border { Padding = new Thickness(8, 5), Child = Ui.Stack(1, label, new Viewbox { Height = 38, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Left, Child = digits }) } } } };

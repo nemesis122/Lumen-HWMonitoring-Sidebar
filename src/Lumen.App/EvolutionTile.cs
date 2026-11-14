@@ -310,7 +310,7 @@ public sealed class EvolutionTile : SummaryTile
 					fanPeaks[f.Name] = peak;
 					if (f.Rpm <= 0)
 					{
-						return new Reading(name, L.T("Off"), 0, P.Faint) { Key = "fan:" + f.Name };
+						return new Reading(name, Format.Rpm(0), 0, P.Faint) { Key = "fan:" + f.Name }; // a stopped fan reads "0 rpm" in every design
 					}
 					double fraction = f.Percent is double pc ? Math.Clamp(pc / 100.0, 0, 1) : Math.Clamp(f.Rpm / peak, 0, 1);
 					return new Reading(name, Format.Rpm(f.Rpm), fraction, accent) { Key = "fan:" + f.Name };

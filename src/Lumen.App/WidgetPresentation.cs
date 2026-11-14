@@ -77,6 +77,13 @@ public static class WidgetPresentation
             {
                 word.Text = said.Replace("Temperature", "Temp").Replace("TEMPERATURE", "TEMP").Replace("temperature", "temp");
             }
+            // Short names in every hardware design (CPU, GPU, DL, UP, PSU, Hot, Clk …). Info widgets (clock,
+            // calendar, weather, notes) and numbers keep their text.
+            if (control is TextBlock { FontFeatures: null, Text: string label } shortened && root is not InfoTile && label.Length > 0)
+            {
+                var shorter = ShortNames.Apply(label, original.FontSize >= 15);
+                if (shorter != label) shortened.Text = shorter;
+            }
             // Numbers in a column sized to its content: the column keeps the widest width seen, so the bar or
             // label beside it does not get longer and shorter as the digits change ("0" ↔ "1130 rpm"). The
             // width is remembered per widget and row name, so rows that are built again keep it too.

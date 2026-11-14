@@ -86,7 +86,8 @@ public sealed class StatPanel : Panel
 		}
         if (RespectIntrinsicWidth)
         {
-            intrinsicMinimum = 0;
+            // The widest value seen so far keeps its room: one wide reading must not put the values side by side
+            // and the next one stack them again (the card would grow and shrink with the reading).
             foreach (var child in list) { child.Measure(Size.Infinity); intrinsicMinimum = Math.Max(intrinsicMinimum,child.DesiredSize.Width); }
         }
 		double num = (double.IsFinite(available.Width) ? available.Width : ((double)(list.Count * 90)));

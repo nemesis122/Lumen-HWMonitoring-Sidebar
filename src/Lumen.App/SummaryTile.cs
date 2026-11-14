@@ -132,7 +132,7 @@ public abstract class SummaryTile : Border, IWidget, INamed
     protected void BindSecondary(Control control) => SensorDetails.Value(control, WidgetSensors.SecondaryKey(Kind));
 
     protected void BindReading(Control control, Reading reading) => SensorDetails.Value(control, reading.Key.Length > 0 ? reading.Key
-        : SensorDetails.LabelKey(Kind, reading.Label, CompleteReadings.For(Kind, Index, Last.Snap, Last.History, S, P)));
+        : SensorDetails.LabelKey(Kind, reading.Label, CompleteReadings.For(Kind, Index, Last.Snap, Last.History, S, P), reading.Value));
 
 	// A reading that the upper part of the card already shows (bar, big number, second value) is not
 	// repeated in the extras below. Readings are matched by their label, so a value that is still

@@ -44,7 +44,11 @@ public class ResponsiveGrid : Grid
                 {
                     c.Measure(Size.Infinity); var pos = positions[c];
                     int col = Math.Clamp(pos.Column, 0, widths.Length - 1);
-                    widths[col] = Math.Max(widths[col], c.DesiredSize.Width / Math.Max(1, pos.Span));
+                    // A value that fits itself into its column (AIO) may shrink a little before the row is split into lines,
+                    // so the room it keeps for its widest form does not fold rows that still fit.
+                    bool fits = c is AioReferenceValue or AioFit || c is Panel panel && panel.Children.Any(x => x is AioReferenceValue or AioFit);
+                    double desired = fits ? c.DesiredSize.Width * .75 : c.DesiredSize.Width;
+                    widths[col] = Math.Max(widths[col], desired / Math.Max(1, pos.Span));
                 }
             }
             double needed = widths.Sum() + ColumnSpacing * Math.Max(0, widths.Length - 1);

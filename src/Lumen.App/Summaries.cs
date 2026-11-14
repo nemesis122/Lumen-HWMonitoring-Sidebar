@@ -81,7 +81,7 @@ public static class Summaries
 		case WidgetKind.Cooling:
 		{
 			TempReading tempReading = CoolingHero(s);
-			return new Summary("M8,8 m-1.3,0 a1.3,1.3 0 1 0 2.6,0 a1.3,1.3 0 1 0 -2.6,0 M8,6.7 C7.2,4.5 7.6,2 9.6,1.8 C11.4,1.7 11,4.6 9.2,7.2 M9.3,8 C11.5,7.2 14,7.6 14.2,9.6 C14.3,11.4 11.4,11 8.8,9.2 M8,9.3 C8.8,11.5 8.4,14 6.4,14.2 C4.6,14.3 5,11.4 6.8,8.8 M6.7,8 C4.5,8.8 2,8.4 1.8,6.4 C1.7,4.6 4.6,5 7.2,6.8", L.T("Cooling"), T(tempReading?.Celsius), unit, Heat(((object)tempReading != null) ? new double?(tempReading.Celsius + 5.0) : ((double?)null)), Format.Heat(((object)tempReading != null) ? new double?(tempReading.Celsius + 5.0) : ((double?)null)), (s.Fans.Count == 0) ? "" : $"{L.T("Fans")} {s.Fans.Count((FanInfo f) => f.Rpm > 0.0)}/{s.Fans.Count}", Array.Empty<double>(), null)
+			return new Summary("M8,8 m-1.3,0 a1.3,1.3 0 1 0 2.6,0 a1.3,1.3 0 1 0 -2.6,0 M8,6.7 C7.2,4.5 7.6,2 9.6,1.8 C11.4,1.7 11,4.6 9.2,7.2 M9.3,8 C11.5,7.2 14,7.6 14.2,9.6 C14.3,11.4 11.4,11 8.8,9.2 M8,9.3 C8.8,11.5 8.4,14 6.4,14.2 C4.6,14.3 5,11.4 6.8,8.8 M6.7,8 C4.5,8.8 2,8.4 1.8,6.4 C1.7,4.6 4.6,5 7.2,6.8", L.T("Cooling"), T(tempReading?.Celsius), unit, Heat(((object)tempReading != null) ? new double?(tempReading.Celsius + 5.0) : ((double?)null)), Format.Heat(((object)tempReading != null) ? new double?(tempReading.Celsius + 5.0) : ((double?)null)), (s.Fans.Count == 0 || !set.Shows("cooling.fancount")) ? "" : $"{L.T("Fans")} {s.Fans.Count((FanInfo f) => f.Rpm > 0.0)}/{s.Fans.Count}", Array.Empty<double>(), null)
 			{
 				Name = Names.Short(s.BoardName),
 				HeroLabel = ((object)tempReading == null) ? "" : Names.Temp(tempReading.Name, set)
@@ -383,7 +383,7 @@ public static class Summaries
 			break;
 		}
 		case WidgetKind.Cooling:
-			Add("cooling.fans", L.T("Fans"), (s.Fans.Count == 0) ? "—" : $"{s.Fans.Count((FanInfo f) => f.Rpm > 0.0)}/{s.Fans.Count}");
+			Add("cooling.fancount", L.T("Running fans"), (s.Fans.Count == 0) ? "—" : $"{s.Fans.Count((FanInfo f) => f.Rpm > 0.0)}/{s.Fans.Count}");
 			if (!set.Shows("cooling.board"))
 			{
 				break;

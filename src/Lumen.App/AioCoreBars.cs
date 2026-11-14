@@ -99,7 +99,7 @@ public sealed class AioCoreBars : Control
                 using (c.PushTransform(Matrix.CreateTranslation(-(x + col / 2), -y) * Matrix.CreateScale(s, s) * Matrix.CreateTranslation(x + col / 2, y)))
                     c.DrawText(ft, new Point(x + col / 2 - ft.Width / 2, y));
             }
-            Centered("K" + (i + 1), typeface, muted, top + barHeight + 2);
+            Centered("C" + (i + 1), typeface, muted, top + barHeight + 2);
             Centered(double.IsFinite(loads[i]) ? Math.Round(loads[i]).ToString("0") : "—", number, ink, top + barHeight + 14);
         }
     }

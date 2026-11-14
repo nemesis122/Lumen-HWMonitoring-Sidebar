@@ -61,7 +61,7 @@ public abstract class FreshTile : SummaryTile
 		{
 			return r;
 		}
-		return r with { Value = r.Value == "0" ? L.T("Off") : r.Value + "\u00A0" + Format.RpmUnit };
+		return r with { Value = r.Value + "\u00A0" + Format.RpmUnit }; // "0 rpm" like every design
 	}
 
 	protected List<Reading> All()
