@@ -4,8 +4,10 @@ using Avalonia.Headless;
 using Avalonia.Media.Imaging;
 using Avalonia.Themes.Fluent;
 using Avalonia.Threading;
+using Avalonia.LogicalTree;
 using Lumen.App;
 using Lumen.Core;
+using INamed = Lumen.App.INamed;
 
 // Renders the new designs with demo data: one sidebar per design (dark and light) and one bar.
 string output = Path.GetFullPath(args.FirstOrDefault() ?? "preview");
@@ -30,6 +32,147 @@ void Shot(Control content, string name, double width, double height, Palette p)
     using var image = window.CaptureRenderedFrame() ?? throw new InvalidOperationException(name);
     image.Save(Path.Combine(output, name + ".png"));
     window.Close();
+}
+
+if (args.Contains("--mainboard"))
+{
+    // Explicit demo fixture matching the approved design's complete set of readings.
+    snapshot = snapshot with
+    {
+        Cpu = new CpuInfo("Demo CPU",51,19,new double[]{35,34,9,12,28,38,20,18,15,14,26,18,11,14,3,6},5230,70,1.184,1023),
+        Gpus = new[]{new GpuInfo("mainboard-gpu","GPU",45,48,64,1473,67,466,9.7*1024,16281.6){MemoryJunction=74}},
+        Memory = new MemoryInfo(29.4,93.7),
+        Disks = new[]{new DiskInfo("c","Demo SSD",58,22,0,205*1024){Letters="C:"},new DiskInfo("g","Demo SSD",46,20,3.2*1024*1024,0){Letters="G:"}},
+        Network = new NetworkInfo("Demo LAN",4.7e6/8,3.4e6/8,10_000_000_000,"192.0.2.1"),
+        Fans = new[]{new FanInfo("Fan 2",1023,null),new FanInfo("Fan 5",863,null)},
+        HardwareSensors = new[]{
+            new SensorNode("Motherboard","Demo board","board",new[]{new SensorValue("Voltage","+12 V",12.192),new SensorValue("Voltage","+5 V",5.040),new SensorValue("Voltage","+3.3 V",3.296)},Array.Empty<SensorNode>()),
+            new SensorNode("GpuNvidia","GPU","mainboard-gpu",new[]{new SensorValue("Voltage","GPU Core",.692)},Array.Empty<SensorNode>())}
+    };
+    var preset = Settings.Starter(); preset.Width = 440; preset.ShowNames = false; preset.Glass = false; preset.Theme = ThemeMode.Dark;
+    AioDesigns.ShowAllParts(preset);
+    foreach (var widget in preset.Widgets.Where(w => Settings.HasStyles(w.Kind))) widget.Style = WidgetStyle.AioMainboardMap;
+    preset.Save(Path.Combine(output,"lumen-settings.json"));
+    // A render of the real native controls, not an AI mockup. Also used to inspect light and narrow layouts.
+    foreach (var design in new[]{WidgetStyle.AioMainboard,WidgetStyle.AioMainboardMap})
+    foreach (bool dark in new[] { true })
+    foreach (int width in design==WidgetStyle.AioMainboard?new[]{260,380}:new[]{260,380,440,1140})
+    {
+        var s = Settings.Starter(); s.Language = "en"; s.ShowNames = false; s.Glass = false;
+        AioDesigns.ShowAllParts(s);
+        var slot = s.Widgets.Single(w => w.Kind == WidgetKind.Overview);
+        slot.Style = design;
+        var p = Palette.For(dark, false);
+        var card = new AioTile(slot.Style, p, Metrics.For(Density.Fit), s);
+        card.Own(slot, 0); card.Update(snapshot, history);
+        card.Measure(new Size(width, double.PositiveInfinity));
+        Shot(new StackPanel { Children = { card } }, $"{(design==WidgetStyle.AioMainboard?"mainboard":"mainboard-map")}-{width}-{(dark ? "dark" : "light")}", width, Math.Ceiling(card.DesiredSize.Height), p);
+    }
+    var sidebarPalette=Palette.For(true,false);
+    var sidebar=new SidebarView(preset,sidebarPalette);sidebar.Update(snapshot,history);
+    Shot(sidebar,"sidebar-mainboard-map",440,1400,sidebarPalette);
+    var corePreset=System.Text.Json.JsonSerializer.Deserialize<Settings>(System.Text.Json.JsonSerializer.Serialize(preset,Settings.Json),Settings.Json)!;
+    foreach(var widget in corePreset.Widgets.Where(w=>Settings.HasStyles(w.Kind)))widget.Style=WidgetStyle.AioMainboardCores;
+    corePreset.Save(Path.Combine(output,"lumen-mainboard-cores-settings.json"));
+    foreach(var width in new[]{360,440})
+    {
+        var coreView=new SidebarView(corePreset,sidebarPalette);coreView.Update(snapshot,history);
+        Shot(coreView,"mainboard-cores-sidebar-"+width,width,1400,sidebarPalette);
+        var coreSlot=corePreset.Widgets.Single(w=>w.Kind==WidgetKind.Overview);
+        var coreCard=new AioTile(coreSlot.Style,sidebarPalette,Metrics.For(Density.Fit),corePreset);coreCard.Own(coreSlot,0);coreCard.Update(snapshot,history);
+        coreCard.Measure(new Size(width,double.PositiveInfinity));
+        Shot(new StackPanel{Children={coreCard}},"mainboard-cores-detail-"+width,width,Math.Ceiling(coreCard.DesiredSize.Height),sidebarPalette);
+    }
+    var networkPreset=System.Text.Json.JsonSerializer.Deserialize<Settings>(System.Text.Json.JsonSerializer.Serialize(preset,Settings.Json),Settings.Json)!;
+    foreach(var w in networkPreset.Widgets.Where(w=>Settings.HasStyles(w.Kind)))w.Style=WidgetStyle.AioMainboard;
+    var networkView=new SidebarView(networkPreset,sidebarPalette);
+    networkView.Update(snapshot with{Network=snapshot.Network! with{DownloadBytesPerSecond=24_000/8d,UploadBytesPerSecond=32_000/8d}},history);
+    Shot(networkView,"netzwerk-32-kbit-korrigiert",380,1400,sidebarPalette);
+    networkPreset.Glass=true;networkPreset.ShowNames=true;
+    networkPreset.Widgets.Single(w=>w.Kind==WidgetKind.Cooling).Visible=false;
+    networkPreset.Widgets.Single(w=>w.Kind==WidgetKind.Power).Visible=false;
+    var glassPalette=Palette.For(true,true);var glassView=new SidebarView(networkPreset,glassPalette);
+    glassView.Update(snapshot with{Network=snapshot.Network! with{DownloadBytesPerSecond=39_000/8d,UploadBytesPerSecond=25_000/8d}},history);
+    Shot(glassView,"netzwerk-ohne-linien-im-feld",360,1400,glassPalette);
+    var variants=new[]{WidgetStyle.AioMainboard,WidgetStyle.AioMainboardCores,WidgetStyle.AioMainboardMap,WidgetStyle.AioMainboardDesktop};
+    var comparison=new Grid{ColumnDefinitions=new ColumnDefinitions("*,*,*,*"),ColumnSpacing=12};
+    for(int i=0;i<variants.Length;i++)
+    {
+        var variant=System.Text.Json.JsonSerializer.Deserialize<Settings>(System.Text.Json.JsonSerializer.Serialize(preset,Settings.Json),Settings.Json)!;
+        foreach(var w in variant.Widgets.Where(w=>Settings.HasStyles(w.Kind)))w.Style=variants[i];
+        var view=new SidebarView(variant,sidebarPalette);view.Update(snapshot,history);
+        Shot(view,"sidebar-"+variants[i],440,1400,sidebarPalette);
+        var compareView=new SidebarView(variant,sidebarPalette);compareView.Update(snapshot,history);
+        var column=new DockPanel();var title=Ui.Text((i+1)+" · "+AioDesigns.Name(variants[i]),15,sidebarPalette.Ink);
+        DockPanel.SetDock(title,Dock.Top);column.Children.Add(title);column.Children.Add(compareView);
+        Grid.SetColumn(column,i);comparison.Children.Add(column);
+    }
+    Shot(comparison,"vier-designs-echte-app",1796,1440,sidebarPalette);
+    var infoComparison=new Grid{ColumnDefinitions=new ColumnDefinitions("*,*,*,*"),ColumnSpacing=12};
+    for(int i=0;i<variants.Length;i++)
+    {
+        var column=new StackPanel{Spacing=10};column.Children.Add(Ui.Text(AioDesigns.Name(variants[i]),15,sidebarPalette.Ink));
+        var infoSettings=Settings.Starter();infoSettings.WorldClocks=new(){"America/New_York","Asia/Tokyo"};
+        foreach(var kind in new[]{WidgetKind.Clock,WidgetKind.WorldClocks,WidgetKind.Calendar,WidgetKind.Weather})
+        {
+            var slot=infoSettings.Widgets.Single(w=>w.Kind==kind);slot.Style=variants[i];slot.Visible=true;
+            var card=Cards.Create(kind,slot.Style,0,sidebarPalette,Metrics.For(Density.Fit),infoSettings);
+            ((INamed)card).Own(slot,0);((IWidget)card).Update(snapshot,history);column.Children.Add(card);
+        }
+        Grid.SetColumn(column,i);infoComparison.Children.Add(column);
+    }
+    infoComparison.Measure(new Size(1796,double.PositiveInfinity));
+    Shot(new StackPanel{Children={infoComparison}},"info-vier-designs",1796,Math.Ceiling(infoComparison.DesiredSize.Height),sidebarPalette);
+    var extrasGrid=new Grid{ColumnDefinitions=new ColumnDefinitions("*,*,*"),ColumnSpacing=12,RowSpacing=12};int extraIndex=0;
+    var extraSettings=Settings.Starter();extraSettings.Notes="Demo: Backup prüfen";
+    foreach(var kind in Enum.GetValues<WidgetKind>().Where(k=>!AioDesigns.Hardware(k)))
+    {
+        var slot=extraSettings.Widgets.Single(w=>w.Kind==kind);slot.Style=WidgetStyle.AioMainboardMap;slot.Visible=true;
+        var card=Cards.Create(kind,slot.Style,0,sidebarPalette,Metrics.For(Density.Fit),extraSettings);
+        ((INamed)card).Own(slot,0);((IWidget)card).Update(snapshot,history);
+        if(extraIndex%3==0)extrasGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        Grid.SetColumn(card,extraIndex%3);Grid.SetRow(card,extraIndex/3);extrasGrid.Children.Add(card);extraIndex++;
+    }
+    extrasGrid.Measure(new Size(1200,double.PositiveInfinity));
+    Shot(new StackPanel{Children={extrasGrid}},"alle-zusatz-widgets",1200,Math.Ceiling(extrasGrid.DesiredSize.Height),sidebarPalette);
+    var desktop=System.Text.Json.JsonSerializer.Deserialize<Settings>(System.Text.Json.JsonSerializer.Serialize(preset,Settings.Json),Settings.Json)!;desktop.FullScreen=true;desktop.Columns=1;desktop.Floating=false;
+    foreach(var w in desktop.Widgets.Where(w=>Settings.HasStyles(w.Kind)))w.Style=WidgetStyle.AioMainboardDesktop;
+    desktop.Save(Path.Combine(output,"lumen-desktop-settings.json"));
+    foreach(var size in new[]{new Size(1920,1080),new Size(2560,1440)})
+    {
+        var view=new SidebarView(desktop,sidebarPalette);view.Update(snapshot,history);
+        Shot(view,$"desktop-{size.Width}x{size.Height}",size.Width,size.Height,sidebarPalette);
+    }
+    var flags=System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic;
+    typeof(SettingsWindow).GetField("pageIndex",flags)!.SetValue(null,0);
+    var selector=new SettingsWindow(corePreset,sidebarPalette,()=>{},()=>new[]{"Demo monitor"},new PreviewPlatform(),snapshot:()=>snapshot);
+    selector.Show();
+    for(int i=0;i<4;i++){Dispatcher.UIThread.RunJobs();selector.CaptureRenderedFrame();}
+    var privateInstance=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+    var pickerContent=(StackPanel)typeof(SettingsWindow).GetField("content",privateInstance)!.GetValue(selector)!;
+    var firstMainboard=pickerContent.GetLogicalDescendants().OfType<Button>().First(b=>b.GetLogicalDescendants().OfType<TextBlock>().Any(t=>t.Text=="AIO · Mainboard"));
+    var pickerScroll=(ScrollViewer)typeof(SettingsWindow).GetField("scroller",privateInstance)!.GetValue(selector)!;
+    pickerScroll.Offset=new Vector(0,Math.Max(0,firstMainboard.TranslatePoint(default,pickerContent)!.Value.Y-120));
+    for(int i=0;i<3;i++){Dispatcher.UIThread.RunJobs();selector.CaptureRenderedFrame();}
+    using(var selection=selector.CaptureRenderedFrame()!)selection.Save(Path.Combine(output,"design-selection.png"));
+    selector.Close();
+    void SelectionShot(Settings config,string name)
+    {
+        var window=new SettingsWindow(config,sidebarPalette,()=>{},()=>new[]{"Demo monitor"},new PreviewPlatform(),snapshot:()=>snapshot){Height=1100};
+        window.Show();for(int i=0;i<4;i++){Dispatcher.UIThread.RunJobs();window.CaptureRenderedFrame();}
+        var list=(StackPanel)typeof(SettingsWindow).GetField("content",privateInstance)!.GetValue(window)!;
+        var scroll=(ScrollViewer)typeof(SettingsWindow).GetField("scroller",privateInstance)!.GetValue(window)!;
+        var cpu=list.GetLogicalDescendants().OfType<CheckBox>().Single(c=>c.Name=="widget-Cpu");
+        scroll.Offset=new Vector(0,Math.Max(0,cpu.TranslatePoint(default,list)!.Value.Y-50));
+        for(int i=0;i<3;i++){Dispatcher.UIThread.RunJobs();window.CaptureRenderedFrame();}
+        using(var shot=window.CaptureRenderedFrame()!)shot.Save(Path.Combine(output,name+".png"));window.Close();
+    }
+    SelectionShot(corePreset,"hauptwidgets-aio-7-plus-4");
+    var normalPreset=System.Text.Json.JsonSerializer.Deserialize<Settings>(System.Text.Json.JsonSerializer.Serialize(corePreset,Settings.Json),Settings.Json)!;
+    DesignWidgetSelection.Apply(normalPreset,WidgetStyle.MeasureTape);
+    SelectionShot(normalPreset,"hauptwidgets-normal-5-plus-4");
+    Console.WriteLine("Mainboard rendered: " + output);
+    return;
 }
 
 if (args.Contains("--jump"))

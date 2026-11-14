@@ -173,7 +173,15 @@ public enum WidgetStyle
     AioIsometricRig,
     AioIsometricPedestals,
     AioIsometricCompact,
-    AioIsometricRings
+    AioIsometricRings,
+    AioMainboard,
+    AioMainboardMap,
+    AioMainboardStrips,
+    AioMainboardGauges,
+    AioMainboardMatrix,
+    AioMainboardType,
+    AioMainboardDesktop,
+    AioMainboardCores
 }
 
 

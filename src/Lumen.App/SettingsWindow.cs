@@ -372,7 +372,7 @@ public sealed class SettingsWindow : Window
 		searchIndex.Clear();
 		List<(string, string, Control[])> list = new List<(string, string, Control[])>();
 		building = 0;
-		Owns("Widgets", "HiddenValues", "ShowIntegratedGpu");
+		Owns("Widgets", "HiddenValues", "ShowIntegratedGpu", "DesignWidgetChoices");
 		list.Add((L.T("Widgets"), "M2,2.5 H6.5 V7 H2 Z M9.5,2.5 H14 V7 H9.5 Z M2,9 H6.5 V13.5 H2 Z M9.5,9 H14 V13.5 H9.5 Z", WidgetsPage()));
 		building = 1;
 		list.Add((L.T("Appearance"), "M8,5.5 A2.5,2.5 0 1 1 7.99,5.5 Z M8,1 V3 M8,13 V15 M1,8 H3 M13,8 H15 M3.05,3.05 L4.46,4.46 M11.54,11.54 L12.95,12.95 M3.05,12.95 L4.46,11.54 M11.54,4.46 L12.95,3.05", AppearancePage()));
@@ -740,12 +740,8 @@ public sealed class SettingsWindow : Window
 			}
 			button.Click += delegate
 			{
-				bool wasAio = s.Widgets.Any(w => w.Kind == WidgetKind.Overview && AioDesigns.Contains(w.Style));
-				foreach (WidgetSlot item in s.Widgets.Where(Target))
-				{
-					item.Style = style;
-				}
-				if (!wasAio && AioDesigns.Contains(style)) AioDesigns.ShowAllParts(s);
+				ApplyMainboardPlacement(style, s.Widgets.Any(w => w.Style == WidgetStyle.AioMainboardDesktop));
+				DesignWidgetSelection.Apply(s,style,styleRegister);
 				changed();
 				Build();
 			};
@@ -805,6 +801,7 @@ public sealed class SettingsWindow : Window
 				c.IsCheckedChanged += delegate
 				{
 					slot.Visible = c.IsChecked == true;
+					DesignWidgetSelection.Remember(s,slot);
 					changed();
 					Dispatcher.UIThread.Post(Build);
 				};
@@ -919,6 +916,7 @@ public sealed class SettingsWindow : Window
 
 	public static string StyleName(WidgetStyle style)
 	{
+        if(style is WidgetStyle.AioMainboardMap or WidgetStyle.AioMainboardDesktop or WidgetStyle.AioMainboardStrips or WidgetStyle.AioMainboardGauges or WidgetStyle.AioMainboardMatrix or WidgetStyle.AioMainboardType)return AioDesigns.Name(style);
         if (AioDesigns.Contains(style)) return "AIO · " + AioDesigns.Name(style);
 		return style switch
 		{
@@ -959,6 +957,15 @@ public sealed class SettingsWindow : Window
 		};
 	}
 
+    private void ApplyMainboardPlacement(WidgetStyle style,bool leavingDesktop)
+    {
+        if(style==WidgetStyle.AioMainboardDesktop)
+        {
+            s.FullScreen=true;s.Floating=false;s.Columns=1;
+            if(s.Horizontal)s.Edge=Edge.Right;
+        }
+        else if(leavingDesktop)s.FullScreen=false;
+    }
 	private Control StyleThumb(WidgetStyle style)
 	{
 		Canvas c = new Canvas
@@ -974,7 +981,32 @@ public sealed class SettingsWindow : Window
         if (AioDesigns.Contains(style))
         {
             Rect(4,1,56,32,fill,4);
-            if (style == WidgetStyle.AioOrbitNetwork)
+            if(style is WidgetStyle.AioMainboardMap or WidgetStyle.AioMainboardDesktop)
+            {
+                var cyan=Palette.Brush(MainboardMapColors.Cyan);var violet=Palette.Brush(MainboardMapColors.Violet);
+                Rect(10,3,44,12,fill2,2);Rect(22,5,8,7,cyan,1);Rect(35,8,13,3,violet,1);
+                Rect(8,20,21,11,cyan,2);Rect(35,20,21,11,violet,2);
+                Rect(17,15,1,5,cyan);Rect(45,15,1,5,violet);
+            }
+            else if(style is WidgetStyle.AioMainboardStrips or WidgetStyle.AioMainboardGauges or WidgetStyle.AioMainboardMatrix or WidgetStyle.AioMainboardType)
+            {
+                Rect(20,3,24,10,fill2,1);Rect(25,5,6,5,brush,1);
+                if(style==WidgetStyle.AioMainboardGauges){Rect(9,17,19,10,brush,5);Rect(36,17,19,10,brush2,5);}
+                else if(style==WidgetStyle.AioMainboardType){Rect(8,16,24,8,brush,1);Rect(38,22,17,8,brush2,1);}
+                else for(int i=0;i<3;i++){Rect(8,17+i*5,style==WidgetStyle.AioMainboardMatrix?18:48,2,brush);if(style==WidgetStyle.AioMainboardMatrix)Rect(38,17+i*5,18,2,brush2);}
+            }
+            else if(style==WidgetStyle.AioMainboardCores)
+            {
+                Rect(8,4,21,10,fill2,1);Rect(35,4,21,10,fill2,1);
+                for(int i=0;i<12;i++)Rect(8+i*4,17,2,7,brush,1);
+                Rect(8,27,21,4,fill2,1);Rect(35,27,21,4,fill2,1);
+            }
+            else if (style == WidgetStyle.AioMainboard)
+            {
+                Rect(31,3,1,28,brush);
+                for(int i=0;i<3;i++) { Rect(8,5+i*9,19,7,fill2,1);Rect(37,5+i*9,19,7,fill2,1);Rect(27,8+i*9,10,1,brush); }
+            }
+            else if (style == WidgetStyle.AioOrbitNetwork)
             {
                 foreach(var point in new[]{new Point(28,4),new Point(13,13),new Point(43,13),new Point(28,22)})
                 {var ring=new Avalonia.Controls.Shapes.Ellipse{Width=10,Height=10,Stroke=brush,StrokeThickness=1.5};Canvas.SetLeft(ring,point.X);Canvas.SetTop(ring,point.Y);c.Children.Add(ring);}
@@ -1428,6 +1460,7 @@ public sealed class SettingsWindow : Window
 		check.IsCheckedChanged += delegate
 		{
 			slot.Visible = check.IsChecked == true;
+			DesignWidgetSelection.Remember(s,slot);
 			changed();
 			Dispatcher.UIThread.Post(Build);
 		};
@@ -1590,8 +1623,8 @@ public sealed class SettingsWindow : Window
 					Button button3 = button2;
 					button3.Click += delegate
 					{
-						if (slot.Kind == WidgetKind.Overview && !AioDesigns.Contains(slot.Style) && AioDesigns.Contains(style)) AioDesigns.ShowAllParts(s);
-						slot.Style = style;
+						ApplyMainboardPlacement(style, slot.Style == WidgetStyle.AioMainboardDesktop);
+						DesignWidgetSelection.Apply(s,style,only:slot);
 						changed();
 						Build();
 					};

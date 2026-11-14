@@ -35,6 +35,7 @@ public sealed partial class AioTile
     private void UpdateCoreBars()
     {
         if (coreBars != null) coreBars.Loads = lastCoreLoads;
+        if (mainboardCores != null) mainboardCores.Loads = lastCoreLoads;
     }
 }
 

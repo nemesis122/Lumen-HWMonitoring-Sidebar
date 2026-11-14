@@ -1,10 +1,21 @@
-# Lumen 4.3.0 – All-in-One
+# Lumen 4.4.0 – Mainboard
 
-A portable hardware-monitoring sidebar for Windows 10 and 11 with **81 designs**, including **18 All-in-One designs** that show the whole PC in one card. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
+A portable hardware-monitoring sidebar for Windows 10 and 11 with **82 designs**, including **20 All-in-One designs** that show the whole PC in one card. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
 
-**[Download Lumen 4.3.0](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.3.0)** · [All designs](docs/style-gallery.md) · [Release notes 4.3.0](docs/release-notes/v4.3.0.md) · [4.2.1](docs/release-notes/v4.2.1.md) · [4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
+**[Download Lumen 4.4.0](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.4.0)** · [All designs](docs/style-gallery.md) · [Release notes 4.4.0](docs/release-notes/v4.4.0.md) · [4.3.0](docs/release-notes/v4.3.0.md) · [4.2.1](docs/release-notes/v4.2.1.md) · [4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
 
 ![Sci-Fi, Thermostat, Neon HUD and Evolution](docs/images/v4.0.0/hero-designs.png)
+
+## New in 4.4.0
+
+- **Mainboard, Mainboard Cores, Mainboard Map and Mainboard Map Desktop**: new layouts with complete live hardware readings. The Desktop design uses the whole selected monitor, with bounded artwork and readable values.
+- **Mainboard Cores** places CPU/GPU above a full-width core-load strip, then RAM/PSU, drives, fans and network. Narrow widths wrap core bars into more rows.
+- **Main-widget choices are saved per design.** A new ordinary design starts with five hardware and four info widgets; a new AIO design starts with seven hardware and four info widgets. Returning to a customized design restores its own checks. Extra widgets and individual sensor choices are kept.
+- **Matching extra widgets in every AIO design**, including clock, world clocks, calendar, weather, FPS, battery, ping, notes and timer.
+- Clearer Mainboard connections and network fields: PCB traces do not run through full-width panels, even with transparent backgrounds.
+- Removed from the selectors: Mainboard Typography, Data Matrix, Instruments, Strips; AIO Pop Console, AIO Chromatic; Aperture. Existing profiles migrate these designs to Standard while keeping their other widget settings.
+
+[4.4.0 release notes and screenshots](docs/release-notes/v4.4.0.md) · [Mainboard guide](docs/mainboard.md)
 
 ## New in 4.3.0
 

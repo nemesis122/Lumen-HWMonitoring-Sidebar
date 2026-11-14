@@ -5,10 +5,13 @@ public static class AioDesigns
 {
     public static readonly WidgetStyle[] Styles =
     {
+        WidgetStyle.AioMainboard, WidgetStyle.AioMainboardMap,
+        WidgetStyle.AioMainboardCores,
+        WidgetStyle.AioMainboardDesktop,
         WidgetStyle.AioTypeBlock, WidgetStyle.AioOrbitNetwork, WidgetStyle.AioThermalGrid,
         WidgetStyle.AioSignalRack, WidgetStyle.AioIsometricCore, WidgetStyle.AioPrecision,
-        WidgetStyle.AioChromatic, WidgetStyle.AioStudioLight, WidgetStyle.AioInstrument,
-        WidgetStyle.AioAuroraFusion, WidgetStyle.AioPopConsole, WidgetStyle.AioCarbonPulse,
+        WidgetStyle.AioStudioLight, WidgetStyle.AioInstrument,
+        WidgetStyle.AioAuroraFusion, WidgetStyle.AioCarbonPulse,
         WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings
     };
     public static bool Contains(WidgetStyle style) => Styles.Contains(style);
@@ -54,6 +57,14 @@ public static class AioDesigns
     }
     public static string Name(WidgetStyle style) => style switch
     {
+        WidgetStyle.AioMainboard => "Mainboard",
+        WidgetStyle.AioMainboardCores => "Mainboard Cores",
+        WidgetStyle.AioMainboardMap => "Mainboard Map",
+        WidgetStyle.AioMainboardStrips => "Mainboard · Messstreifen",
+        WidgetStyle.AioMainboardGauges => "Mainboard · Instrumente",
+        WidgetStyle.AioMainboardMatrix => "Mainboard · Datenmatrix",
+        WidgetStyle.AioMainboardType => "Mainboard · Typografie",
+        WidgetStyle.AioMainboardDesktop => "Mainboard Map Desktop",
         WidgetStyle.AioTypeBlock => "Type Block", WidgetStyle.AioOrbitNetwork => "Orbit Network",
         WidgetStyle.AioThermalGrid => "Thermal Grid", WidgetStyle.AioSignalRack => "Signal Rack",
         WidgetStyle.AioIsometricCore => "Isometric Core", WidgetStyle.AioPrecision => "Precision",

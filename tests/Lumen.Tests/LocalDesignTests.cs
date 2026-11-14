@@ -18,8 +18,10 @@ public class LocalDesignTests
     {
         var removed = new[] { WidgetStyle.Atelier, WidgetStyle.RailLocal, WidgetStyle.Observatory, WidgetStyle.Canvas,
             WidgetStyle.Ledger, WidgetStyle.Instrument, WidgetStyle.Matrix, WidgetStyle.Solace, WidgetStyle.Forma,
-            WidgetStyle.Axis, WidgetStyle.Aurora, WidgetStyle.Flux, WidgetStyle.Halo };
-        Assert.Equal(81, Settings.Selectable.Count()); // + Isometric Atlas, Tiles, Rig, Pedestals, Compact and Rings
+            WidgetStyle.Axis, WidgetStyle.Aurora, WidgetStyle.Flux, WidgetStyle.Halo,
+            WidgetStyle.AioMainboardType,WidgetStyle.AioMainboardMatrix,WidgetStyle.AioMainboardGauges,WidgetStyle.AioMainboardStrips,
+            WidgetStyle.AioPopConsole,WidgetStyle.AioChromatic,WidgetStyle.Aperture };
+        Assert.Equal(82, Settings.Selectable.Count());
         Assert.All(removed, style => { Assert.DoesNotContain(style, Settings.Selectable); Assert.Equal(WidgetStyle.Standard, Settings.Successor(style)); });
     }
 

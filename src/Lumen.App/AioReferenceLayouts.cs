@@ -128,6 +128,12 @@ public sealed partial class AioTile
         ReferenceModelNames();
         switch(style)
         {
+            case WidgetStyle.AioMainboard: Mainboard();break;
+            case WidgetStyle.AioMainboardCores: Mainboard();break;
+            case WidgetStyle.AioMainboardMap: MainboardMap();break;
+            case WidgetStyle.AioMainboardDesktop: MainboardMap();break;
+            case WidgetStyle.AioMainboardStrips: case WidgetStyle.AioMainboardGauges:
+            case WidgetStyle.AioMainboardMatrix: case WidgetStyle.AioMainboardType: MainboardVariant();break;
             case WidgetStyle.AioTypeBlock: ReferenceType();break;
             case WidgetStyle.AioOrbitNetwork: ReferenceOrbit();break;
             case WidgetStyle.AioThermalGrid: ReferenceThermal();break;
@@ -143,7 +149,7 @@ public sealed partial class AioTile
             default:ReferenceSculpted();break;
         }
         ReferenceDrives();
-        ReferenceCoreBars();
+        if(!MainboardDesign(style)) ReferenceCoreBars();
         // Explicitly selected additional devices/sensors stay available without duplicating the reference's main values.
         var extras=rows.Where(r=>!referenceUsed.Contains(r.Key)).ToArray();
         foreach(var group in extras.GroupBy(r=>r.Group+":"+r.Device))
@@ -160,7 +166,7 @@ public sealed partial class AioTile
             var label=Naming.Title(owned,index,fallback);var hardware=Naming.Hardware(owned,index,model);if(hardware.Length==0)return;
             names.Children.Add(Ui.Columns("Auto,*",Text(label.Length==0?"":label+" · ",10,muted),Text(hardware,10,muted)));
         }
-        if(diagram)
+        if(diagram || style is WidgetStyle.AioMainboardStrips or WidgetStyle.AioMainboardGauges or WidgetStyle.AioMainboardMatrix or WidgetStyle.AioMainboardType)
         {
             if(snapshot.Cpu!=null)Add(WidgetKind.Cpu,"CPU","CPU",snapshot.Cpu.Name);
             var gpus=GpuGroup.Visible(snapshot,settings).Where(g=>referenceRows.Any(r=>r.Group=="GPU"&&r.Device==g.Id)).ToList();for(int i=0;i<gpus.Count;i++)Add(WidgetKind.Gpu,"GPU","GPU",gpus[i].Name,i);

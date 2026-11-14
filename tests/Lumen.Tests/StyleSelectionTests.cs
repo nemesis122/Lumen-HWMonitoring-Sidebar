@@ -20,9 +20,11 @@ public class StyleSelectionTests
         WidgetStyle.PerformanceView, WidgetStyle.PureBar, WidgetStyle.PureNumber, WidgetStyle.PureSegments, WidgetStyle.PureWidgetsRight,
         WidgetStyle.Meridian, WidgetStyle.Strata, WidgetStyle.Vector, WidgetStyle.Orbit, WidgetStyle.Lucent, WidgetStyle.Circuit,
         WidgetStyle.Panorama, WidgetStyle.Terminal, WidgetStyle.Thermal, WidgetStyle.MosaicPro, WidgetStyle.RibbonFlow, WidgetStyle.SplitLens,
-        WidgetStyle.Aperture, WidgetStyle.PixelDeck, WidgetStyle.HorizonSync,
+        WidgetStyle.PixelDeck, WidgetStyle.HorizonSync,
         WidgetStyle.SplitFlap, WidgetStyle.MeasureTape, WidgetStyle.HardwareMap,
-        WidgetStyle.AioTypeBlock, WidgetStyle.AioOrbitNetwork, WidgetStyle.AioThermalGrid, WidgetStyle.AioSignalRack, WidgetStyle.AioIsometricCore, WidgetStyle.AioPrecision, WidgetStyle.AioChromatic, WidgetStyle.AioStudioLight, WidgetStyle.AioInstrument, WidgetStyle.AioAuroraFusion, WidgetStyle.AioPopConsole, WidgetStyle.AioCarbonPulse, WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings
+        WidgetStyle.AioTypeBlock, WidgetStyle.AioOrbitNetwork, WidgetStyle.AioThermalGrid, WidgetStyle.AioSignalRack, WidgetStyle.AioIsometricCore, WidgetStyle.AioPrecision, WidgetStyle.AioStudioLight, WidgetStyle.AioInstrument, WidgetStyle.AioAuroraFusion, WidgetStyle.AioCarbonPulse, WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings
+        , WidgetStyle.AioMainboard, WidgetStyle.AioMainboardMap, WidgetStyle.AioMainboardDesktop,
+        WidgetStyle.AioMainboardCores
     };
     const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
 
@@ -93,6 +95,13 @@ public class StyleSelectionTests
             var buttons = parts.SelectMany(c => c.GetLogicalDescendants().Prepend(c)).OfType<UniformGrid>().Single().Children.OfType<Button>().ToList();
             string Name(Button button) => button.GetLogicalDescendants().OfType<TextBlock>().Single().Text!;
             Assert.Equal(Expected.Select(SettingsWindow.StyleName), buttons.Select(Name));
+            var mainboard=buttons.TakeLast(4).Single(b=>Name(b)=="Mainboard Map");
+            mainboard.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert.All(settings.Widgets.Where(w=>Settings.HasStyles(w.Kind)),w=>Assert.Equal(WidgetStyle.AioMainboardMap,w.Style));
+            buttons.Single(b=>Name(b)=="Mainboard Map Desktop").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert.True(settings.FullScreen);Assert.Equal(1,settings.Columns);Assert.False(settings.Floating);
+            Assert.All(settings.Widgets.Where(w=>Settings.HasStyles(w.Kind)),w=>Assert.Equal(WidgetStyle.AioMainboardDesktop,w.Style));
+            mainboard.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));Assert.False(settings.FullScreen);
             buttons.Last().RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Assert.All(settings.Widgets.Where(w => Settings.HasStyles(w.Kind)), w => Assert.Equal(Expected.Last(), w.Style));
 

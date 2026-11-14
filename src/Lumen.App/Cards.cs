@@ -8,6 +8,7 @@ public static class Cards
 {
 	public static Control Create(WidgetKind kind, WidgetStyle style, int index, Palette p, Metrics m, Settings s)
 	{
+        style=Settings.Successor(style);
         var control = CreateNative(kind, style, index, p, m, s);
         SensorDetails.Design(control, Settings.Successor(style));
         if (InstrumentDesigns.Contains(style) && control is Border frame && control is not InstrumentTile)
@@ -20,8 +21,7 @@ public static class Cards
         s = s.ForWidget(kind);
         if (AioDesigns.Contains(style))
             return kind == WidgetKind.Overview ? new AioTile(style,p,m,s)
-                : InfoTile.Handles(kind) ? new InfoTile(kind,index,WidgetStyle.Standard,p,m,s)
-                : CreateNative(kind,WidgetStyle.Standard,index,p,m,s);
+                : new AioCompanionTile(kind,style,p,CreateNative(kind,AioCompanionTile.ContentStyle(style),index,p,m,s));
 		// The overview is a list in every design (name, bar, value), drawn in that design's look.
 		if (kind == WidgetKind.Overview)
 		{

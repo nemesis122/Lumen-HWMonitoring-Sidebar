@@ -15,13 +15,13 @@ public static class LocalDesigns
         WidgetStyle.Orbit, WidgetStyle.Lucent, WidgetStyle.Circuit,
         WidgetStyle.Panorama, WidgetStyle.Terminal, WidgetStyle.Thermal,
         WidgetStyle.MosaicPro, WidgetStyle.RibbonFlow, WidgetStyle.SplitLens,
-        WidgetStyle.Aperture, WidgetStyle.PixelDeck, WidgetStyle.HorizonSync
+        WidgetStyle.PixelDeck, WidgetStyle.HorizonSync
     };
     public static readonly WidgetStyle[] Distinct =
     {
         WidgetStyle.Panorama, WidgetStyle.Terminal, WidgetStyle.Thermal,
         WidgetStyle.MosaicPro, WidgetStyle.RibbonFlow, WidgetStyle.SplitLens,
-        WidgetStyle.Aperture, WidgetStyle.PixelDeck, WidgetStyle.HorizonSync
+        WidgetStyle.PixelDeck, WidgetStyle.HorizonSync
     };
     public static readonly WidgetStyle[] Signature = { WidgetStyle.Aperture, WidgetStyle.PixelDeck, WidgetStyle.HorizonSync };
     public static bool Contains(WidgetStyle style) => Styles.Contains(style);

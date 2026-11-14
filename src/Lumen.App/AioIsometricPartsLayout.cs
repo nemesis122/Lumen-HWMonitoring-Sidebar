@@ -86,7 +86,7 @@ public sealed partial class AioTile
 
     private static readonly string[] FanArt = { "fan0", "fan4", "fan1", "fan2", "fan3" };
 
-    private Control FanGrid(AioReading[] fans, double art, bool rpmBelow)
+    private Control FanGrid(AioReading[] fans, double art, bool rpmBelow, bool uniform = false,bool twoTone=false)
     {
         return Cols(4, fans.Select((r, i) =>
         {
@@ -95,7 +95,7 @@ public sealed partial class AioTile
             value.HorizontalAlignment = HorizontalAlignment.Center;
             var name = Text(Translate(L.T(r.Label)), 11, muted); name.HorizontalAlignment = HorizontalAlignment.Center; name.TextAlignment = TextAlignment.Center;
             name.MaxLines = 2; name.TextTrimming = TextTrimming.CharacterEllipsis;
-            var cell = Stack(1, Part(FanArt[i % FanArt.Length], art, art * .87), name, Fit(value));
+            var cell = Stack(1, Part(twoTone?(i%2==0?"fan0":"fan2"):uniform ? "fan0" : FanArt[i % FanArt.Length], art, art * .87), name, Fit(value));
             if (rpmBelow) { var unit = Text("rpm", 9, muted); unit.HorizontalAlignment = HorizontalAlignment.Center; cell.Children.Add(unit); }
             return (Control)cell;
         }).ToArray());

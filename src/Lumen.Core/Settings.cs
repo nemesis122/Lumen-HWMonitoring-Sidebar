@@ -123,6 +123,7 @@ public sealed class Settings
     // Since 4.1.2 the hardware widget switches choose the parts of an AIO card. Earlier settings
     // could have those widgets hidden while their AIO parts were shown; keep what the user saw.
     public bool AioWidgetSwitches { get; set; }
+    public Dictionary<WidgetStyle,Dictionary<WidgetKind,bool>> DesignWidgetChoices {get;set;}=new();
 
     // Fans that have turned at least once (sensor ids). Kept across restarts so an existing fan that is
     // stopped right now still shows with 0 rpm; empty fan headers (always 0 rpm) never get in here.
@@ -222,7 +223,6 @@ public sealed class Settings
         WidgetStyle.MosaicPro,
         WidgetStyle.RibbonFlow,
         WidgetStyle.SplitLens,
-        WidgetStyle.Aperture,
         WidgetStyle.PixelDeck,
         WidgetStyle.HorizonSync,
         WidgetStyle.SplitFlap,
@@ -230,9 +230,11 @@ public sealed class Settings
         WidgetStyle.HardwareMap,
         WidgetStyle.AioTypeBlock, WidgetStyle.AioOrbitNetwork, WidgetStyle.AioThermalGrid,
         WidgetStyle.AioSignalRack, WidgetStyle.AioIsometricCore, WidgetStyle.AioPrecision,
-        WidgetStyle.AioChromatic, WidgetStyle.AioStudioLight, WidgetStyle.AioInstrument,
-        WidgetStyle.AioAuroraFusion, WidgetStyle.AioPopConsole, WidgetStyle.AioCarbonPulse,
-        WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings
+        WidgetStyle.AioStudioLight, WidgetStyle.AioInstrument,
+        WidgetStyle.AioAuroraFusion, WidgetStyle.AioCarbonPulse,
+        WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings,
+        WidgetStyle.AioMainboard, WidgetStyle.AioMainboardMap, WidgetStyle.AioMainboardDesktop,
+        WidgetStyle.AioMainboardCores
 	};
 
 	public int ColumnCount
