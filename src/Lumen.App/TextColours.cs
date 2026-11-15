@@ -9,8 +9,8 @@ namespace Lumen.App;
 /// <summary>
 /// The value and label colours chosen in Appearance, for every design: each neutral (white or grey) text of a card
 /// takes the chosen colour, values (numbers, amounts) one and names and captions (CPU, Load, Temp …) the other.
-/// Coloured text (accents, hot readings in amber and red) stays as the design draws it. A text that was grey keeps its
-/// place in the order: it takes the colour a little fainter, so captions still read below the names and values.
+/// Coloured text (accents, hot readings in amber and red) stays as the design draws it. Every text takes the chosen
+/// colour at full strength, grey ones too (user request: all text is equally important).
 /// </summary>
 public static class TextColours
 {
@@ -42,7 +42,7 @@ public static class TextColours
             if (!Neutral(original)) { known.Applied = current; continue; }
             bool isValue = values != null ? values.Contains(text) || text is AioValueText : text is AioValueText || HasDigit(text.Text);
             if ((isValue ? value : label) is not Color chosen) { known.Applied = current; continue; }
-            var colour = Color.FromArgb((byte)Math.Round(original.A * Strength(original)), chosen.R, chosen.G, chosen.B);
+            var colour = Color.FromArgb(original.A, chosen.R, chosen.G, chosen.B);
             known.Applied = colour;
             if (colour != current) text.Foreground = new SolidColorBrush(colour, brush.Opacity);
         }
@@ -54,14 +54,6 @@ public static class TextColours
         double r = c.R / 255d, g = c.G / 255d, b = c.B / 255d;
         double max = Math.Max(r, Math.Max(g, b)), min = Math.Min(r, Math.Min(g, b));
         return c.A > 0 && (max <= 0 || (max - min) / max < .28);
-    }
-
-    /// <summary>How strong the chosen colour is drawn: full for the main text, fainter for the greys under it.</summary>
-    private static double Strength(Color c)
-    {
-        double v = Math.Max(c.R, Math.Max(c.G, c.B)) / 255d;
-        double s = v >= .5 ? v / .92 : (1 - v) / .9; // light text on a dark card, or dark text on a light one
-        return Math.Clamp(s, .5, 1);
     }
 
     private static bool HasDigit(string? text) => text != null && text.Any(char.IsDigit);

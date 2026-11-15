@@ -268,7 +268,7 @@ public sealed class MainboardCoreGrid : Control
         {
             double x = (i % columns) * (cell + 4), y = (i / columns) * rowHeight;
             double barX=x+(cell-barWidth)/2;
-            Center("C" + (i + 1), x, y, LabelInk is Color li ? Color.FromArgb(200, li.R, li.G, li.B) : muted, cell>30?11:8);
+            Center("C" + (i + 1), x, y, LabelInk is Color li ? li : muted, cell>30?11:8);
             c.DrawRectangle(Palette.Brush(track), null, new Rect(barX, y + 13, barWidth, barHeight), 2, 2);
             double fraction = double.IsFinite(loads[i]) ? Math.Clamp(loads[i] / 100, 0, 1) : 0;
             double height = barHeight * fraction;
