@@ -17,6 +17,12 @@ A portable hardware-monitoring sidebar for Windows 10 and 11 with **99 designs**
 
 ![Panel, Panel Rings, Panel Header and Panel Plain (demo readings)](docs/images/v4.5.0/panel-designs.png)
 
+![All Red designs, part 1 (demo readings)](docs/images/v4.5.0/red-designs-1.png)
+
+![All Red designs, part 2 (demo readings)](docs/images/v4.5.0/red-designs-2.png)
+
+![All Red designs, part 3 (demo readings)](docs/images/v4.5.0/red-designs-3.png)
+
 [4.5.0 release notes and screenshots](docs/release-notes/v4.5.0.md)
 
 ## New in 4.4.0
