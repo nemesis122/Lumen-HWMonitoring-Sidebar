@@ -985,7 +985,21 @@ public sealed class SettingsWindow : Window
         if (AioDesigns.Contains(style))
         {
             Rect(4,1,56,32,fill,4);
-            if(style is WidgetStyle.AioMainboardMap or WidgetStyle.AioMainboardDesktop)
+            if(AioDesigns.Panel(style))
+            {
+                var red=Palette.Brush(PanelTheme.For(s.PanelTheme).Accent);var dark=Palette.Brush(Color.Parse("#151516"));
+                if(style==WidgetStyle.AioPanel)for(int i=0;i<3;i++)Ellipse(12+i*15,3,8,8,red);
+                double top=style==WidgetStyle.AioPanel?14:4;
+                for(int i=0;i<(style==WidgetStyle.AioPanel?2:3);i++)
+                {
+                    double y=top+i*9.5;Rect(8,y,48,8,dark,1);
+                    if(style==WidgetStyle.AioPanelRings)Ellipse(10,y+.5,7,7,red);else Rect(10,y+1.5,9,5,fill2,1);
+                    if(style==WidgetStyle.AioPanelBadges)Ellipse(16,y,4,4,red);
+                    if(style==WidgetStyle.AioPanelHeader)Rect(22,y+1,32,1.5,red);
+                    Rect(23,y+(style==WidgetStyle.AioPanelHeader?4:2),26,1.5,red);Rect(23,y+5,18,1.5,fill2);
+                }
+            }
+            else if(style is WidgetStyle.AioMainboardMap or WidgetStyle.AioMainboardDesktop)
             {
                 var cyan=Palette.Brush(MainboardMapColors.Cyan);var violet=Palette.Brush(MainboardMapColors.Violet);
                 Rect(10,3,44,12,fill2,2);Rect(22,5,8,7,cyan,1);Rect(35,8,13,3,violet,1);
@@ -1434,6 +1448,7 @@ public sealed class SettingsWindow : Window
 				StrokeLineCap = PenLineCap.Round
 			};
 		}
+		void Ellipse(double x, double y, double w, double h, IBrush fill3) => Rect(x, y, w, h, fill3, w / 2);
 		void Rect(double x, double y, double w, double h, IBrush fill3, double r = 2.0)
 		{
 			Rectangle rectangle = new Rectangle
@@ -1646,6 +1661,23 @@ public sealed class SettingsWindow : Window
 				if (slot.Style == WidgetStyle.Evolution || FavoriteTile.Styles.Contains(slot.Style) || PureLoadIndicator.Styles.Contains(slot.Style))
 				{
 					stackPanel.Children.Add(AccentRow(slot));
+				}
+				if (AioDesigns.Panel(slot.Style))
+				{
+					// Panel designs: the colour set, and for "Panel" the way the gauges at the top are drawn.
+					Owns("PanelTheme", "PanelGauges");
+					Control PanelOption(string label, (string Key, string Name)[] options, string current, Action<string> set)
+					{
+						Grid row = Ui.Columns("Auto,*", Ui.Text(L.T(label), 12.5, p.Soft), Choice(options.Select(o => L.T(o.Name)).ToList(),
+							Math.Max(0, Array.FindIndex(options, o => o.Key == current)), i => set(options[i].Key)));
+						row.Children[0].Margin = new Thickness(0, 6, 10, 0);
+						row.Children[0].VerticalAlignment = VerticalAlignment.Top;
+						row.Margin = new Thickness(28, 4, 0, 0);
+						return row;
+					}
+					stackPanel.Children.Add(PanelOption("Panel colours", AioDesigns.PanelThemes, s.PanelTheme, k => s.PanelTheme = k));
+					if (slot.Style == WidgetStyle.AioPanel)
+						stackPanel.Children.Add(PanelOption("Gauges", AioDesigns.PanelGauges, s.PanelGauges, k => s.PanelGauges = k));
 				}
 			}
 			if (s.ColumnsInUse > 1)

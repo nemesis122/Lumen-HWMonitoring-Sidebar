@@ -124,6 +124,9 @@ public sealed class Settings
     // could have those widgets hidden while their AIO parts were shown; keep what the user saw.
     public bool AioWidgetSwitches { get; set; }
     public Dictionary<WidgetStyle,Dictionary<WidgetKind,bool>> DesignWidgetChoices {get;set;}=new();
+    // Panel designs: colour set and how the gauge block at the top is drawn.
+    public string PanelTheme { get; set; } = "red";
+    public string PanelGauges { get; set; } = "dots";
 
     // Fans that have turned at least once (sensor ids). Kept across restarts so an existing fan that is
     // stopped right now still shows with 0 rpm; empty fan headers (always 0 rpm) never get in here.
@@ -234,7 +237,8 @@ public sealed class Settings
         WidgetStyle.AioAuroraFusion, WidgetStyle.AioCarbonPulse,
         WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings,
         WidgetStyle.AioMainboard, WidgetStyle.AioMainboardMap, WidgetStyle.AioMainboardDesktop,
-        WidgetStyle.AioMainboardCores
+        WidgetStyle.AioMainboardCores,
+        WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelBadges, WidgetStyle.AioPanelHeader
 	};
 
 	public int ColumnCount

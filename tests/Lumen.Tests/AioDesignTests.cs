@@ -355,7 +355,7 @@ public class AioDesignTests
             var card=new AioTile(slot.Style,Palette.For(true,false),Metrics.For(Density.Fit),s);card.Own(slot,0);card.Update(snap,h);
             var window=new Window{Content=card,Width=width,Height=3000};window.Show();
             for(int k=0;k<2;k++){Dispatcher.UIThread.RunJobs();window.CaptureRenderedFrame();}
-            var bars=card.GetVisualDescendants().OfType<Control>().FirstOrDefault(c=>c is AioCoreBars or MainboardCoreGrid);
+            var bars=card.GetVisualDescendants().OfType<Control>().FirstOrDefault(c=>c is AioCoreBars or MainboardCoreGrid or PanelCoreCells);
             if(bars!=null)
             {
                 // Every core gets a bar inside the card, and new loads never change the height (nothing jumps).
@@ -365,7 +365,7 @@ public class AioDesignTests
                 card.Update(snap with{Cpu=snap.Cpu! with{CoreLoads=snap.Cpu!.CoreLoads.Select((v,i)=>i%2==0?100d:0d).ToArray()}},h);
                 for(int k=0;k<2;k++){Dispatcher.UIThread.RunJobs();window.CaptureRenderedFrame();}
                 Assert.Equal(before,card.Bounds.Height,1);
-                var loads=bars is AioCoreBars standard?standard.Loads:((MainboardCoreGrid)bars).Loads;
+                var loads=bars is AioCoreBars standard?standard.Loads:bars is PanelCoreCells panelCells?panelCells.Loads:((MainboardCoreGrid)bars).Loads;
                 Assert.Equal(snap.Cpu.CoreLoads.Count,loads.Count);
                 Assert.Equal(100d,loads[0]);
             }

@@ -181,7 +181,11 @@ public enum WidgetStyle
     AioMainboardMatrix,
     AioMainboardType,
     AioMainboardDesktop,
-    AioMainboardCores
+    AioMainboardCores,
+    AioPanel,
+    AioPanelRings,
+    AioPanelBadges,
+    AioPanelHeader
 }
 
 
