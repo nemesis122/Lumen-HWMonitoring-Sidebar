@@ -1,10 +1,23 @@
-# Lumen 4.4.0 – Mainboard
+# Lumen 4.5.0 – Redline
 
-A portable hardware-monitoring sidebar for Windows 10 and 11 with **82 designs**, including **20 All-in-One designs** that show the whole PC in one card. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
+A portable hardware-monitoring sidebar for Windows 10 and 11 with **99 designs**, including **41 All-in-One designs** that show the whole PC in one card. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
 
-**[Download Lumen 4.4.0](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.4.0)** · [All designs](docs/style-gallery.md) · [Release notes 4.4.0](docs/release-notes/v4.4.0.md) · [4.3.0](docs/release-notes/v4.3.0.md) · [4.2.1](docs/release-notes/v4.2.1.md) · [4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
+**[Download Lumen 4.5.0](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.5.0)** · [All designs](docs/style-gallery.md) · [Release notes 4.5.0](docs/release-notes/v4.5.0.md) · [4.4.0](docs/release-notes/v4.4.0.md) · [4.3.0](docs/release-notes/v4.3.0.md) · [4.2.1](docs/release-notes/v4.2.1.md) · [4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
 
-![AIO designs: Isometric Rig, Isometric Rings and Signal Rack (demo readings)](docs/images/v4.4.0/aio-designs.png)
+![Red designs: Isometric Rings Red, Orbit Network Red, Signal Rack Red and Carbon Pulse Red (demo readings)](docs/images/v4.5.0/red-designs.png)
+
+## New in 4.5.0
+
+- **Four Panel designs**: Panel, Panel Rings, Panel Header and Panel Plain show each part as a panel with a picture and large values.
+- **Red designs**: every AIO design is also available in red, with dark grey cards, the Orbitron typeface and one red throughout (18 designs).
+- **Value colour and Label colour** in Settings → Appearance → Colours: choose the colour of the numbers and of the names and captions in every design.
+- **Orbitron** is a new built-in typeface; the chosen typeface and colour scheme now reach every design.
+- Integrated graphics are shown completely in every design; Isometric Rig groups its further values; long Sci-Fi titles fit the card.
+- Removed from the selectors: Pure widgets, Pure Widgets Right, Capsule row graph, Fill bars graph and Mainboard. Profiles using them fall back to Standard.
+
+![Panel, Panel Rings, Panel Header and Panel Plain (demo readings)](docs/images/v4.5.0/panel-designs.png)
+
+[4.5.0 release notes and screenshots](docs/release-notes/v4.5.0.md)
 
 ## New in 4.4.0
 
