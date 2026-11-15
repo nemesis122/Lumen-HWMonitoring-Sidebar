@@ -226,6 +226,9 @@ public sealed class MainboardCoreGrid : Control
     public bool TwoTone { get; init; }
     /// <summary>Chosen colour or Red design: the load colours in that hue.</summary>
     public Color? Tint { get; set; }
+    /// <summary>Value and label colours chosen in Appearance (null: the design's own).</summary>
+    public Color? ValueInk { get; set; }
+    public Color? LabelInk { get; set; }
     public bool PreferSingleRow {get;init;}
     public int VisibleColumns=>Columns(Bounds.Width);
     private readonly Color ink, muted, track, accent;
@@ -265,13 +268,13 @@ public sealed class MainboardCoreGrid : Control
         {
             double x = (i % columns) * (cell + 4), y = (i / columns) * rowHeight;
             double barX=x+(cell-barWidth)/2;
-            Center("C" + (i + 1), x, y, muted, cell>30?11:8);
+            Center("C" + (i + 1), x, y, LabelInk is Color li ? Color.FromArgb(200, li.R, li.G, li.B) : muted, cell>30?11:8);
             c.DrawRectangle(Palette.Brush(track), null, new Rect(barX, y + 13, barWidth, barHeight), 2, 2);
             double fraction = double.IsFinite(loads[i]) ? Math.Clamp(loads[i] / 100, 0, 1) : 0;
             double height = barHeight * fraction;
             var fill=TwoTone?(accent==MainboardMapColors.Cyan?(i/columns%2==0?MainboardMapColors.Cyan:MainboardMapColors.Violet):(i/columns%2==0?accent:Palette.Mix(accent,Colors.White,.35))):Tint is Color tint?RedSkin.Tint(AioCoreBars.Heat(fraction),tint):AioCoreBars.Heat(fraction);
             if(height > 0) c.DrawRectangle(Palette.Brush(fill), null, new Rect(barX, y + 13 + barHeight - height, barWidth, height), 1, 1);
-            Center(double.IsFinite(loads[i]) ? Math.Round(loads[i]).ToString("0") : "—", x, y + 16 + barHeight, ink, cell>30?11:9);
+            Center(double.IsFinite(loads[i]) ? Math.Round(loads[i]).ToString("0") : "—", x, y + 16 + barHeight, ValueInk ?? ink, cell>30?11:9);
         }
     }
 }

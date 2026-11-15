@@ -78,6 +78,9 @@ public sealed class AioCoreBars : Control
     }
     /// <summary>Chosen colour or Red design: the load colours in that hue.</summary>
     public Color? Tint { get; set; }
+    /// <summary>Value and label colours chosen in Appearance (null: the design's own).</summary>
+    public Color? ValueInk { get; set; }
+    public Color? LabelInk { get; set; }
     public override void Render(DrawingContext c)
     {
         double w = Bounds.Width; if (loads.Count == 0 || w < 10) return;
@@ -102,8 +105,8 @@ public sealed class AioCoreBars : Control
                 using (c.PushTransform(Matrix.CreateTranslation(-(x + col / 2), -y) * Matrix.CreateScale(s, s) * Matrix.CreateTranslation(x + col / 2, y)))
                     c.DrawText(ft, new Point(x + col / 2 - ft.Width / 2, y));
             }
-            Centered("C" + (i + 1), typeface, muted, top + barHeight + 2);
-            Centered(double.IsFinite(loads[i]) ? Math.Round(loads[i]).ToString("0") : "—", number, ink, top + barHeight + 14);
+            Centered("C" + (i + 1), typeface, LabelInk is Color li ? Color.FromArgb(200, li.R, li.G, li.B) : muted, top + barHeight + 2);
+            Centered(double.IsFinite(loads[i]) ? Math.Round(loads[i]).ToString("0") : "—", number, ValueInk ?? ink, top + barHeight + 14);
         }
     }
 }

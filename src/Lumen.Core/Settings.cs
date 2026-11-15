@@ -88,6 +88,12 @@ public sealed class Settings
 
 	public string Background { get; set; } = "graphite";
 
+	/// <summary>Colour of the values (numbers, amounts) in every design; "" keeps the design's own text colour.</summary>
+	public string ValueColor { get; set; } = "";
+
+	/// <summary>Colour of the names and captions (CPU, Load, Temp …) in every design; "" keeps the design's own colour.</summary>
+	public string LabelColor { get; set; } = "";
+
 	// English on the first start; the system language ("auto") and the others stay selectable.
 	public string Language { get; set; } = "en";
 
@@ -476,6 +482,8 @@ public sealed class Settings
 		{
 			s.Colors = "state";
 		}
+		s.ValueColor = s.ValueColor?.Trim() is { } vc && IsHexColor(vc) ? vc.ToUpperInvariant() : "";
+		s.LabelColor = s.LabelColor?.Trim() is { } lc && IsHexColor(lc) ? lc.ToUpperInvariant() : "";
 		s.Language = "en";
 		s.Font = (Fonts.Contains(s.Font?.Trim().ToLowerInvariant()) ? s.Font.Trim().ToLowerInvariant() : "inter");
 		Settings settings = s;

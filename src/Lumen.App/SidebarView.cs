@@ -504,6 +504,7 @@ public sealed class SidebarView : Border
 	{
 		Control control = Cards.Create(slot.Kind, AioCompanionTile.ResolveStyle(slot,settings), index, p, metrics, settings);
 		if (control is AioTile aio) aio.SettingsRequested += () => SettingsRequested?.Invoke();
+		TextColours.Apply(control, settings);
 		if (settings.Floating && control is Border card)
 		{
 			card.Background = Palette.Brush(Solid(p.Card));
@@ -646,6 +647,7 @@ public sealed class SidebarView : Border
 		foreach (IWidget widget in widgets)
 		{
 			widget.Update(last, lastHistory);
+			if (widget is Control card) TextColours.Apply(card, settings);
 		}
 	}
 
@@ -671,9 +673,11 @@ public sealed class SidebarView : Border
 			unreported = missing;
 			BuildCards();
 		}
+		bool texts = TextColours.Active(settings);
 		foreach (IWidget widget in widgets)
 		{
 			widget.Update(s, h);
+			if (texts && widget is Control card) TextColours.Apply(card, settings);
 		}
 		if (settings.ColumnsInUse >= 2 && !settings.Horizontal && !settings.Floating && !balanced)
 		{

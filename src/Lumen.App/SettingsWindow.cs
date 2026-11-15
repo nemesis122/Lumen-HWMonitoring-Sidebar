@@ -2086,6 +2086,23 @@ public sealed class SettingsWindow : Window
 				s.Colors = hex;
 			}));
 		}
+		WrapPanel TextSwatches(Func<string> get, Action<string> set)
+		{
+			WrapPanel panel = new WrapPanel { MaxWidth = 330.0, HorizontalAlignment = HorizontalAlignment.Right };
+			LinearGradientBrush own = new LinearGradientBrush
+			{
+				StartPoint = new RelativePoint(0.0, 0.0, RelativeUnit.Relative),
+				EndPoint = new RelativePoint(1.0, 0.0, RelativeUnit.Relative)
+			};
+			own.GradientStops.Add(new GradientStop(Color.Parse(p.Dark ? "#FFFFFF" : "#151B2A"), 0.0));
+			own.GradientStops.Add(new GradientStop(Color.Parse("#8A93A3"), 1.0));
+			panel.Children.Add(Swatch(own, get() == "", L.T("As the design draws it"), delegate { set(""); }, 50.0));
+			foreach (var (hex, key) in new[] { ("#FFFFFF", "White"), ("#D6DAE1", "Light grey"), ("#8A93A3", "Grey"), ("#151B2A", "Black") }.Concat(Palette.Presets.Where(x => x.Hex != "#94A3B8")))
+				panel.Children.Add(Swatch(Palette.Brush(Color.Parse(hex)), get().Equals(hex, StringComparison.OrdinalIgnoreCase), L.T(key), delegate { set(hex); }));
+			return panel;
+		}
+		WrapPanel valueSwatches = TextSwatches(() => s.ValueColor, v => s.ValueColor = v);
+		WrapPanel labelSwatches = TextSwatches(() => s.LabelColor, v => s.LabelColor = v);
 		bool flag2 = s.Theme switch
 		{
 			ThemeMode.Dark => true,
@@ -2123,7 +2140,7 @@ public sealed class SettingsWindow : Window
 		}
 		return new Control[5]
 		{
-			Section(L.T("Colours"), Row(L.T("Theme"), editor, null, "Theme"), Row(L.T("Colour scheme"), wrapPanel, text + ((s.Colors == "state") ? "" : (" · " + L.T("Hot readings still turn amber and red."))), "Colors"), Row(L.T("Background"), wrapPanel2, help, "Background")),
+			Section(L.T("Colours"), Row(L.T("Theme"), editor, null, "Theme"), Row(L.T("Colour scheme"), wrapPanel, text + ((s.Colors == "state") ? "" : (" · " + L.T("Hot readings still turn amber and red."))), "Colors"), Row(L.T("Value colour"), valueSwatches, L.T("Numbers and amounts in every design. Hot readings still turn amber and red."), "ValueColor"), Row(L.T("Label colour"), labelSwatches, L.T("Names and captions (CPU, Load, Temp …) in every design."), "LabelColor"), Row(L.T("Background"), wrapPanel2, help, "Background")),
 			Section(L.T("Effects"), Row(L.T("Glass effect"), Toggle(s.Glass, delegate(bool v)
 			{
 				s.Glass = v;

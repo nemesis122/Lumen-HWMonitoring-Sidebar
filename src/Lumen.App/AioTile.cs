@@ -18,6 +18,8 @@ public sealed partial class AioTile : Border, IWidget, INamed
     private WidgetSlot? slot;
     private readonly StackPanel content = new() { Spacing = 9 };
     private readonly Dictionary<string,List<TextBlock>> fields = new();
+    /// <summary>The texts that show a reading (for the value colour in Appearance).</summary>
+    public HashSet<TextBlock> ValueTexts => fields.Values.SelectMany(x=>x).ToHashSet();
     private readonly Dictionary<TextBlock,Func<AioReading,string>> formats = new();
     private readonly List<(string Key,AioMeter Meter)> meters = new();
     private readonly List<(string Key,AreaChart Chart)> charts = new();
