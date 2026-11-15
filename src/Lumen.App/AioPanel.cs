@@ -21,6 +21,8 @@ public sealed partial class AioTile
     private PanelCoreCells? panelCores;
     private PanelTheme panel = PanelTheme.For("red");
 
+    private bool PanelPlain => style == WidgetStyle.AioPanelPlain;
+
     private void PanelDesign()
     {
         drivesPlaced = true; coreBars = null; mainboardCores = null; panelCores = null;
@@ -48,7 +50,7 @@ public sealed partial class AioTile
                 panelCores = new PanelCoreCells { Theme = panel, Loads = lastCoreLoads };
                 body.Children.Add(Stack(3, PanelLabel("USAGE"), panelCores));
             }
-            var values = cpu.Where(r => r != temp && r != load && !gaugeKeys.Contains(r.Key)).Select(r => PanelValue(r)).ToList();
+            var values = cpu.Where(r => (PanelPlain || (r != temp && r != load)) && !gaugeKeys.Contains(r.Key)).OrderBy(r => r == temp ? 0 : r == load ? 1 : 2).Select(r => PanelValue(r)).ToList();
             var graph = temp != null ? PanelPlot(temp, "TEMPERATURE") : load != null ? PanelPlot(load, "LOAD") : null;
             body.Children.Add(PanelGraphAndValues(graph, values));
             PanelSection("cpu", PanelName(WidgetKind.Cpu, 0, snapshot.Cpu?.Name ?? "", "CPU"), Naming.Title(owner, 0, "CPU"), body, temp, load);
@@ -68,7 +70,7 @@ public sealed partial class AioTile
             if (power != null && PanelPlot(power, "POWER") is { } g3) graphs.Add(g3);
             var body = Stack(6);
             if (graphs.Count > 0) body.Children.Add(FixedCols(graphs.Count, graphs.ToArray()));
-            var values = rows.Where(r => r != temp && r != load && !gaugeKeys.Contains(r.Key)).Select(r => PanelValue(r)).ToArray();
+            var values = rows.Where(r => (PanelPlain || (r != temp && r != load)) && !gaugeKeys.Contains(r.Key)).OrderBy(r => r == temp ? 0 : r == load ? 1 : 2).Select(r => PanelValue(r)).ToArray();
             if (values.Length > 0) body.Children.Add(PanelValueGrid(values));
             string fallback = "GPU" + (index == 0 ? "" : " " + (index + 1));
             PanelSection("gpu", PanelName(WidgetKind.Gpu, index, snapshot.Gpus.FirstOrDefault(g => g.Id == gpu.Key)?.Name ?? "", fallback),
@@ -82,7 +84,14 @@ public sealed partial class AioTile
             var amount = PanelText(Amount(ram), 13, ink, true); formats[amount] = Amount;
             if (!fields.TryGetValue(ram.Key, out var list)) fields[ram.Key] = list = new(); list.Add(amount);
             var bar = PanelBarFor(ram);
-            var body = Stack(5, PanelLabel("MEMORY"), FitLeft(amount), Stack(3, PanelText("USED MEMORY", 8.5, muted), bar));
+            Control used = PanelText("USED MEMORY", 8.5, muted);
+            if (PanelPlain)
+            {
+                // Panel Plain has no gauge, so the load is written next to the caption.
+                var percent = PanelV(ram, 8.5, ink); formats[percent] = r => Format.Percent(r.Number); percent.Text = Format.Percent(ram.Number);
+                used = Ui.Columns("*,Auto", used, percent);
+            }
+            var body = Stack(5, PanelLabel("MEMORY"), FitLeft(amount), Stack(3, used, bar));
             if (PanelPlot(ram, "USAGE") is { } plot) body.Children.Add(plot);
             // The load itself is the gauge (top block, ring, badge or header).
             PanelSection("ram", "MEMORY", "RAM", body, null, ram);
@@ -208,7 +217,7 @@ public sealed partial class AioTile
         Control left;
         Control? header = null;
         var nameText = PanelText(name, 8.4, ink); nameText.TextAlignment = TextAlignment.Center; nameText.HorizontalAlignment = HorizontalAlignment.Center;
-        bool gauge = style != WidgetStyle.AioPanel && (temp != null || load != null);
+        bool gauge = style != WidgetStyle.AioPanel && !PanelPlain && (temp != null || load != null);
         if (gauge && style == WidgetStyle.AioPanelRings)
             left = Stack(4, PanelTwin(temp, load, null, 92), nameText);
         else if (gauge && style == WidgetStyle.AioPanelBadges)

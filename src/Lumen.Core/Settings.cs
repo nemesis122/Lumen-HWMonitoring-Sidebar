@@ -238,7 +238,7 @@ public sealed class Settings
         WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings,
         WidgetStyle.AioMainboard, WidgetStyle.AioMainboardMap, WidgetStyle.AioMainboardDesktop,
         WidgetStyle.AioMainboardCores,
-        WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelBadges, WidgetStyle.AioPanelHeader
+        WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelBadges, WidgetStyle.AioPanelHeader, WidgetStyle.AioPanelPlain
 	};
 
 	public int ColumnCount

@@ -132,7 +132,7 @@ public sealed partial class AioTile
             case WidgetStyle.AioMainboardCores: Mainboard();break;
             case WidgetStyle.AioMainboardMap: MainboardMap();break;
             case WidgetStyle.AioMainboardDesktop: MainboardMap();break;
-            case WidgetStyle.AioPanel: case WidgetStyle.AioPanelRings: case WidgetStyle.AioPanelBadges: case WidgetStyle.AioPanelHeader: PanelDesign();break;
+            case WidgetStyle.AioPanel: case WidgetStyle.AioPanelRings: case WidgetStyle.AioPanelBadges: case WidgetStyle.AioPanelHeader: case WidgetStyle.AioPanelPlain: PanelDesign();break;
             case WidgetStyle.AioMainboardStrips: case WidgetStyle.AioMainboardGauges:
             case WidgetStyle.AioMainboardMatrix: case WidgetStyle.AioMainboardType: MainboardVariant();break;
             case WidgetStyle.AioTypeBlock: ReferenceType();break;

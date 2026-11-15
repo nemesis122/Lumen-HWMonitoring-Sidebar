@@ -13,10 +13,10 @@ public static class AioDesigns
         WidgetStyle.AioStudioLight, WidgetStyle.AioInstrument,
         WidgetStyle.AioAuroraFusion, WidgetStyle.AioCarbonPulse,
         WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings,
-        WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelBadges, WidgetStyle.AioPanelHeader
+        WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelBadges, WidgetStyle.AioPanelHeader, WidgetStyle.AioPanelPlain
     };
     /// <summary>The sensor-panel family: hardware pictures beside red-label values, colour and gauge style chosen in Customise.</summary>
-    public static bool Panel(WidgetStyle style) => style is WidgetStyle.AioPanel or WidgetStyle.AioPanelRings or WidgetStyle.AioPanelBadges or WidgetStyle.AioPanelHeader;
+    public static bool Panel(WidgetStyle style) => style is WidgetStyle.AioPanel or WidgetStyle.AioPanelRings or WidgetStyle.AioPanelBadges or WidgetStyle.AioPanelHeader or WidgetStyle.AioPanelPlain;
     public static readonly (string Key,string Name)[] PanelThemes={("red","Red"),("cyan","Cyber cyan"),("purple","Neon purple"),("gold","Gold"),("carbon","Carbon orange"),("glass","Glass red"),("lime","Toxic lime"),("silver","Ice silver")};
     public static readonly (string Key,string Name)[] PanelGauges={("dots","Dot rings"),("segments","Segment rings"),("twin","Double rings"),("leds","LED bars"),("hex","Hexagons"),("columns","Dot columns"),("grid","10 × 10 grid"),("tiles","Number tiles"),("rays","Ray rings"),("diamonds","Diamonds"),("tubes","Thermometers"),("strip","Compact strip")};
     public static bool Contains(WidgetStyle style) => Styles.Contains(style);
@@ -78,7 +78,7 @@ public static class AioDesigns
         WidgetStyle.AioInstrument => "Instrument", WidgetStyle.AioAuroraFusion => "Aurora Fusion",
         WidgetStyle.AioPopConsole => "Pop Console", WidgetStyle.AioCarbonPulse => "Carbon Pulse",
         WidgetStyle.AioIsometricAtlas => "Isometric Atlas", WidgetStyle.AioIsometricTiles => "Isometric Tiles", WidgetStyle.AioIsometricRig => "Isometric Rig", WidgetStyle.AioIsometricPedestals => "Isometric Pedestals", WidgetStyle.AioIsometricCompact => "Isometric Compact", WidgetStyle.AioIsometricRings => "Isometric Rings",
-        WidgetStyle.AioPanel => "Panel", WidgetStyle.AioPanelRings => "Panel Rings", WidgetStyle.AioPanelBadges => "Panel Badges", WidgetStyle.AioPanelHeader => "Panel Header", _ => style.ToString()
+        WidgetStyle.AioPanel => "Panel", WidgetStyle.AioPanelRings => "Panel Rings", WidgetStyle.AioPanelBadges => "Panel Badges", WidgetStyle.AioPanelHeader => "Panel Header", WidgetStyle.AioPanelPlain => "Panel Plain", _ => style.ToString()
     };
 
     // Keep saved visibility/order/individual styles intact. Switching back restores separate cards.

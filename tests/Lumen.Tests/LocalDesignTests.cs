@@ -21,7 +21,7 @@ public class LocalDesignTests
             WidgetStyle.Axis, WidgetStyle.Aurora, WidgetStyle.Flux, WidgetStyle.Halo,
             WidgetStyle.AioMainboardType,WidgetStyle.AioMainboardMatrix,WidgetStyle.AioMainboardGauges,WidgetStyle.AioMainboardStrips,
             WidgetStyle.AioPopConsole,WidgetStyle.AioChromatic,WidgetStyle.Aperture };
-        Assert.Equal(86, Settings.Selectable.Count());
+        Assert.Equal(87, Settings.Selectable.Count());
         Assert.All(removed, style => { Assert.DoesNotContain(style, Settings.Selectable); Assert.Equal(WidgetStyle.Standard, Settings.Successor(style)); });
     }
 

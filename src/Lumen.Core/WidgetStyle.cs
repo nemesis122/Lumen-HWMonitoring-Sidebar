@@ -185,7 +185,8 @@ public enum WidgetStyle
     AioPanel,
     AioPanelRings,
     AioPanelBadges,
-    AioPanelHeader
+    AioPanelHeader,
+    AioPanelPlain
 }
 
 
