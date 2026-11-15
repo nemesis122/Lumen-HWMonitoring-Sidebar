@@ -40,8 +40,10 @@ public sealed partial class AioTile
 }
 
 /// <summary>One bar per CPU core, filled and coloured by its load; core names and loads below when there is room.</summary>
-public sealed class AioCoreBars : Control
+public sealed class AioCoreBars : Control, RedSkin.IOneColour
 {
+    /// <summary>Red designs: one red, no lighter second tone (set by RedSkin).</summary>
+    public bool OneColour { get; set; }
     private readonly Color ink, muted, track;
     private IReadOnlyList<double> loads = Array.Empty<double>();
     public AioCoreBars(Color ink, Color muted, Color track) { this.ink = ink; this.muted = muted; this.track = track; }
@@ -97,7 +99,7 @@ public sealed class AioCoreBars : Control
             double f = double.IsFinite(loads[i]) ? Math.Clamp(loads[i] / 100, 0, 1) : 0;
             c.DrawRectangle(back, null, new Rect(x, top, col, barHeight), radius, radius);
             double h = Math.Max(Math.Min(radius * 2, barHeight), barHeight * f);
-            c.DrawRectangle(Palette.Brush(Tint is Color tint ? RedSkin.Tint(Heat(f), tint) : Heat(f)), null, new Rect(x, top + barHeight - h, col, h), radius, radius);
+            c.DrawRectangle(Palette.Brush(Tint is Color tint ? RedSkin.Tint(Heat(f), tint, OneColour) : Heat(f)), null, new Rect(x, top + barHeight - h, col, h), radius, radius);
             void Centered(string text, Typeface face, Color color, double y)
             {
                 var ft = new FormattedText(text, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, face, size, Palette.Brush(color));

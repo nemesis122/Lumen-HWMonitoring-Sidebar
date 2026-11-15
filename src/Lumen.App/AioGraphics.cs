@@ -29,6 +29,8 @@ public sealed class AioMeter : Control
 public sealed class AioRing : Control
 {
     private readonly Color color,track; private readonly bool segmented,openArc; private double? level;
+    // The segmented ring runs from cyan to violet; fields, so a chosen colour (RedSkin) reaches them too.
+    private Color segmentStart=Color.Parse("#20D8D8"),segmentEnd=Color.Parse("#D276E9");
     public AioRing(Color color,Color track,bool segmented=false,bool openArc=false){this.color=color;this.track=track;this.segmented=segmented;this.openArc=openArc;}
     public void Set(double? value){level=value;InvalidateVisual();}
     public override void Render(DrawingContext c)
@@ -38,7 +40,7 @@ public sealed class AioRing : Control
         {
             for(int i=0;i<35;i++)
             {
-                double angle=(135+i*270d/34)*Math.PI/180;var fill=level.HasValue&&i<level.Value*35?Palette.Mix(Color.Parse("#20D8D8"),Color.Parse("#D276E9"),i/34d):track;
+                double angle=(135+i*270d/34)*Math.PI/180;var fill=level.HasValue&&i<level.Value*35?Palette.Mix(segmentStart,segmentEnd,i/34d):track;
                 c.DrawLine(new Pen(Palette.Brush(fill),4),new Point(center.X+Math.Cos(angle)*(radius-8),center.Y+Math.Sin(angle)*(radius-8)),new Point(center.X+Math.Cos(angle)*radius,center.Y+Math.Sin(angle)*radius));
             }
             return;

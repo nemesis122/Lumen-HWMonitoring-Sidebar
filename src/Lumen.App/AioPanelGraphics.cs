@@ -10,7 +10,7 @@ public sealed record PanelTheme(string Key, Color Accent, Color Hot, Color Secti
 {
     public static FontFamily Font => Ui.DesignFont(Ui.Orbitron);
     public Color Grid => Palette.Mix(Color.Parse("#0A0A0B"), Accent, .26);
-    public Color Soft => Palette.Mix(Accent, Colors.White, .4);
+    public Color Soft => Accent; // one colour throughout, no lighter (pink) variant (user request)
     public Color Dim => Palette.Mix(Color.Parse("#0A0A0B"), Accent, .14);
 
     public static PanelTheme For(string? key, Color? own = null)

@@ -24,8 +24,8 @@ public sealed partial class AioTile
     private Color Amber=>skin is not null?SkinC:C("#F5B94D");
     private Color Coral=>skin is not null?SkinA:C("#FA7E74");
     private Color SkinA=>skin??RedSkin.Red;
-    private Color SkinB=>Palette.Mix(SkinA,Colors.White,.3);
-    private Color SkinC=>Palette.Mix(SkinA,Colors.White,.55);
+    private Color SkinB=>red?SkinA:Palette.Mix(SkinA,Colors.White,.3); // Red designs: one red, no pink variants (user request)
+    private Color SkinC=>red?SkinA:Palette.Mix(SkinA,Colors.White,.55);
     private Color MapCyan=>skin is not null?SkinA:MainboardMapColors.Cyan;
     private Color MapViolet=>skin is not null?SkinB:MainboardMapColors.Violet;
     private Color MapFor(string part)=>skin is not null?(part is "gpu" or "psu"?SkinB:part is "cpu" or "ram"?SkinA:C("#64707D")):MainboardMapColors.For(part);
@@ -160,7 +160,7 @@ public sealed partial class AioTile
         ReferenceDrives();
         if(!MainboardDesign(style)&&!AioDesigns.Panel(style)&&!AioDesigns.Black(style)) ReferenceCoreBars();
         if(red)RedFont();
-        if(skin is Color tint)RedSkin.Apply(this,tint);
+        if(skin is Color tint)RedSkin.Apply(this,tint,red);
         // Explicitly selected additional devices/sensors stay available without duplicating the reference's main values.
         var extras=rows.Where(r=>!referenceUsed.Contains(r.Key)).ToArray();
         foreach(var group in extras.GroupBy(r=>r.Group+":"+r.Device))
@@ -228,7 +228,7 @@ public sealed partial class AioTile
         {
             Color color=TileColor(r);var line=Ui.Columns("Auto,*",Ui.Glyph(RefGlyph(r),C("#DDF8FF"),24),Stack(0,Text(Translate(L.T(r.Label)),12,C("#E1D9FC")),Fit(V(r,18,Colors.White))));line.ColumnSpacing=9;
             var gradient=new LinearGradientBrush{GradientStops={new(Palette.Mix(color,Colors.White,.08),0),new(Palette.Mix(color,Colors.Black,.25),1)}};
-            return (Control)new Border{Background=gradient,BorderBrush=Palette.Brush(Palette.Mix(color,Colors.White,.2)),BorderThickness=new Thickness(1),CornerRadius=new CornerRadius(8),Padding=new Thickness(9,5),Margin=new Thickness(0,0,4,0),Child=line};
+            return (Control)new Border{Background=gradient,BorderBrush=Palette.Brush(red?color:Palette.Mix(color,Colors.White,.2)),BorderThickness=new Thickness(1),CornerRadius=new CornerRadius(8),Padding=new Thickness(9,5),Margin=new Thickness(0,0,4,0),Child=line};
         }).ToArray());
     }
     private void ReferenceCooling(bool fans=false)

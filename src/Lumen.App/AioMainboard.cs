@@ -221,8 +221,10 @@ public sealed class MainboardTraces : Control
 }
 
 /// <summary>Live core-load columns; row count depends on width and core count, never on the readings.</summary>
-public sealed class MainboardCoreGrid : Control
+public sealed class MainboardCoreGrid : Control, RedSkin.IOneColour
 {
+    /// <summary>Red designs: one red, no lighter second tone (set by RedSkin).</summary>
+    public bool OneColour { get; set; }
     public bool TwoTone { get; init; }
     /// <summary>Chosen colour or Red design: the load colours in that hue.</summary>
     public Color? Tint { get; set; }
@@ -272,7 +274,7 @@ public sealed class MainboardCoreGrid : Control
             c.DrawRectangle(Palette.Brush(track), null, new Rect(barX, y + 13, barWidth, barHeight), 2, 2);
             double fraction = double.IsFinite(loads[i]) ? Math.Clamp(loads[i] / 100, 0, 1) : 0;
             double height = barHeight * fraction;
-            var fill=TwoTone?(accent==MainboardMapColors.Cyan?(i/columns%2==0?MainboardMapColors.Cyan:MainboardMapColors.Violet):(i/columns%2==0?accent:Palette.Mix(accent,Colors.White,.35))):Tint is Color tint?RedSkin.Tint(AioCoreBars.Heat(fraction),tint):AioCoreBars.Heat(fraction);
+            var fill=TwoTone?(accent==MainboardMapColors.Cyan?(i/columns%2==0?MainboardMapColors.Cyan:MainboardMapColors.Violet):(OneColour||i/columns%2==0?accent:Palette.Mix(accent,Colors.White,.35))):Tint is Color tint?RedSkin.Tint(AioCoreBars.Heat(fraction),tint,OneColour):AioCoreBars.Heat(fraction);
             if(height > 0) c.DrawRectangle(Palette.Brush(fill), null, new Rect(barX, y + 13 + barHeight - height, barWidth, height), 1, 1);
             Center(double.IsFinite(loads[i]) ? Math.Round(loads[i]).ToString("0") : "—", x, y + 16 + barHeight, ValueInk ?? ink, cell>30?11:9);
         }

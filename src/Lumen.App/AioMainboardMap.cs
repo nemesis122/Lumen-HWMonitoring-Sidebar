@@ -225,8 +225,10 @@ public sealed class MainboardDriveGrid : Panel
 public sealed record MapConnectionPath(string Part,Control Card,Rect Component,IReadOnlyList<Point> Points);
 
 /// <summary>Variant 1: independent orthogonal cyan paths, hollow contacts and component contours.</summary>
-public sealed class MapConnections : Control
+public sealed class MapConnections : Control, RedSkin.IOneColour
 {
+    /// <summary>Red designs: one red, no lighter second tone (set by RedSkin).</summary>
+    public bool OneColour { get; set; }
     private readonly MainboardMapLayout layout;
     private readonly Control board;
     private readonly IReadOnlyList<(Control Card,Point Target)> targets;
@@ -298,7 +300,7 @@ public sealed class MapConnections : Control
         foreach(var path in GetPaths())
         {
             // A Red design draws its connections in its own red (parts of the second colour in a lighter red).
-            var accent=color==MainboardMapColors.Cyan?MainboardMapColors.For(path.Part):path.Part is "gpu" or "psu"?Palette.Mix(color,Colors.White,.35):path.Part is "cpu" or "ram"?color:Color.Parse("#64707D");
+            var accent=color==MainboardMapColors.Cyan?MainboardMapColors.For(path.Part):path.Part is "gpu" or "psu"?(OneColour?color:Palette.Mix(color,Colors.White,.35)):path.Part is "cpu" or "ram"?color:Color.Parse("#64707D");
             var brush=Palette.Brush(accent);var pen=new Pen(brush,2.4);var outline=new Pen(brush,2.5);
             if(path.Component.Width>0)c.DrawRectangle(null,outline,path.Component,2,2);
             for(int i=1;i<path.Points.Count;i++)c.DrawLine(pen,path.Points[i-1],path.Points[i]);

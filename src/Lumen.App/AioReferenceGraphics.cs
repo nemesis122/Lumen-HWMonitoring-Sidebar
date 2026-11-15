@@ -113,6 +113,9 @@ public sealed class AioReferenceSurface : Decorator
     public bool Dark { get; init; }
     /// <summary>The card's opacity (0..1): panel fills are as see-through as the card itself.</summary>
     public double Alpha { get; init; } = 1;
+    // Glow and corner dots of the aurora frame; fields, so a chosen colour (RedSkin) reaches them too.
+    private Color glowA=Color.Parse("#14EEEA"),glowB=Color.Parse("#922FE5"),glowC=Color.Parse("#FD875E"),glowD=Color.Parse("#C72CEF");
+    private Color dotA=Color.Parse("#00F0F0"),dotB=Color.Parse("#F96D49"),dotC=Color.Parse("#B92CF0");
     public override void Render(DrawingContext c)
     {
         double w=Bounds.Width,h=Bounds.Height;if(w<4||h<4)return;
@@ -151,12 +154,12 @@ public sealed class AioReferenceSurface : Decorator
         if(Mode is "pop" or "banner"){c.DrawGeometry(Palette.Brush(Tint),null,g);return;}
         if(Mode=="aurora")
         {
-            var glow=new LinearGradientBrush{StartPoint=new RelativePoint(0,0,RelativeUnit.Relative),EndPoint=new RelativePoint(1,1,RelativeUnit.Relative),GradientStops={new(Color.Parse("#14EEEA"),0),new(Color.Parse("#922FE5"),.45),new(Color.Parse("#FD875E"),.72),new(Color.Parse("#C72CEF"),1)}};
+            var glow=new LinearGradientBrush{StartPoint=new RelativePoint(0,0,RelativeUnit.Relative),EndPoint=new RelativePoint(1,1,RelativeUnit.Relative),GradientStops={new(glowA,0),new(glowB,.45),new(glowC,.72),new(glowD,1)}};
             for(int i=34;i>=2;i-=2)c.DrawGeometry(null,new Pen(glow,i){Brush=WithOpacity(glow,(36-i)/260d)},g);
             c.DrawGeometry(Palette.Brush(Color.Parse(Light?"#F3F5FB":"#101124")),new Pen(glow,1.5),g);
             using(c.PushGeometryClip(g))
             {
-                foreach(var (x,y,color) in new[]{(8d,h*.48,Color.Parse("#00F0F0")),(w-8,h*.24,Color.Parse("#F96D49")),(w*.78,h-8,Color.Parse("#B92CF0"))})
+                foreach(var (x,y,color) in new[]{(8d,h*.48,dotA),(w-8,h*.24,dotB),(w*.78,h-8,dotC)})
                     c.DrawEllipse(new RadialGradientBrush{GradientStops={new(Color.FromArgb(100,color.R,color.G,color.B),0),new(Color.FromArgb(0,color.R,color.G,color.B),1)}},null,new Point(x,y),34,h*.55);
             }
             c.DrawGeometry(null,new Pen(WithOpacity(glow,.14),22),g);
@@ -182,16 +185,19 @@ public sealed class AioIsometricConnections : Control
     public bool ShowGpu { get; init; } = true;
     public bool ShowRam { get; init; } = true;
     public bool ShowDisk { get; init; } = true;
+    // Wire colours; fields, so a chosen colour (RedSkin) reaches them too.
+    private Color pin=Color.Parse("#A0F2EF"),cyan=Color.Parse("#24D5DD"),violet=Color.Parse("#AA79EE"),coral=Color.Parse("#FA7E74"),amber=Color.Parse("#F5B94D");
+    private Color Named(string hex)=>hex switch{"#24D5DD"=>cyan,"#AA79EE"=>violet,"#FA7E74"=>coral,"#F5B94D"=>amber,_=>Color.Parse(hex)};
     public override void Render(DrawingContext c)
     {
         foreach(var (show,path,color) in new[]{(ShowCpu,"M160,76 L178,53 L190,53","#24D5DD"),(ShowGpu,"M170,230 L182,213 L190,213","#AA79EE"),(ShowGpu,"M170,262 L188,260 L202,260","#FA7E74"),(ShowGpu,"M154,301 L183,301 L202,300","#AA79EE"),(ShowRam,"M135,376 L230,376 L258,372","#24D5DD"),(ShowDisk,"M235,456 L246,456 L258,438","#F5B94D"),(ShowCpu&&ShowGpu,"M35,159 L11,180 L11,275","#24D5DD"),(ShowGpu&&ShowRam,FanCount>0?"M49,332 L49,358 L12,375 L12,476 L45,495 L32,504":"M49,332 L49,358 L12,375 L12,420","#24D5DD")})
         {
-            if(show)Wire(path,Color.Parse(color));
+            if(show)Wire(path,Named(color));
         }
         var colors=new[]{"#24D5DD","#24D5DD","#AA79EE","#F5B94D","#FA7E74"};
         for(int i=0;i<Math.Min(5,FanCount);i++)
         {
-            var tint=Color.Parse(colors[i]);double x=32+i*66.8;
+            var tint=Named(colors[i]);double x=32+i*66.8;
             Wire(FormattableString.Invariant($"M{(i==0?45:x-66.8)},504 L{x},504 L{x-7},526"),tint);
             c.DrawEllipse(Palette.Brush(tint),null,new Point(x,504),2.2,2.2);
         }
@@ -200,12 +206,14 @@ public sealed class AioIsometricConnections : Control
             var geometry=StreamGeometry.Parse(path);c.DrawGeometry(null,new Pen(Palette.Brush(Color.FromArgb(35,tint.R,tint.G,tint.B)),7),geometry);c.DrawGeometry(null,new Pen(Palette.Brush(tint),1.2),geometry);
         }
         foreach(var (show,point) in new[]{(ShowCpu,new Point(178,53)),(ShowGpu,new Point(182,213)),(ShowGpu,new Point(202,260)),(ShowGpu,new Point(202,300)),(ShowRam,new Point(230,376)),(ShowDisk,new Point(246,456))})
-            if(show)c.DrawEllipse(Palette.Brush(Color.Parse("#A0F2EF")),null,point,2.2,2.2);
+            if(show)c.DrawEllipse(Palette.Brush(pin),null,point,2.2,2.2);
     }
 }
 
-public sealed class AioReferenceHistory : Control
+public sealed class AioReferenceHistory : Control, RedSkin.IOneColour
 {
+    /// <summary>Red designs: one red, no lighter second tone (set by RedSkin).</summary>
+    public bool OneColour { get; set; }
     public Color Color { get; init; }
     public Color OtherColor { get; init; } = Color.Parse("#F9BC44");
     public string Mode { get; init; } = "area";
@@ -227,7 +235,7 @@ public sealed class AioReferenceHistory : Control
                     if(!double.IsFinite(data[i])){started=false;continue;}
                     double x=w*i/(data.Length-1),level=Math.Clamp(data[i]/max,0,1),y=origin+(invert?1:-1)*amplitude*level;
                     if(Mode=="bars")
-                    {double slot=w/data.Length;c.DrawRectangle(Palette.Brush(Palette.Mix(color,Colors.White,level*.3)),null,new Rect(slot*i,origin-amplitude*level,Math.Max(1,slot-1),amplitude*level));continue;}
+                    {double slot=w/data.Length;c.DrawRectangle(Palette.Brush(OneColour?color:Palette.Mix(color,Colors.White,level*.3)),null,new Rect(slot*i,origin-amplitude*level,Math.Max(1,slot-1),amplitude*level));continue;}
                     if(started)s.LineTo(new Point(x,y));else{s.BeginFigure(new Point(x,y),false);started=true;}a.LineTo(new Point(x,y));
                 }
                 if(started)s.EndFigure(false);a.LineTo(new Point(w,origin));a.EndFigure(true);

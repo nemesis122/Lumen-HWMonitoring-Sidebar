@@ -21,7 +21,13 @@ public static class RedSkin
     /// The colour in the hue of <paramref name="target"/> (the colour chosen in Appearance, or the red of the Red designs):
     /// same brightness and strength; greys, white and black are kept. A grey target (monochrome) makes every colour grey.
     /// </summary>
-    public static Color Tint(Color c, Color target)
+    /// <summary>Controls that draw a lighter second tone of their colour; a Red design turns that off (one red throughout).</summary>
+    public interface IOneColour { bool OneColour { get; set; } }
+
+    public static Color Tint(Color c, Color target) => Tint(c, target, false);
+    /// <param name="one">Red designs: a colour you see (ring, bar, value) takes exactly the target, so there is never
+    /// a dark red next to a light red or pink (user request); only a dark tint under a card keeps its depth.</param>
+    public static Color Tint(Color c, Color target, bool one)
     {
         double r = c.R / 255d, g = c.G / 255d, b = c.B / 255d;
         double max = Math.Max(r, Math.Max(g, b)), min = Math.Min(r, Math.Min(g, b));
@@ -30,6 +36,7 @@ public static class RedSkin
         double tr = target.R / 255d, tg = target.G / 255d, tb = target.B / 255d;
         double tmax = Math.Max(tr, Math.Max(tg, tb)), tmin = Math.Min(tr, Math.Min(tg, tb));
         if (tmax <= 0 || (tmax - tmin) / tmax < .12) { byte grey = (byte)Math.Round(max * 255); return Color.FromArgb(c.A, grey, grey, grey); }
+        if (one && max >= .45) return Color.FromArgb(c.A, target.R, target.G, target.B);
         double d = tmax - tmin;
         double hue = tmax == tr ? ((tg - tb) / d) % 6 : tmax == tg ? (tb - tr) / d + 2 : (tr - tg) / d + 4;
         if (hue < 0) hue += 6;
@@ -41,9 +48,10 @@ public static class RedSkin
     }
 
     [ThreadStatic] private static Color target;
+    [ThreadStatic] private static bool oneColour;
     public static IBrush? Redden(IBrush? brush) => brush switch
     {
-        ISolidColorBrush solid => new SolidColorBrush(Tint(solid.Color, target), solid.Opacity),
+        ISolidColorBrush solid => new SolidColorBrush(Tint(solid.Color, target, oneColour), solid.Opacity),
         LinearGradientBrush linear => new LinearGradientBrush
         {
             StartPoint = linear.StartPoint, EndPoint = linear.EndPoint, SpreadMethod = linear.SpreadMethod, Opacity = linear.Opacity,
@@ -58,16 +66,17 @@ public static class RedSkin
     };
     private static GradientStops With(this GradientStops into, IEnumerable<GradientStop> stops)
     {
-        foreach (var stop in stops) into.Add(new GradientStop(Tint(stop.Color, target), stop.Offset));
+        foreach (var stop in stops) into.Add(new GradientStop(Tint(stop.Color, target, oneColour), stop.Offset));
         return into;
     }
 
     /// <summary>Turns a built card red (the card itself and everything in it).</summary>
     public static void Apply(Control root) => Apply(root, Red);
     /// <summary>Gives a built card the hue of <paramref name="colour"/> (the card itself and everything in it).</summary>
-    public static void Apply(Control root, Color colour)
+    public static void Apply(Control root, Color colour) => Apply(root, colour, false);
+    public static void Apply(Control root, Color colour, bool one)
     {
-        target = colour;
+        target = colour; oneColour = one;
         foreach (var control in root.GetLogicalDescendants().OfType<Control>().Prepend(root).ToList())
         {
             switch (control)
@@ -79,6 +88,7 @@ public static class RedSkin
             }
             if (control is AioCoreBars bars) bars.Tint = colour;
             if (control is MainboardCoreGrid grid) grid.Tint = colour;
+            if (one && control is IOneColour single) single.OneColour = true;
             // The design's own drawn controls keep their colours in fields: turn those red too.
             var type = control.GetType();
             if (type.Namespace != typeof(RedSkin).Namespace || control is AioTile) continue;
@@ -87,9 +97,9 @@ public static class RedSkin
                 object? value = field.GetValue(control);
                 object? red = value switch
                 {
-                    Color c => Tint(c, colour),
+                    Color c => Tint(c, colour, one),
                     IBrush b => Redden(b),
-                    Color[] colors => colors.Select(x => Tint(x, colour)).ToArray(),
+                    Color[] colors => colors.Select(x => Tint(x, colour, one)).ToArray(),
                     _ => null
                 };
                 if (red != null) field.SetValue(control, red);
