@@ -16,7 +16,7 @@ public sealed record BlackTheme(Color A, Color B, string Cards, string Art, Font
         var colours = AioDesigns.BlackColours.FirstOrDefault(c => c.Key == look.Colour);
         if (colours.Key == null) colours = AioDesigns.BlackColours[0];
         var a = own ?? Color.Parse(colours.A); var b = own is { } o ? Palette.Mix(o, Colors.White, .35) : Color.Parse(colours.B);
-        var font = look.Font switch { "orbitron" => Orbitron, "mono" => Mono, _ => FontFamily.Default };
+        var font = Ui.DesignFont(look.Font switch { "orbitron" => Orbitron, "mono" => Mono, _ => Ui.Inter });
         return new BlackTheme(a, b, look.Cards, look.Art, font, Color.Parse("#A8A8B2"), Color.FromArgb(32, 255, 255, 255));
     }
 }

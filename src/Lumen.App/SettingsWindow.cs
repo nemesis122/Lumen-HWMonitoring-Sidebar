@@ -2196,14 +2196,15 @@ public sealed class SettingsWindow : Window
 
 	private static string[] FontNames()
 	{
-		return new string[6]
+		return new string[7]
 		{
 			L.T("Inter (built in)"),
 			"Segoe UI",
 			"Segoe UI Variable",
 			"Bahnschrift",
 			L.T("Bahnschrift narrow"),
-			L.T("Monospace (Cascadia, Consolas)")
+			L.T("Monospace (Cascadia, Consolas)"),
+			L.T("Orbitron (built in)")
 		};
 	}
 

@@ -52,7 +52,7 @@ public sealed class DriveTransferPairs : StackPanel
                     if (style == WidgetStyle.SplitFlap)
                     {
                         cell = new Border { Background = Palette.Brush(Palette.Mix(palette.Card,palette.Ink,.04)), BorderBrush = Palette.Brush(palette.Stroke), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(3), Padding = new Thickness(6,3), Child = cell };
-                        value.FontFamily = Ui.FamilyFor("mono");
+                        value.FontFamily = Ui.DesignFont(Ui.FamilyFor("mono"));
                     }
                     else if (style == WidgetStyle.HardwareMap)
                         cell = new Border { BorderBrush = Palette.Brush(palette.Stroke), BorderThickness = new Thickness(1,0,0,0), Padding = new Thickness(6,0,0,0), Child = cell };
@@ -60,7 +60,7 @@ public sealed class DriveTransferPairs : StackPanel
                     {
                         ((StackPanel)cell).Children.Clear();
                         label.Text = label.Text?.ToUpper(L.Culture);
-                        label.FontFamily = new FontFamily("Cascadia Mono, Consolas, DejaVu Sans Mono, fonts:Inter#Inter, $Default");
+                        label.FontFamily = Ui.DesignFont(new FontFamily("Cascadia Mono, Consolas, DejaVu Sans Mono, fonts:Inter#Inter, $Default"));
                         label.FontSize = 8.5; label.FontWeight = FontWeight.Bold;
                         label.Foreground = Palette.Brush(Accents.Design(write ? "#ec4899" : "#22d3ee", palette));
                         label.HorizontalAlignment = HorizontalAlignment.Center;
@@ -126,8 +126,8 @@ public sealed class DriveTransferPairs : StackPanel
                     if (style is WidgetStyle.Thermostat or WidgetStyle.PerformanceView)
                     { label.Text = label.Text?.ToUpper(L.Culture); label.LetterSpacing = style == WidgetStyle.Thermostat ? 1.2 : .5; }
                     if (style is WidgetStyle.NeonHud or WidgetStyle.NeonHudGraph or WidgetStyle.SciFi or WidgetStyle.Terminal)
-                    { label.FontFamily = value.FontFamily = Ui.FamilyFor("mono"); }
-                    if (style == WidgetStyle.SciFi) label.FontFamily = value.FontFamily = new FontFamily("Bahnschrift, DIN Alternate, fonts:Inter#Inter, $Default");
+                    { label.FontFamily = value.FontFamily = Ui.DesignFont(Ui.FamilyFor("mono")); }
+                    if (style == WidgetStyle.SciFi) label.FontFamily = value.FontFamily = Ui.DesignFont(new FontFamily("Bahnschrift, DIN Alternate, fonts:Inter#Inter, $Default"));
                     cells.Add(cell);
                 }
                 {

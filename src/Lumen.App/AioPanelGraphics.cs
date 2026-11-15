@@ -8,7 +8,7 @@ namespace Lumen.App;
 /// <summary>Colours and surfaces of the Panel designs. The accent replaces the classic red; everything stays dark.</summary>
 public sealed record PanelTheme(string Key, Color Accent, Color Hot, Color Section, Color Border, Color Side, string Surface, double Radius, bool Stripe, bool DarkOnHot)
 {
-    public static readonly FontFamily Font = new("avares://Lumen/Assets/Fonts#Orbitron");
+    public static FontFamily Font => Ui.DesignFont(Ui.Orbitron);
     public Color Grid => Palette.Mix(Color.Parse("#0A0A0B"), Accent, .26);
     public Color Soft => Palette.Mix(Accent, Colors.White, .4);
     public Color Dim => Palette.Mix(Color.Parse("#0A0A0B"), Accent, .14);

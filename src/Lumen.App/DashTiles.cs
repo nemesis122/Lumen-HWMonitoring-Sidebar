@@ -15,9 +15,11 @@ namespace Lumen.App;
 // hidden, accent colour per widget, readable in the light theme.
 public abstract class DashTile : FreshTile
 {
-	protected static readonly FontFamily Mono = new FontFamily("Cascadia Mono, Consolas, DejaVu Sans Mono, fonts:Inter#Inter, $Default");
+	protected static FontFamily Mono => Ui.DesignFont(MonoOwn);
+	private static readonly FontFamily MonoOwn = new FontFamily("Cascadia Mono, Consolas, DejaVu Sans Mono, fonts:Inter#Inter, $Default");
 
-	protected static readonly FontFamily Digital = new FontFamily("Bahnschrift, DIN Alternate, fonts:Inter#Inter, $Default");
+	protected static FontFamily Digital => Ui.DesignFont(DigitalOwn);
+	private static readonly FontFamily DigitalOwn = new FontFamily("Bahnschrift, DIN Alternate, fonts:Inter#Inter, $Default");
 
 	protected DashTile(WidgetKind kind, int index, Palette p, Metrics m, Settings s)
 		: base(kind, index, p, m, s)

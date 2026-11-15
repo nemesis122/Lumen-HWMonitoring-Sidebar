@@ -35,9 +35,12 @@ public sealed partial class AioTile : Border, IWidget, INamed
     /// <summary>The design as chosen (a Red design); <see cref="style"/> is the layout it is built from.</summary>
     private readonly WidgetStyle designStyle;
     private readonly bool red;
+    /// <summary>The hue the card takes: the colour chosen in Appearance (monochrome: grey), else red for a Red design.</summary>
+    private readonly Color? skin;
     public AioTile(WidgetStyle style,Palette p,Metrics m,Settings s)
     {
         designStyle=style; red=AioDesigns.Red(style); style=AioDesigns.Base(style);
+        skin=p.Chosen??(s.Colors=="mono"?Color.Parse("#9AA0A8"):red?RedSkin.Red:null);
         this.style=style; source=s; palette=p;
         slot=s.ActiveWidget;
         if(slot==null||slot.Style!=designStyle)
@@ -127,7 +130,7 @@ public sealed partial class AioTile : Border, IWidget, INamed
 
     private Color Accent(AioReading? r)
     {
-        var color=Color.TryParse(slot?.Accent,out var picked)?picked:red?C("#FF2238"):palette.Chosen??BaseAccent(r);
+        var color=Color.TryParse(slot?.Accent,out var picked)?picked:palette.Chosen??(red?RedSkin.Red:BaseAccent(r));
         return lightSurface?Palette.Mix(color,Colors.Black,.25):color;
     }
     private Color BaseAccent(AioReading? r) => r?.Group switch

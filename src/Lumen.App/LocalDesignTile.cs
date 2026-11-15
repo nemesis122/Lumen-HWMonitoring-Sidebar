@@ -107,7 +107,7 @@ public sealed partial class LocalDesignTile : SummaryTile
             head = new Border { BorderBrush = Palette.Brush(Accent), BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(0, 0, 0, 7), Child = head };
         }
         if (style == WidgetStyle.Terminal && Ui.FontKey == "inter")
-            title.FontFamily = device.FontFamily = headerValue.FontFamily = Ui.FamilyFor("mono");
+            title.FontFamily = device.FontFamily = headerValue.FontFamily = Ui.DesignFont(Ui.FamilyFor("mono"));
         body = Ui.Stack(kind == WidgetKind.Drives ? 2 : 7);
         body.Tag = "elastic";
         cores = WidgetPresentation.Sensor(new Skyline { Height = s.Horizontal ? 12 : 14, Palette = p }, "cpu.cores");

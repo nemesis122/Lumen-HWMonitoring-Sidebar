@@ -76,8 +76,8 @@ public sealed class AioCoreBars : Control
             }
         return stops[^1].C;
     }
-    /// <summary>Red designs: the load colours in red.</summary>
-    public bool Red { get; set; }
+    /// <summary>Chosen colour or Red design: the load colours in that hue.</summary>
+    public Color? Tint { get; set; }
     public override void Render(DrawingContext c)
     {
         double w = Bounds.Width; if (loads.Count == 0 || w < 10) return;
@@ -94,7 +94,7 @@ public sealed class AioCoreBars : Control
             double f = double.IsFinite(loads[i]) ? Math.Clamp(loads[i] / 100, 0, 1) : 0;
             c.DrawRectangle(back, null, new Rect(x, top, col, barHeight), radius, radius);
             double h = Math.Max(Math.Min(radius * 2, barHeight), barHeight * f);
-            c.DrawRectangle(Palette.Brush(Red ? RedSkin.Redden(Heat(f)) : Heat(f)), null, new Rect(x, top + barHeight - h, col, h), radius, radius);
+            c.DrawRectangle(Palette.Brush(Tint is Color tint ? RedSkin.Tint(Heat(f), tint) : Heat(f)), null, new Rect(x, top + barHeight - h, col, h), radius, radius);
             void Centered(string text, Typeface face, Color color, double y)
             {
                 var ft = new FormattedText(text, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, face, size, Palette.Brush(color));

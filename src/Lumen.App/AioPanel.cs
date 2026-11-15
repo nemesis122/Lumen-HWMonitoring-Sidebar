@@ -27,7 +27,7 @@ public sealed partial class AioTile
     {
         drivesPlaced = true; coreBars = null; mainboardCores = null; panelCores = null;
         panelLive.Clear(); panelPlots.Clear();
-        panel = PanelTheme.For(settings.PanelTheme, Color.TryParse(slot?.Accent, out var own) ? own : null);
+        panel = PanelTheme.For(settings.PanelTheme, Color.TryParse(slot?.Accent, out var own) ? own : palette.Chosen);
         Padding = new Thickness(6); CornerRadius = new CornerRadius(Math.Max(6, panel.Radius + 4)); content.Spacing = 7;
         // A background the user picked for the sidebar stays the card's background (as in every AIO design); the
         // sections then use it too, so the panel follows the picked colour.

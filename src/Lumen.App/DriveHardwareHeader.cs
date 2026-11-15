@@ -27,7 +27,7 @@ public sealed class DriveHardwareHeader : StackPanel
                 var line = Naming.DriveHardwareRow(label, value, row.Label, style, palette);
                 if (neon) { value.FontWeight = FontWeight.Bold; value.Foreground = Palette.Brush(palette.Ink); }
                 if (style is WidgetStyle.NeonHud or WidgetStyle.NeonHudGraph or WidgetStyle.Terminal)
-                    label.FontFamily = value.FontFamily = Ui.FamilyFor("mono");
+                    label.FontFamily = value.FontFamily = Ui.DesignFont(Ui.FamilyFor("mono"));
                 names[row.Key] = value; Children.Add(line);
             }
         }

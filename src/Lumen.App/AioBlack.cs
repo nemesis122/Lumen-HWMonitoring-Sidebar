@@ -31,7 +31,7 @@ public sealed partial class AioTile
         drivesPlaced = true; coreBars = null; mainboardCores = null; blackCores = null;
         blackLive.Clear(); blackPlots.Clear();
         var look = AioDesigns.BlackLookOf(settings, designStyle);
-        black = BlackTheme.For(look, Color.TryParse(slot?.Accent, out var own) ? own : null);
+        black = BlackTheme.For(look, Color.TryParse(slot?.Accent, out var own) ? own : palette.Chosen);
         bInk = lightSurface ? ink : Colors.White; bMuted = lightSurface ? muted : black.Muted;
         Padding = new Thickness(6); CornerRadius = new CornerRadius(16); content.Spacing = 10;
         if (!palette.OwnBackground)
@@ -366,10 +366,12 @@ public sealed partial class AioTile
     /// <summary>Picture left (inside a live ring on the Rings layout), values right.</summary>
     private Control ArtBeside(string kind, double width, Control values, AioReading? ring = null)
     {
-        Control left = BArt(kind, BlackLayout == WidgetStyle.AioBlackRings ? width * .55 : width);
+        // Rings: the picture fills the inside of the ring; wide pictures (graphics card, memory, network) get more width.
+        bool square = kind is "cpu" or "igpu" or "psu" or "fan";
+        Control left = BArt(kind, BlackLayout == WidgetStyle.AioBlackRings ? width * 1.12 * (square ? .66 : .7) : width);
         if (BlackLayout == WidgetStyle.AioBlackRings)
         {
-            double size = width * (settings.ActiveWidget?.Graphics ?? 1);
+            double size = width * 1.12 * (settings.ActiveWidget?.Graphics ?? 1);
             var r = new BlackRing { Theme = black, Width = size, Height = size, Tag = "graphic" };
             if (ring != null) blackLive.Add((ring.Key, row => r.Set(row?.Fraction)));
             left = new Grid { Width = size, Height = size, Children = { r, left } };

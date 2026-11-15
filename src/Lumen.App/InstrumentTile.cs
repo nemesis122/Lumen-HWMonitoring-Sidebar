@@ -137,7 +137,7 @@ public sealed class InstrumentTile : SummaryTile
         if (style == WidgetStyle.SplitFlap)
         {
             if (!main) return new StableReadingRow(label,value,S,M,90);
-            value.FontFamily = Ui.FamilyFor("mono"); value.TextAlignment = TextAlignment.Center; value.LetterSpacing = 1.1;
+            value.FontFamily = Ui.DesignFont(Ui.FamilyFor("mono")); value.TextAlignment = TextAlignment.Center; value.LetterSpacing = 1.1;
             return Ui.Stack(4,label,new SplitFlapSurface(value,P));
         }
         if (style == WidgetStyle.MeasureTape)

@@ -21,8 +21,8 @@ public sealed class AioCompanionTile : Border,IWidget,INamed
             if(native is Border inner){inner.Background=Brushes.Transparent;inner.BorderThickness=new Thickness(0);inner.CornerRadius=new CornerRadius(0);}
             Padding=new Thickness(4);Child=native;
             if(AioDesigns.Black(design)) font=BlackFrame(AioDesigns.BlackLookOf(settings,design),palette);
-            else if(AioDesigns.Red(design)){PanelFrame(PanelTheme.For("red"),palette);font=PanelTheme.Font;}
-            else PanelFrame(PanelTheme.For(settings.PanelTheme),palette);
+            else if(AioDesigns.Red(design)){PanelFrame(PanelTheme.For("red",palette.Chosen),palette);font=PanelTheme.Font;}
+            else PanelFrame(PanelTheme.For(settings.PanelTheme,palette.Chosen),palette);
             SensorDetails.Design(native,ContentStyle(design));
             ApplyFont();
             return;
@@ -48,9 +48,9 @@ public sealed class AioCompanionTile : Border,IWidget,INamed
     /// <summary>The palette the extra's content is drawn with: the design's accent for Panel and Black designs.</summary>
     public static Palette Themed(WidgetStyle design,Palette p,Settings s)
     {
-        if(AioDesigns.Red(design)&&!AioDesigns.Black(design)){var r=PanelTheme.For("red");return p.Themed(r.Accent,r.Section);}
-        if(AioDesigns.Panel(design)){var t=PanelTheme.For(s.PanelTheme);return p.Themed(t.Accent,t.Section);}
-        if(AioDesigns.Black(design)){var t=BlackTheme.For(AioDesigns.BlackLookOf(s,design));return p.Themed(t.A,Color.Parse("#0B0B0D"));}
+        if(AioDesigns.Red(design)&&!AioDesigns.Black(design)){var r=PanelTheme.For("red",p.Chosen);return p.Themed(r.Accent,r.Section);}
+        if(AioDesigns.Panel(design)){var t=PanelTheme.For(s.PanelTheme,p.Chosen);return p.Themed(t.Accent,t.Section);}
+        if(AioDesigns.Black(design)){var t=BlackTheme.For(AioDesigns.BlackLookOf(s,design),p.Chosen);return p.Themed(t.A,Color.Parse("#0B0B0D"));}
         return p;
     }
     private Color See(Color c,Palette p)=>Color.FromArgb((byte)Math.Round(c.A*p.Card.A/255d),c.R,c.G,c.B);
@@ -64,7 +64,7 @@ public sealed class AioCompanionTile : Border,IWidget,INamed
     }
     private FontFamily? BlackFrame(AioDesigns.BlackLook look,Palette p)
     {
-        var t=BlackTheme.For(look);var a=t.A;
+        var t=BlackTheme.For(look,p.Chosen);var a=t.A;
         var fill=p.OwnBackground?p.Card:See(Color.Parse("#0B0B0D"),p);
         Background=Palette.Brush(fill);BorderThickness=new Thickness(1);
         switch(look.Cards)

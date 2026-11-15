@@ -22,6 +22,12 @@ public static class Ui
 
 	public static FontFamily Font { get; private set; } = Inter;
 
+	/// <summary>Orbitron, the font of the Panel designs (embedded, OFL).</summary>
+	public static readonly FontFamily Orbitron = new FontFamily("avares://Lumen/Assets/Fonts#Orbitron");
+
+	/// <summary>A design's own font (Orbitron, Mono, Digital …) unless the user chose a typeface other than Inter: then that one, in every design.</summary>
+	public static FontFamily DesignFont(FontFamily own) => FontKey == "inter" ? own : Font;
+
 	public static FontStretch FontWidth { get; private set; } = FontStretch.Normal;
 
 	public static string FontKey { get; private set; } = "inter";
@@ -49,6 +55,7 @@ public static class Ui
 			"bahnschrift" => new FontFamily("Bahnschrift, fonts:Inter#Inter, $Default"),
 			"bahnschrift-narrow" => new FontFamily("Bahnschrift SemiCondensed, Bahnschrift, fonts:Inter#Inter, $Default"),
 			"mono" => new FontFamily("Cascadia Mono, Consolas, fonts:Inter#Inter, $Default"),
+			"orbitron" => Orbitron,
 			_ => Inter,
 		};
 	}

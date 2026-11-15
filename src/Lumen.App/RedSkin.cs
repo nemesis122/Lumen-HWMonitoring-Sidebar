@@ -14,24 +14,36 @@ namespace Lumen.App;
 /// </summary>
 public static class RedSkin
 {
+    public static readonly Color Red = Color.Parse("#FF2238");
     /// <summary>The colour in red: same brightness and strength, red hue; greys are kept.</summary>
-    public static Color Redden(Color c)
+    public static Color Redden(Color c) => Tint(c, Red);
+    /// <summary>
+    /// The colour in the hue of <paramref name="target"/> (the colour chosen in Appearance, or the red of the Red designs):
+    /// same brightness and strength; greys, white and black are kept. A grey target (monochrome) makes every colour grey.
+    /// </summary>
+    public static Color Tint(Color c, Color target)
     {
         double r = c.R / 255d, g = c.G / 255d, b = c.B / 255d;
         double max = Math.Max(r, Math.Max(g, b)), min = Math.Min(r, Math.Min(g, b));
         double saturation = max <= 0 ? 0 : (max - min) / max;
         if (saturation < .28 || max < .12) return c;
-        // Hue 354° (#FF2238 is the Panel red); lighter colours become light reds.
-        double v = max, s = Math.Min(1, saturation * 1.05), h = 354 / 60d;
+        double tr = target.R / 255d, tg = target.G / 255d, tb = target.B / 255d;
+        double tmax = Math.Max(tr, Math.Max(tg, tb)), tmin = Math.Min(tr, Math.Min(tg, tb));
+        if (tmax <= 0 || (tmax - tmin) / tmax < .12) { byte grey = (byte)Math.Round(max * 255); return Color.FromArgb(c.A, grey, grey, grey); }
+        double d = tmax - tmin;
+        double hue = tmax == tr ? ((tg - tb) / d) % 6 : tmax == tg ? (tb - tr) / d + 2 : (tr - tg) / d + 4;
+        if (hue < 0) hue += 6;
+        double v = max, s = Math.Min(1, saturation * 1.05), h = hue;
         int i = (int)Math.Floor(h) % 6; double f = h - Math.Floor(h);
         double p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
         (r, g, b) = i switch { 0 => (v, t, p), 1 => (q, v, p), 2 => (p, v, t), 3 => (p, q, v), 4 => (t, p, v), _ => (v, p, q) };
         return Color.FromArgb(c.A, (byte)Math.Round(r * 255), (byte)Math.Round(g * 255), (byte)Math.Round(b * 255));
     }
 
+    [ThreadStatic] private static Color target;
     public static IBrush? Redden(IBrush? brush) => brush switch
     {
-        ISolidColorBrush solid => new SolidColorBrush(Redden(solid.Color), solid.Opacity),
+        ISolidColorBrush solid => new SolidColorBrush(Tint(solid.Color, target), solid.Opacity),
         LinearGradientBrush linear => new LinearGradientBrush
         {
             StartPoint = linear.StartPoint, EndPoint = linear.EndPoint, SpreadMethod = linear.SpreadMethod, Opacity = linear.Opacity,
@@ -44,15 +56,18 @@ public static class RedSkin
         },
         _ => brush
     };
-    private static GradientStops With(this GradientStops target, IEnumerable<GradientStop> stops)
+    private static GradientStops With(this GradientStops into, IEnumerable<GradientStop> stops)
     {
-        foreach (var stop in stops) target.Add(new GradientStop(Redden(stop.Color), stop.Offset));
-        return target;
+        foreach (var stop in stops) into.Add(new GradientStop(Tint(stop.Color, target), stop.Offset));
+        return into;
     }
 
     /// <summary>Turns a built card red (the card itself and everything in it).</summary>
-    public static void Apply(Control root)
+    public static void Apply(Control root) => Apply(root, Red);
+    /// <summary>Gives a built card the hue of <paramref name="colour"/> (the card itself and everything in it).</summary>
+    public static void Apply(Control root, Color colour)
     {
+        target = colour;
         foreach (var control in root.GetLogicalDescendants().OfType<Control>().Prepend(root).ToList())
         {
             switch (control)
@@ -62,8 +77,8 @@ public static class RedSkin
                 case Panel panel: panel.Background = Redden(panel.Background); break;
                 case Shape shape: shape.Fill = Redden(shape.Fill); shape.Stroke = Redden(shape.Stroke); break;
             }
-            if (control is AioCoreBars bars) bars.Red = true;
-            if (control is MainboardCoreGrid grid) grid.Red = true;
+            if (control is AioCoreBars bars) bars.Tint = colour;
+            if (control is MainboardCoreGrid grid) grid.Tint = colour;
             // The design's own drawn controls keep their colours in fields: turn those red too.
             var type = control.GetType();
             if (type.Namespace != typeof(RedSkin).Namespace || control is AioTile) continue;
@@ -72,9 +87,9 @@ public static class RedSkin
                 object? value = field.GetValue(control);
                 object? red = value switch
                 {
-                    Color c => Redden(c),
+                    Color c => Tint(c, colour),
                     IBrush b => Redden(b),
-                    Color[] colors => colors.Select(Redden).ToArray(),
+                    Color[] colors => colors.Select(x => Tint(x, colour)).ToArray(),
                     _ => null
                 };
                 if (red != null) field.SetValue(control, red);

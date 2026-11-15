@@ -18,7 +18,7 @@ public sealed class Settings
 
 	public static readonly string[] Languages = new string[1] { "en" };
 
-	public static readonly string[] Fonts = new string[6] { "inter", "segoe", "segoe-variable", "bahnschrift", "bahnschrift-narrow", "mono" };
+	public static readonly string[] Fonts = new string[7] { "inter", "segoe", "segoe-variable", "bahnschrift", "bahnschrift-narrow", "mono", "orbitron" };
 
 	// Legacy enum values remain readable so older settings migrate without losing other preferences.
 	public static readonly WidgetStyle[] Retired = Enum.GetValues<WidgetStyle>().Except(Selectable).ToArray();
