@@ -21,8 +21,8 @@ public class LocalDesignTests
             WidgetStyle.Axis, WidgetStyle.Aurora, WidgetStyle.Flux, WidgetStyle.Halo,
             WidgetStyle.AioMainboardType,WidgetStyle.AioMainboardMatrix,WidgetStyle.AioMainboardGauges,WidgetStyle.AioMainboardStrips,
             WidgetStyle.AioPopConsole,WidgetStyle.AioChromatic,WidgetStyle.Aperture,
-            WidgetStyle.PureWidgets,WidgetStyle.PureWidgetsRight,WidgetStyle.PillRowGraph,WidgetStyle.FillBarsGraph,WidgetStyle.AioMainboard,WidgetStyle.AioPanelBadges };
-        Assert.Equal(100, Settings.Selectable.Count());
+            WidgetStyle.PureWidgets,WidgetStyle.PureWidgetsRight,WidgetStyle.PillRowGraph,WidgetStyle.FillBarsGraph,WidgetStyle.AioMainboard,WidgetStyle.AioPanelBadges,WidgetStyle.AioBlackCopperRings };
+        Assert.Equal(99, Settings.Selectable.Count());
         Assert.All(removed, style => { Assert.DoesNotContain(style, Settings.Selectable); Assert.Equal(WidgetStyle.Standard, Settings.Successor(style)); });
     }
 
