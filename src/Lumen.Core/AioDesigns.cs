@@ -25,6 +25,7 @@ public static class AioDesigns
     public static bool SensorDefault(WidgetStyle style,string key)
     {
         if(key.StartsWith("aio.gpu.")&&key.EndsWith(".extra")) return false; // a second graphics card is off by default
+        if(key=="aio.graphs"&&Panel(style)) return false; // Panel designs show values only; history charts can be switched on
         if(key=="aio.cpu.cores"||key.StartsWith("aio.cpu.core.")) return style==WidgetStyle.AioThermalGrid;
         if(style==WidgetStyle.AioSignalRack)
             return !key.EndsWith("clock") && !key.EndsWith("hotspot") && !key.EndsWith("junction")

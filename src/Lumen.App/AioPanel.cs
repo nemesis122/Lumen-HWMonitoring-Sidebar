@@ -222,7 +222,7 @@ public sealed partial class AioTile
             left = Stack(4, new PanelArt { Kind = art, Theme = panel }, nameText);
             if (gauge && style == WidgetStyle.AioPanelHeader) header = PanelHeader(label, temp, load);
         }
-        var columns = new Grid { ColumnDefinitions = new ColumnDefinitions("0.31*,0.69*") };
+        var columns = new Grid { ColumnDefinitions = new ColumnDefinitions(gauge && style is WidgetStyle.AioPanelRings or WidgetStyle.AioPanelBadges ? "0.31*,0.69*" : "0.25*,0.75*") };
         var leftBox = new Border
         {
             Child = new Border { VerticalAlignment = VerticalAlignment.Center, Child = left },
@@ -275,14 +275,16 @@ public sealed partial class AioTile
     }
 
     // ---------------------------------------------------------------- pieces
+    /// <summary>Panel letters are drawn a fifth larger than the other designs so values stay readable in a narrow sidebar.</summary>
+    private const double PanelBoost = 1.22;
     private TextBlock PanelText(string text, double size, Color color, bool number = false)
     {
-        var t = Text(text, size, color, number); t.FontFamily = PanelTheme.Font; t.FontWeight = FontWeight.Bold; return t;
+        var t = Text(text, size * PanelBoost, color, number); t.FontFamily = PanelTheme.Font; t.FontWeight = FontWeight.Bold; return t;
     }
     private Control PanelLabel(string text) => FitLeft(PanelText(text, 9, panel.Accent));
     private TextBlock PanelV(AioReading r, double size, Color? color = null)
     {
-        var t = V(r, size, color ?? ink); t.FontFamily = PanelTheme.Font; t.FontWeight = FontWeight.Bold; return t;
+        var t = V(r, size * PanelBoost, color ?? ink); t.FontFamily = PanelTheme.Font; t.FontWeight = FontWeight.Bold; return t;
     }
     private string PanelName(WidgetKind kind, int index, string model, string fallback)
     {
@@ -381,7 +383,7 @@ public sealed partial class AioTile
         if (temp != null) texts.Add((PanelV(temp, 13, panel.Accent), panel.Accent));
         if (load != null) texts.Add((PanelV(load, 12, ink), ink));
         PanelGaugeLive(gauge, temp, load, PanelFace(face, texts.ToArray()));
-        var cell = new Grid { Width = size, Height = size, Children = { gauge, Squeeze(face, size * .27) } };
+        var cell = new Grid { Width = size, Height = size, Children = { gauge, Squeeze(face, size * .21) } };
         Control result = new Viewbox { MaxWidth = size, MaxHeight = size, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Child = cell };
         if (label == null) return result;
         var caption = PanelText(label, 10, ink); caption.HorizontalAlignment = HorizontalAlignment.Center;
