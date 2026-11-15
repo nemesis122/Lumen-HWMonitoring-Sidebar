@@ -999,6 +999,21 @@ public sealed class SettingsWindow : Window
                     Rect(23,y+(style==WidgetStyle.AioPanelHeader?4:2),26,1.5,red);Rect(23,y+5,18,1.5,fill2);
                 }
             }
+            else if(AioDesigns.Black(style))
+            {
+                var look=AioDesigns.BlackLookOf(s,style);
+                var col=Palette.Brush(Color.Parse(AioDesigns.BlackColours.First(c=>c.Key==look.Colour).A));var blackFill=Palette.Brush(Color.Parse("#050505"));var cell=Palette.Brush(Color.Parse("#17171A"));
+                Rect(4,1,56,32,blackFill,4);
+                switch(style)
+                {
+                    case WidgetStyle.AioBlackDashboard: for(int i=0;i<2;i++){Ellipse(10+i*24,4,16,16,cell);Rect(12+i*24,6,12,3,col,1);} Rect(8,23,48,7,cell,2);break;
+                    case WidgetStyle.AioBlackRings: for(int i=0;i<2;i++){Ellipse(8,3+i*15,12,12,col);Ellipse(10,5+i*15,8,8,blackFill);Rect(24,6+i*15,30,2,col);Rect(24,10+i*15,20,2,fill2);} break;
+                    case WidgetStyle.AioBlackGraph: for(int i=0;i<3;i++){Rect(8,3+i*10,48,8,cell,2);Rect(10,8+i*10,44,2,col);} break;
+                    case WidgetStyle.AioBlackTiles: for(int i=0;i<4;i++){Rect(8+i%2*25,3+i/2*15,23,13,cell,2);Rect(11+i%2*25,10+i/2*15,12,3,col,1);} break;
+                    case WidgetStyle.AioBlackXRay: Rect(26,3,14,28,cell,2);Rect(29,6,8,6,col,1);Rect(29,15,8,4,fill2,1);Rect(10,8,14,1.5,col);Rect(42,16,14,1.5,col);break;
+                    default: for(int i=0;i<3;i++){Rect(8,3+i*10,48,8,cell,2);Rect(10,5+i*10,8,4,fill2,1);Rect(22,6+i*10,30,2,col);} break;
+                }
+            }
             else if(style is WidgetStyle.AioMainboardMap or WidgetStyle.AioMainboardDesktop)
             {
                 var cyan=Palette.Brush(MainboardMapColors.Cyan);var violet=Palette.Brush(MainboardMapColors.Violet);
@@ -1678,6 +1693,26 @@ public sealed class SettingsWindow : Window
 					stackPanel.Children.Add(PanelOption("Panel colours", AioDesigns.PanelThemes, s.PanelTheme, k => s.PanelTheme = k));
 					if (slot.Style == WidgetStyle.AioPanel)
 						stackPanel.Children.Add(PanelOption("Gauges", AioDesigns.PanelGauges, s.PanelGauges, k => s.PanelGauges = k));
+				}
+				if (AioDesigns.Black(slot.Style))
+				{
+					// Black designs: colour, cards, graphics and font of this layout.
+					Owns("BlackLooks");
+					var style = slot.Style;
+					Control BlackOption(string label, (string Key, string Name)[] options, string current, Func<AioDesigns.BlackLook, string, AioDesigns.BlackLook> set)
+					{
+						Grid row = Ui.Columns("Auto,*", Ui.Text(L.T(label), 12.5, p.Soft), Choice(options.Select(o => L.T(o.Name)).ToList(),
+							Math.Max(0, Array.FindIndex(options, o => o.Key == current)), i => s.BlackLooks[style] = set(AioDesigns.BlackLookOf(s, style), options[i].Key).ToString()));
+						row.Children[0].Margin = new Thickness(0, 6, 10, 0);
+						row.Children[0].VerticalAlignment = VerticalAlignment.Top;
+						row.Margin = new Thickness(28, 4, 0, 0);
+						return row;
+					}
+					var look = AioDesigns.BlackLookOf(s, style);
+					stackPanel.Children.Add(BlackOption("Colour", AioDesigns.BlackColours.Select(c => (c.Key, c.Name)).ToArray(), look.Colour, (l, k) => l with { Colour = k }));
+					stackPanel.Children.Add(BlackOption("Cards", AioDesigns.BlackCards, look.Cards, (l, k) => l with { Cards = k }));
+					stackPanel.Children.Add(BlackOption("Graphics", AioDesigns.BlackArts, look.Art, (l, k) => l with { Art = k }));
+					stackPanel.Children.Add(BlackOption("Font", AioDesigns.BlackFonts, look.Font, (l, k) => l with { Font = k }));
 				}
 			}
 			if (s.ColumnsInUse > 1)

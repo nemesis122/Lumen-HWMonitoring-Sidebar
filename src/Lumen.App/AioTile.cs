@@ -84,7 +84,7 @@ public sealed partial class AioTile : Border, IWidget, INamed
         readings.Clear(); foreach(var r in list) readings[r.Key]=r;
         foreach(var r in list) samples.Add(r.Key,r.Number);
         string next=string.Join('|',list.Select(r=>r.Key+":"+r.Label))+"|"+snap.Cpu?.Name+"|"+string.Join('|',snap.Gpus.Select(g=>g.Name))
-            +"|"+(slot?.ShowTitle??true)+(slot?.ShowHardware??true)+(slot?.Name??"")+"|"+L.Language+"|"+settings.Fahrenheit+"|"+(AioDesigns.Panel(style)?settings.PanelTheme+settings.PanelGauges+slot?.Accent:"");
+            +"|"+(slot?.ShowTitle??true)+(slot?.ShowHardware??true)+(slot?.Name??"")+"|"+L.Language+"|"+settings.Fahrenheit+"|"+(AioDesigns.Panel(style)?settings.PanelTheme+settings.PanelGauges+slot?.Accent:"")+(AioDesigns.Black(style)?AioDesigns.BlackLookOf(settings,style)+slot?.Accent:"");
         if((snap.Cpu?.CoreLoads.Count??0)>=2)lastCoreLoads=snap.Cpu!.CoreLoads;
         next+="|"+lastCoreLoads.Count+AioReadings.Selected(settings,"aio.cpu.coreloads");
         next+="|"+settings.ShowNames+settings.Shows("aio.graphs")+slot?.HardwareName+"|"+string.Join('|',source.Widgets.Select(w=>w.Name+w.HardwareName+w.ShowHardware+w.ShowTitle+(AioDesigns.Switches.Contains(w.Kind)?w.Visible:true)));
@@ -112,6 +112,7 @@ public sealed partial class AioTile : Border, IWidget, INamed
         }
         UpdateReferencePlots(h);
         if(AioDesigns.Panel(style))UpdatePanel(h);
+        if(AioDesigns.Black(style))UpdateBlack(h);
         WidgetPresentation.Apply(this,settings);
         // Compact AIO columns can need reflow even at 100%, especially the Pop Console CPU panel.
         foreach(var grid in this.GetLogicalDescendants().OfType<ResponsiveGrid>())

@@ -25,7 +25,7 @@ public class StyleSelectionTests
         WidgetStyle.AioTypeBlock, WidgetStyle.AioOrbitNetwork, WidgetStyle.AioThermalGrid, WidgetStyle.AioSignalRack, WidgetStyle.AioIsometricCore, WidgetStyle.AioPrecision, WidgetStyle.AioStudioLight, WidgetStyle.AioInstrument, WidgetStyle.AioAuroraFusion, WidgetStyle.AioCarbonPulse, WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings
         , WidgetStyle.AioMainboard, WidgetStyle.AioMainboardMap, WidgetStyle.AioMainboardDesktop,
         WidgetStyle.AioMainboardCores,
-        WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelBadges, WidgetStyle.AioPanelHeader, WidgetStyle.AioPanelPlain
+        WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelBadges, WidgetStyle.AioPanelHeader, WidgetStyle.AioPanelPlain, WidgetStyle.AioBlackDashboard, WidgetStyle.AioBlackRings, WidgetStyle.AioBlackGraph, WidgetStyle.AioBlackClassic, WidgetStyle.AioBlackTiles, WidgetStyle.AioBlackXRay
     };
     const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
 
@@ -96,7 +96,7 @@ public class StyleSelectionTests
             var buttons = parts.SelectMany(c => c.GetLogicalDescendants().Prepend(c)).OfType<UniformGrid>().Single().Children.OfType<Button>().ToList();
             string Name(Button button) => button.GetLogicalDescendants().OfType<TextBlock>().Single().Text!;
             Assert.Equal(Expected.Select(SettingsWindow.StyleName), buttons.Select(Name));
-            var mainboard=buttons.TakeLast(9).Single(b=>Name(b)=="Mainboard Map");
+            var mainboard=buttons.TakeLast(15).Single(b=>Name(b)=="Mainboard Map");
             mainboard.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Assert.All(settings.Widgets.Where(w=>Settings.HasStyles(w.Kind)),w=>Assert.Equal(WidgetStyle.AioMainboardMap,w.Style));
             buttons.Single(b=>Name(b)=="Mainboard Map Desktop").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));

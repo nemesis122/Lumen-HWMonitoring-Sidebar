@@ -80,6 +80,16 @@ public sealed class Palette
 
 	public Color Calm => Ramp[1];
 
+	/// <summary>The same palette with a design's accent and card colour (extras beside a Panel or Black design).</summary>
+	public Palette Themed(Color accent, Color? card = null)
+	{
+		var ramp = (Color[])Ramp.Clone();
+		ramp[0] = Mix(accent, Colors.White, 0.35); ramp[1] = accent;
+		var c = card is Color k && !OwnBackground ? Color.FromArgb(Card.A, k.R, k.G, k.B) : Card;
+		return new Palette { Dark = Dark, Surface = Surface, Card = c, Stroke = Stroke, Ink = Ink, Soft = Soft, Faint = Faint, Track = Track, Ramp = ramp,
+			OwnBackground = OwnBackground, Chosen = accent };
+	}
+
 	public static Palette For(bool dark, bool glass)
 	{
 		return For(dark, glass, 0.55, null);

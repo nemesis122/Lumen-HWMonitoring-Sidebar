@@ -186,7 +186,13 @@ public enum WidgetStyle
     AioPanelRings,
     AioPanelBadges,
     AioPanelHeader,
-    AioPanelPlain
+    AioPanelPlain,
+    AioBlackDashboard,
+    AioBlackRings,
+    AioBlackGraph,
+    AioBlackClassic,
+    AioBlackTiles,
+    AioBlackXRay
 }
 
 

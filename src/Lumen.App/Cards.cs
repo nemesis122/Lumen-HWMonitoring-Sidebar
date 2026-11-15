@@ -22,7 +22,7 @@ public static class Cards
         Unreported.Attach(s, kind, index);
         if (AioDesigns.Contains(style))
             return kind == WidgetKind.Overview ? new AioTile(style,p,m,s)
-                : new AioCompanionTile(kind,style,p,CreateNative(kind,AioCompanionTile.ContentStyle(style),index,p,m,s));
+                : new AioCompanionTile(kind,style,p,CreateNative(kind,AioCompanionTile.ContentStyle(style),index,AioCompanionTile.Themed(style,p,s),m,s),s);
 		// The overview is a list in every design (name, bar, value), drawn in that design's look.
 		if (kind == WidgetKind.Overview)
 		{

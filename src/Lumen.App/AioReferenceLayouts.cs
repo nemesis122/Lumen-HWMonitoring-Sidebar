@@ -133,6 +133,7 @@ public sealed partial class AioTile
             case WidgetStyle.AioMainboardMap: MainboardMap();break;
             case WidgetStyle.AioMainboardDesktop: MainboardMap();break;
             case WidgetStyle.AioPanel: case WidgetStyle.AioPanelRings: case WidgetStyle.AioPanelBadges: case WidgetStyle.AioPanelHeader: case WidgetStyle.AioPanelPlain: PanelDesign();break;
+            case WidgetStyle.AioBlackDashboard: case WidgetStyle.AioBlackRings: case WidgetStyle.AioBlackGraph: case WidgetStyle.AioBlackClassic: case WidgetStyle.AioBlackTiles: case WidgetStyle.AioBlackXRay: BlackDesign();break;
             case WidgetStyle.AioMainboardStrips: case WidgetStyle.AioMainboardGauges:
             case WidgetStyle.AioMainboardMatrix: case WidgetStyle.AioMainboardType: MainboardVariant();break;
             case WidgetStyle.AioTypeBlock: ReferenceType();break;
@@ -150,7 +151,7 @@ public sealed partial class AioTile
             default:ReferenceSculpted();break;
         }
         ReferenceDrives();
-        if(!MainboardDesign(style)&&!AioDesigns.Panel(style)) ReferenceCoreBars();
+        if(!MainboardDesign(style)&&!AioDesigns.Panel(style)&&!AioDesigns.Black(style)) ReferenceCoreBars();
         // Explicitly selected additional devices/sensors stay available without duplicating the reference's main values.
         var extras=rows.Where(r=>!referenceUsed.Contains(r.Key)).ToArray();
         foreach(var group in extras.GroupBy(r=>r.Group+":"+r.Device))
