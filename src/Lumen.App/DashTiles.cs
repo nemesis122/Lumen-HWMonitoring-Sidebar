@@ -879,7 +879,9 @@ public sealed class SciFiTile : DashTile
 		// Drives: every drive as a segmented line instead of the ring for the hottest one.
 		drives = new DriveRows(8, 11, 13, Soft, () => new SegmentBar { Height = 10 },
 			(c, r) => ((SegmentBar)c).Set(r.Fraction, Accent("#ec4899"), Accent("#3b82f6"), P.Dark ? Color.Parse("#25272e") : P.Track), r => Heat(r.Value) ? Opaque(r.Color) : Ink, Digital);
-		var inner = Ui.Stack(10, header, hardwareLabel, face, valueFaces, drives, segments, rows);
+		// A long title with the hardware name ("PROCESSOR · RYZEN 9 5900X") shrinks to the card instead of running past its edge.
+		var headerFit = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Center, Child = header };
+		var inner = Ui.Stack(10, headerFit, hardwareLabel, face, valueFaces, drives, segments, rows);
 		inner.Tag = "elastic";
 		Child = new ChamferFrame
 		{
