@@ -127,8 +127,6 @@ public sealed class Settings
     // Panel designs: colour set and how the gauge block at the top is drawn.
     public string PanelTheme { get; set; } = "red";
     public string PanelGauges { get; set; } = "dots";
-    // Black designs: colour, cards, graphics and font of each layout ("red|plain|real|orbitron").
-    public Dictionary<WidgetStyle,string> BlackLooks { get; set; } = new();
 
     // Fans that have turned at least once (sensor ids). Kept across restarts so an existing fan that is
     // stopped right now still shows with 0 rpm; empty fan headers (always 0 rpm) never get in here.
@@ -240,8 +238,10 @@ public sealed class Settings
         WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings,
         WidgetStyle.AioMainboard, WidgetStyle.AioMainboardMap, WidgetStyle.AioMainboardDesktop,
         WidgetStyle.AioMainboardCores,
-        WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelBadges, WidgetStyle.AioPanelHeader, WidgetStyle.AioPanelPlain,
-        WidgetStyle.AioBlackDashboard, WidgetStyle.AioBlackRings, WidgetStyle.AioBlackGraph, WidgetStyle.AioBlackClassic, WidgetStyle.AioBlackTiles, WidgetStyle.AioBlackXRay
+        WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelHeader, WidgetStyle.AioPanelPlain,
+        WidgetStyle.AioBlackRings, WidgetStyle.AioBlackGraph, WidgetStyle.AioBlackClassic, WidgetStyle.AioBlackTiles, WidgetStyle.AioBlackXRay,
+        WidgetStyle.AioBlackWhiteDashboard, WidgetStyle.AioBlackGoldClassic, WidgetStyle.AioBlackWhiteGraph, WidgetStyle.AioBlackRedTiles, WidgetStyle.AioBlackWhiteTiles, WidgetStyle.AioBlackBlueDashboard, WidgetStyle.AioBlackAmberClassic, WidgetStyle.AioBlackLimeDashboard, WidgetStyle.AioBlackCrimsonDashboard, WidgetStyle.AioBlackCopperRings,
+        WidgetStyle.AioMainboardRed, WidgetStyle.AioMainboardMapRed, WidgetStyle.AioMainboardDesktopRed, WidgetStyle.AioMainboardCoresRed, WidgetStyle.AioTypeBlockRed, WidgetStyle.AioOrbitNetworkRed, WidgetStyle.AioThermalGridRed, WidgetStyle.AioSignalRackRed, WidgetStyle.AioIsometricCoreRed, WidgetStyle.AioPrecisionRed, WidgetStyle.AioStudioLightRed, WidgetStyle.AioInstrumentRed, WidgetStyle.AioAuroraFusionRed, WidgetStyle.AioCarbonPulseRed, WidgetStyle.AioIsometricAtlasRed, WidgetStyle.AioIsometricTilesRed, WidgetStyle.AioIsometricRigRed, WidgetStyle.AioIsometricPedestalsRed, WidgetStyle.AioIsometricCompactRed, WidgetStyle.AioIsometricRingsRed, WidgetStyle.AioBlackRingsRed, WidgetStyle.AioBlackGraphRed, WidgetStyle.AioBlackClassicRed, WidgetStyle.AioBlackTilesRed, WidgetStyle.AioBlackXRayRed, WidgetStyle.AioBlackWhiteDashboardRed, WidgetStyle.AioBlackGoldClassicRed, WidgetStyle.AioBlackWhiteGraphRed, WidgetStyle.AioBlackRedTilesRed, WidgetStyle.AioBlackWhiteTilesRed, WidgetStyle.AioBlackBlueDashboardRed, WidgetStyle.AioBlackAmberClassicRed, WidgetStyle.AioBlackLimeDashboardRed, WidgetStyle.AioBlackCrimsonDashboardRed, WidgetStyle.AioBlackCopperRingsRed
 	};
 
 	public int ColumnCount

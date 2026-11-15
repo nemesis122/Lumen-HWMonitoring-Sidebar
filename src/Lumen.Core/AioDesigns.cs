@@ -13,16 +13,38 @@ public static class AioDesigns
         WidgetStyle.AioStudioLight, WidgetStyle.AioInstrument,
         WidgetStyle.AioAuroraFusion, WidgetStyle.AioCarbonPulse,
         WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings,
-        WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelBadges, WidgetStyle.AioPanelHeader, WidgetStyle.AioPanelPlain,
-        WidgetStyle.AioBlackDashboard, WidgetStyle.AioBlackRings, WidgetStyle.AioBlackGraph, WidgetStyle.AioBlackClassic, WidgetStyle.AioBlackTiles, WidgetStyle.AioBlackXRay
+        WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelHeader, WidgetStyle.AioPanelPlain,
+        WidgetStyle.AioBlackRings, WidgetStyle.AioBlackGraph, WidgetStyle.AioBlackClassic, WidgetStyle.AioBlackTiles, WidgetStyle.AioBlackXRay,
+        WidgetStyle.AioBlackWhiteDashboard, WidgetStyle.AioBlackGoldClassic, WidgetStyle.AioBlackWhiteGraph, WidgetStyle.AioBlackRedTiles, WidgetStyle.AioBlackWhiteTiles, WidgetStyle.AioBlackBlueDashboard, WidgetStyle.AioBlackAmberClassic, WidgetStyle.AioBlackLimeDashboard, WidgetStyle.AioBlackCrimsonDashboard, WidgetStyle.AioBlackCopperRings
+        ,WidgetStyle.AioMainboardRed, WidgetStyle.AioMainboardMapRed, WidgetStyle.AioMainboardDesktopRed, WidgetStyle.AioMainboardCoresRed, WidgetStyle.AioTypeBlockRed, WidgetStyle.AioOrbitNetworkRed, WidgetStyle.AioThermalGridRed, WidgetStyle.AioSignalRackRed, WidgetStyle.AioIsometricCoreRed, WidgetStyle.AioPrecisionRed, WidgetStyle.AioStudioLightRed, WidgetStyle.AioInstrumentRed, WidgetStyle.AioAuroraFusionRed, WidgetStyle.AioCarbonPulseRed, WidgetStyle.AioIsometricAtlasRed, WidgetStyle.AioIsometricTilesRed, WidgetStyle.AioIsometricRigRed, WidgetStyle.AioIsometricPedestalsRed, WidgetStyle.AioIsometricCompactRed, WidgetStyle.AioIsometricRingsRed, WidgetStyle.AioBlackRingsRed, WidgetStyle.AioBlackGraphRed, WidgetStyle.AioBlackClassicRed, WidgetStyle.AioBlackTilesRed, WidgetStyle.AioBlackXRayRed, WidgetStyle.AioBlackWhiteDashboardRed, WidgetStyle.AioBlackGoldClassicRed, WidgetStyle.AioBlackWhiteGraphRed, WidgetStyle.AioBlackRedTilesRed, WidgetStyle.AioBlackWhiteTilesRed, WidgetStyle.AioBlackBlueDashboardRed, WidgetStyle.AioBlackAmberClassicRed, WidgetStyle.AioBlackLimeDashboardRed, WidgetStyle.AioBlackCrimsonDashboardRed, WidgetStyle.AioBlackCopperRingsRed
     };
     /// <summary>The sensor-panel family: hardware pictures beside red-label values, colour and gauge style chosen in Customise.</summary>
-    public static bool Panel(WidgetStyle style) => style is WidgetStyle.AioPanel or WidgetStyle.AioPanelRings or WidgetStyle.AioPanelBadges or WidgetStyle.AioPanelHeader or WidgetStyle.AioPanelPlain;
+    public static bool Panel(WidgetStyle style) => Base(style) is WidgetStyle.AioPanel or WidgetStyle.AioPanelRings or WidgetStyle.AioPanelBadges or WidgetStyle.AioPanelHeader or WidgetStyle.AioPanelPlain;
     public static readonly (string Key,string Name)[] PanelThemes={("red","Red"),("cyan","Cyber cyan"),("purple","Neon purple"),("gold","Gold"),("carbon","Carbon orange"),("glass","Glass red"),("lime","Toxic lime"),("silver","Ice silver")};
     public static readonly (string Key,string Name)[] PanelGauges={("dots","Dot rings"),("segments","Segment rings"),("twin","Double rings"),("leds","LED bars"),("hex","Hexagons"),("columns","Dot columns"),("grid","10 × 10 grid"),("tiles","Number tiles"),("rays","Ray rings"),("diamonds","Diamonds"),("tubes","Thermometers"),("strip","Compact strip")};
     /// <summary>The black family: one layout each; colour, cards, graphics and font are chosen per design in Customise.</summary>
-    public static bool Black(WidgetStyle style) => style is WidgetStyle.AioBlackDashboard or WidgetStyle.AioBlackRings or WidgetStyle.AioBlackGraph
-        or WidgetStyle.AioBlackClassic or WidgetStyle.AioBlackTiles or WidgetStyle.AioBlackXRay;
+    public static bool Black(WidgetStyle style) => BlackDesigns.Any(d => d.Style == Base(style));
+    /// <summary>Every black design: its layout and its fixed look (colour, cards, graphics, font). User request: one design per look.</summary>
+    public static readonly (WidgetStyle Style, string Name, WidgetStyle Layout, BlackLook Look)[] BlackDesigns =
+    {
+        (WidgetStyle.AioBlackDashboard, "Red Dashboard", WidgetStyle.AioBlackDashboard, new("red","plain","real","orbitron")),
+        (WidgetStyle.AioBlackRings, "Gold Rings", WidgetStyle.AioBlackRings, new("gold","plain","real","inter")),
+        (WidgetStyle.AioBlackGraph, "Silver Graph", WidgetStyle.AioBlackGraph, new("silver","plain","real","inter")),
+        (WidgetStyle.AioBlackClassic, "Carbon Yellow Classic", WidgetStyle.AioBlackClassic, new("yellow","carbon","real","orbitron")),
+        (WidgetStyle.AioBlackTiles, "Neon Silver Tiles", WidgetStyle.AioBlackTiles, new("silver","neon","real","inter")),
+        (WidgetStyle.AioBlackXRay, "Carbon Amber X-Ray", WidgetStyle.AioBlackXRay, new("amber","carbon","real","inter")),
+        (WidgetStyle.AioBlackWhiteDashboard, "Carbon White Dashboard", WidgetStyle.AioBlackDashboard, new("white","carbon","real","orbitron")),
+        (WidgetStyle.AioBlackGoldClassic, "Neon Gold Classic", WidgetStyle.AioBlackClassic, new("gold","neon","real","inter")),
+        (WidgetStyle.AioBlackWhiteGraph, "Neon White Graph", WidgetStyle.AioBlackGraph, new("white","neon","real","inter")),
+        (WidgetStyle.AioBlackRedTiles, "Line Red Tiles", WidgetStyle.AioBlackTiles, new("red","line","line","inter")),
+        (WidgetStyle.AioBlackWhiteTiles, "Edge White Tiles", WidgetStyle.AioBlackTiles, new("white","edge","real","mono")),
+        (WidgetStyle.AioBlackBlueDashboard, "Line Blue Dashboard", WidgetStyle.AioBlackDashboard, new("blue","line","line","inter")),
+        (WidgetStyle.AioBlackAmberClassic, "Amber Classic", WidgetStyle.AioBlackClassic, new("amber","plain","real","inter")),
+        (WidgetStyle.AioBlackLimeDashboard, "Edge Lime Dashboard", WidgetStyle.AioBlackDashboard, new("lime","edge","iso","inter")),
+        (WidgetStyle.AioBlackCrimsonDashboard, "Crimson Dashboard", WidgetStyle.AioBlackDashboard, new("crimson","plain","real","inter")),
+        (WidgetStyle.AioBlackCopperRings, "Copper Rings", WidgetStyle.AioBlackRings, new("copper","plain","real","inter"))
+    };
+    public static WidgetStyle BlackLayout(WidgetStyle style) => BlackDesigns.FirstOrDefault(d => d.Style == Base(style)).Layout;
     public static readonly (string Key,string Name,string A,string B)[] BlackColours =
     {
         ("red","Red","#EF4444","#F97316"),("gold","Gold","#E5B84B","#F5DEB3"),("silver","Silver","#E5E7EB","#9CA3AF"),("yellow","Yellow","#FACC15","#F97316"),
@@ -43,28 +65,58 @@ public static class AioDesigns
             return p.Length==4?new BlackLook(p[0],p[1],p[2],p[3]):null;
         }
     }
-    /// <summary>The look a black design starts with (the user's favourite of each layout).</summary>
-    public static BlackLook BlackDefault(WidgetStyle style)=>style switch
+    public static BlackLook BlackDefault(WidgetStyle style) => Red(style) ? (BlackDefault(Base(style)) with { Colour = "red", Font = "orbitron" })
+        : BlackDesigns.FirstOrDefault(d => d.Style == style).Look ?? BlackDesigns[0].Look;
+    /// <summary>Each black design has its own fixed look.</summary>
+    public static BlackLook BlackLookOf(Settings s, WidgetStyle style) => BlackDefault(style);
+    /// <summary>The "Red" designs: the same layout in the red Panel Header look (red, dark grey, Orbitron). User request.</summary>
+    public static readonly (WidgetStyle Style, WidgetStyle Base)[] RedDesigns =
     {
-        WidgetStyle.AioBlackRings=>new("gold","plain","real","inter"),
-        WidgetStyle.AioBlackGraph=>new("silver","plain","real","inter"),
-        WidgetStyle.AioBlackClassic=>new("yellow","carbon","real","orbitron"),
-        WidgetStyle.AioBlackTiles=>new("silver","neon","real","inter"),
-        WidgetStyle.AioBlackXRay=>new("amber","carbon","real","inter"),
-        _=>new("red","plain","real","orbitron")
+        (WidgetStyle.AioMainboardRed, WidgetStyle.AioMainboard),
+        (WidgetStyle.AioMainboardMapRed, WidgetStyle.AioMainboardMap),
+        (WidgetStyle.AioMainboardDesktopRed, WidgetStyle.AioMainboardDesktop),
+        (WidgetStyle.AioMainboardCoresRed, WidgetStyle.AioMainboardCores),
+        (WidgetStyle.AioTypeBlockRed, WidgetStyle.AioTypeBlock),
+        (WidgetStyle.AioOrbitNetworkRed, WidgetStyle.AioOrbitNetwork),
+        (WidgetStyle.AioThermalGridRed, WidgetStyle.AioThermalGrid),
+        (WidgetStyle.AioSignalRackRed, WidgetStyle.AioSignalRack),
+        (WidgetStyle.AioIsometricCoreRed, WidgetStyle.AioIsometricCore),
+        (WidgetStyle.AioPrecisionRed, WidgetStyle.AioPrecision),
+        (WidgetStyle.AioStudioLightRed, WidgetStyle.AioStudioLight),
+        (WidgetStyle.AioInstrumentRed, WidgetStyle.AioInstrument),
+        (WidgetStyle.AioAuroraFusionRed, WidgetStyle.AioAuroraFusion),
+        (WidgetStyle.AioCarbonPulseRed, WidgetStyle.AioCarbonPulse),
+        (WidgetStyle.AioIsometricAtlasRed, WidgetStyle.AioIsometricAtlas),
+        (WidgetStyle.AioIsometricTilesRed, WidgetStyle.AioIsometricTiles),
+        (WidgetStyle.AioIsometricRigRed, WidgetStyle.AioIsometricRig),
+        (WidgetStyle.AioIsometricPedestalsRed, WidgetStyle.AioIsometricPedestals),
+        (WidgetStyle.AioIsometricCompactRed, WidgetStyle.AioIsometricCompact),
+        (WidgetStyle.AioIsometricRingsRed, WidgetStyle.AioIsometricRings),
+        (WidgetStyle.AioBlackRingsRed, WidgetStyle.AioBlackRings),
+        (WidgetStyle.AioBlackGraphRed, WidgetStyle.AioBlackGraph),
+        (WidgetStyle.AioBlackClassicRed, WidgetStyle.AioBlackClassic),
+        (WidgetStyle.AioBlackTilesRed, WidgetStyle.AioBlackTiles),
+        (WidgetStyle.AioBlackXRayRed, WidgetStyle.AioBlackXRay),
+        (WidgetStyle.AioBlackWhiteDashboardRed, WidgetStyle.AioBlackWhiteDashboard),
+        (WidgetStyle.AioBlackGoldClassicRed, WidgetStyle.AioBlackGoldClassic),
+        (WidgetStyle.AioBlackWhiteGraphRed, WidgetStyle.AioBlackWhiteGraph),
+        (WidgetStyle.AioBlackRedTilesRed, WidgetStyle.AioBlackRedTiles),
+        (WidgetStyle.AioBlackWhiteTilesRed, WidgetStyle.AioBlackWhiteTiles),
+        (WidgetStyle.AioBlackBlueDashboardRed, WidgetStyle.AioBlackBlueDashboard),
+        (WidgetStyle.AioBlackAmberClassicRed, WidgetStyle.AioBlackAmberClassic),
+        (WidgetStyle.AioBlackLimeDashboardRed, WidgetStyle.AioBlackLimeDashboard),
+        (WidgetStyle.AioBlackCrimsonDashboardRed, WidgetStyle.AioBlackCrimsonDashboard),
+        (WidgetStyle.AioBlackCopperRingsRed, WidgetStyle.AioBlackCopperRings)
     };
-    public static BlackLook BlackLookOf(Settings s,WidgetStyle style)
-    {
-        var d=BlackDefault(style);
-        var look=s.BlackLooks.TryGetValue(style,out var text)?BlackLook.Parse(text)??d:d;
-        static string Pick((string Key,string Name)[] options,string value,string fallback)=>options.Any(o=>o.Key==value)?value:fallback;
-        return new BlackLook(BlackColours.Any(c=>c.Key==look.Colour)?look.Colour:d.Colour,Pick(BlackCards,look.Cards,d.Cards),Pick(BlackArts,look.Art,d.Art),Pick(BlackFonts,look.Font,d.Font));
-    }
+    public static bool Red(WidgetStyle style) => RedDesigns.Any(d => d.Style == style);
+    /// <summary>The layout a design is built from: a Red design is its base design in another look.</summary>
+    public static WidgetStyle Base(WidgetStyle style) => RedDesigns.FirstOrDefault(d => d.Style == style) is { Style: not WidgetStyle.Standard } red ? red.Base : style;
     public static bool Contains(WidgetStyle style) => Styles.Contains(style);
     public static bool Hardware(WidgetKind kind) => kind is WidgetKind.Cpu or WidgetKind.Gpu or WidgetKind.Cooling
         or WidgetKind.Power or WidgetKind.Memory or WidgetKind.Drives or WidgetKind.Network or WidgetKind.Overview;
     public static bool SensorDefault(WidgetStyle style,string key)
     {
+        style=Base(style); // a Red design starts with the sensors of its base design
         if(key.StartsWith("aio.gpu.")&&key.EndsWith(".extra")) return false; // a second graphics card is off by default
         if(key=="aio.graphs"&&Panel(style)) return false; // Panel designs show values only; history charts can be switched on
         if(key=="aio.cpu.cores"||key.StartsWith("aio.cpu.core.")) return style==WidgetStyle.AioThermalGrid;
@@ -119,7 +171,9 @@ public static class AioDesigns
         WidgetStyle.AioInstrument => "Instrument", WidgetStyle.AioAuroraFusion => "Aurora Fusion",
         WidgetStyle.AioPopConsole => "Pop Console", WidgetStyle.AioCarbonPulse => "Carbon Pulse",
         WidgetStyle.AioIsometricAtlas => "Isometric Atlas", WidgetStyle.AioIsometricTiles => "Isometric Tiles", WidgetStyle.AioIsometricRig => "Isometric Rig", WidgetStyle.AioIsometricPedestals => "Isometric Pedestals", WidgetStyle.AioIsometricCompact => "Isometric Compact", WidgetStyle.AioIsometricRings => "Isometric Rings",
-        WidgetStyle.AioPanel => "Panel", WidgetStyle.AioPanelRings => "Panel Rings", WidgetStyle.AioPanelBadges => "Panel Badges", WidgetStyle.AioPanelHeader => "Panel Header", WidgetStyle.AioPanelPlain => "Panel Plain", WidgetStyle.AioBlackDashboard => "Black Dashboard", WidgetStyle.AioBlackRings => "Black Rings", WidgetStyle.AioBlackGraph => "Black Graph", WidgetStyle.AioBlackClassic => "Black Classic", WidgetStyle.AioBlackTiles => "Black Tiles", WidgetStyle.AioBlackXRay => "Black X-Ray", _ => style.ToString()
+        WidgetStyle.AioPanel => "Panel", WidgetStyle.AioPanelRings => "Panel Rings", WidgetStyle.AioPanelBadges => "Panel Badges", WidgetStyle.AioPanelHeader => "Panel Header", WidgetStyle.AioPanelPlain => "Panel Plain",
+        _ when Red(style) => Name(Base(style)) + " Red",
+        _ when Black(style) => BlackDesigns.First(d => d.Style == style).Name,  _ => style.ToString()
     };
 
     // Keep saved visibility/order/individual styles intact. Switching back restores separate cards.

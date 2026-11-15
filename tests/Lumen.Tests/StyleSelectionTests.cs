@@ -25,7 +25,8 @@ public class StyleSelectionTests
         WidgetStyle.AioTypeBlock, WidgetStyle.AioOrbitNetwork, WidgetStyle.AioThermalGrid, WidgetStyle.AioSignalRack, WidgetStyle.AioIsometricCore, WidgetStyle.AioPrecision, WidgetStyle.AioStudioLight, WidgetStyle.AioInstrument, WidgetStyle.AioAuroraFusion, WidgetStyle.AioCarbonPulse, WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings
         , WidgetStyle.AioMainboard, WidgetStyle.AioMainboardMap, WidgetStyle.AioMainboardDesktop,
         WidgetStyle.AioMainboardCores,
-        WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelBadges, WidgetStyle.AioPanelHeader, WidgetStyle.AioPanelPlain, WidgetStyle.AioBlackDashboard, WidgetStyle.AioBlackRings, WidgetStyle.AioBlackGraph, WidgetStyle.AioBlackClassic, WidgetStyle.AioBlackTiles, WidgetStyle.AioBlackXRay
+        WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelHeader, WidgetStyle.AioPanelPlain, WidgetStyle.AioBlackRings, WidgetStyle.AioBlackGraph, WidgetStyle.AioBlackClassic, WidgetStyle.AioBlackTiles, WidgetStyle.AioBlackXRay, WidgetStyle.AioBlackWhiteDashboard, WidgetStyle.AioBlackGoldClassic, WidgetStyle.AioBlackWhiteGraph, WidgetStyle.AioBlackRedTiles, WidgetStyle.AioBlackWhiteTiles, WidgetStyle.AioBlackBlueDashboard, WidgetStyle.AioBlackAmberClassic, WidgetStyle.AioBlackLimeDashboard, WidgetStyle.AioBlackCrimsonDashboard, WidgetStyle.AioBlackCopperRings,
+        WidgetStyle.AioMainboardRed, WidgetStyle.AioMainboardMapRed, WidgetStyle.AioMainboardDesktopRed, WidgetStyle.AioMainboardCoresRed, WidgetStyle.AioTypeBlockRed, WidgetStyle.AioOrbitNetworkRed, WidgetStyle.AioThermalGridRed, WidgetStyle.AioSignalRackRed, WidgetStyle.AioIsometricCoreRed, WidgetStyle.AioPrecisionRed, WidgetStyle.AioStudioLightRed, WidgetStyle.AioInstrumentRed, WidgetStyle.AioAuroraFusionRed, WidgetStyle.AioCarbonPulseRed, WidgetStyle.AioIsometricAtlasRed, WidgetStyle.AioIsometricTilesRed, WidgetStyle.AioIsometricRigRed, WidgetStyle.AioIsometricPedestalsRed, WidgetStyle.AioIsometricCompactRed, WidgetStyle.AioIsometricRingsRed, WidgetStyle.AioBlackRingsRed, WidgetStyle.AioBlackGraphRed, WidgetStyle.AioBlackClassicRed, WidgetStyle.AioBlackTilesRed, WidgetStyle.AioBlackXRayRed, WidgetStyle.AioBlackWhiteDashboardRed, WidgetStyle.AioBlackGoldClassicRed, WidgetStyle.AioBlackWhiteGraphRed, WidgetStyle.AioBlackRedTilesRed, WidgetStyle.AioBlackWhiteTilesRed, WidgetStyle.AioBlackBlueDashboardRed, WidgetStyle.AioBlackAmberClassicRed, WidgetStyle.AioBlackLimeDashboardRed, WidgetStyle.AioBlackCrimsonDashboardRed, WidgetStyle.AioBlackCopperRingsRed
     };
     const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
 
@@ -96,7 +97,7 @@ public class StyleSelectionTests
             var buttons = parts.SelectMany(c => c.GetLogicalDescendants().Prepend(c)).OfType<UniformGrid>().Single().Children.OfType<Button>().ToList();
             string Name(Button button) => button.GetLogicalDescendants().OfType<TextBlock>().Single().Text!;
             Assert.Equal(Expected.Select(SettingsWindow.StyleName), buttons.Select(Name));
-            var mainboard=buttons.TakeLast(15).Single(b=>Name(b)=="Mainboard Map");
+            var mainboard=buttons.TakeLast(60).Single(b=>Name(b)=="Mainboard Map");
             mainboard.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Assert.All(settings.Widgets.Where(w=>Settings.HasStyles(w.Kind)),w=>Assert.Equal(WidgetStyle.AioMainboardMap,w.Style));
             buttons.Single(b=>Name(b)=="Mainboard Map Desktop").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));

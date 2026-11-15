@@ -44,7 +44,7 @@ public sealed partial class AioTile
         }
         Control Box(string title, string art, IEnumerable<Control> rows, Point target, string model = "",Color? tone=null,bool identify=true)
         {
-            var accent=tone??MainboardMapColors.For(art);int number=identify?MainboardMapColors.Number(art):0;
+            var accent=tone??MapFor(art);int number=identify?MainboardMapColors.Number(art):0;
             var header = Ui.Columns("Auto,*", Part(art, 26, 24), FitLeft(Text((number>0?number+" ":"")+title, 15, ink)));
             header.ColumnSpacing = 5;
             var body = Stack(5,new Border{Height=3,Background=Palette.Brush(accent)},header);
@@ -83,7 +83,7 @@ public sealed partial class AioTile
         if(Rs("Network").Length>0)
         {
             var values=Rs("Network").Select(r=>(Control)Stack(3,
-                FitLeft(Text(r.Key.EndsWith(".down")?"↓ DL":r.Key.EndsWith(".up")?"↑ UP":"Link",10,muted)),FitLeft(V(r,13,r.Key.EndsWith(".up")?MainboardMapColors.Violet:r.Key.EndsWith(".link")?ink:MainboardMapColors.Cyan)))).ToArray();
+                FitLeft(Text(r.Key.EndsWith(".down")?"↓ DL":r.Key.EndsWith(".up")?"↑ UP":"Link",10,muted)),FitLeft(V(r,13,r.Key.EndsWith(".up")?MapViolet:r.Key.EndsWith(".link")?ink:MapCyan)))).ToArray();
             network=Box("NETWORK","router",new[]{FixedCols(values.Length,values)},new Point(.05,.22));
         }
         if(R("ram","System") is {} ram)
@@ -96,7 +96,7 @@ public sealed partial class AioTile
         int driveIndex=0;
         foreach(var drive in PartDrives())
         {
-            var tone=driveIndex%2==0?MainboardMapColors.Cyan:MainboardMapColors.Violet;
+            var tone=driveIndex%2==0?MapCyan:MapViolet;
             var rows=new List<Control>();
             if(drive.Temp!=null) rows.Add(FitLeft(V(drive.Temp,22,ink)));
             rows.AddRange(drive.Rows.Select(Row));
@@ -297,7 +297,8 @@ public sealed class MapConnections : Control
         var contact=Palette.Brush(Color.Parse("#0C1017"));
         foreach(var path in GetPaths())
         {
-            var accent=MainboardMapColors.For(path.Part);
+            // A Red design draws its connections in its own red (parts of the second colour in a lighter red).
+            var accent=color==MainboardMapColors.Cyan?MainboardMapColors.For(path.Part):path.Part is "gpu" or "psu"?Palette.Mix(color,Colors.White,.35):path.Part is "cpu" or "ram"?color:Color.Parse("#64707D");
             var brush=Palette.Brush(accent);var pen=new Pen(brush,2.4);var outline=new Pen(brush,2.5);
             if(path.Component.Width>0)c.DrawRectangle(null,outline,path.Component,2,2);
             for(int i=1;i<path.Points.Count;i++)c.DrawLine(pen,path.Points[i-1],path.Points[i]);

@@ -15,13 +15,14 @@ public sealed class AioCompanionTile : Border,IWidget,INamed
     public AioCompanionTile(WidgetKind kind,WidgetStyle design,Palette palette,Control native,Settings? settings=null)
     {
         Design=design;NativeContent=native;Tag="aio-companion";
-        if(settings!=null&&(AioDesigns.Panel(design)||AioDesigns.Black(design)))
+        if(settings!=null&&(AioDesigns.Panel(design)||AioDesigns.Black(design)||AioDesigns.Red(design)))
         {
             // Panel and Black designs: the extras take the design's colour, card and font, so the sidebar looks like one piece.
             if(native is Border inner){inner.Background=Brushes.Transparent;inner.BorderThickness=new Thickness(0);inner.CornerRadius=new CornerRadius(0);}
             Padding=new Thickness(4);Child=native;
-            if(AioDesigns.Panel(design)) PanelFrame(PanelTheme.For(settings.PanelTheme),palette);
-            else font=BlackFrame(AioDesigns.BlackLookOf(settings,design),palette);
+            if(AioDesigns.Black(design)) font=BlackFrame(AioDesigns.BlackLookOf(settings,design),palette);
+            else if(AioDesigns.Red(design)){PanelFrame(PanelTheme.For("red"),palette);font=PanelTheme.Font;}
+            else PanelFrame(PanelTheme.For(settings.PanelTheme),palette);
             SensorDetails.Design(native,ContentStyle(design));
             ApplyFont();
             return;
@@ -47,6 +48,7 @@ public sealed class AioCompanionTile : Border,IWidget,INamed
     /// <summary>The palette the extra's content is drawn with: the design's accent for Panel and Black designs.</summary>
     public static Palette Themed(WidgetStyle design,Palette p,Settings s)
     {
+        if(AioDesigns.Red(design)&&!AioDesigns.Black(design)){var r=PanelTheme.For("red");return p.Themed(r.Accent,r.Section);}
         if(AioDesigns.Panel(design)){var t=PanelTheme.For(s.PanelTheme);return p.Themed(t.Accent,t.Section);}
         if(AioDesigns.Black(design)){var t=BlackTheme.For(AioDesigns.BlackLookOf(s,design));return p.Themed(t.A,Color.Parse("#0B0B0D"));}
         return p;
@@ -94,7 +96,7 @@ public sealed class AioCompanionTile : Border,IWidget,INamed
             // Live numbers keep their own font: they reserve the room of their widest form, so nothing jumps.
             if(text.FontFeatures==null&&!Equals(text.FontFamily,font))text.FontFamily=font;
     }
-    public static WidgetStyle ContentStyle(WidgetStyle style)=>style switch
+    public static WidgetStyle ContentStyle(WidgetStyle style)=>(AioDesigns.Black(style)?AioDesigns.BlackLayout(style):AioDesigns.Base(style)) switch
     {
         WidgetStyle.AioBlackDashboard or WidgetStyle.AioBlackRings=>WidgetStyle.RingPair,
         WidgetStyle.AioBlackTiles=>WidgetStyle.ClarityTiles,

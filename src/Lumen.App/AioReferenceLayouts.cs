@@ -18,10 +18,17 @@ public sealed partial class AioTile
     private bool drivesPlaced;
     private readonly HashSet<string> diagramDisks=new();
     private static readonly Lazy<Bitmap> isometricArt=new(()=>new Bitmap(AssetLoader.Open(new Uri("avares://Lumen/Assets/Aio/reference-isometric.png"))));
-    private Color Cyan=>C("#24D5DD");
-    private Color Purple=>C("#AA79EE");
-    private Color Amber=>C("#F5B94D");
-    private Color Coral=>C("#FA7E74");
+    // A Red design draws every accent in the red of the Panel designs (lighter reds for the second colours).
+    private Color Cyan=>red?RedA:C("#24D5DD");
+    private Color Purple=>red?RedB:C("#AA79EE");
+    private Color Amber=>red?RedC:C("#F5B94D");
+    private Color Coral=>red?RedA:C("#FA7E74");
+    private static Color RedA=>C("#FF2238");
+    private static Color RedB=>C("#FF6B78");
+    private static Color RedC=>C("#FF9AA2");
+    private Color MapCyan=>red?RedA:MainboardMapColors.Cyan;
+    private Color MapViolet=>red?RedB:MainboardMapColors.Violet;
+    private Color MapFor(string part)=>red?(part is "gpu" or "psu"?RedB:part is "cpu" or "ram"?RedA:C("#64707D")):MainboardMapColors.For(part);
     private bool TableReference=>style is WidgetStyle.AioPrecision or WidgetStyle.AioChromatic or WidgetStyle.AioStudioLight or WidgetStyle.AioInstrument;
     private AioReading? R(string suffix,string group="CPU",string? device=null)=>referenceRows.FirstOrDefault(r=>r.Group==group&&r.Key.EndsWith("."+suffix)&&(device==null||r.Device==device));
     private AioReading[] Rs(string group)=>referenceRows.Where(r=>r.Group==group).ToArray();
@@ -133,7 +140,7 @@ public sealed partial class AioTile
             case WidgetStyle.AioMainboardMap: MainboardMap();break;
             case WidgetStyle.AioMainboardDesktop: MainboardMap();break;
             case WidgetStyle.AioPanel: case WidgetStyle.AioPanelRings: case WidgetStyle.AioPanelBadges: case WidgetStyle.AioPanelHeader: case WidgetStyle.AioPanelPlain: PanelDesign();break;
-            case WidgetStyle.AioBlackDashboard: case WidgetStyle.AioBlackRings: case WidgetStyle.AioBlackGraph: case WidgetStyle.AioBlackClassic: case WidgetStyle.AioBlackTiles: case WidgetStyle.AioBlackXRay: BlackDesign();break;
+            case WidgetStyle black when AioDesigns.Black(black): BlackDesign();break;
             case WidgetStyle.AioMainboardStrips: case WidgetStyle.AioMainboardGauges:
             case WidgetStyle.AioMainboardMatrix: case WidgetStyle.AioMainboardType: MainboardVariant();break;
             case WidgetStyle.AioTypeBlock: ReferenceType();break;
@@ -152,6 +159,7 @@ public sealed partial class AioTile
         }
         ReferenceDrives();
         if(!MainboardDesign(style)&&!AioDesigns.Panel(style)&&!AioDesigns.Black(style)) ReferenceCoreBars();
+        if(red){RedFont();RedSkin.Apply(this);}
         // Explicitly selected additional devices/sensors stay available without duplicating the reference's main values.
         var extras=rows.Where(r=>!referenceUsed.Contains(r.Key)).ToArray();
         foreach(var group in extras.GroupBy(r=>r.Group+":"+r.Device))

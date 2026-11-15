@@ -17,7 +17,7 @@ public sealed record BlackTheme(Color A, Color B, string Cards, string Art, Font
         if (colours.Key == null) colours = AioDesigns.BlackColours[0];
         var a = own ?? Color.Parse(colours.A); var b = own is { } o ? Palette.Mix(o, Colors.White, .35) : Color.Parse(colours.B);
         var font = look.Font switch { "orbitron" => Orbitron, "mono" => Mono, _ => FontFamily.Default };
-        return new BlackTheme(a, b, look.Cards, look.Art, font, Color.Parse("#8A8A92"), Color.FromArgb(28, 255, 255, 255));
+        return new BlackTheme(a, b, look.Cards, look.Art, font, Color.Parse("#A8A8B2"), Color.FromArgb(32, 255, 255, 255));
     }
 }
 
@@ -416,13 +416,14 @@ public sealed class BlackArc : Control
     public void Set(double? fraction) { var v = fraction is double f && double.IsFinite(f) ? Math.Clamp(f, 0, 1) : (double?)null; if (Equals(v, value)) return; value = v; InvalidateVisual(); }
     protected override Size MeasureOverride(Size available)
     {
-        double w = double.IsFinite(available.Width) ? Math.Min(available.Width, 150) : 150;
+        double w = double.IsFinite(available.Width) ? Math.Min(available.Width, 190) : 150;
         return new Size(w, w * .52);
     }
     public override void Render(DrawingContext g)
     {
-        double w = Bounds.Width; if (w < 20) return;
-        double r = w * .36; var c = new Point(w / 2, Bounds.Height - 4);
+        // The gauge keeps its proportions inside a wider cell (wide sidebar): it never grows past its own height.
+        double w = Math.Min(Bounds.Width, Bounds.Height / .52); if (w < 20) return;
+        double r = w * .36; var c = new Point(Bounds.Width / 2, Bounds.Height - 4);
         var col = Color ?? Theme.A; double thick = w * .07;
         for (int i = 0; i <= 10; i++)
         {

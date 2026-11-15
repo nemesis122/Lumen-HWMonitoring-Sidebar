@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Shapes;
 using Avalonia.Layout;
+using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Lumen.Core;
 
@@ -23,11 +24,13 @@ public sealed partial class AioTile
     private BlackTheme black = BlackTheme.For(AioDesigns.BlackDefault(WidgetStyle.AioBlackDashboard));
     private Color bInk, bMuted;
 
+    private WidgetStyle BlackLayout => AioDesigns.BlackLayout(style);
+
     private void BlackDesign()
     {
         drivesPlaced = true; coreBars = null; mainboardCores = null; blackCores = null;
         blackLive.Clear(); blackPlots.Clear();
-        var look = AioDesigns.BlackLookOf(settings, style);
+        var look = AioDesigns.BlackLookOf(settings, designStyle);
         black = BlackTheme.For(look, Color.TryParse(slot?.Accent, out var own) ? own : null);
         bInk = lightSurface ? ink : Colors.White; bMuted = lightSurface ? muted : black.Muted;
         Padding = new Thickness(6); CornerRadius = new CornerRadius(16); content.Spacing = 10;
@@ -43,7 +46,7 @@ public sealed partial class AioTile
         BorderBrush = Palette.Brush(Color.Parse("#1C1C1F"));
 
         var top = new HashSet<string>();
-        switch (style)
+        switch (BlackLayout)
         {
             case WidgetStyle.AioBlackDashboard: BlackGauges(top); break;
             case WidgetStyle.AioBlackXRay: BlackXRay(top); break;
@@ -74,7 +77,7 @@ public sealed partial class AioTile
             var temp = rows.FirstOrDefault(r => r.Key.EndsWith(".temp")); var load = rows.FirstOrDefault(r => r.Key.EndsWith(".load"));
             string title = info?.Integrated == true ? "INTEGRATED GRAPHICS" : index == 0 ? "GRAPHICS" : "GRAPHICS " + (index + 1);
             BlackSection(title, PanelName(WidgetKind.Gpu, index, info?.Name ?? "", ""), info?.Integrated == true ? "igpu" : "gpu",
-                Ordered(rows.Where(r => !top.Contains(r.Key))), load ?? temp, temp ?? load, info?.Integrated != true);
+                Ordered(rows.Where(r => !top.Contains(r.Key))), load ?? temp, temp ?? load, false);
             index++;
         }
 
@@ -97,7 +100,7 @@ public sealed partial class AioTile
             var list = Stack(8);
             foreach (var r in net.Where(r => r != link && !top.Contains(r.Key)))
                 list.Children.Add(BKV(r, r == down ? "DOWN" : r == up ? "UP" : PanelCaption(r)));
-            Control? right = link != null && !top.Contains(link.Key) ? Ui.Row(5, BText("LINK", 9, bMuted), BV(link, 11)) : null;
+            Control? right = link != null && !top.Contains(link.Key) ? FitRight(Ui.Row(5, BText("LINK", 9, bMuted), BV(link, 11))) : null;
             var body = Stack(8, ArtBeside("net", 104, list));
             if (down != null && BArea(down, black.B, 30) is { } area) body.Children.Add(area);
             content.Children.Add(BCard("NETWORK", right, body));
@@ -125,7 +128,7 @@ public sealed partial class AioTile
     private void BlackSection(string title, string model, string art, List<AioReading> values, AioReading? ring, AioReading? main, bool wideArt, Control? after = null)
     {
         var body = Stack(10);
-        if (style == WidgetStyle.AioBlackGraph && main != null && values.Contains(main))
+        if (BlackLayout == WidgetStyle.AioBlackGraph && main != null && values.Contains(main))
         {
             values.Remove(main);
             var big = BV(main, 26); big.HorizontalAlignment = HorizontalAlignment.Right;
@@ -134,7 +137,7 @@ public sealed partial class AioTile
             if (BArea(main, black.A, 40) is { } curve) body.Children.Add(curve);
             if (values.Count > 0) body.Children.Add(BGrid(values.Select(r => BKV(r, null, 15)), 3));
         }
-        else if (style == WidgetStyle.AioBlackRings)
+        else if (BlackLayout == WidgetStyle.AioBlackRings)
         {
             var first = values.Take(5).ToList();
             body.Children.Add(ArtBeside(art, 112, BGrid(first.Select(r => BKV(r)), 2), ring));
@@ -150,7 +153,7 @@ public sealed partial class AioTile
         else
         {
             var first = values.Take(4).ToList();
-            if (first.Count > 0) body.Children.Add(ArtBeside(art, 88, BGrid(first.Select(r => BKV(r)), 2)));
+            if (first.Count > 0) body.Children.Add(ArtBeside(art, art == "gpu" ? 118 : 88, BGrid(first.Select(r => BKV(r)), 2)));
             else body.Children.Add(new Border { HorizontalAlignment = HorizontalAlignment.Center, Child = BArt(art, 88) });
             if (values.Count > first.Count) body.Children.Add(BGrid(values.Skip(first.Count).Select(r => BKV(r)), 2));
         }
@@ -166,20 +169,20 @@ public sealed partial class AioTile
         TextBlock? percent = null;
         if (!top.Contains(ram.Key))
         {
-            var p = BV(ram, style == WidgetStyle.AioBlackRings ? 30 : 12); formats[p] = r => Format.Percent(r.Number); p.Text = Format.Percent(ram.Number);
+            var p = BV(ram, BlackLayout == WidgetStyle.AioBlackRings ? 30 : 12); formats[p] = r => Format.Percent(r.Number); p.Text = Format.Percent(ram.Number);
             percent = p;
         }
         else referenceUsed.Add(ram.Key);
         Control body;
-        if (style == WidgetStyle.AioBlackRings && percent != null)
+        if (BlackLayout == WidgetStyle.AioBlackRings && percent != null)
             body = ArtBeside("ram", 112, Stack(2, FitLeft(percent), BCaption("USED MEMORY"), FitLeft(amount)), ram);
         else
         {
             var info = Stack(4, FitLeft(amount), BCaption("USED"), BBar(ram, 8));
             body = Stack(8, ArtBeside("ram", 120, info));
-            if (style == WidgetStyle.AioBlackGraph && BArea(ram, black.A, 34) is { } curve) ((StackPanel)body).Children.Add(curve);
+            if (BlackLayout == WidgetStyle.AioBlackGraph && BArea(ram, black.A, 34) is { } curve) ((StackPanel)body).Children.Add(curve);
         }
-        content.Children.Add(BCard("MEMORY", style == WidgetStyle.AioBlackRings ? null : percent, body));
+        content.Children.Add(BCard("MEMORY", BlackLayout == WidgetStyle.AioBlackRings ? null : percent, body));
     }
 
     private void BlackDrives(HashSet<string> top)
@@ -187,7 +190,7 @@ public sealed partial class AioTile
         var drives = PartDrives();
         if (drives.Length == 0) return;
         var body = Stack(12, new Border { HorizontalAlignment = HorizontalAlignment.Center, Child = BArt("ssd", 150) });
-        if (style == WidgetStyle.AioBlackRings)
+        if (BlackLayout == WidgetStyle.AioBlackRings)
         {
             var cells = drives.Select(d =>
             {
@@ -219,7 +222,7 @@ public sealed partial class AioTile
                 }
                 var rates = d.Rows.Where(r => !r.Key.EndsWith(".used")).Select(r => BKV(r, r.Key.EndsWith(".read") ? "READ" : "WRITE", 12)).ToArray();
                 if (rates.Length > 0) block.Children.Add(BGrid(rates, 2));
-                if (style == WidgetStyle.AioBlackGraph && d.Temp != null && BArea(d.Temp, black.B, 28) is { } curve) block.Children.Add(curve);
+                if (BlackLayout == WidgetStyle.AioBlackGraph && d.Temp != null && BArea(d.Temp, black.B, 28) is { } curve) block.Children.Add(curve);
                 body.Children.Add(block);
             }
         content.Children.Add(BCard("STORAGE", null, body));
@@ -234,7 +237,7 @@ public sealed partial class AioTile
             var art = BArt("fan", 44); art.Active = (f.Number ?? 0) > 0;
             blackLive.Add((f.Key, r => art.Active = (r?.Number ?? 0) > 0));
             var value = BV(f, 16); formats[value] = row => row.Number.HasValue ? Format.Number(row.Number) + " rpm" : "—"; value.Text = formats[value](f);
-            var name = BText(Translate(L.T(f.Label)).ToUpperInvariant(), 8.5, bMuted, true); name.TextTrimming = TextTrimming.CharacterEllipsis; name.TextWrapping = TextWrapping.NoWrap;
+            var name = BText(Translate(L.T(f.Label)).ToUpperInvariant(), 9.5, bMuted, true); name.TextTrimming = TextTrimming.CharacterEllipsis; name.TextWrapping = TextWrapping.NoWrap;
             var info = Stack(3, FitLeft(value), name, BBar(f, 4));
             var row = Ui.Columns("Auto,*", art, info); row.ColumnSpacing = 8;
             return (Control)new Border
@@ -263,7 +266,7 @@ public sealed partial class AioTile
             var arc = new BlackArc { Theme = black, Color = i.C, Tag = "graphic" };
             blackLive.Add((i.R.Key, r => arc.Set(r?.Fraction)));
             var value = BV(i.R, 20); value.HorizontalAlignment = HorizontalAlignment.Center;
-            var caption = BText(i.Caption, 8.5, bMuted, true); caption.HorizontalAlignment = HorizontalAlignment.Center;
+            var caption = BText(i.Caption, 9.5, bMuted, true); caption.HorizontalAlignment = HorizontalAlignment.Center;
             return (Control)Stack(2, arc, Fit(value), caption);
         });
         content.Children.Add(BCard("LIVE", null, BGrid(cells, 2, 8)));
@@ -325,19 +328,21 @@ public sealed partial class AioTile
         var fan = Rs("Cooling").FirstOrDefault();
         if (fan != null) Callout("fan", fan, Translate(L.T(fan.Label)).ToUpperInvariant(), false, 168, r => r.Number.HasValue ? Format.Number(r.Number) + " rpm" : "—");
         Callout("psu", Rs("Rails").FirstOrDefault(), Rs("Rails").FirstOrDefault()?.Label ?? "", true, 254);
-        var view = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.Both, Child = canvas, MaxHeight = 330 };
+        var view = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.Both, Child = canvas, MaxHeight = 460 };
         content.Children.Add(BCard("SYSTEM", BText("X-RAY", 9, bMuted, true), view));
     }
 
     // ---------------------------------------------------------------- pieces
+    /// <summary>Black letters are drawn a quarter larger than the other designs, so values and captions stay readable in a wide sidebar.</summary>
+    private const double BlackBoost = 1.25;
     private TextBlock BText(string text, double size, Color color, bool bold = false, bool number = false)
     {
-        var t = Text(text, size, color, number); t.FontFamily = black.Font; t.FontWeight = bold ? FontWeight.Bold : FontWeight.SemiBold; t.TextWrapping = TextWrapping.NoWrap; return t;
+        var t = Text(text, size * BlackBoost, color, number); t.FontFamily = black.Font; t.FontWeight = bold ? FontWeight.Bold : FontWeight.SemiBold; t.TextWrapping = TextWrapping.NoWrap; return t;
     }
-    private Control BCaption(string text) => FitLeft(BText(text, 8.5, bMuted, true));
+    private Control BCaption(string text) => FitLeft(BText(text, 9.5, bMuted, true));
     private TextBlock BV(AioReading r, double size, Color? color = null)
     {
-        var t = V(r, size, color ?? bInk); t.FontFamily = black.Font; t.FontWeight = FontWeight.Bold; return t;
+        var t = V(r, size * BlackBoost, color ?? bInk); t.FontFamily = black.Font; t.FontWeight = FontWeight.Bold; return t;
     }
     /// <summary>A value with its small caption below ("3.88 GHz" / CLOCK).</summary>
     private Control BKV(AioReading r, string? caption = null, double size = 16) => Stack(1, FitLeft(BV(r, size)), BCaption(caption ?? PanelCaption(r)));
@@ -361,8 +366,8 @@ public sealed partial class AioTile
     /// <summary>Picture left (inside a live ring on the Rings layout), values right.</summary>
     private Control ArtBeside(string kind, double width, Control values, AioReading? ring = null)
     {
-        Control left = BArt(kind, style == WidgetStyle.AioBlackRings ? width * .55 : width);
-        if (style == WidgetStyle.AioBlackRings)
+        Control left = BArt(kind, BlackLayout == WidgetStyle.AioBlackRings ? width * .55 : width);
+        if (BlackLayout == WidgetStyle.AioBlackRings)
         {
             double size = width * (settings.ActiveWidget?.Graphics ?? 1);
             var r = new BlackRing { Theme = black, Width = size, Height = size, Tag = "graphic" };
@@ -388,7 +393,7 @@ public sealed partial class AioTile
     }
     private Control BCard(string title, Control? right, Control body)
     {
-        var name = BText(title, 9.5, bMuted, true); name.LetterSpacing = 1.2;
+        var name = BText(title, 10.5, bMuted, true); name.LetterSpacing = 1.2;
         Control head = right == null ? name : Ui.Columns("Auto,*", name, new Border { HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(10, 0, 0, 0), Child = right });
         return BFrame(Stack(10, head, body), new Thickness(14));
     }
@@ -445,6 +450,14 @@ public sealed partial class AioTile
                 break;
         }
         return border;
+    }
+
+    /// <summary>Red designs: every text of the card in the Panel designs' Orbitron, set when the card is built.</summary>
+    private void RedFont()
+    {
+        // Type Block is built from huge figures sized for its own font; it keeps it (Orbitron would be too wide).
+        if (style == WidgetStyle.AioTypeBlock) return;
+        foreach (var text in content.GetLogicalDescendants().OfType<TextBlock>()) text.FontFamily = PanelTheme.Font;
     }
 
     private void UpdateBlack(History h)

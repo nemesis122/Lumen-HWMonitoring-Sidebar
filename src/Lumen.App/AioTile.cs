@@ -32,14 +32,18 @@ public sealed partial class AioTile : Border, IWidget, INamed
     private string shape="";
     private Snapshot snapshot = null!;
     private History history = null!;
+    /// <summary>The design as chosen (a Red design); <see cref="style"/> is the layout it is built from.</summary>
+    private readonly WidgetStyle designStyle;
+    private readonly bool red;
     public AioTile(WidgetStyle style,Palette p,Metrics m,Settings s)
     {
+        designStyle=style; red=AioDesigns.Red(style); style=AioDesigns.Base(style);
         this.style=style; source=s; palette=p;
         slot=s.ActiveWidget;
-        if(slot==null||slot.Style!=style)
+        if(slot==null||slot.Style!=designStyle)
         {
             var original=slot??new WidgetSlot {Kind=WidgetKind.Overview};
-            slot=new WidgetSlot {Kind=WidgetKind.Overview,Style=style,HiddenSensors=original.HiddenSensors,AioEnabledSensors=original.AioEnabledSensors,
+            slot=new WidgetSlot {Kind=WidgetKind.Overview,Style=designStyle,HiddenSensors=original.HiddenSensors,AioEnabledSensors=original.AioEnabledSensors,
                 WidgetScale=original.WidgetScale,HeroScale=original.HeroScale,GraphicScale=original.GraphicScale,ValueScale=original.ValueScale,
                 LabelScale=original.LabelScale,ShowHardware=original.ShowHardware,ShowTitle=original.ShowTitle,Name=original.Name,
                 HardwareName=original.HardwareName,Accent=original.Accent,DriveOrder=original.DriveOrder};
@@ -54,10 +58,12 @@ public sealed partial class AioTile : Border, IWidget, INamed
         ink=Color.Parse(light?"#151B2A":"#EEF4FF"); muted=Color.Parse(light?"#46516B":"#B2BFD1");
         back=p.OwnBackground?p.Card:light?C("#F9FAFE"):Color.Parse(style switch { WidgetStyle.AioPrecision=>"#0D172B",WidgetStyle.AioChromatic=>"#170D2D",_=>"#0C1017" });
         track=Color.Parse(light?"#DBDFE9":"#29313E");
+        // Red designs: the dark sections and grey lines of the Panel designs.
+        if(red&&!light){muted=C("#A9A9AE");track=C("#3A3A3D");if(!p.OwnBackground)back=C("#0E0E0F");}
         // Opacity setting: the card is as transparent as the standard designs' cards (same alpha as Palette.Card).
         cardAlpha=p.Card.A;
         Background=Palette.Brush(Color.FromArgb(cardAlpha,back.R,back.G,back.B)); BorderBrush=Palette.Brush(track); BorderThickness=new Thickness(1);
-        if(style==WidgetStyle.AioAuroraFusion&&!p.OwnBackground)
+        if(style==WidgetStyle.AioAuroraFusion&&!p.OwnBackground&&!red)
             BorderBrush=new LinearGradientBrush {GradientStops={new GradientStop(C("#2EE3DA"),0),new GradientStop(C("#BC4FF1"),.45),new GradientStop(C("#FA905F"),.75),new GradientStop(C("#26D9E0"),1)}};
         CornerRadius=new CornerRadius(style==WidgetStyle.AioTypeBlock?6:18); Padding=new Thickness(12);
         Child=content;
@@ -121,7 +127,7 @@ public sealed partial class AioTile : Border, IWidget, INamed
 
     private Color Accent(AioReading? r)
     {
-        var color=Color.TryParse(slot?.Accent,out var picked)?picked:palette.Chosen??BaseAccent(r);
+        var color=Color.TryParse(slot?.Accent,out var picked)?picked:red?C("#FF2238"):palette.Chosen??BaseAccent(r);
         return lightSurface?Palette.Mix(color,Colors.Black,.25):color;
     }
     private Color BaseAccent(AioReading? r) => r?.Group switch

@@ -224,6 +224,8 @@ public sealed class MainboardTraces : Control
 public sealed class MainboardCoreGrid : Control
 {
     public bool TwoTone { get; init; }
+    /// <summary>Red designs: the load colours in red.</summary>
+    public bool Red { get; set; }
     public bool PreferSingleRow {get;init;}
     public int VisibleColumns=>Columns(Bounds.Width);
     private readonly Color ink, muted, track, accent;
@@ -267,7 +269,7 @@ public sealed class MainboardCoreGrid : Control
             c.DrawRectangle(Palette.Brush(track), null, new Rect(barX, y + 13, barWidth, barHeight), 2, 2);
             double fraction = double.IsFinite(loads[i]) ? Math.Clamp(loads[i] / 100, 0, 1) : 0;
             double height = barHeight * fraction;
-            var fill=TwoTone?(i/columns%2==0?MainboardMapColors.Cyan:MainboardMapColors.Violet):AioCoreBars.Heat(fraction);
+            var fill=TwoTone?(accent==MainboardMapColors.Cyan?(i/columns%2==0?MainboardMapColors.Cyan:MainboardMapColors.Violet):(i/columns%2==0?accent:Palette.Mix(accent,Colors.White,.35))):Red?RedSkin.Redden(AioCoreBars.Heat(fraction)):AioCoreBars.Heat(fraction);
             if(height > 0) c.DrawRectangle(Palette.Brush(fill), null, new Rect(barX, y + 13 + barHeight - height, barWidth, height), 1, 1);
             Center(double.IsFinite(loads[i]) ? Math.Round(loads[i]).ToString("0") : "—", x, y + 16 + barHeight, ink, cell>30?11:9);
         }

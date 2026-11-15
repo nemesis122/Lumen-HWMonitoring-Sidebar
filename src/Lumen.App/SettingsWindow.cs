@@ -982,6 +982,14 @@ public sealed class SettingsWindow : Window
 		IBrush brush3 = Palette.Brush(p.Track);
 		IBrush fill = Palette.Brush(p.Dark ? Color.Parse("#262E3B") : Color.Parse("#E4E9F0"));
 		IBrush fill2 = Palette.Brush(p.Soft);
+        // A Red design shows its base design's picture in red on dark grey.
+        var thumbDesign = style;
+        if (AioDesigns.Red(style))
+        {
+            style = AioDesigns.Base(style);
+            brush = brush2 = Palette.Brush(Color.Parse("#FF2238"));
+            fill = Palette.Brush(Color.Parse("#151516"));
+        }
         if (AioDesigns.Contains(style))
         {
             Rect(4,1,56,32,fill,4);
@@ -1001,10 +1009,10 @@ public sealed class SettingsWindow : Window
             }
             else if(AioDesigns.Black(style))
             {
-                var look=AioDesigns.BlackLookOf(s,style);
+                var look=AioDesigns.BlackLookOf(s,thumbDesign);
                 var col=Palette.Brush(Color.Parse(AioDesigns.BlackColours.First(c=>c.Key==look.Colour).A));var blackFill=Palette.Brush(Color.Parse("#050505"));var cell=Palette.Brush(Color.Parse("#17171A"));
                 Rect(4,1,56,32,blackFill,4);
-                switch(style)
+                switch(AioDesigns.BlackLayout(style))
                 {
                     case WidgetStyle.AioBlackDashboard: for(int i=0;i<2;i++){Ellipse(10+i*24,4,16,16,cell);Rect(12+i*24,6,12,3,col,1);} Rect(8,23,48,7,cell,2);break;
                     case WidgetStyle.AioBlackRings: for(int i=0;i<2;i++){Ellipse(8,3+i*15,12,12,col);Ellipse(10,5+i*15,8,8,blackFill);Rect(24,6+i*15,30,2,col);Rect(24,10+i*15,20,2,fill2);} break;
@@ -1693,26 +1701,6 @@ public sealed class SettingsWindow : Window
 					stackPanel.Children.Add(PanelOption("Panel colours", AioDesigns.PanelThemes, s.PanelTheme, k => s.PanelTheme = k));
 					if (slot.Style == WidgetStyle.AioPanel)
 						stackPanel.Children.Add(PanelOption("Gauges", AioDesigns.PanelGauges, s.PanelGauges, k => s.PanelGauges = k));
-				}
-				if (AioDesigns.Black(slot.Style))
-				{
-					// Black designs: colour, cards, graphics and font of this layout.
-					Owns("BlackLooks");
-					var style = slot.Style;
-					Control BlackOption(string label, (string Key, string Name)[] options, string current, Func<AioDesigns.BlackLook, string, AioDesigns.BlackLook> set)
-					{
-						Grid row = Ui.Columns("Auto,*", Ui.Text(L.T(label), 12.5, p.Soft), Choice(options.Select(o => L.T(o.Name)).ToList(),
-							Math.Max(0, Array.FindIndex(options, o => o.Key == current)), i => s.BlackLooks[style] = set(AioDesigns.BlackLookOf(s, style), options[i].Key).ToString()));
-						row.Children[0].Margin = new Thickness(0, 6, 10, 0);
-						row.Children[0].VerticalAlignment = VerticalAlignment.Top;
-						row.Margin = new Thickness(28, 4, 0, 0);
-						return row;
-					}
-					var look = AioDesigns.BlackLookOf(s, style);
-					stackPanel.Children.Add(BlackOption("Colour", AioDesigns.BlackColours.Select(c => (c.Key, c.Name)).ToArray(), look.Colour, (l, k) => l with { Colour = k }));
-					stackPanel.Children.Add(BlackOption("Cards", AioDesigns.BlackCards, look.Cards, (l, k) => l with { Cards = k }));
-					stackPanel.Children.Add(BlackOption("Graphics", AioDesigns.BlackArts, look.Art, (l, k) => l with { Art = k }));
-					stackPanel.Children.Add(BlackOption("Font", AioDesigns.BlackFonts, look.Font, (l, k) => l with { Font = k }));
 				}
 			}
 			if (s.ColumnsInUse > 1)
