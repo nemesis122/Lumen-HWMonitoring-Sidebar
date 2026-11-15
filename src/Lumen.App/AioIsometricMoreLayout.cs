@@ -357,42 +357,46 @@ public sealed partial class AioTile
         }
         RefSection(new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, MaxWidth = 340, Child = canvas }, Cyan);
 
-        // Everything else as a compact value grid, named so it is clear which part a value belongs to.
-        string Context(AioReading r)
-        {
-            var label = IsoLabel(r);
-            if (r.Group == "GPU" && gpuIds.Count > 1) return "GPU " + (gpuIds.IndexOf(r.Device) + 1) + " " + label;
-            if (r.Key.StartsWith("aio.system.disk.")) return "Temp " + AioReadings.DriveName(snapshot, r.Device ?? "");
-            if (r.Group == "Drives") return label + " " + AioReadings.DriveName(snapshot, r.Device ?? "");
-            if (r.Group == "CPU" && r.Key.EndsWith(".power")) return "CPU " + label;
-            if (r.Group == "GPU" && r.Key.EndsWith(".power")) return "GPU " + label;
-            return label;
-        }
+        // Everything else in groups with a heading (CPU, GPU, FANS, STORAGE, NETWORK, POWER): each value sits under
+        // the part it belongs to, values in one colour, the heading in the colour of the part. User request.
         var rest = referenceRows.Where(r => r.Group is "CPU" or "GPU" or "Drives" or "Cooling" || r.Key.StartsWith("aio.system.disk.")).Where(r => !shown.Contains(r.Key)).ToArray();
-        if (rest.Length > 0)
+        int columns = settings.Width < 270 ? 2 : settings.Width < 330 ? 3 : 4;
+        string DriveLabel(AioReading r)
         {
-            int columns = settings.Width < 270 ? 2 : settings.Width < 330 ? 3 : 4;
-            RefSection(FixedCols(columns, rest.Select(r =>
-            {
-                var value = V(r, 14, r.Key.EndsWith(".hotspot") ? Coral : r.Key.EndsWith(".junction") ? Purple : r.Group == "Drives" ? Accent(r) : ink);
-                if (r.Group == "Cooling") { formats[value] = row => row.Number.HasValue ? Format.Number(row.Number) + " rpm" : "—"; value.Text = formats[value](r); }
-                if (r.Key.StartsWith("aio.system.disk.")) value.Foreground = Palette.Brush(Amber);
-                var label = Text(Context(r), 11, muted); label.TextWrapping = TextWrapping.NoWrap; label.TextTrimming = TextTrimming.CharacterEllipsis;
-                return (Control)Stack(1, label, FitLeft(value));
-            }).ToArray()), Cyan);
+            string drive = AioReadings.DriveName(snapshot, r.Device ?? "");
+            if (r.Key.StartsWith("aio.system.disk.")) return drive + " " + L.T("Temp");
+            return drive + " " + (r.Key.EndsWith(".read") ? L.T("Read") : r.Key.EndsWith(".write") ? L.T("Write") : r.Key.EndsWith(".used") ? L.T("Used") : IsoLabel(r));
         }
-        // Network and power supply in the same grid as the values above: name on top, value below, fixed columns.
-        var rates = Rs("Network"); var rails = Rs("Rails");
-        if (rates.Length > 0 || rails.Length > 0)
+        Control Cell(string caption, AioReading r)
         {
-            Control Cell(string caption, Color tint, AioReading r)
+            var value = V(r, 14, ink);
+            if (r.Group == "Cooling") { formats[value] = row => row.Number.HasValue ? Format.Number(row.Number) + " rpm" : "—"; value.Text = formats[value](r); }
+            var label = Text(caption, 11, muted); label.TextWrapping = TextWrapping.NoWrap; label.TextTrimming = TextTrimming.CharacterEllipsis;
+            return Stack(1, label, FitLeft(value));
+        }
+        var groups = new List<(string Title, Color Tint, Control[] Cells, int Columns)>();
+        void Group(string title, Color tint, IEnumerable<Control> cells, int? cols = null) { var list = cells.ToArray(); if (list.Length > 0) groups.Add((title, tint, list, cols ?? columns)); }
+        Group("CPU", Cyan, rest.Where(r => r.Group == "CPU").Select(r => Cell(IsoLabel(r), r)));
+        for (int g = 0; g < gpuIds.Count; g++)
+        {
+            var id = gpuIds[g];
+            Group(gpuIds.Count > 1 ? "GPU " + (g + 1) : "GPU", Purple, rest.Where(r => r.Group == "GPU" && r.Device == id).Select(r => Cell(IsoLabel(r), r)));
+        }
+        Group(L.T("FANS"), Cyan, rest.Where(r => r.Group == "Cooling").Select(r => Cell(Translate(L.T(r.Label)), r)));
+        Group(L.T("STORAGE"), Amber, rest.Where(r => r.Group == "Drives" || r.Key.StartsWith("aio.system.disk.")).Select(r => Cell(DriveLabel(r), r)));
+        var rates = Rs("Network"); var rails = Rs("Rails");
+        Group(L.T("NETWORK"), Cyan, rates.Select(r => Cell(r.Key.EndsWith(".link") ? L.T("Link speed") : r.Key.EndsWith(".down") ? "↓ " + L.T("Download") : "↑ " + L.T("Upload"), r)), Math.Min(3, columns));
+        Group(L.T("POWER"), Amber, rails.Select(r => Cell(r.Label, r)), Math.Min(3, columns));
+        if (groups.Count > 0)
+        {
+            var list = Stack(12);
+            foreach (var (title, tint, cells, cols) in groups)
             {
-                var label = Text(caption, 11, tint); label.TextWrapping = TextWrapping.NoWrap; label.TextTrimming = TextTrimming.CharacterEllipsis;
-                return Stack(1, label, FitLeft(V(r, 14, ink)));
+                var heading = Text(title, 10.5, tint); heading.FontWeight = FontWeight.Bold; heading.LetterSpacing = 1.2;
+                var line = new Border { Height = 1, Background = Palette.Brush(Palette.Mix(tint, back, .7)), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
+                list.Children.Add(Stack(6, Ui.Columns("Auto,*", heading, line), FixedCols(cols, cells)));
             }
-            var cells = rates.Select(r => r.Key.EndsWith(".link") ? Cell("⇄ " + L.T("Link speed"), Purple, r) : r.Key.EndsWith(".down") ? Cell("↓ " + L.T("Download"), Cyan, r) : Cell("↑ " + L.T("Upload"), Amber, r))
-                .Concat(rails.Select(r => Cell(r.Label, Amber, r))).ToArray();
-            RefSection(FixedCols(3, cells), Cyan, true);
+            RefSection(list, Cyan, true);
         }
     }
 }
