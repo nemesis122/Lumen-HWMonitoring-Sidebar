@@ -64,32 +64,4 @@ public class DriveNativeAppearanceTests
         finally { window.Close(); }
         return true;
     });
-
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void Capsule_graph_uses_native_capsules_for_optional_drive_values(bool dark) => UiHost.Run(() =>
-    {
-        var (snap, history) = Render.Demo(); var settings = new Settings();
-        settings.Widgets.Single(w => w.Kind == WidgetKind.Drives).HiddenSensors.Clear();
-        var palette = Palette.For(dark, false);
-        var card = Cards.Create(WidgetKind.Drives, WidgetStyle.PillRowGraph, 0, palette, Metrics.For(Density.Fit), settings);
-        ((IWidget)card).Update(snap, history);
-        var window = new Window { Content = card, Width = 375, Height = 1800 };
-        try
-        {
-            window.Show(); Dispatcher.UIThread.RunJobs(); window.CaptureRenderedFrame();
-            var key = "drive:" + snap.Disks.First().Id + ":used";
-            var value = card.GetLogicalDescendants().OfType<TextBlock>().Single(t => SensorDetails.KeyOf(t) == key && SensorDetails.Visible(t, card));
-            Assert.DoesNotContain(value.GetLogicalAncestors(), a => a is SensorDetails);
-            var capsule = value.GetLogicalAncestors().OfType<Panel>().First(p => p.Children.OfType<FillBack>().Any());
-            var fill = capsule.Children.OfType<FillBack>().Single();
-            Assert.Equal(capsule.Height / 2, fill.Radius);
-            Assert.Equal(Palette.Alpha(palette.Cool, dark ? .34 : .28), fill.Fill);
-            Assert.Equal(Palette.Mix(palette.Card, palette.Ink, dark ? .06 : .05), fill.Track);
-            Assert.True(capsule.Height >= 38);
-        }
-        finally { window.Close(); }
-        return true;
-    });
 }

@@ -5,7 +5,7 @@ public static class AioDesigns
 {
     public static readonly WidgetStyle[] Styles =
     {
-        WidgetStyle.AioMainboard, WidgetStyle.AioMainboardMap,
+        WidgetStyle.AioMainboardMap,
         WidgetStyle.AioMainboardCores,
         WidgetStyle.AioMainboardDesktop,
         WidgetStyle.AioTypeBlock, WidgetStyle.AioOrbitNetwork, WidgetStyle.AioThermalGrid,
@@ -13,10 +13,8 @@ public static class AioDesigns
         WidgetStyle.AioStudioLight, WidgetStyle.AioInstrument,
         WidgetStyle.AioAuroraFusion, WidgetStyle.AioCarbonPulse,
         WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings,
-        WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelHeader, WidgetStyle.AioPanelPlain,
-        WidgetStyle.AioBlackRings, WidgetStyle.AioBlackGraph, WidgetStyle.AioBlackClassic, WidgetStyle.AioBlackTiles, WidgetStyle.AioBlackXRay,
-        WidgetStyle.AioBlackWhiteDashboard, WidgetStyle.AioBlackGoldClassic, WidgetStyle.AioBlackWhiteGraph, WidgetStyle.AioBlackRedTiles, WidgetStyle.AioBlackWhiteTiles, WidgetStyle.AioBlackBlueDashboard, WidgetStyle.AioBlackAmberClassic, WidgetStyle.AioBlackLimeDashboard, WidgetStyle.AioBlackCrimsonDashboard, WidgetStyle.AioBlackCopperRings
-        ,WidgetStyle.AioMainboardRed, WidgetStyle.AioMainboardMapRed, WidgetStyle.AioMainboardDesktopRed, WidgetStyle.AioMainboardCoresRed, WidgetStyle.AioTypeBlockRed, WidgetStyle.AioOrbitNetworkRed, WidgetStyle.AioThermalGridRed, WidgetStyle.AioSignalRackRed, WidgetStyle.AioIsometricCoreRed, WidgetStyle.AioPrecisionRed, WidgetStyle.AioStudioLightRed, WidgetStyle.AioInstrumentRed, WidgetStyle.AioAuroraFusionRed, WidgetStyle.AioCarbonPulseRed, WidgetStyle.AioIsometricAtlasRed, WidgetStyle.AioIsometricTilesRed, WidgetStyle.AioIsometricRigRed, WidgetStyle.AioIsometricPedestalsRed, WidgetStyle.AioIsometricCompactRed, WidgetStyle.AioIsometricRingsRed, WidgetStyle.AioBlackRingsRed, WidgetStyle.AioBlackGraphRed, WidgetStyle.AioBlackClassicRed, WidgetStyle.AioBlackTilesRed, WidgetStyle.AioBlackXRayRed, WidgetStyle.AioBlackWhiteDashboardRed, WidgetStyle.AioBlackGoldClassicRed, WidgetStyle.AioBlackWhiteGraphRed, WidgetStyle.AioBlackRedTilesRed, WidgetStyle.AioBlackWhiteTilesRed, WidgetStyle.AioBlackBlueDashboardRed, WidgetStyle.AioBlackAmberClassicRed, WidgetStyle.AioBlackLimeDashboardRed, WidgetStyle.AioBlackCrimsonDashboardRed, WidgetStyle.AioBlackCopperRingsRed
+        WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelHeader, WidgetStyle.AioPanelPlain, WidgetStyle.AioBlackCopperRings
+        , WidgetStyle.AioMainboardMapRed, WidgetStyle.AioMainboardCoresRed, WidgetStyle.AioTypeBlockRed, WidgetStyle.AioOrbitNetworkRed, WidgetStyle.AioThermalGridRed, WidgetStyle.AioSignalRackRed, WidgetStyle.AioIsometricCoreRed, WidgetStyle.AioPrecisionRed, WidgetStyle.AioStudioLightRed, WidgetStyle.AioInstrumentRed, WidgetStyle.AioAuroraFusionRed, WidgetStyle.AioCarbonPulseRed, WidgetStyle.AioIsometricAtlasRed, WidgetStyle.AioIsometricTilesRed, WidgetStyle.AioIsometricRigRed, WidgetStyle.AioIsometricPedestalsRed, WidgetStyle.AioIsometricCompactRed, WidgetStyle.AioIsometricRingsRed
     };
     /// <summary>The sensor-panel family: hardware pictures beside red-label values, colour and gauge style chosen in Customise.</summary>
     public static bool Panel(WidgetStyle style) => Base(style) is WidgetStyle.AioPanel or WidgetStyle.AioPanelRings or WidgetStyle.AioPanelBadges or WidgetStyle.AioPanelHeader or WidgetStyle.AioPanelPlain;

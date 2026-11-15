@@ -107,7 +107,7 @@ public sealed class AioCompanionTile : Border,IWidget,INamed
         WidgetStyle.AioChromatic=>WidgetStyle.PurpleList,
         WidgetStyle.AioCarbonPulse=>WidgetStyle.Terminal,
         WidgetStyle.AioPopConsole=>WidgetStyle.MosaicPro,
-        WidgetStyle.AioStudioLight=>WidgetStyle.PureWidgets,
+        WidgetStyle.AioStudioLight=>WidgetStyle.Pure,
         WidgetStyle.AioAuroraFusion=>WidgetStyle.Meridian,
         _=>WidgetStyle.Table
     };

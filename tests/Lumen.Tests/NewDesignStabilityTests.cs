@@ -10,7 +10,7 @@ using Xunit;
 
 public class NewDesignStabilityTests
 {
-    public static IEnumerable<object[]> Designs() => FavoriteTile.Styles.Concat(PureLoadIndicator.Styles).Append(WidgetStyle.PureWidgetsRight).Select(s => new object[] { s });
+    public static IEnumerable<object[]> Designs() => FavoriteTile.Styles.Concat(PureLoadIndicator.Styles).Append(WidgetStyle.PureWidgetsRight).Where(Settings.Selectable.Contains).Select(s => new object[] { s });
 
     [Theory]
     [MemberData(nameof(Designs))]

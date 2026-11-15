@@ -201,19 +201,15 @@ public sealed class Settings
         WidgetStyle.PurpleList,
         WidgetStyle.SegmentGraph,
         WidgetStyle.TableGraph,
-        WidgetStyle.FillBarsGraph,
-        WidgetStyle.PillRowGraph,
         WidgetStyle.BadgeListGraph,
         WidgetStyle.NeonHudGraph,
         WidgetStyle.Pure,
-        WidgetStyle.PureWidgets,
         WidgetStyle.CleanDark,
         WidgetStyle.CompactPro,
         WidgetStyle.PerformanceView,
         WidgetStyle.PureBar,
         WidgetStyle.PureNumber,
         WidgetStyle.PureSegments,
-        WidgetStyle.PureWidgetsRight,
         WidgetStyle.Meridian,
         WidgetStyle.Strata,
         WidgetStyle.Vector,
@@ -235,13 +231,10 @@ public sealed class Settings
         WidgetStyle.AioSignalRack, WidgetStyle.AioIsometricCore, WidgetStyle.AioPrecision,
         WidgetStyle.AioStudioLight, WidgetStyle.AioInstrument,
         WidgetStyle.AioAuroraFusion, WidgetStyle.AioCarbonPulse,
-        WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings,
-        WidgetStyle.AioMainboard, WidgetStyle.AioMainboardMap, WidgetStyle.AioMainboardDesktop,
+        WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings, WidgetStyle.AioMainboardMap, WidgetStyle.AioMainboardDesktop,
         WidgetStyle.AioMainboardCores,
-        WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelHeader, WidgetStyle.AioPanelPlain,
-        WidgetStyle.AioBlackRings, WidgetStyle.AioBlackGraph, WidgetStyle.AioBlackClassic, WidgetStyle.AioBlackTiles, WidgetStyle.AioBlackXRay,
-        WidgetStyle.AioBlackWhiteDashboard, WidgetStyle.AioBlackGoldClassic, WidgetStyle.AioBlackWhiteGraph, WidgetStyle.AioBlackRedTiles, WidgetStyle.AioBlackWhiteTiles, WidgetStyle.AioBlackBlueDashboard, WidgetStyle.AioBlackAmberClassic, WidgetStyle.AioBlackLimeDashboard, WidgetStyle.AioBlackCrimsonDashboard, WidgetStyle.AioBlackCopperRings,
-        WidgetStyle.AioMainboardRed, WidgetStyle.AioMainboardMapRed, WidgetStyle.AioMainboardDesktopRed, WidgetStyle.AioMainboardCoresRed, WidgetStyle.AioTypeBlockRed, WidgetStyle.AioOrbitNetworkRed, WidgetStyle.AioThermalGridRed, WidgetStyle.AioSignalRackRed, WidgetStyle.AioIsometricCoreRed, WidgetStyle.AioPrecisionRed, WidgetStyle.AioStudioLightRed, WidgetStyle.AioInstrumentRed, WidgetStyle.AioAuroraFusionRed, WidgetStyle.AioCarbonPulseRed, WidgetStyle.AioIsometricAtlasRed, WidgetStyle.AioIsometricTilesRed, WidgetStyle.AioIsometricRigRed, WidgetStyle.AioIsometricPedestalsRed, WidgetStyle.AioIsometricCompactRed, WidgetStyle.AioIsometricRingsRed, WidgetStyle.AioBlackRingsRed, WidgetStyle.AioBlackGraphRed, WidgetStyle.AioBlackClassicRed, WidgetStyle.AioBlackTilesRed, WidgetStyle.AioBlackXRayRed, WidgetStyle.AioBlackWhiteDashboardRed, WidgetStyle.AioBlackGoldClassicRed, WidgetStyle.AioBlackWhiteGraphRed, WidgetStyle.AioBlackRedTilesRed, WidgetStyle.AioBlackWhiteTilesRed, WidgetStyle.AioBlackBlueDashboardRed, WidgetStyle.AioBlackAmberClassicRed, WidgetStyle.AioBlackLimeDashboardRed, WidgetStyle.AioBlackCrimsonDashboardRed, WidgetStyle.AioBlackCopperRingsRed
+        WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelHeader, WidgetStyle.AioPanelPlain, WidgetStyle.AioBlackCopperRings,
+        WidgetStyle.AioMainboardMapRed, WidgetStyle.AioMainboardCoresRed, WidgetStyle.AioTypeBlockRed, WidgetStyle.AioOrbitNetworkRed, WidgetStyle.AioThermalGridRed, WidgetStyle.AioSignalRackRed, WidgetStyle.AioIsometricCoreRed, WidgetStyle.AioPrecisionRed, WidgetStyle.AioStudioLightRed, WidgetStyle.AioInstrumentRed, WidgetStyle.AioAuroraFusionRed, WidgetStyle.AioCarbonPulseRed, WidgetStyle.AioIsometricAtlasRed, WidgetStyle.AioIsometricTilesRed, WidgetStyle.AioIsometricRigRed, WidgetStyle.AioIsometricPedestalsRed, WidgetStyle.AioIsometricCompactRed, WidgetStyle.AioIsometricRingsRed
 	};
 
 	public int ColumnCount

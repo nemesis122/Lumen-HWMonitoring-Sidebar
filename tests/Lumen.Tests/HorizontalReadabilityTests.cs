@@ -10,7 +10,7 @@ using Xunit;
 public class HorizontalReadabilityTests
 {
     public static IEnumerable<object[]> Designs() => FavoriteTile.Styles.Concat(PureLoadIndicator.Styles)
-        .Concat(new[] { WidgetStyle.PureWidgets, WidgetStyle.PureWidgetsRight }).Select(s => new object[] { s });
+        .Where(Settings.Selectable.Contains).Select(s => new object[] { s });
 
     [Theory]
     [MemberData(nameof(Designs))]
