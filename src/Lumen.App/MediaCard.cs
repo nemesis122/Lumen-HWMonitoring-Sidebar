@@ -44,7 +44,7 @@ public sealed class MediaCard : Card
 			CornerRadius = new CornerRadius(10.0),
 			ClipToBounds = true
 		};
-		title = Ui.Text("", 13.5, p.Ink, FontWeight.DemiBold);
+		title = Ui.Text("", 13.5, p.Ink, FontWeight.DemiBold); TextFonts.Mark(title, TextRole.Title);
 		artist = Ui.Text("", 12.0, p.Soft);
 		StackPanel stackPanel = Ui.Stack(1.0, title, artist);
 		stackPanel.VerticalAlignment = VerticalAlignment.Center;

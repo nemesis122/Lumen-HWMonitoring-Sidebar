@@ -45,7 +45,7 @@ public sealed partial class AioTile
         Control Box(string title, string art, IEnumerable<Control> rows, Point target, string model = "",Color? tone=null,bool identify=true)
         {
             var accent=tone??MapFor(art);int number=identify?MainboardMapColors.Number(art):0;
-            var header = Ui.Columns("Auto,*", Part(art, 26, 24), FitLeft(Text((number>0?number+" ":"")+title, 15, ink)));
+            var header = Ui.Columns("Auto,*", Part(art, 26, 24), FitLeft(TextFonts.Mark(Text((number>0?number+" ":"")+title, 15, ink), TextRole.Title)));
             header.ColumnSpacing = 5;
             var body = Stack(5,new Border{Height=3,Background=Palette.Brush(accent)},header);
             if(model.Length > 0)
@@ -321,7 +321,7 @@ public sealed class MapConnections : Control, RedSkin.IOneColour
             {
                 string label=number+" "+(path.Part=="psu"?"ATX":path.Part.ToUpperInvariant());
                 var text=new FormattedText(label,System.Globalization.CultureInfo.InvariantCulture,FlowDirection.LeftToRight,
-                    new Typeface(Ui.Font,FontStyle.Normal,FontWeight.SemiBold),10,brush);
+                    new Typeface(Ui.GraphFont,FontStyle.Normal,FontWeight.SemiBold),10,brush);
                 double x=path.Part=="psu"?path.Component.Right+4:path.Component.Left;
                 double y=path.Part=="psu"?path.Component.Top:path.Component.Top-text.Height-6;
                 x=Math.Clamp(x,1,Math.Max(1,Bounds.Width-text.Width-9));y=Math.Max(1,y);

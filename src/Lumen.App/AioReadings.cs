@@ -15,7 +15,7 @@ public static class AioReadings
     public static readonly (string Key,string Label)[] Groups =
     {
         ("aio.cpu","CPU"), ("aio.gpu","GPU"), ("aio.cooling","Cooling"),
-        ("aio.rails","Voltages"), ("aio.system","System"), ("aio.drives","Drives"), ("aio.network","Network")
+        ("aio.rails","Voltages"), ("aio.system","System"), ("aio.drives","Drives"), ("aio.network","Network"), ("aio.board","Mainboard")
     };
     public static bool Selected(Settings settings,string key) => settings.Shows(key) && AioDesigns.SwitchedOn(settings,key)
         && Groups.Where(g => key.StartsWith(g.Key + ".")).All(g => settings.Shows(g.Key));
@@ -113,6 +113,17 @@ public static class AioReadings
         }
         var m=s.Memory;
         Add("aio.system.ram","System","RAM",m==null?"—":Format.Number(m.UsedGb,"0.#")+" / "+Format.Gigabytes(m.TotalGb),m?.Load,100,"mem.load");
+        bool detailed = listingAllFans || AioDesigns.Dashboard(settings.ActiveWidget?.Style ?? WidgetStyle.Standard);
+        void Detail(string key,string group,string label,string value,double? number,double max=100,string history="",string device="")
+        {
+            if(detailed || settings.ActiveWidget?.AioEnabledSensors?.Contains(key)==true)
+                Add(key,group,label,value,number,max,history,device);
+        }
+        Detail("aio.system.ram.used","System","Used",Format.Gigabytes(m?.UsedGb),m?.UsedGb,m?.TotalGb??1);
+        Detail("aio.system.ram.free","System","Available",Format.Gigabytes(m?.AvailableGb),m?.AvailableGb,m?.TotalGb??1);
+        Detail("aio.system.ram.total","System","Installed",Format.Gigabytes(m?.TotalGb),m?.TotalGb,m?.TotalGb??1);
+        foreach(var temp in s.BoardTemps)
+            Detail("aio.board."+temp.Name+".temp","Board",Names.Temp(temp.Name,settings),Temp(temp.Celsius),temp.Celsius);
         var drives=DriveOrdering.Order(s.Disks,DriveOrdering.Mode(settings.ForWidget(WidgetKind.Drives)));
         foreach(var d in drives)
             Add("aio.system.disk."+d.Id,"System",s.Disks.Count==1?"SSD":(d.Letters.Length>0?d.Letters:d.Name),Temp(d.Temperature),d.Temperature,100,"disk."+d.Id+".temp",d.Id);
@@ -123,10 +134,16 @@ public static class AioReadings
             Add(k+"read","Drives","Read",Format.Rate(d.ReadBytesPerSecond),d.ReadBytesPerSecond,DriveRateMaximum,"disk."+d.Id+".read",d.Id);
             Add(k+"write","Drives","Write",Format.Rate(d.WriteBytesPerSecond),d.WriteBytesPerSecond,DriveRateMaximum,"disk."+d.Id+".write",d.Id);
             Add(k+"used","Drives","Used",Format.Percent(d.UsedPercent),d.UsedPercent,100,"",d.Id);
+            if(d.Life.HasValue)Detail(k+"life","Drives","Life left",Format.Percent(d.Life),d.Life,100,device:d.Id);
+            if(d.PowerOnHours.HasValue)Detail(k+"hours","Drives","Power-on hours",Format.Number(d.PowerOnHours)+" h",d.PowerOnHours,device:d.Id);
+            if(d.TotalActivity.HasValue)Detail(k+"activity","Drives","Total activity",Format.Percent(d.TotalActivity),d.TotalActivity,device:d.Id);
         }
         Add("aio.network.down","Network","Download",Format.Bits(s.Network?.DownloadBytesPerSecond*8),s.Network?.DownloadBytesPerSecond,1250000000,"net.down");
         Add("aio.network.up","Network","Upload",Format.Bits(s.Network?.UploadBytesPerSecond*8),s.Network?.UploadBytesPerSecond,1250000000,"net.up");
         Add("aio.network.link","Network","Link speed",Format.Link(s.Network?.LinkBitsPerSecond),s.Network?.LinkBitsPerSecond,10_000_000_000);
+        if(s.Ping?.Ms is double ping)Detail("aio.network.ping","Network","Ping",Format.Milliseconds(ping),ping,1000);
+        if(s.Ping?.JitterMs is double jitter)Detail("aio.network.jitter","Network","Jitter",Format.Milliseconds(jitter),jitter,1000);
+        if(s.Ping?.LossPercent is double loss)Detail("aio.network.loss","Network","Loss",Format.Percent(loss),loss);
         return rows;
     }
     private const double DriveRateMaximum=2_000_000_000;
@@ -161,7 +178,16 @@ public static class AioReadings
         // The choices list every fan that reports a reading – also one that never turned, so it can be ticked.
         List<AioReading> all;
         listingAllFans=true;try{all=For(snapshot,new Settings());}finally{listingAllFans=false;}
+        var gpuOrder = cards.OrderBy(g => g == main ? 0 : 1).ToArray();
         foreach(var r in all.Where(r=>r.Group!="Cores"))
-                yield return (r.Key,r.Group=="Drives"?"AIO · "+L.T("Drives")+" · "+DriveName(snapshot,r.Device)+" · "+L.T(r.Label):"AIO · "+r.Group+" · "+L.T(r.Label));
+        {
+            if (r.Group == "GPU")
+            {
+                int index = Array.FindIndex(gpuOrder, g => g.Id == r.Device);
+                var device = index >= 0 ? gpuOrder[index] : null;
+                yield return (r.Key, "AIO · GPU " + (index + 1) + " · " + (device?.Name ?? r.Device) + " · " + L.T(r.Label));
+            }
+            else yield return (r.Key,r.Group=="Drives"?"AIO · "+L.T("Drives")+" · "+DriveName(snapshot,r.Device)+" · "+L.T(r.Label):"AIO · "+r.Group+" · "+L.T(r.Label));
+        }
     }
 }

@@ -137,7 +137,7 @@ public sealed class OverviewTile : Border, IWidget, INamed
 			_ => (Head.Badge, Visual.Spark, null)
 		};
 		Frame();
-		title = Ui.Text(L.T("Overview"), 12.5, p.Ink, FontWeight.DemiBold);
+		title = Ui.Text(L.T("Overview"), 12.5, p.Ink, FontWeight.DemiBold); TextFonts.Mark(title, TextRole.Title);
 		grid.Margin = new Thickness(-4, 0, -4, -6);
 		var root = Ui.Stack(head is Head.Capsule ? 8 : 10, Header(), grid);
 		if (head == Head.SciFi)

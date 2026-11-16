@@ -59,7 +59,7 @@ public sealed class PillTile : SummaryTile
 		sub = Ui.Text("", 11.5, p.Soft, FontWeight.Normal, numbers: true);
 		value = Ui.Text("", m.Subtitles ? 24 : 21, p.Ink, FontWeight.Bold, numbers: true);
 		value.LetterSpacing = -0.5;
-		unit = Ui.Text("", 12.5, p.Soft, FontWeight.DemiBold, numbers: true);
+		unit = Ui.Text("", 12.5, p.Soft, FontWeight.DemiBold, numbers: true); TextFonts.Mark(unit, TextRole.Value);
 		WidgetPresentation.Sensor(value, WidgetSensors.PrimaryKey(kind));
         WidgetPresentation.Sensor(unit, WidgetSensors.PrimaryKey(kind));
         WidgetPresentation.Sensor(sub, WidgetSensors.CaptionKey(kind));

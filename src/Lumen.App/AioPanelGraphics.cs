@@ -56,7 +56,7 @@ internal static class PanelDraw
     public static void Text(DrawingContext g, string text, double size, Color color, Point at, bool center = false, FontWeight weight = FontWeight.Bold)
     {
         var f = new FormattedText(text, System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
-            new Typeface(PanelTheme.Font, FontStyle.Normal, weight), size, B(color));
+            new Typeface(Ui.GraphDesignFont(PanelTheme.Font), FontStyle.Normal, weight), size, B(color));
         g.DrawText(f, center ? new Point(at.X - f.Width / 2, at.Y - f.Height / 2) : at);
     }
 }

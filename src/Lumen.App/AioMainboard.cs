@@ -31,7 +31,7 @@ public sealed partial class AioTile
         Control Module(string title, string art, IEnumerable<Control> rows, string model = "")
         {
             var body = Stack(5);
-            var heading = Ui.Columns("Auto,*", Part(art, 45, 36), FitLeft(Text(title, 15, ink)));
+            var heading = Ui.Columns("Auto,*", Part(art, 45, 36), FitLeft(TextFonts.Mark(Text(title, 15, ink), TextRole.Title)));
             heading.ColumnSpacing = 5;
             body.Children.Add(heading);
             if (model.Length > 0)
@@ -260,7 +260,7 @@ public sealed class MainboardCoreGrid : Control, RedSkin.IOneColour
         int columns = Columns(Bounds.Width);
         double cell = (Bounds.Width - (columns - 1) * 4) / columns;
         double rowHeight=RowHeight(Bounds.Width),barHeight=rowHeight-33,barWidth=Math.Min(24,cell);
-        var face = new Typeface(Ui.Font, FontStyle.Normal, FontWeight.SemiBold);
+        var face = new Typeface(Ui.GraphFont, FontStyle.Normal, FontWeight.SemiBold);
         void Center(string text, double x, double y, Color color, double size)
         {
             var t = new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, face, size, Palette.Brush(color));

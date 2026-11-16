@@ -82,7 +82,7 @@ public abstract class Card : Border, IWidget, INamed
 		base.BorderThickness = Ui.CardEdge;
 		base.CornerRadius = Ui.CardRadius(m);
 		base.Padding = new Thickness(m.Pad, m.Pad - 2.0, m.Pad, m.Pad);
-		title = Ui.Text(titleText, 12.5, p.Ink, FontWeight.DemiBold);
+		title = Ui.Text(titleText, 12.5, p.Ink, FontWeight.DemiBold); TextFonts.Mark(title, TextRole.Title);
 		builtInTitle = titleText;
 		aside = Ui.Text("", 12.0, p.Soft, FontWeight.Medium, numbers: true);
 		aside.HorizontalAlignment = HorizontalAlignment.Right;

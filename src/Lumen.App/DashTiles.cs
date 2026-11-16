@@ -174,7 +174,7 @@ public sealed class NeonHudTile : DashTile
 		BorderThickness = new Thickness(1);
 		CornerRadius = new CornerRadius(10);
 		Padding = new Thickness(13, 11, 13, 12);
-		title = Text("", 11, Ink, FontWeight.Bold, Mono);
+		title = Text("", 11, Ink, FontWeight.Bold, Mono); TextFonts.Mark(title, TextRole.Title);
         HardwareWidgetTitle.Register(this, title);
 		title.LetterSpacing = 0.6;
 		title.TextTrimming = TextTrimming.CharacterEllipsis;
@@ -848,7 +848,7 @@ public sealed class SciFiTile : DashTile
 		Background = null;
 		BorderThickness = new Thickness(0);
 		Padding = new Thickness(0);
-		title = Text("", 15, Ink, FontWeight.DemiBold, Digital);
+		title = Text("", 15, Ink, FontWeight.DemiBold, Digital); TextFonts.Mark(title, TextRole.Title);
 		title.LetterSpacing = 2;
 		var header = Ui.Row(0, lineLeft, title, lineRight);
         hardwareLabel = Text("", 11, Soft, FontWeight.Medium, Digital);

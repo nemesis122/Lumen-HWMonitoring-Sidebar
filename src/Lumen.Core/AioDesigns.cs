@@ -3,8 +3,17 @@ namespace Lumen.Core;
 /// <summary>Appended persisted IDs. AIO is a single hardware card, not one duplicate per widget.</summary>
 public static class AioDesigns
 {
+    public static readonly WidgetStyle[] DashboardStyles =
+    {
+        WidgetStyle.AioBoardCard, WidgetStyle.AioDoubleTable,
+        WidgetStyle.AioQuadrants, WidgetStyle.AioNetworkCenter
+    };
+    public static bool Dashboard(WidgetStyle style) => DashboardStyles.Contains(style) || CaseDesigns.Contains(style);
+    public static bool DashboardWide(WidgetStyle style) => style is WidgetStyle.AioBoardCard or WidgetStyle.AioDoubleTable or WidgetStyle.AioQuadrants;
     public static readonly WidgetStyle[] Styles =
     {
+        WidgetStyle.CaseCyanGlass, WidgetStyle.AioBoardCard, WidgetStyle.AioDoubleTable,
+        WidgetStyle.AioQuadrants, WidgetStyle.AioNetworkCenter,
         WidgetStyle.AioMainboardMap,
         WidgetStyle.AioMainboardCores,
         WidgetStyle.AioMainboardDesktop,
@@ -133,7 +142,8 @@ public static class AioDesigns
         if(In("aio.gpu"))return WidgetKind.Gpu;
         if(In("aio.cooling"))return WidgetKind.Cooling;
         if(In("aio.rails"))return WidgetKind.Power;
-        if(key=="aio.system.ram")return WidgetKind.Memory;
+        if(key=="aio.system.ram" || key.StartsWith("aio.system.ram."))return WidgetKind.Memory;
+        if(In("aio.board"))return WidgetKind.Cooling;
         if(key.StartsWith("aio.system.disk.")||In("aio.drives"))return WidgetKind.Drives;
         if(In("aio.network"))return WidgetKind.Network;
         return null;
@@ -154,6 +164,16 @@ public static class AioDesigns
     }
     public static string Name(WidgetStyle style) => style switch
     {
+        _ when CaseDesigns.Contains(style) => CaseDesigns.For(style).Name,
+        WidgetStyle.AioSensorTable => "Sensor Table",
+        WidgetStyle.AioTwoHalves => "Two Halves",
+        WidgetStyle.AioSummaryDetails => "Summary + Details",
+        WidgetStyle.AioCasePlan => "Case Plan",
+        WidgetStyle.AioBoardCard => "Mainboard Card",
+        WidgetStyle.AioDoubleTable => "Double Table",
+        WidgetStyle.AioQuadrants => "Quadrants",
+        WidgetStyle.AioMinMax => "Min–Max",
+        WidgetStyle.AioNetworkCenter => "Network Center",
         WidgetStyle.AioMainboard => "Mainboard",
         WidgetStyle.AioMainboardCores => "Mainboard Cores",
         WidgetStyle.AioMainboardMap => "Mainboard Map",

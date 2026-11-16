@@ -13,6 +13,7 @@ public static class Cards
         SensorDetails.Design(control, Settings.Successor(style));
         if (InstrumentDesigns.Contains(style) && control is Border frame && control is not InstrumentTile)
             InstrumentDesigns.Frame(frame, style, p, m);
+        TextFonts.Apply(control, s);
         return control;
     }
 

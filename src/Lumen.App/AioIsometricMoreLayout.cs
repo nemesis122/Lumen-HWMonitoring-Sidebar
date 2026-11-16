@@ -172,7 +172,7 @@ public sealed partial class AioTile
 
     private Control IsoTitle(string title, Color color, double size, HorizontalAlignment alignment)
     {
-        var t = Text(title, size, color); t.FontWeight = FontWeight.SemiBold;
+        var t = TextFonts.Mark(Text(title, size, color), TextRole.Title); t.FontWeight = FontWeight.SemiBold;
         return Align(Fit(t), alignment);
     }
 
@@ -392,7 +392,7 @@ public sealed partial class AioTile
             var list = Stack(12);
             foreach (var (title, tint, cells, cols) in groups)
             {
-                var heading = Text(title, 10.5, tint); heading.FontWeight = FontWeight.Bold; heading.LetterSpacing = 1.2;
+                var heading = Text(title, 10.5, tint); TextFonts.Mark(heading, TextRole.Title); heading.FontWeight = FontWeight.Bold; heading.LetterSpacing = 1.2;
                 var line = new Border { Height = 1, Background = Palette.Brush(Palette.Mix(tint, back, .7)), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
                 list.Children.Add(Stack(6, Ui.Columns("Auto,*", heading, line), FixedCols(cols, cells)));
             }

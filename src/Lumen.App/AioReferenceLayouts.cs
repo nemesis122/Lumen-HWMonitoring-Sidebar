@@ -98,7 +98,7 @@ public sealed partial class AioTile
         double[] Series(string key){var r=readings.GetValueOrDefault(key);var values=r!=null&&r.History.Length>0?h.Read(r.History):samples.Read(key);return values.Length>0?values:samples.Read(key);}
         foreach(var (key,second,plot) in referencePlots)plot.Set(Series(key),second==null?null:Series(second));
     }
-    private Control RefHeading(string title,string glyph,Color color)=>Ui.Columns("Auto,*",new Border{Margin=new Thickness(0,0,7,0),Child=Ui.Glyph(glyph,color,21)},Text(Translate(title),19,color));
+    private Control RefHeading(string title,string glyph,Color color)=>Ui.Columns("Auto,*",new Border{Margin=new Thickness(0,0,7,0),Child=Ui.Glyph(glyph,color,21)},TextFonts.Mark(Text(Translate(title),19,color),TextRole.Title));
     private void RefSection(Control body,Color color,bool last=false)
     {
         Control section;
@@ -129,8 +129,10 @@ public sealed partial class AioTile
     private void BuildReference(List<AioReading> rows)
     {
         content.Children.Clear();fields.Clear();formats.Clear();meters.Clear();charts.Clear();rings.Clear();heat.Clear();referencePlots.Clear();referenceUsed.Clear();referenceRows=rows;drivesPlaced=false;diagramDisks.Clear();
+        casePlots.Clear();
         Padding=new Thickness(style is WidgetStyle.AioAuroraFusion or WidgetStyle.AioPopConsole?5:3);content.Spacing=style is WidgetStyle.AioPrecision or WidgetStyle.AioCarbonPulse?4:0;content.Tag=null;
         CornerRadius=new CornerRadius(style==WidgetStyle.AioTypeBlock?8:20);
+        if (AioDesigns.Dashboard(style)) { BuildDashboard(rows); return; }
         ReferenceHeader();
         ReferenceModelNames();
         switch(style)
@@ -305,7 +307,7 @@ public sealed partial class AioTile
         var body=Stack(8);
         foreach(var (id,items) in perDrive)
         {
-            var title=Text(AioReadings.DriveName(snapshot,id),TableReference?14:13,style==WidgetStyle.AioPopConsole?ink:Amber);title.FontWeight=FontWeight.SemiBold;
+            var title=Text(AioReadings.DriveName(snapshot,id),TableReference?14:13,style==WidgetStyle.AioPopConsole?ink:Amber); TextFonts.Mark(title, TextRole.Title);title.FontWeight=FontWeight.SemiBold;
             body.Children.Add(title);
             if(style==WidgetStyle.AioChromatic)body.Children.Add(ReferenceTiles(items));
             else if(TableReference)foreach(var r in items)body.Children.Add(RefRow(r,true,style==WidgetStyle.AioInstrument?2:0));
@@ -364,7 +366,7 @@ public sealed partial class AioTile
     {
         var systems=SystemWithoutDrives();var cells=systems.Select(r=>
         {
-            Control cell=Stack(4,Text(r.Label,15),V(r,25,Accent(r)));
+            Control cell=Stack(4,Text(r.Label,15),FitLeft(V(r,25,Accent(r))));
             if(style is WidgetStyle.AioAuroraFusion or WidgetStyle.AioCarbonPulse or WidgetStyle.AioPopConsole)cell=Stack(5,cell,Meter(r));
             if(style==WidgetStyle.AioPopConsole)cell=new AioReferenceSurface{Alpha=cardAlpha/255d,Mode="pop",Dark=!lightSurface,Tint=r.Key.EndsWith("ram")?C("#2945FF"):C("#CDB8F7"),Padding=new Thickness(9),Child=cell};return cell;
         }).ToList();

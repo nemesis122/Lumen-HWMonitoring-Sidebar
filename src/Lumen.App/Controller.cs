@@ -160,7 +160,7 @@ public sealed class Controller
 	{
 		Diagnostics.SetLayout(settings, 1, "rebuild sidebar");
 		Palette palette = CurrentPalette();
-		Ui.UseFont(settings.Font);
+		Ui.UseFonts(settings);
 		Motion.Enabled = settings.SmoothTransitions;
 		Motion.ScrollDuration = Math.Min(900.0, (double)settings.IntervalMs * 0.9);
 		Motion.Duration = Math.Min(450.0, (double)settings.IntervalMs * 0.6);

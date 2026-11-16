@@ -286,7 +286,7 @@ public sealed class FocusReadout : Panel
     {
         this.settings=settings;
         digits=Ui.Text("",size,palette.Ink,FontWeight.Bold,true);
-        unit=Ui.Text("",Math.Max(11,size*.42),palette.Soft,FontWeight.Medium,true);
+        unit=Ui.Text("",Math.Max(11,size*.42),palette.Soft,FontWeight.Medium,true); TextFonts.Mark(unit, TextRole.Value);
         digits.TextTrimming=unit.TextTrimming=TextTrimming.None;
         digits.TextWrapping=unit.TextWrapping=TextWrapping.Wrap;
         Children.Add(digits);Children.Add(unit);

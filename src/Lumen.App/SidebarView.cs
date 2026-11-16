@@ -343,6 +343,10 @@ public sealed class SidebarView : Border
 		}
 		double value;
 		List<List<WidgetSlot>> list = ((measured == null) ? settings.Layout(null, page) : settings.Layout((WidgetSlot w) => (!measured.TryGetValue(w.Kind, out value)) ? (Settings.Weight(w) * 150.0) : value, page));
+        // A dashboard owns the configured sidebar width, including both columns. Companions
+        // remain below it instead of reducing the hardware dashboard to a single narrow column.
+        if (list.SelectMany(c => c).Any(w => w.Kind == WidgetKind.Overview && AioDesigns.Dashboard(w.Style)))
+            list = new List<List<WidgetSlot>> { list.SelectMany(c => c).ToList() };
 		for (int num = 0; num < lists.Count; num++)
 		{
 			StackPanel stackPanel = lists[num];

@@ -79,6 +79,7 @@ public sealed partial class AioTile : Border, IWidget, INamed
     public void Own(WidgetSlot owned,int index) { slot=owned; settings=source.ForSlot(owned); shape=""; }
     public void Update(Snapshot snap,History h)
     {
+        settings=source.ForSlot(slot);
         snapshot=snap; history=h;
         var list=AioReadings.For(snap,settings);
         if(!AioReadings.Selected(settings,"aio.cpu.cores")) list.RemoveAll(r=>r.Group=="Cores");
@@ -94,11 +95,13 @@ public sealed partial class AioTile : Border, IWidget, INamed
         list=known.Keys.Where(fresh.ContainsKey).Select(k=>fresh[k]).ToList();
         readings.Clear(); foreach(var r in list) readings[r.Key]=r;
         foreach(var r in list) samples.Add(r.Key,r.Number);
+        if (AioDesigns.Dashboard(style)) SampleDashboard(list, h);
         string next=string.Join('|',list.Select(r=>r.Key+":"+r.Label))+"|"+snap.Cpu?.Name+"|"+string.Join('|',snap.Gpus.Select(g=>g.Name))
             +"|"+(slot?.ShowTitle??true)+(slot?.ShowHardware??true)+(slot?.Name??"")+"|"+L.Language+"|"+settings.Fahrenheit+"|"+(AioDesigns.Panel(style)?settings.PanelTheme+settings.PanelGauges+slot?.Accent:"")+(AioDesigns.Black(style)?AioDesigns.BlackLookOf(settings,style)+slot?.Accent:"");
         if((snap.Cpu?.CoreLoads.Count??0)>=2)lastCoreLoads=snap.Cpu!.CoreLoads;
         next+="|"+lastCoreLoads.Count+AioReadings.Selected(settings,"aio.cpu.coreloads");
         next+="|"+settings.ShowNames+settings.Shows("aio.graphs")+slot?.HardwareName+"|"+string.Join('|',source.Widgets.Select(w=>w.Name+w.HardwareName+w.ShowHardware+w.ShowTitle+(AioDesigns.Switches.Contains(w.Kind)?w.Visible:true)));
+        if (IsDashboard) next += "|columns:" + source.Columns;
         if(next!=shape) { shape=next; Build(list); if(settings.Horizontal)Horizontalize(); }
         UpdateCoreBars();
         foreach(var r in list)
@@ -122,6 +125,7 @@ public sealed partial class AioTile : Border, IWidget, INamed
             ToolTip.SetTip(chart,series.Any(double.IsFinite)?L.T("History chart"):L.T("No data"));
         }
         UpdateReferencePlots(h);
+        if (AioDesigns.Dashboard(style)) UpdateDashboard();
         if(AioDesigns.Panel(style))UpdatePanel(h);
         if(AioDesigns.Black(style))UpdateBlack(h);
         WidgetPresentation.Apply(this,settings);
@@ -190,7 +194,7 @@ public sealed partial class AioTile : Border, IWidget, INamed
             model=Naming.ShowHardware(owned,settings)?Naming.Hardware(owned,0,model??""):"";
         }
         label=Translate(label);
-        var heading=Text(label,15,C(lightSurface?"#174FA8":"#A8E5E9"));
+        var heading=Text(label,15,C(lightSurface?"#174FA8":"#A8E5E9")); TextFonts.Mark(heading, TextRole.Title);
         Control caption=heading;
         if(style==WidgetStyle.AioTypeBlock&&kind.HasValue)
         {

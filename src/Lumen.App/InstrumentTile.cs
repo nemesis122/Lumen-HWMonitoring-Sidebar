@@ -43,7 +43,7 @@ public sealed class InstrumentTile : SummaryTile
     public InstrumentTile(WidgetKind kind, int index, Palette p, Metrics m, Settings s, WidgetStyle style) : base(kind,index,p,m,s,false)
     {
         this.style = style; InstrumentDesigns.Frame(this,style,p,m);
-        heading = Ui.Text("", 14, p.Ink, FontWeight.SemiBold);
+        heading = Ui.Text("", 14, p.Ink, FontWeight.SemiBold); TextFonts.Mark(heading, TextRole.Title);
         hardware = Ui.Text("", 11, p.Soft);
         HardwareWidgetTitle.Register(this, heading, hardware);
         var header = Ui.Columns("Auto,*", symbol, heading); heading.Margin = new Thickness(8,0,0,0);
@@ -176,7 +176,7 @@ public sealed class InstrumentScale : Control
             for (int i = 0; i <= 5; i++)
             {
                 double n = Temperature && Fahrenheit ? 32 + i * 36 : i * 20;
-                var text = new FormattedText(n.ToString("0",L.Culture),L.Culture,FlowDirection.LeftToRight,new Typeface(Ui.Font),7 * unit,Palette.Brush(ink));
+                var text = new FormattedText(n.ToString("0",L.Culture),L.Culture,FlowDirection.LeftToRight,new Typeface(Ui.GraphFont),7 * unit,Palette.Brush(ink));
                 context.DrawText(text,new Point(Math.Clamp(i * width / 5 - text.Width / 2,0,Math.Max(0,width-text.Width)),y+7*unit));
             }
         if (fraction is double f)

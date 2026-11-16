@@ -36,7 +36,7 @@ public sealed partial class AioTile
 
     private Control PartTitle(string title, Color color, string model)
     {
-        var heading = Text(title, 15, color); heading.FontWeight = FontWeight.SemiBold;
+        var heading = Text(title, 15, color); TextFonts.Mark(heading, TextRole.Title); heading.FontWeight = FontWeight.SemiBold;
         if (model.Length == 0) return FitLeft(heading);
         var name = Text(model, 10, muted); name.TextTrimming = TextTrimming.CharacterEllipsis; name.TextWrapping = TextWrapping.NoWrap;
         return Stack(1, FitLeft(heading), name);

@@ -18,7 +18,15 @@ public sealed class Settings
 
 	public static readonly string[] Languages = new string[1] { "en" };
 
-	public static readonly string[] Fonts = new string[7] { "inter", "segoe", "segoe-variable", "bahnschrift", "bahnschrift-narrow", "mono", "orbitron" };
+	public static readonly string[] Fonts = new[] { "inter", "segoe", "segoe-variable", "bahnschrift", "bahnschrift-narrow", "mono", "orbitron" }.Concat(FontCatalog.Bundled.Select(f => f.Key)).ToArray();
+
+    public static readonly WidgetStyle[] RemovedLayouts =
+    {
+        WidgetStyle.CaseAmberTechnical, WidgetStyle.CaseWhiteMinimal, WidgetStyle.CaseGreenTerminal,
+        WidgetStyle.CaseBlueModules, WidgetStyle.CaseRedPerformance, WidgetStyle.CaseVioletOrbit,
+        WidgetStyle.CaseIndustrialSteel, WidgetStyle.CaseCompactSensors, WidgetStyle.CaseLargeValues,
+        WidgetStyle.AioSensorTable, WidgetStyle.AioTwoHalves, WidgetStyle.AioSummaryDetails, WidgetStyle.AioCasePlan
+    };
 
 	// Legacy enum values remain readable so older settings migrate without losing other preferences.
 	public static readonly WidgetStyle[] Retired = Enum.GetValues<WidgetStyle>().Except(Selectable).ToArray();
@@ -98,6 +106,11 @@ public sealed class Settings
 	public string Language { get; set; } = "en";
 
 	public string Font { get; set; } = "inter";
+    // Empty means the base/design font, preserving existing profiles.
+    public string TitleFont { get; set; } = "";
+    public string LabelFont { get; set; } = "";
+    public string ValueFont { get; set; } = "";
+    public string GraphFont { get; set; } = "";
 
 	public bool Topmost { get; set; }
 
@@ -233,6 +246,8 @@ public sealed class Settings
         WidgetStyle.SplitFlap,
         WidgetStyle.MeasureTape,
         WidgetStyle.HardwareMap,
+        WidgetStyle.CaseCyanGlass, WidgetStyle.AioBoardCard, WidgetStyle.AioDoubleTable,
+        WidgetStyle.AioQuadrants, WidgetStyle.AioNetworkCenter,
         WidgetStyle.AioTypeBlock, WidgetStyle.AioOrbitNetwork, WidgetStyle.AioThermalGrid,
         WidgetStyle.AioSignalRack, WidgetStyle.AioIsometricCore, WidgetStyle.AioPrecision,
         WidgetStyle.AioStudioLight, WidgetStyle.AioInstrument,
@@ -299,7 +314,8 @@ public sealed class Settings
 	}
 
 	public static WidgetStyle Successor(WidgetStyle style) =>
-		Selectable.Contains(style) ? style : WidgetStyle.Standard;
+        style == WidgetStyle.AioMinMax || RemovedLayouts.Contains(style) ? WidgetStyle.CaseCyanGlass
+            : Selectable.Contains(style) ? style : WidgetStyle.Standard;
 
 	public static List<WidgetSlot> DefaultWidgets()
 	{
@@ -486,7 +502,11 @@ public sealed class Settings
 		s.LabelColor = s.LabelColor?.Trim() is { } lc && IsHexColor(lc) ? lc.ToUpperInvariant() : "";
 		s.Language = "en";
 		s.Font = (Fonts.Contains(s.Font?.Trim().ToLowerInvariant()) ? s.Font.Trim().ToLowerInvariant() : "inter");
-		Settings settings = s;
+		s.TitleFont = FontCatalog.Normalize(s.TitleFont);
+        s.LabelFont = FontCatalog.Normalize(s.LabelFont);
+        s.ValueFont = FontCatalog.Normalize(s.ValueFont);
+        s.GraphFont = FontCatalog.Normalize(s.GraphFont);
+        Settings settings = s;
 		if (settings.WeatherPlace == null)
 		{
 			string text = (settings.WeatherPlace = "");

@@ -44,6 +44,7 @@ public sealed class AioCoreBars : Control, RedSkin.IOneColour
 {
     /// <summary>Red designs: one red, no lighter second tone (set by RedSkin).</summary>
     public bool OneColour { get; set; }
+    public bool Compact { get; set; }
     private readonly Color ink, muted, track;
     private IReadOnlyList<double> loads = Array.Empty<double>();
     public AioCoreBars(Color ink, Color muted, Color track) { this.ink = ink; this.muted = muted; this.track = track; }
@@ -58,7 +59,7 @@ public sealed class AioCoreBars : Control, RedSkin.IOneColour
     private int Rows(double width) => loads.Count == 0 ? 0 : (int)Math.Ceiling(loads.Count / (double)MostPerRow(width));
     // Rows are filled evenly (16 cores: 8 + 8, not 11 + 5).
     private int PerRow(double width) => Rows(width) == 0 ? 1 : (int)Math.Ceiling(loads.Count / (double)Rows(width));
-    private double BarHeight(double width) => Rows(width) > 1 ? 34 : 46;
+    private double BarHeight(double width) => Compact ? 14 : Rows(width) > 1 ? 34 : 46;
     // The height depends on the width and the number of cores only, never on the values, so nothing below moves.
     protected override Size MeasureOverride(Size available)
     {
@@ -89,8 +90,8 @@ public sealed class AioCoreBars : Control, RedSkin.IOneColour
         int perRow = PerRow(w); double barHeight = BarHeight(w);
         double col = (w - Gap * (perRow - 1)) / perRow;
         double radius = Math.Min(5, col / 2);
-        var typeface = new Typeface(Ui.Font, FontStyle.Normal, FontWeight.Medium);
-        var number = new Typeface(Ui.Font, FontStyle.Normal, FontWeight.SemiBold);
+        var typeface = new Typeface(Ui.GraphFont, FontStyle.Normal, FontWeight.Medium);
+        var number = new Typeface(Ui.GraphFont, FontStyle.Normal, FontWeight.SemiBold);
         double size = Math.Clamp(col * .5, 8, 11);
         var back = Palette.Brush(Color.FromArgb(Math.Max(track.A, (byte)120), track.R, track.G, track.B));
         for (int i = 0; i < loads.Count; i++)

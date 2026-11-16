@@ -237,7 +237,26 @@ public enum WidgetStyle
     AioBlackAmberClassicRed,
     AioBlackLimeDashboardRed,
     AioBlackCrimsonDashboardRed,
-    AioBlackCopperRingsRed
+    AioBlackCopperRingsRed,
+    AioSensorTable,
+    AioTwoHalves,
+    AioSummaryDetails,
+    AioCasePlan,
+    AioBoardCard,
+    AioDoubleTable,
+    AioQuadrants,
+    AioMinMax,
+    AioNetworkCenter,
+    CaseCyanGlass,
+    CaseAmberTechnical,
+    CaseWhiteMinimal,
+    CaseGreenTerminal,
+    CaseBlueModules,
+    CaseRedPerformance,
+    CaseVioletOrbit,
+    CaseIndustrialSteel,
+    CaseCompactSensors,
+    CaseLargeValues
 }
 
 

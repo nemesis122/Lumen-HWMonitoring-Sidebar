@@ -337,7 +337,7 @@ public sealed partial class AioTile
     private const double BlackBoost = 1.25;
     private TextBlock BText(string text, double size, Color color, bool bold = false, bool number = false)
     {
-        var t = Text(text, size * BlackBoost, color, number); t.FontFamily = black.Font; t.FontWeight = bold ? FontWeight.Bold : FontWeight.SemiBold; t.TextWrapping = TextWrapping.NoWrap; return t;
+        var t = Text(text, size * BlackBoost, color, number); TextFonts.Mark(t, TextRole.Label); t.FontFamily = black.Font; t.FontWeight = bold ? FontWeight.Bold : FontWeight.SemiBold; t.TextWrapping = TextWrapping.NoWrap; return t;
     }
     private Control BCaption(string text) => FitLeft(BText(text, 9.5, bMuted, true));
     private TextBlock BV(AioReading r, double size, Color? color = null)
@@ -395,7 +395,7 @@ public sealed partial class AioTile
     }
     private Control BCard(string title, Control? right, Control body)
     {
-        var name = BText(title, 10.5, bMuted, true); name.LetterSpacing = 1.2;
+        var name = BText(title, 10.5, bMuted, true); TextFonts.Mark(name, TextRole.Title); name.LetterSpacing = 1.2;
         Control head = right == null ? name : Ui.Columns("Auto,*", name, new Border { HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(10, 0, 0, 0), Child = right });
         return BFrame(Stack(10, head, body), new Thickness(14));
     }

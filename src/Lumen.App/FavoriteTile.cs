@@ -33,7 +33,7 @@ public sealed class FavoriteTile : SummaryTile
         CornerRadius = new CornerRadius(Compact ? 12 : Performance ? 14 : 24);
         BorderThickness = new Thickness(Performance ? 1 : 0);
         if (Performance) Background = Palette.Brush(p.DesignBack("#101925"));
-        title = Ui.Text("", 13, p.Ink, FontWeight.SemiBold);
+        title = Ui.Text("", 13, p.Ink, FontWeight.SemiBold); TextFonts.Mark(title, TextRole.Title);
         device = Ui.Text("", 10.5, p.Soft);
         HardwareWidgetTitle.Register(this, title, device);
         device.TextWrapping = TextWrapping.Wrap;
@@ -106,7 +106,7 @@ public sealed class FavoriteTile : SummaryTile
         Color color = !Compact && !Performance || Kind == WidgetKind.Network ? ColorFor(row.Key) : P.Ink;
         var number = Value(row, size, color, Kind == WidgetKind.Network ? "888.8" : "888");
         number.LetterSpacing = -1;
-        var unit = Ui.Text("", Math.Max(11, size * .38), P.Soft, FontWeight.Medium);
+        var unit = Ui.Text("", Math.Max(11, size * .38), P.Soft, FontWeight.Medium); TextFonts.Mark(unit, TextRole.Value);
         unit.VerticalAlignment = VerticalAlignment.Bottom;
         unit.Margin = new Thickness(3, 0, 0, size * .10);
         units[row.Key] = unit;

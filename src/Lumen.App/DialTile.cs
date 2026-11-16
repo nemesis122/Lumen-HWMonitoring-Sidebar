@@ -61,7 +61,7 @@ public sealed class DialTile : SummaryTile
 		: base(kind, index, p, m, s, half: false)
 	{
 		Padding = new Thickness(12, 10, 12, 12);
-		chip = Ui.Text("", 10, p.Ink, FontWeight.Bold);
+		chip = TextFonts.Mark(Ui.Text("", 10, p.Ink, FontWeight.Bold), TextRole.Title);
 		chipBox = new Border { CornerRadius = new CornerRadius(5), Padding = new Thickness(6, 2), Child = chip, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
 		device = Ui.Text("", 13, p.Ink, FontWeight.DemiBold);
         HardwareWidgetTitle.Register(this, device);
@@ -676,7 +676,7 @@ public sealed class GridLines : Control
 	public override void Render(DrawingContext ctx)
 	{
 		var pen = new Pen(Palette.Brush(Color), 1, new DashStyle(new double[] { 3, 3 }, 0));
-		var face = new Typeface(Ui.Font);
+		var face = new Typeface(Ui.GraphFont);
 		for (int i = 0; i <= 4; i++)
 		{
 			double y = Math.Round(i / 4.0 * (Bounds.Height - 1)) + 0.5;

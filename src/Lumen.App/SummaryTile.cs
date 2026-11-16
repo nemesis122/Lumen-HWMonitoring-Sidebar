@@ -60,7 +60,7 @@ public abstract class SummaryTile : Border, IWidget, INamed
 		{
 			Margin = new Thickness(0.0, half ? 2 : 4, 0.0, 0.0)
 		};
-		title = Ui.Text("", half ? 11.5 : 12.5, p.Ink, FontWeight.DemiBold);
+		title = Ui.Text("", half ? 11.5 : 12.5, p.Ink, FontWeight.DemiBold); TextFonts.Mark(title, TextRole.Title);
 		title.Margin = new Thickness(7.0, 0.0, 0.0, 0.0);
 		name = Ui.Text("", 10.5, p.Soft);
 		Caption = Ui.Text("", 11.5, p.Soft, FontWeight.Normal, numbers: true);

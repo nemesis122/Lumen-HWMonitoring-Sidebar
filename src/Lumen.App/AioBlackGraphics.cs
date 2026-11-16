@@ -71,7 +71,7 @@ internal static class BlackDraw
     public static void Label(DrawingContext g, string text, double size, Color color, Point at, bool center = true)
     {
         var f = new FormattedText(text, System.Globalization.CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
-            new Typeface(BlackTheme.Orbitron, FontStyle.Normal, FontWeight.Bold), size, B(color));
+            new Typeface(Ui.GraphDesignFont(BlackTheme.Orbitron), FontStyle.Normal, FontWeight.Bold), size, B(color));
         g.DrawText(f, center ? new Point(at.X - f.Width / 2, at.Y - f.Height / 2) : at);
     }
 }

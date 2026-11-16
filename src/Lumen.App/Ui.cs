@@ -32,7 +32,14 @@ public static class Ui
 
 	public static string FontKey { get; private set; } = "inter";
 
-	public static bool Modern { get; set; } = true;
+	private static string graphKey = "";
+    public static string GraphFontKey => graphKey;
+    public static void UseGraphFont(string key) => graphKey = FontCatalog.Normalize(key);
+    public static FontFamily GraphFont => graphKey.Length > 0 ? FamilyFor(graphKey) : Font;
+    public static FontFamily GraphDesignFont(FontFamily own) => graphKey.Length > 0 ? FamilyFor(graphKey) : DesignFont(own);
+    public static void UseFonts(Settings settings) { UseFont(settings.Font); graphKey = FontCatalog.Normalize(settings.GraphFont); }
+
+    public static bool Modern { get; set; } = true;
 
 	public static Thickness CardEdge
 	{
@@ -48,7 +55,9 @@ public static class Ui
 
 	public static FontFamily FamilyFor(string key)
 	{
-		return key switch
+		var bundled = FontCatalog.Bundled.FirstOrDefault(f => f.Key == key);
+        if (bundled != null) return new FontFamily("avares://Lumen/Assets/Fonts#" + bundled.Name);
+        return key switch
 		{
 			"segoe" => new FontFamily("Segoe UI, fonts:Inter#Inter, $Default"),
 			"segoe-variable" => new FontFamily("Segoe UI Variable Text, Segoe UI Variable, Segoe UI, fonts:Inter#Inter, $Default"),
@@ -92,6 +101,7 @@ public static class Ui
 
 	public static void UseFont(string key)
 	{
+		graphKey = "";
 		FontKey = (Settings.Fonts.Contains(key) ? key : "inter");
 		Font = FamilyFor(FontKey);
 		FontWidth = ((FontKey == "bahnschrift-narrow") ? FontStretch.SemiCondensed : FontStretch.Normal);

@@ -54,7 +54,7 @@ public sealed class DesignValueFaces : UniformGrid
                 label.TextTrimming = TextTrimming.CharacterEllipsis;
                 var number = SensorDetails.Value(Ui.Text("", style == WidgetStyle.HistoryGraph ? 30 : plain ? style == WidgetStyle.Pure ? 36 : 46 : 40, palette.Ink, FontWeight.DemiBold, numbers: true), reading.Key);
                 if (!plain && style != WidgetStyle.HistoryGraph) number.TextAlignment = TextAlignment.Center;
-                var unit = Ui.Text("", plain ? 14 : 16, palette.Soft, FontWeight.DemiBold);
+                var unit = Ui.Text("", plain ? 14 : 16, palette.Soft, FontWeight.DemiBold); TextFonts.Mark(unit, TextRole.Value);
                 unit.VerticalAlignment = VerticalAlignment.Bottom; unit.Margin = new Thickness(3, 0, 0, 4);
                 var digits = Ui.Row(0, number, unit);
                 Control? graphic = null;

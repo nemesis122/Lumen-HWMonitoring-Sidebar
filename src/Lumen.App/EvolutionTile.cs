@@ -76,7 +76,7 @@ public sealed class EvolutionTile : SummaryTile
 		: base(kind, index, p, m, s, half: false)
 	{
 		Padding = new Thickness(14, 10, 14, 10);
-		heading = Ui.Text("", 13, p.Ink, FontWeight.DemiBold);
+		heading = Ui.Text("", 13, p.Ink, FontWeight.DemiBold); TextFonts.Mark(heading, TextRole.Title);
 		heading.Margin = new Thickness(8, 0, 8, 0);
 		device = Ui.Text("", 11, p.Soft);
         HardwareWidgetTitle.Register(this, heading, device);
@@ -121,7 +121,7 @@ public sealed class EvolutionTile : SummaryTile
 			arrow.Margin = new Thickness(0, 0, 4, 3);
 			TextBlock value = Ui.Text("", 22, p.Ink, FontWeight.DemiBold, numbers: true);
 			value.VerticalAlignment = VerticalAlignment.Bottom;
-			TextBlock unit = Ui.Text("", 11, p.Soft);
+			TextBlock unit = Ui.Text("", 11, p.Soft); TextFonts.Mark(unit, TextRole.Value);
 			unit.VerticalAlignment = VerticalAlignment.Bottom;
 			unit.Margin = new Thickness(4, 0, 0, 3);
 			FillBack bar = new FillBack { Height = 5, Radius = 2.5, Track = Track(p) };

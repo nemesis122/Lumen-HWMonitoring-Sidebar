@@ -348,6 +348,7 @@ public sealed class SettingsWindow : Window
 	private void Build()
 	{
 		string fontKey = Ui.FontKey;
+		string graphKey = Ui.GraphFontKey;
 		Ui.UseFont("inter");
 		try
 		{
@@ -356,6 +357,7 @@ public sealed class SettingsWindow : Window
 		finally
 		{
 			Ui.UseFont(fontKey);
+			Ui.UseGraphFont(graphKey);
 		}
 	}
 
@@ -963,6 +965,11 @@ public sealed class SettingsWindow : Window
 
     private void ApplyMainboardPlacement(WidgetStyle style,bool leavingDesktop)
     {
+        if (AioDesigns.Dashboard(style))
+        {
+            // Dashboard layouts adapt to Placement; selecting a design must not rewrite it.
+            return;
+        }
         if(style==WidgetStyle.AioMainboardDesktop)
         {
             s.FullScreen=true;s.Floating=false;s.Columns=1;
@@ -993,7 +1000,43 @@ public sealed class SettingsWindow : Window
         if (AioDesigns.Contains(style))
         {
             Rect(4,1,56,32,fill,4);
-            if(AioDesigns.Panel(style))
+            if (AioDesigns.Dashboard(style))
+            {
+                if (CaseDesigns.Contains(style))
+                {
+                    var look = CaseDesigns.For(style);
+                    var accent = Palette.Brush(Color.Parse(look.Accent));
+                    Rect(5, 2, 54, 30, Palette.Brush(Color.Parse("#0B1017")), 3);
+                    Rect(23, 5, 18, 25, brush3, 2); Rect(28, 10, 7, 6, accent, 2);
+                    Rect(25, 20, 15, 3, accent, 1);
+                    Rect(8, 5, 15, 8, fill, 2); Rect(10, 7, 10, 2, accent);
+                    Rect(8, 20, 15, 8, fill, 2); Rect(10, 22, 10, 2, accent);
+                    Rect(43, 9, 12, 10, fill, 2); Rect(45, 11, 8, 2, accent);
+                }
+                else if (style is WidgetStyle.AioSensorTable or WidgetStyle.AioMinMax)
+                {
+                    for (int row = 0; row < 4; row++) for (int col = 0; col < 4; col++) Rect(9 + col * 12, 5 + row * 6, col == 0 ? 8 : 6, 2, col == 1 ? brush : fill2);
+                }
+                else if (style is WidgetStyle.AioCasePlan or WidgetStyle.AioBoardCard)
+                {
+                    Rect(9, 4, 20, 25, brush3, 2); Rect(13, 8, 8, 8, brush, 1);
+                    for (int row = 0; row < 4; row++) { Rect(33, 5 + row * 6, 19, 2, brush); Rect(33, 8 + row * 6, 14, 1, fill2); }
+                }
+                else if (style == WidgetStyle.AioNetworkCenter)
+                {
+                    Rect(9, 4, 44, 12, brush3, 1); for (int col = 0; col < 8; col++) Rect(11 + col * 5, 13 - col % 3 * 2, 3, 2 + col % 3 * 2, brush);
+                    for (int row = 0; row < 2; row++) Rect(9, 20 + row * 6, 44, 3, fill2, 1);
+                }
+                else if (style == WidgetStyle.AioSummaryDetails)
+                {
+                    for (int col = 0; col < 3; col++) Rect(9 + col * 15, 4, 12, 7, brush, 1);
+                    for (int row = 0; row < 3; row++) Rect(9, 14 + row * 5, 42, 2, fill2);
+                }
+                else
+                    for (int col = 0; col < 2; col++) for (int row = 0; row < (style == WidgetStyle.AioQuadrants ? 2 : 3); row++)
+                    { Rect(9 + col * 24, 4 + row * 9, 20, 7, brush3, 1); Rect(11 + col * 24, 6 + row * 9, 15, 2, brush); }
+            }
+            else if(AioDesigns.Panel(style))
             {
                 var red=Palette.Brush(PanelTheme.For(s.PanelTheme).Accent);var dark=Palette.Brush(Color.Parse("#151516"));
                 if(style==WidgetStyle.AioPanel)for(int i=0;i<3;i++)Ellipse(12+i*15,3,8,8,red);
@@ -2154,10 +2197,13 @@ public sealed class SettingsWindow : Window
 			Section(L.T("Text"), Row(L.T("Text size"), Slide(0.5, 2.0, 0.05, s.TextScale, delegate(double v)
 			{
 				s.TextScale = v;
-			}, (double v) => $"{v * 100.0:0} %"), L.T("Above 100 % the sidebar grows wider by the same amount."), "TextScale"), Row(L.T("Typeface"), Choice(FontNames(), Math.Max(0, Array.IndexOf(Settings.Fonts, s.Font)), delegate(int num)
-			{
-				s.Font = Settings.Fonts[num];
-			}, rebuild: true), L.T("Narrow fonts fit more values into the bar."), "Font"), Row(L.T("High contrast"), Toggle(s.HighContrast, delegate(bool v)
+			}, (double v) => $"{v * 100.0:0} %"), L.T("Above 100 % the sidebar grows wider by the same amount."), "TextScale"), Row(L.T("Base typeface"), FontChoice(s.Font, v => s.Font = v, false), L.T("Used globally. Each text group can use its own font below."), "Font"),
+            Row(L.T("Titles"), FontChoice(s.TitleFont, v => s.TitleFont = v), null, "TitleFont"),
+            Row(L.T("Labels"), FontChoice(s.LabelFont, v => s.LabelFont = v), null, "LabelFont"),
+            Row(L.T("Values"), FontChoice(s.ValueFont, v => s.ValueFont = v), null, "ValueFont"),
+            Row(L.T("Graphs and scales"), FontChoice(s.GraphFont, v => s.GraphFont = v), null, "GraphFont"),
+            FontPreview(),
+            Row(L.T("High contrast"), Toggle(s.HighContrast, delegate(bool v)
 			{
 				s.HighContrast = v;
 			}, notify: true, rebuild: true), L.T("All labels in full brightness."), "HighContrast"), Row(L.T("Hardware names"), Toggle(s.ShowNames, delegate(bool v)
@@ -2211,20 +2257,51 @@ public sealed class SettingsWindow : Window
 		}
 	}
 
-	private static string[] FontNames()
-	{
-		return new string[7]
-		{
-			L.T("Inter (built in)"),
-			"Segoe UI",
-			"Segoe UI Variable",
-			"Bahnschrift",
-			L.T("Bahnschrift narrow"),
-			L.T("Monospace (Cascadia, Consolas)"),
-			L.T("Orbitron (built in)")
-		};
-	}
+    private Control FontChoice(string selected, Action<string> set, bool inherit = true)
+    {
+        var keys = (inherit ? new[] { "" } : Array.Empty<string>()).Concat(Settings.Fonts).ToArray();
+        string Name(string key) => key switch
+        {
+            "" => L.T("Base typeface"), "inter" => "Inter", "segoe" => "Segoe UI",
+            "segoe-variable" => "Segoe UI Variable", "bahnschrift" => "Bahnschrift",
+            "bahnschrift-narrow" => "Bahnschrift narrow", "mono" => "Cascadia / Consolas",
+            "orbitron" => "Orbitron · " + L.T("Technical"),
+            _ => FontCatalog.Bundled.First(f => f.Key == key) is var f ? f.Name + " · " + L.T(f.Group) : key
+        };
+        var box = new ComboBox
+        {
+            MinWidth = 190, MaxWidth = 290, MaxDropDownHeight = 420,
+            ItemsSource = keys.Select(key => new ComboBoxItem
+            {
+                Content = new TextBlock
+                {
+                    Text = Name(key), FontFamily = Ui.FamilyFor(key.Length == 0 ? s.Font : key), FontSize = 15,
+                    Foreground = Palette.Brush(p.Ink), TextTrimming = TextTrimming.CharacterEllipsis
+                },
+                Tag = key
+            }).ToArray(),
+            SelectedIndex = Math.Max(0, Array.IndexOf(keys, selected))
+        };
+        box.SelectionChanged += (_, _) =>
+        {
+            if (box.SelectedIndex < 0) return;
+            set(keys[box.SelectedIndex]); changed(); Dispatcher.UIThread.Post(Build);
+        };
+        return box;
+    }
 
+    private Control FontPreview()
+    {
+        TextBlock Sample(string text, string key, double size) => new()
+        {
+            Text = text, FontFamily = Ui.FamilyFor(key.Length == 0 ? s.Font : key), FontSize = size,
+            Foreground = Palette.Brush(p.Ink), TextWrapping = TextWrapping.Wrap
+        };
+        var reset = new Button { Content = L.T("Reset typefaces"), HorizontalAlignment = HorizontalAlignment.Left };
+        reset.Click += (_, _) => { s.Font = "inter"; s.TitleFont = s.LabelFont = s.ValueFont = s.GraphFont = ""; changed(); Build(); };
+        return Ui.Stack(6, Sample("CPU / GPU", s.TitleFont, 22), Sample("GPU · " + L.T("Temperature") + " · " + L.T("Load"), s.LabelFont, 14),
+            Sample("62,5 °C · 1.450 RPM · 98,7 %", s.ValueFont, 20), Sample("0 · 25 · 50 · 75 · 100 %", s.GraphFont, 13), reset);
+    }
     private Control ThemeSection()
     {
         var choices = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right, MaxWidth = 360 };

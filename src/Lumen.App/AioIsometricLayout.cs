@@ -39,7 +39,7 @@ public sealed partial class AioTile
         void Box(IEnumerable<AioReading> source,double x,double y,double width,string caption,Color edge)
         {
             var rows=source.ToArray();if(rows.Length==0)return;
-            var title=Text(caption,18,ink);title.FontWeight=FontWeight.Bold;
+            var title=Text(caption,18,ink); TextFonts.Mark(title, TextRole.Title);title.FontWeight=FontWeight.Bold;
             var cells=rows.Select(r=>
             {
                 Color color=r.Key.EndsWith(".temp")||r.Key.EndsWith("ram")?Cyan:r.Group=="System"?Palette.Mix(Amber,ink,.55):ink;

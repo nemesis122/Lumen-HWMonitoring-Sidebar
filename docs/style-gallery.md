@@ -1,10 +1,23 @@
-# Lumen — all widget designs
+# Lumen — widget design gallery
 
-All 60 selectable designs of Lumen 4.1.0, rendered from the application with demo readings. Every widget can use its own design, and every register can have its own design.
+Lumen 4.5.1 offers **104 selectable designs**, including **46 All-in-One designs**. Use one to six columns and independently named registers. Every image below is an application render with demo telemetry; the older galleries document earlier releases and may show layouts that are no longer selectable.
 
-[Back to the README](../README.md) · [Release notes](release-notes/v4.1.0.md) · [Download](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.1.0)
+[Back to the README](../README.md) · [4.5.1 release notes](release-notes/v4.5.1.md) · [Download 4.5.1](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.5.1) · [Font options](typefaces.md)
 
+## Added in 4.5.1
+
+| Design | Program preview |
+| --- | --- |
+| Cyan Glas, one column | [Preview](images/v4.5.1/cyan-one-column.png) |
+| Cyan Glas, two columns | [Preview](images/v4.5.1/cyan-two-columns.png) |
+| Mainboard Card | [Preview](images/v4.5.1/AioBoardCard.png) |
+| Double Table | [Preview](images/v4.5.1/AioDoubleTable.png) |
+| Quadrants | [Preview](images/v4.5.1/AioQuadrants.png) |
+| Network Center | [Preview](images/v4.5.1/AioNetworkCenter.png) |
+
+The new typography controls assign Titles, Labels, Values, and Graphs and scales separately. Value/label colours, widget accents, individual sensors, up to six columns and up to six named registers are configurable. The final selector excludes the thirteen discarded previews described in the release notes.
 ## Added in 4.1.0
+
 
 All images below are native application renders with demo data. Each new design also has individual dark, light and horizontal previews in [images/v4.1.0/designs](images/v4.1.0/designs).
 

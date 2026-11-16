@@ -37,7 +37,7 @@ public sealed partial class AioTile
         }),78);
         Control Section(string title,Color accent,Control child)
         {
-            var heading=Text(title,13,accent);heading.FontWeight=FontWeight.SemiBold;
+            var heading=Text(title,13,accent); TextFonts.Mark(heading, TextRole.Title);heading.FontWeight=FontWeight.SemiBold;
             return new Border{Tag="mainboard-section",Padding=new Thickness(9,8),
                 BorderBrush=Palette.Brush(matrix?track:Palette.Mix(track,accent,.45)),
                 BorderThickness=matrix?new Thickness(0,1,0,0):type?new Thickness(3,0,0,0):new Thickness(1),
@@ -171,7 +171,7 @@ public sealed class MainboardOverview : Control
             context.DrawLine(pen,start,new Point(lane,start.Y));context.DrawLine(pen,new Point(lane,start.Y),new Point(lane,y-7));
             context.DrawLine(pen,new Point(lane,y-7),new Point(terminal,y-7));context.DrawLine(pen,new Point(terminal,y-7),new Point(terminal,y));
             var text=new FormattedText(names[i],System.Globalization.CultureInfo.InvariantCulture,FlowDirection.LeftToRight,
-                new Typeface(Ui.Font,FontStyle.Normal,FontWeight.SemiBold),11,brush);
+                new Typeface(Ui.GraphFont,FontStyle.Normal,FontWeight.SemiBold),11,brush);
             var label=new Rect(terminal-text.Width/2-4,y,text.Width+8,text.Height+3);
             context.DrawRectangle(Palette.Brush(back),new Pen(brush,1),label,3,3);context.DrawText(text,new Point(label.X+4,label.Y+1));
         }

@@ -216,7 +216,7 @@ public sealed partial class AioTile
     {
         Control left;
         Control? header = null;
-        var nameText = PanelText(name, 8.4, ink); nameText.TextAlignment = TextAlignment.Center; nameText.HorizontalAlignment = HorizontalAlignment.Center;
+        var nameText = TextFonts.Mark(PanelText(name, 8.4, ink), TextRole.Title); nameText.TextAlignment = TextAlignment.Center; nameText.HorizontalAlignment = HorizontalAlignment.Center;
         bool gauge = style != WidgetStyle.AioPanel && !PanelPlain && (temp != null || load != null);
         if (gauge && style == WidgetStyle.AioPanelRings)
             left = Stack(4, PanelTwin(temp, load, null, 92), nameText);
@@ -418,7 +418,7 @@ public sealed partial class AioTile
     /// <summary>Panel Header: the part's name with temperature and load as LED strips across the top of its section.</summary>
     private Control PanelHeader(string label, AioReading? temp, AioReading? load)
     {
-        var cells = new List<Control> { PanelText(label.ToUpperInvariant(), 11, panel.Accent) };
+        var cells = new List<Control> { TextFonts.Mark(PanelText(label.ToUpperInvariant(), 11, panel.Accent), TextRole.Title) };
         string columns = "Auto";
         foreach (var (r, caption) in new[] { (temp, "TEMP"), (load, "LOAD") })
         {

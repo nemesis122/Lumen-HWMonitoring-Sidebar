@@ -160,7 +160,7 @@ public sealed class GraphTile : FreshTile
 	{
 		value = Ui.Text("", m.Subtitles ? 30 : 26, p.Ink, FontWeight.DemiBold, numbers: true);
 		value.LetterSpacing = -1;
-		unit = Ui.Text("", 12, p.Soft, FontWeight.Medium);
+		unit = Ui.Text("", 12, p.Soft, FontWeight.Medium); TextFonts.Mark(unit, TextRole.Value);
 		unit.VerticalAlignment = VerticalAlignment.Bottom;
 		unit.Margin = new Thickness(3, 0, 0, 5);
 		second = Ui.Text("", 11.5, p.Soft, FontWeight.Medium, numbers: true);

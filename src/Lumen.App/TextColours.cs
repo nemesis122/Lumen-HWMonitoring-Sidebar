@@ -17,13 +17,14 @@ public static class TextColours
     private sealed class Seen { public Color Original, Applied; }
     private static readonly ConditionalWeakTable<TextBlock, Seen> seen = new();
 
-    public static bool Active(Settings s) => Parse(s.ValueColor) != null || Parse(s.LabelColor) != null;
+    public static bool Active(Settings s) => Parse(s.ValueColor) != null || Parse(s.LabelColor) != null || TextFonts.Active(s);
 
     public static Color? Parse(string? hex) => !string.IsNullOrEmpty(hex) && Settings.IsHexColor(hex) ? Color.Parse(hex) : null;
 
     /// <summary>Gives the card's neutral texts the chosen colours (again after an update that drew them in its own).</summary>
     public static void Apply(Control root, Settings s)
     {
+        TextFonts.Apply(root, s);
         Color? value = Parse(s.ValueColor), label = Parse(s.LabelColor);
         if (value == null && label == null) return;
         var values = root is AioTile aio ? aio.ValueTexts : null;

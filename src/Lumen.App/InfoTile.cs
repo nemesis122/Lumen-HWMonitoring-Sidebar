@@ -121,7 +121,7 @@ public sealed class InfoTile : Border, IWidget, INamed
 			_ => (Head.Badge, null, false)
 		};
 		Frame();
-		title = Ui.Text("", 12.5, p.Ink, FontWeight.DemiBold);
+		title = Ui.Text("", 12.5, p.Ink, FontWeight.DemiBold); TextFonts.Mark(title, TextRole.Title);
         HardwareWidgetTitle.Register(this, title);
 		title.TextTrimming = TextTrimming.CharacterEllipsis;
 		glyphHost = Header();

@@ -1,8 +1,25 @@
-# Lumen 4.5.0 – Redline
+# Lumen 4.5.1 – Fonts, colours and flexible layouts
 
-A portable hardware-monitoring sidebar for Windows 10 and 11 with **99 designs**, including **41 All-in-One designs** that show the whole PC in one card. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
+A portable hardware-monitoring sidebar for Windows 10 and 11 with **104 designs**, including **46 All-in-One designs** that show the whole PC in one card. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
 
-**[Download Lumen 4.5.0](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.5.0)** · [All designs](docs/style-gallery.md) · [Release notes 4.5.0](docs/release-notes/v4.5.0.md) · [4.4.0](docs/release-notes/v4.4.0.md) · [4.3.0](docs/release-notes/v4.3.0.md) · [4.2.1](docs/release-notes/v4.2.1.md) · [4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
+**[Download Lumen 4.5.1](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.5.1)** · [All designs](docs/style-gallery.md) · [Release notes 4.5.1](docs/release-notes/v4.5.1.md) · [4.5.0](docs/release-notes/v4.5.0.md) · [4.4.0](docs/release-notes/v4.4.0.md) · [4.3.0](docs/release-notes/v4.3.0.md) · [4.2.1](docs/release-notes/v4.2.1.md) · [4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
+
+## New in 4.5.1
+
+- **22 additional bundled font families**, including clear, technical, monospaced, bold and graffiti/marker styles; **29 font options** in total.
+- **Independent global fonts for Titles, Labels, Values, and Graphs and scales**, with a common base typeface when desired.
+- **Value colour and Label colour**, widget accents, theme palettes and custom colours; the selected font stays readable in dark and light pickers.
+- **One to six columns**, each configurable from **240 to 440 logical pixels**, plus **one to six registers with custom names** and widget assignments.
+- **Automatic density fits the available height above the taskbar**; Comfortable and Compact retain scrolling. Whole-screen and the existing monitor, edge and horizontal-bar settings remain available.
+- **Cyan Glas, Mainboard Card, Double Table, Quadrants and Network Center** add native live hardware views. Cyan Glas has compact dark cards, short component connections and a separate case picture for two columns.
+- **Per-sensor selection and separate GPUs/drives** with actual device names. GPU choices identify each detected device by number and model; available RAM, board, drive and network details remain selectable.
+- **Existing settings are preserved**. Unwanted preview designs are excluded, and profiles using them migrate to Cyan Glas. Narrow Thermal Grid RAM values no longer change row heights when they update.
+
+[Full 4.5.1 release notes: fonts, colours, all layout options, sensors and update instructions](docs/release-notes/v4.5.1.md)
+
+| Cyan Glas: one column | Cyan Glas: two columns |
+| --- | --- |
+| <img src="docs/images/v4.5.1/cyan-one-column.png" width="260" alt="Cyan Glas one column, demo telemetry"> | <img src="docs/images/v4.5.1/cyan-two-columns.png" width="520" alt="Cyan Glas two columns, demo telemetry"> |
 
 ![Red designs: Isometric Rings Red, Orbit Network Red, Signal Rack Red and Carbon Pulse Red (demo readings)](docs/images/v4.5.0/red-designs.png)
 
@@ -167,7 +184,7 @@ Logs and reports stay local. Nothing is uploaded automatically.
 
 ## Download and run
 
-Download **Lumen-4.3.0.exe** for the portable application, or the portable ZIP with licence files. No separate .NET installation is required. Close an older running instance before starting the new EXE. Settings are stored beside the EXE, with an AppData fallback when that folder is read-only.
+Download **Lumen-4.5.1.exe** for the portable application, or the portable ZIP with licence files. No separate .NET installation is required. Close an older running instance before starting the new EXE. Settings are stored beside the EXE, with an AppData fallback when that folder is read-only.
 
 The release also includes the complete source archive, all gallery images and SHA-256 checksums.
 

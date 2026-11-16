@@ -22,6 +22,7 @@ public class StyleSelectionTests
         WidgetStyle.Panorama, WidgetStyle.Terminal, WidgetStyle.Thermal, WidgetStyle.MosaicPro, WidgetStyle.RibbonFlow, WidgetStyle.SplitLens,
         WidgetStyle.PixelDeck, WidgetStyle.HorizonSync,
         WidgetStyle.SplitFlap, WidgetStyle.MeasureTape, WidgetStyle.HardwareMap,
+        WidgetStyle.CaseCyanGlass, WidgetStyle.AioBoardCard, WidgetStyle.AioDoubleTable, WidgetStyle.AioQuadrants, WidgetStyle.AioNetworkCenter,
         WidgetStyle.AioTypeBlock, WidgetStyle.AioOrbitNetwork, WidgetStyle.AioThermalGrid, WidgetStyle.AioSignalRack, WidgetStyle.AioIsometricCore, WidgetStyle.AioPrecision, WidgetStyle.AioStudioLight, WidgetStyle.AioInstrument, WidgetStyle.AioAuroraFusion, WidgetStyle.AioCarbonPulse, WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings
         , WidgetStyle.AioMainboardMap, WidgetStyle.AioMainboardDesktop,
         WidgetStyle.AioMainboardCores,
@@ -45,7 +46,8 @@ public class StyleSelectionTests
                 settings.Save(file);
                 var loaded = Settings.Load(file);
                 var restored = loaded.Widgets.Single(w => w.Kind == WidgetKind.Cpu);
-                Assert.Equal(Expected.Contains(style) ? style : WidgetStyle.Standard, restored.Style);
+                bool toCyan = Settings.RemovedLayouts.Contains(style) || style == WidgetStyle.AioMinMax;
+                Assert.Equal(Expected.Contains(style) ? style : toCyan ? WidgetStyle.CaseCyanGlass : WidgetStyle.Standard, restored.Style);
                 Assert.Equal(3, restored.Page); Assert.Equal(2, restored.Column);
                 Assert.Equal("My CPU", restored.Name); Assert.False(restored.Visible);
                 Assert.Equal("keep notes", loaded.Notes); Assert.Equal(350, loaded.Width);
@@ -122,12 +124,16 @@ public class StyleSelectionTests
     });
 
     [Fact]
-    public void RemovedRenderersFallBackToStandard() => UiHost.Run(() =>
+    public void Retired_renderers_use_their_migration_target() => UiHost.Run(() =>
     {
         var settings = new Settings();
         var palette = Palette.For(true, false);
         foreach (var style in Settings.Retired)
-            Assert.IsType<CpuCard>(Cards.Create(WidgetKind.Cpu, style, 0, palette, Metrics.For(Density.Fit), settings));
+        {
+            var control = Cards.Create(WidgetKind.Cpu, style, 0, palette, Metrics.For(Density.Fit), settings);
+            if (Settings.RemovedLayouts.Contains(style) || style == WidgetStyle.AioMinMax) Assert.IsType<AioCompanionTile>(control);
+            else Assert.IsType<CpuCard>(control);
+        }
         return true;
     });
 

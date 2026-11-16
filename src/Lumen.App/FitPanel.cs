@@ -174,6 +174,7 @@ public sealed class FitPanel : Panel
 		public readonly List<StatPanel> Rows = new List<StatPanel>();
 
 		public readonly List<Border> Cards = new List<Border>();
+        public readonly List<AioTile> Dashboards = new();
 	}
 
 	// One walk over a column instead of one walk per kind of stretchable element.
@@ -189,6 +190,8 @@ public sealed class FitPanel : Panel
 		{
 			if (item is Border card && IsCard(card))
 			{
+                if (card is AioTile { IsDashboard: true } dashboard)
+                { parts.Dashboards.Add(dashboard); continue; }
 				if (!basePad.ContainsKey(card))
 				{
 					basePad[card] = card.Padding.Bottom;
@@ -249,7 +252,8 @@ public sealed class FitPanel : Panel
 		return parts.Charts.Sum((Control c) => c.Height - baseHeight[c])
 			+ parts.Stacks.Sum((StackPanel s) => (s.Spacing - baseSpacing[s]) * (double)InnerGaps(s))
 			+ parts.Rows.Sum((StatPanel p) => (p.RowSpacing - baseRows[p]) * (double)p.RowGaps)
-			+ parts.Cards.Sum((Border b) => b.Padding.Bottom - basePad[b]);
+			+ parts.Cards.Sum((Border b) => b.Padding.Bottom - basePad[b])
+            + parts.Dashboards.Sum(d => d.DashboardHeightGrowth);
 	}
 
 	public double NaturalHeight(Control card)
@@ -296,6 +300,9 @@ public sealed class FitPanel : Panel
 		double max = 0.0;
 		foreach (StackPanel list in lists)
 		{
+            var reset = list.Children.OfType<AioTile>().Where(d => d.IsDashboard && d.DashboardHeightGrowth > 0).ToArray();
+            foreach (var dashboard in reset) dashboard.ResetDashboardHeight();
+            if (reset.Length > 0) Remeasure(list, reset.Select(d => (Layoutable)d.DashboardSizingControl).ToList(), colWidth / s);
 			list.Measure(new Size(colWidth / s, double.PositiveInfinity));
 			Parts p = Collect(list);
 			parts.Add(p);
@@ -421,6 +428,7 @@ public sealed class FitPanel : Panel
 			double elastic = 0.0;
 			double cardGrowth = 0.0;
 			int elasticGaps = p.Stacks.Sum(InnerGaps) + p.Rows.Sum((StatPanel r) => r.RowGaps);
+            int cardCount = p.Cards.Count + p.Dashboards.Count;
 			if (stretch)
 			{
 				double extra = Math.Max(0.0, goal - Natural(column, p));
@@ -443,9 +451,9 @@ public sealed class FitPanel : Panel
 				// Beyond that limit the widgets themselves get longer, so the column still ends exactly at
 				// the bottom (and on one line with its neighbours) instead of leaving a hole below.
 				double beyond = betweenCards + extra - (spacing - gap) * (double)ActualGaps(column);
-				if (beyond > 0.5 && p.Cards.Count > 0)
+				if (beyond > 0.5 && cardCount > 0)
 				{
-					cardGrowth = beyond / (double)p.Cards.Count;
+					cardGrowth = beyond / cardCount;
 				}
 			}
 			// Growing rows and charts is planned from measured sizes, but a card can come out a little
@@ -464,6 +472,11 @@ public sealed class FitPanel : Panel
 					Set(changed, item, StatPanel.RowSpacingProperty, item.RowSpacing, baseRows[item] + elastic, tol);
 				}
 				Set(changed, column, StackPanel.SpacingProperty, column.Spacing, spacing, tol);
+                foreach (var dashboard in p.Dashboards)
+                {
+                    if (Math.Abs(dashboard.DashboardHeightGrowth - cardGrowth) > tol)
+                    { dashboard.GrowDashboard(cardGrowth); changed.Add(dashboard.DashboardSizingControl); }
+                }
 				foreach (Border card in p.Cards)
 				{
 					Thickness pad = card.Padding;
@@ -485,11 +498,11 @@ public sealed class FitPanel : Panel
 					Remeasure(column, changed, colWidth / s);
 				}
 				double over = stretch ? column.DesiredSize.Height - goal : 0.0;
-				if (over < -1.0 && p.Cards.Count > 0 && attempt < 7)
+				if (over < -1.0 && cardCount > 0 && attempt < 7)
 				{
 					// Still short (rows that did not take their share, charts at their limit): the
 					// widgets take the rest, so the column ends on the bottom line.
-					cardGrowth += -over / (double)p.Cards.Count;
+					cardGrowth += -over / cardCount;
 					continue;
 				}
 				if (over <= 1.5)
@@ -498,7 +511,7 @@ public sealed class FitPanel : Panel
 				}
 				if (cardGrowth > 0.0)
 				{
-					cardGrowth = Math.Max(0.0, cardGrowth - over / (double)Math.Max(1, p.Cards.Count));
+					cardGrowth = Math.Max(0.0, cardGrowth - over / Math.Max(1, cardCount));
 				}
 				else if (elasticGaps > 0 && elastic > 0.0)
 				{

@@ -430,7 +430,7 @@ public sealed class RatePairView : ResponsiveGrid
 			var cap = Ui.Text("", 10.5, p.Soft, FontWeight.Medium);
 			var number = new SteadyText { Text = "", FontFamily = Ui.Font, FontStretch = Ui.FontWidth, FontSize = size, FontWeight = FontWeight.DemiBold, Foreground = Palette.Brush(p.Ink), FontFeatures = Ui.Text("", 1, p.Ink, FontWeight.Normal, true).FontFeatures, TextAlignment = TextAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom };
 			number.LetterSpacing = -1;
-			var unit = Ui.Text("", Math.Round(size * 0.4), p.Soft, FontWeight.DemiBold);
+			var unit = Ui.Text("", Math.Round(size * 0.4), p.Soft, FontWeight.DemiBold); TextFonts.Mark(unit, TextRole.Value);
 			unit.VerticalAlignment = VerticalAlignment.Bottom;
 			unit.Margin = new Thickness(4, 0, 0, size * 0.12);
 			var row = Ui.Row(0, number, unit);

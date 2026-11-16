@@ -89,6 +89,11 @@ public sealed class ThemeFile
 	public double TextScale { get; set; } = 1.0;
 
 	public string Font { get; set; } = "inter";
+    // Empty means the base/design font, preserving existing profiles.
+    public string TitleFont { get; set; } = "";
+    public string LabelFont { get; set; } = "";
+    public string ValueFont { get; set; } = "";
+    public string GraphFont { get; set; } = "";
 
 	public bool SmoothTransitions { get; set; }
 
@@ -107,7 +112,7 @@ public sealed class ThemeFile
 			Opacity = s.Opacity,
 			HighContrast = s.HighContrast,
 			TextScale = s.TextScale,
-			Font = s.Font,
+			Font = s.Font, TitleFont = s.TitleFont, LabelFont = s.LabelFont, ValueFont = s.ValueFont, GraphFont = s.GraphFont,
 			SmoothTransitions = s.SmoothTransitions,
 			Modern = s.Modern
 		};
@@ -122,7 +127,7 @@ public sealed class ThemeFile
 		s.Opacity = Opacity;
 		s.HighContrast = HighContrast;
 		s.TextScale = TextScale;
-		s.Font = Font ?? "inter";
+		s.Font = Font ?? "inter"; s.TitleFont = TitleFont; s.LabelFont = LabelFont; s.ValueFont = ValueFont; s.GraphFont = GraphFont;
 		s.SmoothTransitions = SmoothTransitions;
 		s.Modern = Modern;
 		Settings.Normalize(s);

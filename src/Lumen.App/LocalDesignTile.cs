@@ -86,7 +86,7 @@ public sealed partial class LocalDesignTile : SummaryTile
                 StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative), EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative),
                 GradientStops = { new GradientStop(p.Card, 0), new GradientStop(Palette.Mix(p.Card, Accent, .1), 1) }
             };
-        title = Text("", 14, p.Ink, FontWeight.SemiBold);
+        title = Text("", 14, p.Ink, FontWeight.SemiBold); TextFonts.Mark(title, TextRole.Title);
         device = Text("", 12, p.Soft);
         HardwareWidgetTitle.Register(this, title, device);
         headerValue = Ui.Text("", 13, p.Ink, FontWeight.SemiBold, numbers: true);
