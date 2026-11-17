@@ -30,6 +30,7 @@ public sealed partial class SettingsWindow : Window
 	private readonly Platform platform;
 
 	private Palette p;
+    private ThemeMode paletteTheme;
 
 	private readonly StackPanel content = new StackPanel
 	{
@@ -106,6 +107,7 @@ public sealed partial class SettingsWindow : Window
 		this.snapshot = snapshot ?? ((Func<Snapshot>)(() => (Snapshot?)null));
 		s = settings;
 		p = palette;
+        paletteTheme=settings.Theme;
 		changed = onChanged;
 		screens = screenNames;
 		this.platform = platform;
@@ -363,7 +365,8 @@ public sealed partial class SettingsWindow : Window
 
 	private void BuildPages()
 	{
-        bool dark=s.Theme switch{ThemeMode.Dark=>true,ThemeMode.Light=>false,_=>Application.Current?.ActualThemeVariant!=Avalonia.Styling.ThemeVariant.Light};
+        bool dark=s.Theme==paletteTheme?p.Dark:s.Theme switch{ThemeMode.Dark=>true,ThemeMode.Light=>false,_=>Application.Current?.ActualThemeVariant!=Avalonia.Styling.ThemeVariant.Light};
+        paletteTheme=s.Theme;
         p=Palette.For(s,dark,Application.Current?.PlatformSettings?.GetColorValues().AccentColor1);
 		base.Title = "Lumen – " + L.T("Settings");
 		title.Text = L.T("Settings");
