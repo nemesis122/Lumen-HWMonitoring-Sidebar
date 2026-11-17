@@ -152,7 +152,9 @@ public sealed class SensorDetailVisual
         Graphic.Opacity = row.Available ? 1 : .3;
         if (nativePaint != null) { nativePaint(level); return; }
         // Legacy designs use the palette ramp. Widget accents belong to designs that opt into them.
-        var accent = kind == WidgetKind.Drives ? palette.Cool : Accents.For(kind, settings.ActiveWidget, palette);
+        var accent = kind == WidgetKind.Memory && row.Key=="mem.used"
+            ? palette.At(Format.Share(snapshot.Memory?.Load)*.9)
+            : kind == WidgetKind.Drives ? palette.Cool : Accents.For(kind, settings.ActiveWidget, palette);
         if (nativeUpdate != null)
         {
             nativeUpdate(new Reading(row.Label, row.Value, level, row.Key.EndsWith(":temp") ? palette.At(level) : accent) { Key = row.Key });

@@ -127,7 +127,7 @@ public sealed partial class AioTile
                 BorderThickness = new Thickness(look.Layout == 4 ? 1.8 : 1), BorderBrush = Palette.Brush(refined ? Palette.Mix(accent,C("#1C2A34"),.7) : accent),
                 Background = look.Metal ? new LinearGradientBrush { StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative), EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative),
                     GradientStops = { new GradientStop(SeeThrough(C("#3B4249")), 0), new GradientStop(SeeThrough(C("#161B20")), 1) } }
-                    : refined ? Palette.Brush(C("#FA0D151E")) : Palette.Brush(SeeThrough(Color.FromArgb((byte)(look.Layout == 6 ? 230 : 248), 12, 18, 24))),
+                    : refined ? Palette.Brush(SeeThrough(C("#FA0D151E"))) : Palette.Brush(SeeThrough(Color.FromArgb((byte)(look.Layout == 6 ? 230 : 248), 12, 18, 24))),
                 Tag = "case-widget:" + part.Id
             };
             if (look.Layout == 5) title.Background = Palette.Brush(C("#5E1822"));

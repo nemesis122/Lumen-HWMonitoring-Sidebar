@@ -9,6 +9,31 @@ using Xunit;
 
 public class StyleSelectionTests
 {
+    [Fact]
+    public void Open_settings_refresh_preview_palette_after_colour_change_and_reset()=>UiHost.Run(()=>
+    {
+        var settings=Settings.Starter();settings.Colors="mono";
+        var window=new SettingsWindow(settings,Palette.For(settings,true,null),()=>{},()=>new[]{"Demo"},new TestPlatform());
+        const BindingFlags flags=BindingFlags.Instance|BindingFlags.NonPublic;
+        var paletteField=typeof(SettingsWindow).GetField("p",flags)!;
+        void Check(string colors)
+        {
+            settings.Colors=colors;typeof(SettingsWindow).GetMethod("Build",flags)!.Invoke(window,null);
+            var actual=(Palette)paletteField.GetValue(window)!;
+            Assert.Equal(Palette.For(settings,actual.Dark,null).Cool,actual.Cool);
+            var thumb=(Control)typeof(SettingsWindow).GetMethod("StyleThumb",flags)!.Invoke(window,new object[]{WidgetStyle.Terminal})!;
+            Assert.Contains(thumb.GetLogicalDescendants().OfType<Avalonia.Controls.Shapes.Shape>(),shape=>shape.Fill is Avalonia.Media.ISolidColorBrush brush&&brush.Color==actual.Cool);
+        }
+        try
+        {
+            Check("#EF4444");Check("mono");
+            typeof(SettingsWindow).GetMethod("Reset",flags)!.Invoke(window,null);
+            Assert.Equal("state",settings.Colors);Check(settings.Colors);
+            var palette=(Palette)paletteField.GetValue(window)!;Assert.NotEqual(palette.Cool.R,palette.Cool.B);
+        }
+        finally{window.Close();}
+        return true;
+    });
     static readonly WidgetStyle[] Expected =
     {
         WidgetStyle.Standard, WidgetStyle.Segments, WidgetStyle.Table,

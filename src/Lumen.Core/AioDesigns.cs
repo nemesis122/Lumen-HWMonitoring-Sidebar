@@ -125,6 +125,8 @@ public static class AioDesigns
     public static bool SensorDefault(WidgetStyle style,string key)
     {
         style=Base(style); // a Red design starts with the sensors of its base design
+        if(CaseEditionDesigns.Contains(style)&&key.StartsWith("aio.drives.")&&
+            (key.EndsWith(".life")||key.EndsWith(".hours")||key.EndsWith(".activity")))return false;
         if(key.StartsWith("aio.gpu.")&&key.EndsWith(".extra")) return false; // a second graphics card is off by default
         if(key=="aio.graphs"&&Panel(style)) return false; // Panel designs show values only; history charts can be switched on
         if(key=="aio.cpu.cores"||key.StartsWith("aio.cpu.core.")) return style==WidgetStyle.AioThermalGrid;

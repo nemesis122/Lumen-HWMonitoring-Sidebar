@@ -11,6 +11,29 @@ using Xunit;
 
 public class CaseOverlayTests
 {
+    [Theory]
+    [InlineData(1)][InlineData(2)][InlineData(3)][InlineData(4)][InlineData(5)][InlineData(6)]
+    public void Case_card_backgrounds_follow_glass_opacity_without_fading_text(int columns)=>UiHost.Run(()=>
+    {
+        foreach(var (glass,opacity) in new[]{(true,.2),(true,.7),(false,.2)})
+        {
+            var s=Settings.Starter();s.Glass=glass;s.Opacity=opacity;s.Columns=columns;
+            DesignWidgetSelection.Apply(s,WidgetStyle.CaseCyanGlass);var slot=s.Widgets.Single(w=>w.Kind==WidgetKind.Overview);
+            var(snapshot,history)=Render.Demo();var palette=Palette.For(s,true,null);
+            var card=new AioTile(WidgetStyle.CaseCyanGlass,palette,Metrics.For(Density.Fit),s);card.Own(slot,0);card.Update(snapshot,history);
+            var scene=Assert.Single(card.GetLogicalDescendants().OfType<CaseOverlayPanel>());Assert.NotEmpty(scene.Widgets);
+            byte expected=(byte)Math.Round((columns<=2?250:248)*palette.Card.A/255d);
+            foreach(var widget in scene.Widgets)
+            {
+                var panel=Assert.IsType<Border>(widget.Control);
+                Assert.Equal(expected,Assert.IsAssignableFrom<Avalonia.Media.ISolidColorBrush>(panel.Background).Color.A);
+                Assert.Equal(1,panel.Opacity);
+                foreach(var value in panel.GetLogicalDescendants().OfType<TextBlock>().Where(t=>SensorDetails.KeyOf(t).Length>0))
+                {Assert.Equal(1,value.Opacity);Assert.Equal(255,Assert.IsAssignableFrom<Avalonia.Media.ISolidColorBrush>(value.Foreground).Color.A);}
+            }
+        }
+        return true;
+    });
     public static IEnumerable<object[]> Designs() => CaseDesigns.All.Select(l => new object[] { l.Style });
     public static IEnumerable<object[]> Layouts() => CaseDesigns.All.SelectMany(l => new[] {1,2,3,4,5,6}.Select(c => new object[]{l.Style,c}));
     [Fact]

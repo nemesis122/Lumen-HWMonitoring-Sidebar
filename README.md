@@ -1,8 +1,18 @@
-# Lumen 4.5.2 – Case editions, sensor colours and wider layouts
+# Lumen 4.5.3 – Transparency, readable rings and consistent colours
 
 A portable hardware-monitoring sidebar for Windows 10 and 11 with **109 designs**, including **51 All-in-One designs** that show the whole PC in one card. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
 
-**[Download Lumen 4.5.2](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.5.2)** · [All designs](docs/style-gallery.md) · [Release notes 4.5.2](docs/release-notes/v4.5.2.md) · [4.5.1](docs/release-notes/v4.5.1.md) · [4.5.0](docs/release-notes/v4.5.0.md) · [4.4.0](docs/release-notes/v4.4.0.md) · [4.3.0](docs/release-notes/v4.3.0.md) · [4.2.1](docs/release-notes/v4.2.1.md) · [4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
+**[Download Lumen 4.5.3](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.5.3)** · [All designs](docs/style-gallery.md) · [Release notes 4.5.2](docs/release-notes/v4.5.2.md) · [4.5.1](docs/release-notes/v4.5.1.md) · [4.5.0](docs/release-notes/v4.5.0.md) · [4.4.0](docs/release-notes/v4.4.0.md) · [4.3.0](docs/release-notes/v4.3.0.md) · [4.2.1](docs/release-notes/v4.2.1.md) · [4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
+
+## New in 4.5.3
+
+- Fixed transparency of Cyan Glas cards and inner case-edition value tiles.
+- Larger fan/RAM/voltage rings, with unchanged number font sizes.
+- Optional SSD life/hours/activity readings are off by default in the five case editions.
+- Settings previews refresh immediately after colour changes and reset.
+- The extra RAM GB bar follows the percentage bar's default colour; overrides still work.
+
+[Full 4.5.3 release notes and update instructions](docs/release-notes/v4.5.3.md)
 
 ## New in 4.5.2
 

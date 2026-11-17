@@ -14,6 +14,26 @@ using Xunit;
 public class ColourAssignmentTests
 {
     [Fact]
+    public void Memory_used_gigabytes_bar_matches_load_colour_and_keeps_sensor_override()=>UiHost.Run(()=>
+    {
+        var s=Settings.Starter();var slot=s.Widgets.Single(w=>w.Kind==WidgetKind.Memory);slot.Style=WidgetStyle.Table;
+        slot.HiddenSensors.Clear();var p=Palette.For(true,false);var(snapshot,history)=Render.Demo();
+        var card=Cards.Create(slot.Kind,slot.Style,0,p,Metrics.For(Density.Comfortable),s.ForSlot(slot));
+        ((Lumen.App.INamed)card).Own(slot,0);
+        foreach(var used in new[]{10d,60d,95d})
+        {
+            var data=snapshot with{Memory=new MemoryInfo(used,100)};((IWidget)card).Update(data,history);TextColours.Apply(card,s);
+            var bars=card.GetLogicalDescendants().OfType<Meter>().ToArray();
+            var gb=Assert.Single(bars,b=>b.GetValue(TextColours.SensorProperty)=="mem.used");
+            var expected=p.At(Format.Share(data.Memory.Load)*.9);Assert.Equal(expected,gb.Color);
+            Assert.Contains(bars,b=>b!=gb&&b.Color==expected);
+            slot.Colours=new(){InheritGlobal=false,GraphColor="#D946EF"};TextColours.Apply(card,s);Assert.Equal(Color.Parse("#D946EF"),gb.Tint);
+            slot.SensorColours["mem.used"]=new(){GraphColor="#FDE047"};TextColours.Apply(card,s);Assert.Equal(Color.Parse("#FDE047"),gb.Tint);
+            slot.SensorColours.Clear();slot.Colours=new();((IWidget)card).Update(data,history);TextColours.Apply(card,s);Assert.Equal(expected,gb.Color);
+        }
+        return true;
+    });
+    [Fact]
     public void Editable_notes_take_global_and_widget_value_colours_without_changing_text()=>UiHost.Run(()=>
     {
         var s=Settings.Starter();s.Notes="Keep this note";s.ValueColor="#10B981";var notes=s.Widgets.Single(w=>w.Kind==WidgetKind.Notes);

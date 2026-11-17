@@ -11,6 +11,44 @@ using Xunit;
 public class CaseEditionTests
 {
     public static IEnumerable<object[]> Designs()=>CaseEditionDesigns.All.Select(l=>new object[]{l.Style});
+    [Theory,MemberData(nameof(Designs))]
+    public void Drive_details_are_optional_but_explicit_selection_survives(WidgetStyle design)=>UiHost.Run(()=>
+    {
+        var s=Settings.Starter();DesignWidgetSelection.Apply(s,design);var slot=s.Widgets.Single(w=>w.Kind==WidgetKind.Overview);
+        var(snapshot,history)=Render.Demo();var disk=snapshot.Disks.First(d=>d.Life.HasValue&&d.PowerOnHours.HasValue&&d.TotalActivity.HasValue);
+        foreach(var suffix in new[]{"life","hours","activity"})
+        {
+            string key="aio.drives."+disk.Id+"."+suffix;
+            Assert.DoesNotContain(AioReadings.For(snapshot,s.ForSlot(slot)),r=>r.Key==key);
+            WidgetSensors.Select(s,slot,key,true,snapshot);Assert.Contains(AioReadings.For(snapshot,s.ForSlot(slot)),r=>r.Key==key);
+            var saved=Settings.Normalize(JsonSerializer.Deserialize<Settings>(JsonSerializer.Serialize(s,Settings.Json),Settings.Json)!);
+            Assert.Contains(key,saved.Widgets.Single(w=>w.Kind==WidgetKind.Overview).AioEnabledSensors);
+            WidgetSensors.Select(s,slot,key,false,snapshot);Assert.DoesNotContain(AioReadings.For(snapshot,s.ForSlot(slot)),r=>r.Key==key);
+        }
+        Assert.Contains(AioReadings.For(snapshot,s.ForSlot(slot)),r=>r.Key=="aio.drives."+disk.Id+".used");return true;
+    });
+    [Theory,MemberData(nameof(Designs))]
+    public void Inner_value_tile_backgrounds_follow_glass_opacity_while_values_remain_opaque(WidgetStyle design)=>UiHost.Run(()=>
+    {
+        var tileColor=Avalonia.Media.Color.Parse("#18232D");
+        foreach(var (glass,opacity) in new[]{(true,.2),(true,.7),(false,.2)})
+        {
+            var s=Settings.Starter();s.Glass=glass;s.Opacity=opacity;DesignWidgetSelection.Apply(s,design);
+            var slot=s.Widgets.Single(w=>w.Kind==WidgetKind.Overview);var(snapshot,history)=Render.Demo();
+            var palette=Palette.For(s,true,null);var card=new AioTile(design,palette,Metrics.For(Density.Fit),s);
+            card.Own(slot,0);card.Update(snapshot,history);
+            var tiles=card.GetLogicalDescendants().OfType<Border>().Where(b=>b.Background is Avalonia.Media.ISolidColorBrush ink&&ink.Color.R==tileColor.R&&ink.Color.G==tileColor.G&&ink.Color.B==tileColor.B).ToArray();
+            if(design!=WidgetStyle.CaseNvidiaEdition)Assert.NotEmpty(tiles);
+            foreach(var tile in tiles)
+            {
+                Assert.Equal(palette.Card.A,((Avalonia.Media.ISolidColorBrush)tile.Background!).Color.A);
+                Assert.Equal(1,tile.Opacity);
+                foreach(var value in tile.GetLogicalDescendants().OfType<TextBlock>().Where(t=>SensorDetails.KeyOf(t).Length>0))
+                {Assert.Equal(1,value.Opacity);Assert.Equal(255,((Avalonia.Media.ISolidColorBrush)value.Foreground!).Color.A);}
+            }
+        }
+        return true;
+    });
     public static IEnumerable<object[]> Layouts()=>CaseEditionDesigns.All.SelectMany(l=>new[]{1,2,3,4,5,6}.SelectMany(c=>new[]{300,440,640}.Select(w=>new object[]{l.Style,c,w})));
     [Fact]
     public void Five_editions_are_selectable_and_preserve_placement()

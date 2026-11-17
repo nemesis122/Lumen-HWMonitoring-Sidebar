@@ -29,7 +29,7 @@ public sealed partial class SettingsWindow : Window
 
 	private readonly Platform platform;
 
-	private readonly Palette p;
+	private Palette p;
 
 	private readonly StackPanel content = new StackPanel
 	{
@@ -363,6 +363,8 @@ public sealed partial class SettingsWindow : Window
 
 	private void BuildPages()
 	{
+        bool dark=s.Theme switch{ThemeMode.Dark=>true,ThemeMode.Light=>false,_=>Application.Current?.ActualThemeVariant!=Avalonia.Styling.ThemeVariant.Light};
+        p=Palette.For(s,dark,Application.Current?.PlatformSettings?.GetColorValues().AccentColor1);
 		base.Title = "Lumen – " + L.T("Settings");
 		title.Text = L.T("Settings");
 		lead.Text = L.T("Changes apply immediately.");

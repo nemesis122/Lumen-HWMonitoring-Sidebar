@@ -48,7 +48,7 @@ public sealed partial class AioTile
     private Control EditionTile(AioReading row,Color accent,double size=19)
     {
         var label=TextColours.Bind(EditionText(EditionLabel(row),10,C("#BAC5D0")),row.Key);
-        return new Border{Padding=new Thickness(7,5),CornerRadius=new CornerRadius(5),Background=Palette.Brush(C("#18232D")),
+        return new Border{Padding=new Thickness(7,5),CornerRadius=new CornerRadius(5),Background=Palette.Brush(SeeThrough(C("#18232D"))),
             Child=Stack(3,label,FitLeft(EditionValue(row,size)))};
     }
     private Control EditionTrace(AioReading row,Color accent,double height=25)
@@ -61,16 +61,17 @@ public sealed partial class AioTile
         var bar=TextColours.Bind(new AioMeter(accent,C("#303943"),0){Height=6,Tag="graphic"},row.Key);
         meters.Add((row.Key,bar));return bar;
     }
-    private Control EditionDial(AioReading row,Color accent,bool open=false)
+    private Control EditionDial(AioReading row,Color accent,bool open=false,double ringScale=1.2)
     {
-        var ring=TextColours.Bind(new AioRing(accent,C("#303943"),false,open){Width=74,Height=74},row.Key);
+        double diameter=78*ringScale;
+        var ring=TextColours.Bind(new AioRing(accent,C("#303943"),false,open){Width=74*ringScale,Height=74*ringScale},row.Key);
         rings.Add((row.Key,ring));
         var value=EditionValue(row,15);value.HorizontalAlignment=HorizontalAlignment.Center;
         var number=new Viewbox{Child=value,MaxWidth=70,Stretch=Stretch.Uniform,HorizontalAlignment=HorizontalAlignment.Center};
         var label=TextColours.Bind(EditionText(EditionLabel(row),10,C("#C8D2DC")),row.Key);label.HorizontalAlignment=HorizontalAlignment.Center;
-        var dial=new Grid{Width=78,Height=78,Children={ring,new Border{Padding=new Thickness(3),VerticalAlignment=VerticalAlignment.Center,Child=number}}};
-        var scalable=new Viewbox{Child=dial,Width=78,Height=78,Stretch=Stretch.Uniform,Tag="graphic"};
-        return Stack(2,label,new Viewbox{Child=scalable,Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,MaxHeight=156});
+        var dial=new Grid{Width=diameter,Height=diameter,Children={ring,new Border{Padding=new Thickness(3),VerticalAlignment=VerticalAlignment.Center,Child=number}}};
+        var scalable=new Viewbox{Child=dial,Width=diameter,Height=diameter,Stretch=Stretch.Uniform,Tag="graphic"};
+        return Stack(2,label,new Viewbox{Child=scalable,Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,MaxHeight=diameter*2});
     }
     private static Control EditionCells(IEnumerable<Control> items,int columns,double minimum)
     {
@@ -142,7 +143,7 @@ public sealed partial class AioTile
         {
             var load=rows.FirstOrDefault(r=>r.Key=="aio.system.ram");
             if(look.Layout==Edition.Nvidia && load!=null)
-            {used.Add(load.Key);body.Children.Add(Ui.Columns("84,*",EditionDial(load,accent),Stack(4,rows.Where(r=>r!=load).Select(EditionLine).ToArray())));foreach(var row in rows)used.Add(row.Key);}
+            {used.Add(load.Key);body.Children.Add(Ui.Columns(".45*,.55*",EditionDial(load,accent),Stack(4,rows.Where(r=>r!=load).Select(EditionLine).ToArray())));foreach(var row in rows)used.Add(row.Key);}
             else if(look.Layout==Edition.Intel)
             {body.Children.Add(FixedCols(2,rows.Select(r=>EditionTile(r,accent,18)).ToArray()));foreach(var row in rows)used.Add(row.Key);}
             else if(load!=null){body.Children.Add(EditionBar(load,accent));}
@@ -178,7 +179,7 @@ public sealed partial class AioTile
             }
         }
         if(part.Id=="power" && look.Layout==Edition.Command)
-        {body.Children.Add(EditionCells(rows.Select(r=>EditionDial(r,accent,true)),3,85));foreach(var r in rows)used.Add(r.Key);}
+        {body.Children.Add(EditionCells(rows.Select(r=>EditionDial(r,accent,true,1.25)),3,85));foreach(var r in rows)used.Add(r.Key);}
         if(part.Id=="net" && look.Layout is Edition.Intel or Edition.Command)
         {
             var rates=rows.Where(r=>r.Key is "aio.network.down" or "aio.network.up").ToArray();
