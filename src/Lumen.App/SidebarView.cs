@@ -318,11 +318,11 @@ public sealed class SidebarView : Border
 		});
 	}
 
-	public static double WindowWidth(Settings s)
+	public static double WindowWidth(Settings s, double maximumWidth = double.PositiveInfinity)
 	{
 		int columnCount = s.ColumnCount;
 		double num = Math.Max(1.0, s.TextScale);
-		return (s.Width * (double)columnCount + (double)(columnCount - 1) * Metrics.For(s.Density).Gap) * num;
+		return Math.Min(maximumWidth, (s.Width * (double)columnCount + (double)(columnCount - 1) * Metrics.For(s.Density).Gap) * num);
 	}
 
 	private void BuildCards()
@@ -507,6 +507,7 @@ public sealed class SidebarView : Border
 	private Control Make(WidgetSlot slot, int index)
 	{
 		Control control = Cards.Create(slot.Kind, AioCompanionTile.ResolveStyle(slot,settings), index, p, metrics, settings);
+        TextColours.Own(control, slot, p.Dark, index);
 		if (control is AioTile aio) aio.SettingsRequested += () => SettingsRequested?.Invoke();
 		TextColours.Apply(control, settings);
 		if (settings.Floating && control is Border card)
@@ -681,6 +682,7 @@ public sealed class SidebarView : Border
 		foreach (IWidget widget in widgets)
 		{
 			widget.Update(s, h);
+            if (widget is Control coloured) TextColours.Snapshot(coloured, s);
 			if (texts && widget is Control card) TextColours.Apply(card, settings);
 		}
 		if (settings.ColumnsInUse >= 2 && !settings.Horizontal && !settings.Floating && !balanced)

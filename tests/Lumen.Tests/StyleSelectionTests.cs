@@ -22,6 +22,7 @@ public class StyleSelectionTests
         WidgetStyle.Panorama, WidgetStyle.Terminal, WidgetStyle.Thermal, WidgetStyle.MosaicPro, WidgetStyle.RibbonFlow, WidgetStyle.SplitLens,
         WidgetStyle.PixelDeck, WidgetStyle.HorizonSync,
         WidgetStyle.SplitFlap, WidgetStyle.MeasureTape, WidgetStyle.HardwareMap,
+        WidgetStyle.CaseAmdEdition,WidgetStyle.CaseNvidiaEdition,WidgetStyle.CaseIntelEdition,WidgetStyle.CaseStudio,WidgetStyle.CaseCommandCenter,
         WidgetStyle.CaseCyanGlass, WidgetStyle.AioBoardCard, WidgetStyle.AioDoubleTable, WidgetStyle.AioQuadrants, WidgetStyle.AioNetworkCenter,
         WidgetStyle.AioTypeBlock, WidgetStyle.AioOrbitNetwork, WidgetStyle.AioThermalGrid, WidgetStyle.AioSignalRack, WidgetStyle.AioIsometricCore, WidgetStyle.AioPrecision, WidgetStyle.AioStudioLight, WidgetStyle.AioInstrument, WidgetStyle.AioAuroraFusion, WidgetStyle.AioCarbonPulse, WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings
         , WidgetStyle.AioMainboardMap, WidgetStyle.AioMainboardDesktop,

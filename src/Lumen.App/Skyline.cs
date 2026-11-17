@@ -7,7 +7,7 @@ using Avalonia.Media;
 
 namespace Lumen.App;
 
-public sealed class Skyline : Control
+public sealed class Skyline : Control, IColourGraph
 {
 	private double[] shown = Array.Empty<double>();
 
@@ -37,6 +37,7 @@ public sealed class Skyline : Control
 	}
 
 	public Palette? Palette { get; set; }
+	public Color? Tint { get; set; }
 
 	public override void Render(DrawingContext context)
 	{
@@ -54,7 +55,7 @@ public sealed class Skyline : Control
 				double num4 = double.IsFinite(shown[i]) ? Math.Clamp(shown[i], 0.0, 100.0) / 100.0 : 0;
 				context.DrawRectangle(brush, null, new RoundedRect(new Rect(x, 0.0, num3, bounds.Height), radius));
 				double num5 = Math.Max(2.0, num4 * bounds.Height);
-				context.DrawRectangle(new SolidColorBrush(Palette.At(num4)), null, new RoundedRect(new Rect(x, bounds.Height - num5, num3, num5), radius));
+				context.DrawRectangle(new SolidColorBrush(Tint ?? Palette.At(num4)), null, new RoundedRect(new Rect(x, bounds.Height - num5, num3, num5), radius));
 			}
 		}
 	}

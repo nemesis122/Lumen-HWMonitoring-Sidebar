@@ -532,9 +532,11 @@ public sealed class FitPanel : Panel
 			}
 		}
 		Diagnostics.RecordMeasure(available.Width, available.Height, s, lists.Count);
-		if (!double.IsFinite(applied) || Math.Abs(s - applied) > 0.001)
+		bool scaleChanged = !double.IsFinite(applied) || Math.Abs(s - applied) > 0.001;
+        // Arrange must use the exact scale used for measuring, even below the notification threshold.
+        applied = s;
+		if (scaleChanged)
 		{
-			applied = s;
 			this.Fitted?.Invoke(s);
 		}
 		if (!flag)
@@ -582,6 +584,11 @@ public sealed class FitPanel : Panel
 		double num = ColumnWidth(final.Width);
 		List<StackPanel> list = Active();
 		double s = ((double.IsFinite(applied) && applied > 0.01) ? applied : 1.0);
+        // A late template/row reflow can grow the measured column after the fitting search.
+        // Keep its final uniform scale within the viewport rather than clipping the last widget.
+        double tallest = list.Select(c=>c.DesiredSize.Height).Where(double.IsFinite).DefaultIfEmpty(0).Max();
+        if(fill && stretchContent && tallest>0 && final.Height>0 && tallest*s>final.Height+1)
+            s=Math.Min(s,final.Height/tallest);
 		foreach (ScaleTransform transform in transforms.Values)
 		{
 			if (transform.ScaleX != s || transform.ScaleY != s)
@@ -598,6 +605,10 @@ public sealed class FitPanel : Panel
 		{
 			StackPanel stackPanel = list[i];
 			double height = (double.IsFinite(stackPanel.DesiredSize.Height) ? Math.Max(0.0, stackPanel.DesiredSize.Height) : 0.0);
+            // Elastic rows can accumulate a few pixels of layout rounding. Correct only that tiny
+            // vertical residue, keeping the measured width stable so wrapping cannot oscillate.
+            if(fill && stretchContent && height>0 && final.Height>0 && Math.Abs(height*s-final.Height)<=final.Height*.005)
+                transforms[stackPanel].ScaleY=final.Height/height;
 			stackPanel.Arrange(new Rect((double)i * (num + gap), 0.0, num / s, height));
 		}
 		return final;

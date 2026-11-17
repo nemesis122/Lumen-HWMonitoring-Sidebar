@@ -117,6 +117,7 @@ public sealed class DriveRows : StackPanel
 			label.Text = r.Label;
 			value.Text = r.Value;
             SensorDetails.Value(value, r.Key);
+            TextColours.Bind(bar,r.Key);
 			value.Foreground = Palette.Brush(valueColor(r));
 			// The value column keeps the widest value seen, so the bars do not get longer and shorter as the
 			// digits change ("9.6 MB/s" ↔ "61 MB/s").

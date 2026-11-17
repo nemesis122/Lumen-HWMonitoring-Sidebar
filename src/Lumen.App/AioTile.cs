@@ -76,9 +76,11 @@ public sealed partial class AioTile : Border, IWidget, INamed
     private byte cardAlpha=255;
     /// <summary>A design colour with the card's opacity, for panels that should be see-through like the card.</summary>
     internal Color SeeThrough(Color c)=>Color.FromArgb((byte)Math.Round(c.A*cardAlpha/255d),c.R,c.G,c.B);
-    public void Own(WidgetSlot owned,int index) { slot=owned; settings=source.ForSlot(owned); shape=""; }
+    public void Own(WidgetSlot owned,int index) { slot=owned; settings=source.ForSlot(owned); shape=""; TextColours.Own(this,owned,palette.Dark); }
+    internal double? ColourTemperature(string key) => readings.TryGetValue(key,out var reading) ? reading.Number : null;
     public void Update(Snapshot snap,History h)
     {
+        TextColours.Snapshot(this,snap);
         settings=source.ForSlot(slot);
         snapshot=snap; history=h;
         var list=AioReadings.For(snap,settings);
@@ -104,8 +106,17 @@ public sealed partial class AioTile : Border, IWidget, INamed
         if (IsDashboard) next += "|columns:" + source.Columns;
         if(next!=shape) { shape=next; Build(list); if(settings.Horizontal)Horizontalize(); }
         UpdateCoreBars();
+        foreach(var (key,meter) in meters) TextColours.Bind(meter,key);
+        foreach(var (key,ring) in rings) TextColours.Bind(ring,key);
+        foreach(var (key,chart) in charts) TextColours.Bind(chart,key);
+        foreach(var (key,cell) in heat) TextColours.BindHeat(cell,key);
+        foreach(var (key,second,plot) in referencePlots) TextColours.Bind(plot,key,second);
+        if(dashboardTraffic!=null)TextColours.Bind(dashboardTraffic,"aio.network.down","aio.network.up");
+        foreach(var (key,plot) in casePlots) TextColours.Bind(plot,key);
+        if(coreBars!=null)TextColours.Bind(coreBars,"aio.cpu.coreloads");
+        if(mainboardCores!=null)TextColours.Bind(mainboardCores,"aio.cpu.coreloads");
         foreach(var r in list)
-            if(fields.TryGetValue(r.Key,out var texts)) foreach(var t in texts) { t.Text=formats.TryGetValue(t,out var format)?format(r):Display(r); ToolTip.SetTip(t,L.T(r.Label)+": "+r.Value); }
+            if(fields.TryGetValue(r.Key,out var texts)) foreach(var t in texts) { TextColours.Bind(t,r.Key);t.Text=formats.TryGetValue(t,out var format)?format(r):Display(r); ToolTip.SetTip(t,L.T(r.Label)+": "+r.Value); }
         foreach(var (key,meter) in meters)
         {
             var row=readings.GetValueOrDefault(key);

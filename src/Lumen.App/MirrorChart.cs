@@ -6,7 +6,7 @@ using Avalonia.Media;
 
 namespace Lumen.App;
 
-public sealed class MirrorChart : Control
+public sealed class MirrorChart : Control, IColourGraph
 {
 	private double shift;
 
@@ -15,6 +15,8 @@ public sealed class MirrorChart : Control
 	public double[] Up { get; set; } = Array.Empty<double>();
 
 	public Palette? Palette { get; set; }
+	public Color? DownTint { get; set; }
+	public Color? UpTint { get; set; }
 
 	public MirrorChart()
 	{
@@ -44,8 +46,8 @@ public sealed class MirrorChart : Control
 		if (Palette != null && !(bounds.Width < 4.0))
 		{
 			double num = Math.Round(bounds.Height * 0.62);
-			Half(context, Down, bounds.Width, num, -1, Palette.Cool, 0.0, shift);
-			Half(context, Up, bounds.Width, bounds.Height - num, 1, Palette.Calm, num, shift);
+			Half(context, Down, bounds.Width, num, -1, DownTint ?? Palette.Cool, 0.0, shift);
+			Half(context, Up, bounds.Width, bounds.Height - num, 1, UpTint ?? Palette.Calm, num, shift);
 			context.DrawLine(new Pen(new SolidColorBrush(Palette.Stroke)), new Point(0.0, num + 0.5), new Point(bounds.Width, num + 0.5));
 		}
 	}

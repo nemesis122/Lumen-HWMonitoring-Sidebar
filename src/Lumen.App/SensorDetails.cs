@@ -114,6 +114,7 @@ public sealed class SensorDetails : StackPanel
 
     public static IReadOnlyList<CompleteReading> Apply(Border root, WidgetKind kind, int index, Snapshot snap, History history, Settings settings, Palette palette, bool collectOnly = false, Control? excluded = null)
     {
+        TextColours.Snapshot(root,snap,index);
         if (kind is WidgetKind.Overview or WidgetKind.Notes or WidgetKind.Timer) return Array.Empty<CompleteReading>();
         var rows = CompleteReadings.For(kind, index, snap, history, settings, palette);
         HardwareWidgetTitle.Apply(root, kind, index, snap, history, settings, palette);
@@ -204,6 +205,7 @@ public sealed class SensorDetails : StackPanel
             if (detail.coreGroup == null)
             {
                 detail.coreBars = new Skyline { Height = 16, Palette = palette };
+                TextColours.Bind(detail.coreBars,"cpu.cores");
                 detail.coreGroup = Ui.Stack(2, Ui.Text(L.T("Core bars"), 10.5, palette.Soft), detail.coreBars);
             }
             if (!detail.Children.Contains(detail.coreGroup)) detail.Children.Add(detail.coreGroup);

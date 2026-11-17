@@ -136,6 +136,7 @@ public sealed class SensorDetailVisual
     {
         if (kind == WidgetKind.Drives && DriveTransferPairs.IsRate(row)) valueText.Foreground = Palette.Brush(palette.Ink);
         if (Graphic == null) return;
+        TextColours.Bind(Graphic,row.Key);
         double? fraction = row.Fraction ?? SegmentScale.Fraction(kind, row.Label, row.Value, snapshot);
         double? rawCounter = null;
         // For cumulative counters the bar uses a labelled decimal auto scale, not a fabricated percent.

@@ -221,7 +221,7 @@ public sealed class MainboardTraces : Control
 }
 
 /// <summary>Live core-load columns; row count depends on width and core count, never on the readings.</summary>
-public sealed class MainboardCoreGrid : Control, RedSkin.IOneColour
+public sealed class MainboardCoreGrid : Control, IColourGraph, RedSkin.IOneColour
 {
     /// <summary>Red designs: one red, no lighter second tone (set by RedSkin).</summary>
     public bool OneColour { get; set; }

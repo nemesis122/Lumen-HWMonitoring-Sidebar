@@ -419,7 +419,7 @@ public static class CaseConnectorRouter
     }
 }
 
-public sealed class CaseSparkline(Color accent) : Control
+public sealed class CaseSparkline(Color accent) : Control, IColourGraph
 {
     private double[] values = Array.Empty<double>();
     public void Set(double[] data) { values = data.Where(double.IsFinite).ToArray(); InvalidateVisual(); }

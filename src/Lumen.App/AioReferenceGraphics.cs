@@ -210,7 +210,7 @@ public sealed class AioIsometricConnections : Control
     }
 }
 
-public sealed class AioReferenceHistory : Control, RedSkin.IOneColour
+public sealed class AioReferenceHistory : Control, IColourGraph, RedSkin.IOneColour
 {
     /// <summary>Red designs: one red, no lighter second tone (set by RedSkin).</summary>
     public bool OneColour { get; set; }

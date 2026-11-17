@@ -115,7 +115,7 @@ public class CaseOverlayTests
         Assert.Contains(route,p=>p.Y<50||p.Y>150);
     }
 
-    public static IEnumerable<object[]> ScrollLayouts() => CaseDesigns.All.SelectMany(l=>new[]{Density.Comfortable,Density.Compact}.Select(d=>new object[]{l.Style,d}));
+    public static IEnumerable<object[]> ScrollLayouts() => CaseDesigns.All.Select(l=>l.Style).Concat(CaseEditionDesigns.All.Select(l=>l.Style)).SelectMany(style=>new[]{Density.Comfortable,Density.Compact}.Select(d=>new object[]{style,d}));
     [Theory,MemberData(nameof(ScrollLayouts))]
     public void Natural_density_keeps_scrolling_instead_of_forcing_automatic_fit(WidgetStyle design,Density density) => UiHost.Run(()=>
     {
@@ -127,7 +127,8 @@ public class CaseOverlayTests
             window.Show();Dispatcher.UIThread.RunJobs();using var image=window.CaptureRenderedFrame();Assert.NotNull(image);
             var scroll=Assert.Single(sidebar.GetLogicalDescendants().OfType<ScrollViewer>(),v=>v.Content is FitPanel);
             Assert.Equal(0,((FitPanel)scroll.Content!).LastHeight);Assert.Equal(density,s.Density);
-            Assert.Equal(2,Assert.Single(sidebar.GetLogicalDescendants().OfType<CaseOverlayPanel>()).Columns);
+            if(CaseEditionDesigns.Contains(design))Assert.Equal(2,Assert.Single(sidebar.GetLogicalDescendants().OfType<CaseEditionPanel>()).Columns);
+            else Assert.Equal(2,Assert.Single(sidebar.GetLogicalDescendants().OfType<CaseOverlayPanel>()).Columns);
         }
         finally{window.Close();}
         return true;

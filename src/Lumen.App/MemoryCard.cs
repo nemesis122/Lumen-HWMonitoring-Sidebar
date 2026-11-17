@@ -37,6 +37,7 @@ public sealed class MemoryCard : Card
 				RampBySegment = true
 			};
 			Body.Children.Add(bar);
+            TextColours.Bind(bar,"mem.load");
 		}
 		stats = Stats(("mem.free", L.T("Available")), ("mem.total", L.T("Installed")), ("mem.peak", L.T("2-min peak")));
         WidgetPresentation.Sensor(hero, "mem.used");

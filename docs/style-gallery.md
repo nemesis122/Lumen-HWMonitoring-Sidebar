@@ -1,8 +1,19 @@
 # Lumen — widget design gallery
 
-Lumen 4.5.1 offers **104 selectable designs**, including **46 All-in-One designs**. Use one to six columns and independently named registers. Every image below is an application render with demo telemetry; the older galleries document earlier releases and may show layouts that are no longer selectable.
+Lumen 4.5.2 offers **109 selectable designs**, including **51 All-in-One designs**. Use one to six columns, 240–640 px per column and independently named registers. Every image below is an application render with demo telemetry; the older galleries document earlier releases and may show layouts that are no longer selectable.
 
-[Back to the README](../README.md) · [4.5.1 release notes](release-notes/v4.5.1.md) · [Download 4.5.1](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.5.1) · [Font options](typefaces.md)
+[Back to the README](../README.md) · [4.5.2 release notes](release-notes/v4.5.2.md) · [Download 4.5.2](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.5.2) · [Font options](typefaces.md)
+
+## Added in 4.5.2
+
+| Design | Program preview |
+| --- | --- |
+| Case · AMD Edition | [Preview](images/v4.5.2/CaseAmdEdition-1-columns.png) |
+| Case · NVIDIA Edition | [Preview](images/v4.5.2/CaseNvidiaEdition-1-columns.png) |
+| Case · Intel Edition | [Preview](images/v4.5.2/CaseIntelEdition-1-columns.png) |
+| Case · Studio | [Preview](images/v4.5.2/CaseStudio-1-columns.png) |
+| Case · Command Center, sidebar | [Preview](images/v4.5.2/CaseCommandCenter-1-columns.png) |
+| Case · Command Center, whole screen | [Preview](images/v4.5.2/CaseCommandCenter-3-columns.png) |
 
 ## Added in 4.5.1
 

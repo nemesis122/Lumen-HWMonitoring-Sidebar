@@ -43,6 +43,7 @@ public sealed class NetworkCard : Card
 				Palette = p
 			};
 			Body.Children.Add(chart);
+			TextColours.Bind(chart, "net.down", "net.up");
 		}
 		List<(string, string)> source = new(string, string)[3]
 		{
@@ -64,6 +65,7 @@ public sealed class NetworkCard : Card
 				Margin = new Thickness(0.0, -4.0, 0.0, 0.0)
 			};
 			Body.Children.Add(linkBar);
+			TextColours.Bind(linkBar, "net.use");
 		}
 		if (Shows("net.external"))
 		{

@@ -94,6 +94,12 @@ public sealed class ThemeFile
     public string LabelFont { get; set; } = "";
     public string ValueFont { get; set; } = "";
     public string GraphFont { get; set; } = "";
+    public string? TitleColor { get; set; }
+    public string? LabelColor { get; set; }
+    public string? ValueColor { get; set; }
+    public string? GraphColor { get; set; }
+    public bool? AutomaticWarningColors { get; set; }
+    public List<WidgetColourTheme>? WidgetColourOverrides { get; set; }
 
 	public bool SmoothTransitions { get; set; }
 
@@ -113,6 +119,8 @@ public sealed class ThemeFile
 			HighContrast = s.HighContrast,
 			TextScale = s.TextScale,
 			Font = s.Font, TitleFont = s.TitleFont, LabelFont = s.LabelFont, ValueFont = s.ValueFont, GraphFont = s.GraphFont,
+            TitleColor=s.TitleColor,LabelColor=s.LabelColor,ValueColor=s.ValueColor,GraphColor=s.GraphColor,AutomaticWarningColors=s.AutomaticWarningColors,
+            WidgetColourOverrides=s.Widgets.Select((w,index)=>new WidgetColourTheme { Kind=w.Kind,Index=s.Widgets.Take(index).Count(p=>p.Kind==w.Kind),Colours=w.Colours.Copy(),Sensors=w.SensorColours.ToDictionary(p=>p.Key,p=>p.Value.Copy()) }).Where(w=>!w.Colours.InheritGlobal || !w.Colours.Empty || w.Sensors.Count>0).ToList(),
 			SmoothTransitions = s.SmoothTransitions,
 			Modern = s.Modern
 		};
@@ -128,6 +136,16 @@ public sealed class ThemeFile
 		s.HighContrast = HighContrast;
 		s.TextScale = TextScale;
 		s.Font = Font ?? "inter"; s.TitleFont = TitleFont; s.LabelFont = LabelFont; s.ValueFont = ValueFont; s.GraphFont = GraphFont;
+        if(TitleColor!=null)s.TitleColor=TitleColor;if(LabelColor!=null)s.LabelColor=LabelColor;if(ValueColor!=null)s.ValueColor=ValueColor;if(GraphColor!=null)s.GraphColor=GraphColor;
+        if(AutomaticWarningColors.HasValue)s.AutomaticWarningColors=AutomaticWarningColors.Value;
+        if(WidgetColourOverrides!=null)
+            foreach(var widget in s.Widgets){widget.Colours=new();widget.SensorColours=new();}
+        foreach(var entry in WidgetColourOverrides??new())
+            if(entry!=null && s.Widgets.Where(w=>w.Kind==entry.Kind).ElementAtOrDefault(Math.Max(0,entry.Index)) is {} target)
+            {
+                target.Colours=(entry.Colours??new()).Copy();
+                target.SensorColours=(entry.Sensors??new()).Where(p=>p.Value!=null).ToDictionary(p=>p.Key,p=>p.Value.Copy());
+            }
 		s.SmoothTransitions = SmoothTransitions;
 		s.Modern = Modern;
 		Settings.Normalize(s);
@@ -140,7 +158,7 @@ public sealed class ThemeFile
 
 	public static ThemeFile? Parse(string json)
 	{
-		if (string.IsNullOrWhiteSpace(json) || json.Length > 65536)
+		if (string.IsNullOrWhiteSpace(json) || json.Length > 1048576)
 		{
 			return null;
 		}

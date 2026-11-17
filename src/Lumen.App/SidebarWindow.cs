@@ -338,7 +338,7 @@ public sealed class SidebarWindow : Window
 		}
 		else
 		{
-			num3 = (s.FullScreen ? ((double)workingArea.Width / scaling) : SidebarView.WindowWidth(s));
+			num3 = (s.FullScreen ? ((double)workingArea.Width / scaling) : SidebarView.WindowWidth(s, (double)workingArea.Width / scaling));
 			num2 = (s.FullScreen ? workingArea.Width : ((int)Math.Round(num3 * scaling)));
 			x = (s.FullScreen ? workingArea.X : ((s.Edge == Edge.Right) ? (workingArea.Right - num2) : workingArea.X));
 			y = workingArea.Y;

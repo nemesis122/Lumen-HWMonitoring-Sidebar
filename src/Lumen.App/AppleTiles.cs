@@ -226,6 +226,7 @@ public sealed class PureTile : AppleTile
 			var (fraction, text) = RingValue(sum);
 			ring.Set(fraction, Tint, RingTrack);
 			level.Set(sum.Value == "—" ? 0 : sum.Fraction, Tint, RingTrack);
+            BindPrimary(level);
 			ringText.Text = text; if (sum.Second.HasValue) BindSecondary(ringText);
 			loadIndicator?.Set(sum.Second, Tint, RingTrack);
 			ringShown = ringBox.IsVisible ? Key(text) : "";
@@ -486,7 +487,7 @@ public sealed class SteadyText : TextBlock
 }
 
 /// <summary>A full ring that fills clockwise from the top, with round ends.</summary>
-public sealed class AppleRing : Control
+public sealed class AppleRing : Control, IColourGraph
 {
 	private double fraction;
 
@@ -539,7 +540,7 @@ public sealed class AppleRing : Control
 }
 
 /// <summary>The recent history as rounded upright bars; the newest bar in full colour.</summary>
-public sealed class HistoryBars : Control
+public sealed class HistoryBars : Control, IColourGraph
 {
 	private double[] values = Array.Empty<double>();
 

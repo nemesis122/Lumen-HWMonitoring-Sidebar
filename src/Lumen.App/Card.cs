@@ -99,6 +99,7 @@ public abstract class Card : Border, IWidget, INamed
 	public void Own(WidgetSlot slot, int index)
 	{
 		this.slot = slot;
+        TextColours.Own(this, slot, P.Dark, index);
 		slotIndex = index;
 		Title = builtInTitle;
 		Subtitle = lastSubtitle;
@@ -142,6 +143,7 @@ public abstract class Card : Border, IWidget, INamed
 
     public void Update(Snapshot s, History h)
     {
+        TextColours.Snapshot(this, s, slotIndex);
         var filtered = WidgetSensors.FilterSnapshot(s, S);
         UpdateReadings(filtered, h);
         WidgetPresentation.Apply(this, S);
@@ -179,7 +181,7 @@ public abstract class Card : Border, IWidget, INamed
 				Max = 100.0,
 				Margin = new Thickness(0.0, -2.0, 0.0, 0.0)
 			};
-			Body.Children.Add(areaChart);
+            TextColours.Bind(areaChart, S.ActiveWidget is { } owner ? WidgetSensors.PrimaryKey(owner.Kind) : chartKey); Body.Children.Add(areaChart);
 		}
 		return (hero: hero, side: textBlock2, chart: areaChart);
 	}
@@ -197,7 +199,7 @@ public abstract class Card : Border, IWidget, INamed
         if (Shows(chartKey))
         {
             chart = new AreaChart { Height = M.Chart, Max = 100, Margin = new Thickness(0, -2, 0, 0) };
-            Body.Children.Add(chart);
+            TextColours.Bind(chart, S.ActiveWidget?.Kind == WidgetKind.Gpu ? "gpu.load" : "cpu.load"); Body.Children.Add(chart);
         }
         return (hero, side, chart);
     }

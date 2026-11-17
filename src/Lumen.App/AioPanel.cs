@@ -48,6 +48,7 @@ public sealed partial class AioTile
             if (lastCoreLoads.Count >= 2 && AioReadings.Selected(settings, "aio.cpu.coreloads"))
             {
                 panelCores = new PanelCoreCells { Theme = panel, Loads = lastCoreLoads };
+                TextColours.Bind(panelCores,"aio.cpu.coreloads");
                 body.Children.Add(Stack(3, PanelLabel("USAGE"), panelCores));
             }
             var values = cpu.Where(r => (PanelPlain || (r != temp && r != load)) && !gaugeKeys.Contains(r.Key)).OrderBy(r => r == temp ? 0 : r == load ? 1 : 2).Select(r => PanelValue(r)).ToList();
@@ -338,12 +339,14 @@ public sealed partial class AioTile
     {
         if (!settings.Shows("aio.graphs")) return null;
         var graph = new PanelGraph { Theme = panel, Height = 46, Tag = "graphic" };
+        TextColours.Bind(graph,r.Key);
         panelPlots.Add((r.Key, graph));
         return label == null ? graph : Stack(3, PanelLabel(label), graph);
     }
     private PanelBar PanelBarFor(AioReading r, bool leds = false)
     {
         var bar = new PanelBar { Theme = panel, Leds = leds, Height = leds ? 9 : 7, MinWidth = 30 };
+        TextColours.Bind(bar,r.Key);
         panelLive.Add((r.Key, row => bar.Set(row?.Fraction)));
         return bar;
     }
@@ -354,6 +357,7 @@ public sealed partial class AioTile
     }
     private void PanelGaugeLive(PanelGauge gauge, AioReading? first, AioReading? second, (TextBlock Text, Color Normal)[] faces)
     {
+        TextColours.Bind(gauge,first?.Key ?? second?.Key ?? "", first == null ? null : second?.Key);
         void Refresh(AioReading? _)
         {
             gauge.Set(first == null ? null : readings.GetValueOrDefault(first.Key)?.Fraction, second == null ? null : readings.GetValueOrDefault(second.Key)?.Fraction);

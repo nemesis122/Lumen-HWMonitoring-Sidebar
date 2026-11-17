@@ -45,7 +45,17 @@ public static class UiHost
     public static T Run<T>(Func<T> work, int seconds = 90)
     {
         var done = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
-        queue.Add(() => { try { done.SetResult(work()); } catch (Exception e) { done.SetException(e); } });
+        queue.Add(() =>
+        {
+            try
+            {
+                // The app retains its selected register across rebuilds. Each test starts a new
+                // scenario: a register-switch test must not leave later tests on the INFO page.
+                typeof(SidebarView).GetField("page", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!.SetValue(null, 1);
+                done.SetResult(work());
+            }
+            catch (Exception e) { done.SetException(e); }
+        });
         if (!done.Task.Wait(TimeSpan.FromSeconds(seconds)))
             throw new TimeoutException($"The interface did not finish within {seconds} s – the layout probably never comes to rest.");
         return done.Task.GetAwaiter().GetResult();
@@ -58,7 +68,7 @@ public static class UiHost
     {
         public bool IsEnabled(Avalonia.Logging.LogEventLevel level, string area) => level >= Avalonia.Logging.LogEventLevel.Warning && area == Avalonia.Logging.LogArea.Layout;
         public void Log(Avalonia.Logging.LogEventLevel level, string area, object? source, string messageTemplate) => LayoutWarnings.Enqueue(messageTemplate);
-        public void Log(Avalonia.Logging.LogEventLevel level, string area, object? source, string messageTemplate, params object?[] propertyValues) => LayoutWarnings.Enqueue(messageTemplate);
+        public void Log(Avalonia.Logging.LogEventLevel level, string area, object? source, string messageTemplate, params object?[] propertyValues) => LayoutWarnings.Enqueue(messageTemplate+" "+string.Join(", ",propertyValues.Select(v=>v?.ToString())));
     }
 
     private sealed class TestApp : Application

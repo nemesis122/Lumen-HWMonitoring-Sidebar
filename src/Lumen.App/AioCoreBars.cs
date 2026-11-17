@@ -40,7 +40,7 @@ public sealed partial class AioTile
 }
 
 /// <summary>One bar per CPU core, filled and coloured by its load; core names and loads below when there is room.</summary>
-public sealed class AioCoreBars : Control, RedSkin.IOneColour
+public sealed class AioCoreBars : Control, IColourGraph, RedSkin.IOneColour
 {
     /// <summary>Red designs: one red, no lighter second tone (set by RedSkin).</summary>
     public bool OneColour { get; set; }

@@ -248,6 +248,7 @@ public sealed class GraphTile : FreshTile
 		{
 			chart.Max = sum.SeriesMax;
 			chart.Set(sum.Series, tint);
+            TextColours.Bind(chart,WidgetSensors.PrimaryKey(Kind));
 		}
 		pairs.Children.Clear();
 		foreach (Reading r in AllDrives ? new List<Reading>() : WithoutRates(Rest(sum)))
@@ -513,7 +514,7 @@ public sealed class ColumnsTile : FreshTile
 }
 
 // A straight bar with round caps, drawn like a piece of the rings (same thickness feel and colours).
-public sealed class RingBar : Control
+public sealed class RingBar : Control, IColourGraph
 {
     internal void CopyAppearanceTo(RingBar target, double value) => target.Set(value, fill, track);
 	private double fraction;
@@ -547,7 +548,7 @@ public sealed class RingBar : Control
 }
 
 // Two concentric rings, open at the bottom: outer for the main value, inner for the second value.
-public sealed class RingPair : Control
+public sealed class RingPair : Control, IColourGraph
 {
 	private double outer;
 
@@ -609,7 +610,7 @@ public sealed class RingPair : Control
 }
 
 // An upright bar filled from the bottom.
-public sealed class LevelBar : Control
+public sealed class LevelBar : Control, IColourGraph
 {
     internal void CopyAppearanceTo(LevelBar target, double value) => target.Set(value, color, track);
 	private double fraction;

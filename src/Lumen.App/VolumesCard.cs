@@ -51,6 +51,7 @@ public sealed class VolumesCard : Card
 			Color color = ((num >= 0.9) ? P.Ramp[^1] : ((num >= 0.8) ? P.Ramp[2] : P.Cool));
 			value.Item2.Foreground = Palette.Brush((num >= 0.8) ? color : P.Ink);
 			value.Item3.Set(num, color);
+            TextColours.Bind(value.Item3,"volume:"+item2.Name+":used");
 			value.Item4.Text = L.F("{0} of {1} used", Format.Capacity(item2.TotalGb - item2.FreeGb), Format.Capacity(item2.TotalGb));
 		}
 	}

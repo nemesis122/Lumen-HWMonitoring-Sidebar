@@ -94,6 +94,7 @@ public sealed class DesignValueFaces : UniformGrid
         foreach (var reading in readings)
         {
             var cell = cells[reading.Key]; var split = Format.Split(reading.Value);
+            if(cell.Graphic!=null)TextColours.Bind(cell.Graphic,reading.Key);
             cell.Number.Text = split.Number; cell.Unit.Text = split.Unit;
             ToolTip.SetTip(cell.Number, reading.Label + ": " + reading.Value);
             if (cell.Graphic is AreaChart chart)

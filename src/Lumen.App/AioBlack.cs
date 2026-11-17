@@ -63,6 +63,7 @@ public sealed partial class AioTile
             if (lastCoreLoads.Count >= 2 && AioReadings.Selected(settings, "aio.cpu.coreloads"))
             {
                 blackCores = new BlackCores { Theme = black, Loads = lastCoreLoads };
+                TextColours.Bind(blackCores,"aio.cpu.coreloads");
                 cores = Stack(6, BCaption("CORE USAGE"), blackCores);
             }
             BlackSection("PROCESSOR", PanelName(WidgetKind.Cpu, 0, snapshot.Cpu?.Name ?? "", ""), "cpu", values, load ?? temp, temp ?? load, false, cores);
@@ -200,6 +201,7 @@ public sealed partial class AioTile
                 if (used != null) { var u = BV(used, 9.5, bMuted); u.HorizontalAlignment = HorizontalAlignment.Center; face.Children.Add(u); }
                 face.HorizontalAlignment = HorizontalAlignment.Center; face.VerticalAlignment = VerticalAlignment.Center;
                 var ring = new BlackRing { Theme = black, Color = black.B, Thickness = 6, Width = 92, Height = 92, Tag = "graphic" };
+                if(used!=null)TextColours.Bind(ring,used.Key);
                 if (used != null) blackLive.Add((used.Key, r => ring.Set(r?.Fraction)));
                 var name = BText(AioReadings.DriveName(snapshot, d.Id), 13, bInk, true); name.HorizontalAlignment = HorizontalAlignment.Center;
                 var cell = Stack(6, new Grid { Width = 92, Height = 92, HorizontalAlignment = HorizontalAlignment.Center, Children = { ring, Squeeze(face, 14) } }, name);
@@ -264,6 +266,7 @@ public sealed partial class AioTile
         var cells = items.Select(i =>
         {
             var arc = new BlackArc { Theme = black, Color = i.C, Tag = "graphic" };
+            TextColours.Bind(arc,i.R.Key);
             blackLive.Add((i.R.Key, r => arc.Set(r?.Fraction)));
             var value = BV(i.R, 20); value.HorizontalAlignment = HorizontalAlignment.Center;
             var caption = BText(i.Caption, 9.5, bMuted, true); caption.HorizontalAlignment = HorizontalAlignment.Center;
@@ -373,6 +376,7 @@ public sealed partial class AioTile
         {
             double size = width * 1.12 * (settings.ActiveWidget?.Graphics ?? 1);
             var r = new BlackRing { Theme = black, Width = size, Height = size, Tag = "graphic" };
+            if(ring!=null)TextColours.Bind(r,ring.Key);
             if (ring != null) blackLive.Add((ring.Key, row => r.Set(row?.Fraction)));
             left = new Grid { Width = size, Height = size, Children = { r, left } };
         }
@@ -382,6 +386,7 @@ public sealed partial class AioTile
     private BlackBar BBar(AioReading r, double height)
     {
         var bar = new BlackBar { Theme = black, Height = height, MinWidth = 30, VerticalAlignment = VerticalAlignment.Center };
+        TextColours.Bind(bar,r.Key);
         blackLive.Add((r.Key, row => bar.Set(row?.Fraction)));
         return bar;
     }
@@ -390,6 +395,7 @@ public sealed partial class AioTile
     {
         if (!settings.Shows("aio.graphs")) return null;
         var area = new BlackArea { Color = color, Height = height, Tag = "graphic" };
+        TextColours.Bind(area,r.Key);
         blackPlots.Add((r.Key, area));
         return area;
     }

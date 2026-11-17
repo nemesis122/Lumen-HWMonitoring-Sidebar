@@ -15,6 +15,14 @@ public sealed class AioCompanionTile : Border,IWidget,INamed
     public AioCompanionTile(WidgetKind kind,WidgetStyle design,Palette palette,Control native,Settings? settings=null)
     {
         Design=design;NativeContent=native;Tag="aio-companion";
+        if(CaseEditionDesigns.Contains(design))
+        {
+            var look=CaseEditionDesigns.For(design);var ink=palette.Chosen??Color.Parse(look.Accent);
+            if(native is Border inner){inner.Background=Brushes.Transparent;inner.BorderThickness=new Thickness(0);}
+            Child=native;Padding=new Thickness(4);Background=Palette.Brush(palette.OwnBackground?palette.Card:Color.Parse("#0C141C"));
+            BorderBrush=Palette.Brush(Palette.Mix(ink,Color.Parse("#34414C"),.45));BorderThickness=new Thickness(1);CornerRadius=new CornerRadius(7);
+            SensorDetails.Design(native,ContentStyle(design));return;
+        }
         if(settings!=null&&(AioDesigns.Panel(design)||AioDesigns.Black(design)||AioDesigns.Red(design)))
         {
             // Panel and Black designs: the extras take the design's colour, card and font, so the sidebar looks like one piece.
@@ -48,6 +56,7 @@ public sealed class AioCompanionTile : Border,IWidget,INamed
     /// <summary>The palette the extra's content is drawn with: the design's accent for Panel and Black designs.</summary>
     public static Palette Themed(WidgetStyle design,Palette p,Settings s)
     {
+        if(CaseEditionDesigns.Contains(design))return p.Themed(p.Chosen??Color.Parse(CaseEditionDesigns.For(design).Accent),Color.Parse("#0C141C"));
         if(AioDesigns.Red(design)&&!AioDesigns.Black(design)){var r=PanelTheme.For("red",p.Chosen);return p.Themed(r.Accent,r.Section);}
         if(AioDesigns.Panel(design)){var t=PanelTheme.For(s.PanelTheme,p.Chosen);return p.Themed(t.Accent,t.Section);}
         if(AioDesigns.Black(design)){var t=BlackTheme.For(AioDesigns.BlackLookOf(s,design),p.Chosen);return p.Themed(t.A,Color.Parse("#0B0B0D"));}
@@ -98,6 +107,8 @@ public sealed class AioCompanionTile : Border,IWidget,INamed
     }
     public static WidgetStyle ContentStyle(WidgetStyle style)=>(AioDesigns.Black(style)?AioDesigns.BlackLayout(style):AioDesigns.Base(style)) switch
     {
+        WidgetStyle.CaseNvidiaEdition=>WidgetStyle.RingPair,
+        WidgetStyle.CaseIntelEdition or WidgetStyle.CaseCommandCenter=>WidgetStyle.ClarityTiles,
         WidgetStyle.AioBlackDashboard or WidgetStyle.AioBlackRings=>WidgetStyle.RingPair,
         WidgetStyle.AioBlackTiles=>WidgetStyle.ClarityTiles,
         WidgetStyle.AioMainboardGauges or WidgetStyle.AioIsometricRings or WidgetStyle.AioOrbitNetwork=>WidgetStyle.RingPair,

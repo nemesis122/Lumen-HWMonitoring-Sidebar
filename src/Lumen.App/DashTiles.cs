@@ -248,6 +248,7 @@ public sealed class NeonHudTile : DashTile
 			var val = Text(r.Value, 11, high ? magenta : cyan, FontWeight.Bold, Mono, true);
 			var bar = new GradientBar { Height = 4 };
 			bar.Set(r.Fraction, cyan, magenta, track);
+            TextColours.Bind(bar,r.Key);
 			rows.Children.Add(Ui.Stack(5, Ui.Columns("*,Auto", label, val), bar));
 		}
 		foreach (var (label, value) in Facts(sum, readings, graph ? 12 : 3))
@@ -261,6 +262,7 @@ public sealed class NeonHudTile : DashTile
 			{
 				var bar = new GradientBar { Height = 4 };
 				bar.Set(fraction, cyan, magenta, track);
+                TextColours.Bind(bar,SensorDetails.LabelKey(Kind,label,CompleteReadings.For(Kind,Index,Last.Snap,Last.History,S,P),value));
 				rows.Children.Add(Mark(Ui.Stack(5, line, bar), value));
 				continue;
 			}
@@ -608,6 +610,7 @@ public sealed class SmartPanelTile : DashTile
 		if (level.IsVisible)
 		{
 			level.Animate(sum.Fraction, green);
+            BindPrimary(level);
 		}
 		Color[] marks = { Accent("#f59e0b"), Accent("#f472b6"), Accent("#60a5fa") };
 		var rates = Rates();
@@ -764,9 +767,10 @@ public sealed class PurpleTile : DashTile
 		pairHost.Child = !list && rates is var (pd, pu) ? RatePair(pd, pu, 28, null, Ink, Ink, stacked: true, center: true) : null;
 		((Control)pairHost.Parent!).Margin = new Thickness(0, pairHost.IsVisible ? 6 : 18, 0, 0);
 		bars.Children.Clear();
-		void Add(string text, string reading, double fraction, Color fill, bool lead)
+		void Add(string text, string reading, double fraction, Color fill, bool lead,string key)
 		{
 			var bar = new FillBack { Height = lead ? 14 : 11, Radius = 0, Track = track };
+            TextColours.Bind(bar,key);
 			bar.Animate(fraction, fill);
 			var (num, u) = Format.Split(reading);
 			var right = Ui.Row(0, Text(num, lead ? 18 : 13, Ink, FontWeight.Bold, null, true), Text(u, lead ? 11 : 9.5, Ink, FontWeight.Normal));
@@ -781,17 +785,17 @@ public sealed class PurpleTile : DashTile
 		if (list && rates is var (ld, lu))
 		{
 			// Network: download and upload are both lead bars.
-			Add(ld.Label, ld.Value, ld.Fraction, pink, true);
-			Add(lu.Label, lu.Value, lu.Fraction, pink, true);
+			Add(ld.Label, ld.Value, ld.Fraction, pink, true,ld.Key);
+			Add(lu.Label, lu.Value, lu.Fraction, pink, true,lu.Key);
 		}
 		else if (list && sum.Value.Length > 0 && !AllDrives)
 		{
 			// The value the ring carried, as the first and slightly larger bar.
-			Add(label.Text, none ? "—" : (sum.Value + " " + sum.Unit).Trim(), none ? 0 : sum.Fraction, pink, true);
+			Add(label.Text, none ? "—" : (sum.Value + " " + sum.Unit).Trim(), none ? 0 : sum.Fraction, pink, true,WidgetSensors.PrimaryKey(Kind));
 		}
 		foreach (Reading r in rest)
 		{
-			Add(r.Label, r.Value, r.Fraction, purple, false);
+			Add(r.Label, r.Value, r.Fraction, purple, false,r.Key);
 		}
 		foreach (var (l, v) in Facts(sum, shown, Math.Max(0, (list ? 6 : 5) - bars.Children.Count)))
 		{
@@ -980,6 +984,7 @@ public sealed class SciFiTile : DashTile
 		if (segments.IsVisible)
 		{
 			segments.Set(sum.Fraction, pink, blue, P.Dark ? Color.Parse("#25272e") : P.Track);
+            BindPrimary(segments);
 		}
 		rows.Children.Clear();
 		var others = rest.Except(feet).Select(r => (r.Label, r.Value, Heat(r.Value) ? (Color?)Opaque(r.Color) : null))
@@ -1037,7 +1042,7 @@ public sealed class SciFiTile : DashTile
 }
 
 // A thin bar with a colour gradient over the filled part.
-public sealed class GradientBar : Control
+public sealed class GradientBar : Control, IColourGraph
 {
     internal void CopyAppearanceTo(GradientBar target, double value) => target.Set(value, from, to, track);
 	private double fraction;
@@ -1076,7 +1081,7 @@ public sealed class GradientBar : Control
 }
 
 // Thermostat ring: 270°, warm-to-cool gradient up to the value and a glowing knob there.
-public sealed class KnobRing : Control
+public sealed class KnobRing : Control, IColourGraph
 {
 	private double fraction;
 
@@ -1126,7 +1131,7 @@ public sealed class KnobRing : Control
 }
 
 // Purple half ring: 240° from purple to pink up to the value, two small dots at its start.
-public sealed class SweepRing : Control
+public sealed class SweepRing : Control, IColourGraph
 {
 	private double fraction;
 
@@ -1172,7 +1177,7 @@ public sealed class SweepRing : Control
 }
 
 // Sci-fi ring: short radial ticks over 270°, the filled ones from pink to blue, and a thin outer circle.
-public sealed class TickRing : Control
+public sealed class TickRing : Control, IColourGraph
 {
 	private double fraction;
 
@@ -1238,7 +1243,7 @@ public sealed class TickRing : Control
 }
 
 // A level made of small segments that fade from pink to blue.
-public sealed class SegmentBar : Control
+public sealed class SegmentBar : Control, IColourGraph
 {
     internal void CopyAppearanceTo(SegmentBar target, double value) => target.Set(value, from, to, off);
 	private double fraction;

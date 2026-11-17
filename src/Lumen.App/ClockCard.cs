@@ -45,6 +45,7 @@ public sealed class ClockCard : Card
 		dayBlock = Ui.Stack(5.0, Ui.Columns("*,Auto", Card.Label(L.T("Day"), p), dayText), day);
 		dayBlock.IsVisible = Shows("clock.day");
 		Body.Children.Add(dayBlock);
+        TextColours.Bind(day,"clock.day");
         WidgetPresentation.Sensor(time, "clock.time");
 	}
 

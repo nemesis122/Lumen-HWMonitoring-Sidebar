@@ -346,7 +346,7 @@ public sealed class BlackArt : Control
 }
 
 /// <summary>History curve with a soft gradient below the line.</summary>
-public sealed class BlackArea : Control
+public sealed class BlackArea : Control, IColourGraph
 {
     public Color Color { get; init; } = Colors.Red;
     private double[] values = Array.Empty<double>();
@@ -375,7 +375,7 @@ public sealed class BlackArea : Control
 }
 
 /// <summary>Rounded bar with a gradient fill.</summary>
-public sealed class BlackBar : Control
+public sealed class BlackBar : Control, IColourGraph
 {
     public BlackTheme Theme { get; init; } = null!;
     private double? value;
@@ -389,7 +389,7 @@ public sealed class BlackBar : Control
 }
 
 /// <summary>A round progress ring (Rings layout); the picture or value sits inside.</summary>
-public sealed class BlackRing : Control
+public sealed class BlackRing : Control, IColourGraph
 {
     public BlackTheme Theme { get; init; } = null!;
     public Color? Color { get; init; }
@@ -408,7 +408,7 @@ public sealed class BlackRing : Control
 }
 
 /// <summary>Half-round gauge with ticks, like a car instrument (Dashboard layout); value and caption are live text below.</summary>
-public sealed class BlackArc : Control
+public sealed class BlackArc : Control, IColourGraph
 {
     public BlackTheme Theme { get; init; } = null!;
     public Color? Color { get; init; }
@@ -437,7 +437,7 @@ public sealed class BlackArc : Control
 }
 
 /// <summary>One small cell per core with its load filled from below.</summary>
-public sealed class BlackCores : Control
+public sealed class BlackCores : Control, IColourGraph
 {
     public BlackTheme Theme { get; init; } = null!;
     private IReadOnlyList<double> loads = Array.Empty<double>();

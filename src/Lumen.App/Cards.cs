@@ -10,6 +10,7 @@ public static class Cards
 	{
         style=Settings.Successor(style);
         var control = CreateNative(kind, style, index, p, m, s);
+        TextColours.Own(control, s.ActiveWidget ?? s.Widgets.FirstOrDefault(w => w.Kind == kind), p.Dark, index);
         SensorDetails.Design(control, Settings.Successor(style));
         if (InstrumentDesigns.Contains(style) && control is Border frame && control is not InstrumentTile)
             InstrumentDesigns.Frame(frame, style, p, m);

@@ -165,9 +165,13 @@ public sealed partial class LocalDesignTile : SummaryTile
             level.Bar.Animate(fraction ?? 0, ColorFor(level.Key));
         }
         foreach (var dial in dials)
+        {
+            TextColours.Bind(dial.Dial,dial.Key);
             dial.Dial.Set(rows.First(r => r.Key == dial.Key).Fraction ?? 0, ColorFor(dial.Key), P.Track);
+        }
         if (vram != null)
         {
+            TextColours.Bind(vram,"gpu.vram.used");
             var gpu = GpuGroup.Visible(Last.Snap, S).ElementAtOrDefault(Index);
             double fraction = gpu?.MemoryTotalMb is > 0 ? (gpu.MemoryUsedMb ?? 0) / gpu.MemoryTotalMb.Value : 0;
             vram.Animate(fraction, Accent);
@@ -382,7 +386,7 @@ public sealed partial class LocalDesignTile : SummaryTile
     }
 }
 
-internal sealed class CompactOrbit : Control
+internal sealed class CompactOrbit : Control, IColourGraph
 {
     private double fraction;
     private Color color, track;

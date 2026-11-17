@@ -27,13 +27,18 @@ public sealed partial class LocalDesignTile
     {
         foreach (var item in radial)
         {
+            TextColours.Bind(item.Plot,item.Key);
             var metric = SignatureMetric(item.Key, pair);
             item.Plot.Set(HistoryVisible(item.Key) ? metric.Series : Array.Empty<double>(), metric.Maximum, ColorFor(item.Key), P.Track);
         }
         foreach (var item in pixels)
+        {
+            TextColours.Bind(item.Gauge,item.Key);
             item.Gauge.Set(rows.FirstOrDefault(r => r.Key == item.Key)?.Fraction, ColorFor(item.Key), P.Track);
+        }
         if (horizon != null)
         {
+            TextColours.Bind(horizon,horizonPrimary,horizonSecondary);
             var first = SignatureMetric(horizonPrimary, pair);
             var second = SignatureMetric(horizonSecondary, pair);
             horizon.IsVisible = HistoryVisible(horizonPrimary) || HistoryVisible(horizonSecondary);
@@ -118,7 +123,7 @@ public sealed partial class LocalDesignTile
     }
 }
 
-internal sealed class PixelPercent : Control
+internal sealed class PixelPercent : Control, IColourGraph
 {
     private double? fraction;
     private Color color, track;
@@ -135,7 +140,7 @@ internal sealed class PixelPercent : Control
     }
 }
 
-internal sealed class RadialHistory : Control
+internal sealed class RadialHistory : Control, IColourGraph
 {
     private double[] values = Array.Empty<double>();
     private double maximum = 1;
@@ -178,7 +183,7 @@ internal sealed class RadialHistory : Control
     }
 }
 
-internal sealed class HorizonHistory : Control
+internal sealed class HorizonHistory : Control, IColourGraph
 {
     private double[] upper = Array.Empty<double>(), lower = Array.Empty<double>();
     private double maxUpper = 1, maxLower = 1;

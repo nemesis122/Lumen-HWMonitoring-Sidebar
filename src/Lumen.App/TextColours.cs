@@ -12,12 +12,12 @@ namespace Lumen.App;
 /// Coloured text (accents, hot readings in amber and red) stays as the design draws it. Every text takes the chosen
 /// colour at full strength, grey ones too (user request: all text is equally important).
 /// </summary>
-public static class TextColours
+public static partial class TextColours
 {
     private sealed class Seen { public Color Original, Applied; }
     private static readonly ConditionalWeakTable<TextBlock, Seen> seen = new();
 
-    public static bool Active(Settings s) => Parse(s.ValueColor) != null || Parse(s.LabelColor) != null || TextFonts.Active(s);
+    public static bool Active(Settings s) => Parse(s.ValueColor) != null || Parse(s.LabelColor) != null || TextFonts.Active(s) || ColourRules.Active(s);
 
     public static Color? Parse(string? hex) => !string.IsNullOrEmpty(hex) && Settings.IsHexColor(hex) ? Color.Parse(hex) : null;
 
@@ -25,6 +25,7 @@ public static class TextColours
     public static void Apply(Control root, Settings s)
     {
         TextFonts.Apply(root, s);
+        if (ApplyOverrides(root, s)) return;
         Color? value = Parse(s.ValueColor), label = Parse(s.LabelColor);
         if (value == null && label == null) return;
         var values = root is AioTile aio ? aio.ValueTexts : null;

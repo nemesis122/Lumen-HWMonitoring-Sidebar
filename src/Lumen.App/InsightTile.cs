@@ -74,6 +74,7 @@ public sealed class InsightTile : SummaryTile
 
     private void SetLane(Control lane,AreaChart chart,LiveMetric metric,string key,Color color)
     {
+        TextColours.Bind(chart,key);
         bool visible=RenderedKeys.Contains(key)&&S.Shows(key+".history")&&metric.Series.Any(double.IsFinite)
             &&(Summaries.ChartKey(Kind) is not string group||S.Shows(group));
         lane.IsVisible=visible;

@@ -29,6 +29,7 @@ public sealed class CpuCard : Card
 				Palette = p
 			};
 			Body.Children.Add(cores);
+            TextColours.Bind(cores,"cpu.cores");
 		}
 		stats = Stats(("cpu.power", L.T("Power")), ("cpu.voltage", L.T("Voltage")), ("cpu.fan", L.T("Fan")));
         WidgetPresentation.Sensor(hero, "cpu.temp");

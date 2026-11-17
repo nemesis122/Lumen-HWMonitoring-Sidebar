@@ -8,10 +8,11 @@ public static class AioDesigns
         WidgetStyle.AioBoardCard, WidgetStyle.AioDoubleTable,
         WidgetStyle.AioQuadrants, WidgetStyle.AioNetworkCenter
     };
-    public static bool Dashboard(WidgetStyle style) => DashboardStyles.Contains(style) || CaseDesigns.Contains(style);
+    public static bool Dashboard(WidgetStyle style) => DashboardStyles.Contains(style) || CaseDesigns.Contains(style) || CaseEditionDesigns.Contains(style);
     public static bool DashboardWide(WidgetStyle style) => style is WidgetStyle.AioBoardCard or WidgetStyle.AioDoubleTable or WidgetStyle.AioQuadrants;
     public static readonly WidgetStyle[] Styles =
     {
+        WidgetStyle.CaseAmdEdition,WidgetStyle.CaseNvidiaEdition,WidgetStyle.CaseIntelEdition,WidgetStyle.CaseStudio,WidgetStyle.CaseCommandCenter,
         WidgetStyle.CaseCyanGlass, WidgetStyle.AioBoardCard, WidgetStyle.AioDoubleTable,
         WidgetStyle.AioQuadrants, WidgetStyle.AioNetworkCenter,
         WidgetStyle.AioMainboardMap,
@@ -164,6 +165,7 @@ public static class AioDesigns
     }
     public static string Name(WidgetStyle style) => style switch
     {
+        _ when CaseEditionDesigns.Contains(style) => CaseEditionDesigns.For(style).Name,
         _ when CaseDesigns.Contains(style) => CaseDesigns.For(style).Name,
         WidgetStyle.AioSensorTable => "Sensor Table",
         WidgetStyle.AioTwoHalves => "Two Halves",

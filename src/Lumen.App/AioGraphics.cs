@@ -5,7 +5,7 @@ using Avalonia.Media;
 namespace Lumen.App;
 
 /// <summary>Vector-only decoration and meters. No sensor value is baked into these drawings.</summary>
-public sealed class AioMeter : Control
+public sealed class AioMeter : Control, IColourGraph
 {
     private readonly Color color,track; private readonly int mode; private double? level;private double[] samples=Array.Empty<double>();
     public AioMeter(Color color,Color track,int mode) {this.color=color;this.track=track;this.mode=mode;}
@@ -26,7 +26,7 @@ public sealed class AioMeter : Control
         }
     }
 }
-public sealed class AioRing : Control
+public sealed class AioRing : Control, IColourGraph
 {
     private readonly Color color,track; private readonly bool segmented,openArc; private double? level;
     // The segmented ring runs from cyan to violet; fields, so a chosen colour (RedSkin) reaches them too.

@@ -47,4 +47,6 @@ public sealed class WidgetSlot
 
 	// Accent colour as #RRGGBB; empty uses the colour of the widget kind.
 	public string Accent { get; set; } = "";
+    public WidgetColours Colours { get; set; } = new();
+    public Dictionary<string, SensorColours> SensorColours { get; set; } = new();
 }

@@ -13,17 +13,17 @@ public class ColumnHeightTests
     public static IEnumerable<object[]> Dashboards() => AioDesigns.DashboardStyles.SelectMany(s => new[] { 2, 3, 4, 5, 6 }.Select(c => new object[] { s, c }));
     public static IEnumerable<object[]> AllDesigns() => Settings.Selectable.SelectMany(s => new[] { 2, 3, 4, 5, 6 }.Select(c => new object[] { s, c }));
 
-    public static void Audit(WidgetStyle design, int columns, bool dashboard)
+    public static void Audit(WidgetStyle design, int columns, bool dashboard,double width=300,double maximumWidth=double.PositiveInfinity)
     {
         int warningCount = UiHost.LayoutWarnings.Count;
         Ui.UseFont("inter");
-        var settings = Settings.Starter(); settings.Width = 300; settings.Columns = columns; settings.Density = Density.Fit;
+        var settings = Settings.Starter(); settings.Width = width; settings.Columns = columns; settings.Density = Density.Fit;
         settings.PageNames = new() { "HW", "INFO" };
         DesignWidgetSelection.Apply(settings, design);
         var (snapshot, history) = Render.Demo();
         typeof(SidebarView).GetField("page", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!.SetValue(null, 1);
         var sidebar = new SidebarView(settings, Palette.For(true, false)); sidebar.Update(snapshot, history);
-        var window = new Window { Content = sidebar, Width = SidebarView.WindowWidth(settings), Height = 1040 };
+        var window = new Window { Content = sidebar, Width = SidebarView.WindowWidth(settings,maximumWidth), Height = 1040 };
         try
         {
             window.Show();
@@ -64,7 +64,7 @@ public class ColumnHeightTests
                 }
                 sidebar.Update(snapshot with { Cpu = snapshot.Cpu! with { Temperature = 50 + pass * 7 } }, history);
             }
-            Assert.Equal(columns, settings.Columns); Assert.Equal(300, settings.Width); Assert.Equal(Density.Fit, settings.Density);
+            Assert.Equal(columns, settings.Columns); Assert.Equal(width, settings.Width); Assert.Equal(Density.Fit, settings.Density);
             Assert.Equal(new[] { "HW", "INFO" }, settings.PageNames);
             if (dashboard) Assert.DoesNotContain(UiHost.LayoutWarnings.Skip(warningCount), message => message.Contains("cycle", StringComparison.OrdinalIgnoreCase));
         }

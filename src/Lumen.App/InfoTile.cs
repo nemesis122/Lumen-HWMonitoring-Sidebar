@@ -952,6 +952,7 @@ public sealed class InfoTile : Border, IWidget, INamed
 			Color fill = d.Life is < 10 ? Palette.Alpha(P.Ramp[^1], 1) : d.Life is < 30 ? Palette.Alpha(P.Ramp[2], 1) : P.Calm;
 			if (row.Bar != null)
 			{
+                TextColours.Bind(row.Bar,"drive:"+d.Id+":life");
 				row.Bar.Opacity = d.Life.HasValue ? 1 : 0;
 			}
 			switch (row.Bar)

@@ -62,8 +62,10 @@ internal static class PanelDraw
 }
 
 /// <summary>The gauge drawing of a Panel value (12 forms). Its numbers are separate live text placed by the layout.</summary>
-public sealed class PanelGauge : Control
+public sealed class PanelGauge : Control, IColourGraph
 {
+    public Color? FillColor { get; init; }
+    public Color? OtherColor { get; init; }
     public string Mode { get; init; } = "dots";
     public PanelTheme Theme { get; init; } = PanelTheme.For("red");
     /// <summary>A second value (inner ring of the double ring).</summary>
@@ -80,7 +82,7 @@ public sealed class PanelGauge : Control
     public override void Render(DrawingContext g)
     {
         double w = Bounds.Width, h = Bounds.Height; if (w < 4 || h < 4) return;
-        var t = Theme; double f = first ?? 0; bool hot = Hot;
+        var t = Theme; double f = first ?? 0; bool hot = Hot && FillColor == null;
         Color accent = t.Accent, off = Color.Parse("#2A2A2E"), hotFill = t.Hot;
         var center = new Point(w / 2, h / 2); double r = Math.Min(w, h) / 2 - 2;
         switch (Mode)
@@ -113,7 +115,7 @@ public sealed class PanelGauge : Control
                 g.DrawEllipse(null, PanelDraw.P(Color.Parse("#26262A"), sw), center, ro, ro);
                 g.DrawEllipse(null, PanelDraw.P(Color.Parse("#26262A"), sw), center, ri, ri);
                 if (first is double a) g.DrawGeometry(null, new Pen(PanelDraw.B(accent), sw, lineCap: PenLineCap.Round), PanelDraw.Arc(center, ro, -Math.PI / 2, a * Math.PI * 2));
-                if (second is double b) g.DrawGeometry(null, new Pen(PanelDraw.B(b >= .9 ? t.Soft : Color.Parse("#E8E8EA")), sw, lineCap: PenLineCap.Round), PanelDraw.Arc(center, ri, -Math.PI / 2, b * Math.PI * 2));
+                if (second is double b) g.DrawGeometry(null, new Pen(PanelDraw.B(OtherColor ?? (b >= .9 ? t.Soft : Color.Parse("#E8E8EA"))), sw, lineCap: PenLineCap.Round), PanelDraw.Arc(center, ri, -Math.PI / 2, b * Math.PI * 2));
                 break;
             }
             case "hex":
@@ -231,7 +233,7 @@ public sealed class PanelGauge : Control
 }
 
 /// <summary>A history graph in a red grid (the panel's "graph paper").</summary>
-public sealed class PanelGraph : Control
+public sealed class PanelGraph : Control, IColourGraph
 {
     public PanelTheme Theme { get; init; } = PanelTheme.For("red");
     public int Cells { get; init; } = 6;
@@ -265,8 +267,9 @@ public sealed class PanelGraph : Control
 }
 
 /// <summary>Grey bar (free space, used memory) and LED strip (header variant).</summary>
-public sealed class PanelBar : Control
+public sealed class PanelBar : Control, IColourGraph
 {
+    public Color? FillColor { get; init; }
     public PanelTheme Theme { get; init; } = PanelTheme.For("red");
     public bool Leds { get; init; }
     private double fraction;
@@ -277,7 +280,7 @@ public sealed class PanelBar : Control
         if (!Leds)
         {
             g.DrawRectangle(PanelDraw.B(Color.Parse("#2C2C2F")), null, new Rect(0, 0, w, h));
-            g.DrawRectangle(PanelDraw.B(Color.Parse("#8E8E93")), null, new Rect(0, 0, w * fraction, h));
+            g.DrawRectangle(PanelDraw.B(FillColor ?? Color.Parse("#8E8E93")), null, new Rect(0, 0, w * fraction, h));
             return;
         }
         int n = 22; double step = w / n;
@@ -287,7 +290,7 @@ public sealed class PanelBar : Control
 }
 
 /// <summary>Usage per core as small boxes filled from the bottom.</summary>
-public sealed class PanelCoreCells : Control
+public sealed class PanelCoreCells : Control, IColourGraph
 {
     public PanelTheme Theme { get; init; } = PanelTheme.For("red");
     private IReadOnlyList<double> loads = Array.Empty<double>();

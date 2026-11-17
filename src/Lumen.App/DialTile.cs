@@ -234,6 +234,7 @@ public sealed class DialTile : SummaryTile
 
 	private void SetDial(double? value, string text, string label, double fraction, Color color)
 	{
+        BindPrimary(dial);
 		// A hidden or missing main value leaves out the whole gauge rather than showing an empty ring.
 		dialBox.IsVisible = value.HasValue;
 		dialValue.Text = value.HasValue ? text : "—";
@@ -470,6 +471,7 @@ public sealed class DialTile : SummaryTile
 		upChart.Max = top;
 		downChart.Set(a, tint);
 		upChart.Set(b, up);
+        TextColours.Bind(downChart,"net.down");TextColours.Bind(upChart,"net.up");
 		// Scale in four steps; the labels are drawn with the dashed lines, so they stay on them when the
 		// chart grows with the sidebar.
 		lines.Labels = Enumerable.Range(0, 5).Select(i => i == 4 ? "0" : Format.Rate(top * (4 - i) / 4.0)).ToArray();
@@ -574,7 +576,7 @@ public sealed class DialTile : SummaryTile
 }
 
 // 270° ring: grey track and a coloured part for the value, open at the bottom.
-public sealed class DialArc : Control
+public sealed class DialArc : Control, IColourGraph
 {
 	private double fraction;
 

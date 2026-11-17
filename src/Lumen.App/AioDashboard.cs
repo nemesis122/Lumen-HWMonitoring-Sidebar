@@ -68,6 +68,7 @@ public sealed partial class AioTile
     private void UpdateDashboard()
     {
         UpdateCasePlots();
+        if(CaseEditionDesigns.Contains(style))UpdateCaseEditionValues();
         foreach (var (key, min, max) in dashboardLimits)
         {
             if (readings.TryGetValue(key, out var row) && dashboardExtrema.TryGetValue(key, out var limits))
@@ -184,7 +185,7 @@ public sealed partial class AioTile
     {
         var body = new DashboardVertical(8);
         body.Add(DashboardText(casePlan ? "Case overview" : "Mainboard map", 14, true), false);
-        body.Add(new DashboardBoardPicture(casePlan ? dashboardCase.Value : mapArtwork.Value, DashboardAccent, Ui.GraphFont, casePlan) { MinHeight = 260, Tag = "graphic" });
+        body.Add(new DashboardBoardPicture(casePlan ? dashboardCase.Value : mapArtwork.Value, DashboardAccent, Ui.GraphFont, casePlan) { MinHeight = 260, MaxWidth = Settings.MaxColumnWidth, Tag = "graphic" });
         if (summary) body.Add(DashboardSummary(parts), false);
         var frame = DashboardFrame(body); frame.Tag = "dashboard-picture"; return frame;
     }
@@ -204,6 +205,7 @@ public sealed partial class AioTile
 
     private void BuildDashboard(List<AioReading> rows)
     {
+        if (CaseEditionDesigns.Contains(style)) { BuildCaseEdition(rows); return; }
         if (CaseDesigns.Contains(style)) { BuildCaseOverlay(rows); return; }
         dashboardLimits.Clear(); dashboardTraffic = null; coreBars = null; mainboardCores = null;
         DashboardHeightGrowth = 0; dashboardLayout = null;
@@ -431,7 +433,7 @@ public sealed class DashboardBoardPicture(Bitmap board, Color accent, FontFamily
     }
 }
 
-public sealed class DashboardTrafficPlot(Color downColor, Color upColor, Color gridColor, Color labelColor, bool showDown, bool showUp) : Control
+public sealed class DashboardTrafficPlot(Color downColor, Color upColor, Color gridColor, Color labelColor, bool showDown, bool showUp) : Control, IColourGraph
 {
     private double[] down = Array.Empty<double>(), up = Array.Empty<double>();
     public void Set(double[] first, double[] second) { down = first; up = second; InvalidateVisual(); }

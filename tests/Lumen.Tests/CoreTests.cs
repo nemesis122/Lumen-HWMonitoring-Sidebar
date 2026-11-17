@@ -77,7 +77,7 @@ public class SettingsTests
             Width = 9000, IntervalMs = 1, TemperatureWarning = double.NaN, Screen = -3,
             Widgets = new() { new() { Kind = WidgetKind.Network }, new() { Kind = WidgetKind.Network, Visible = false } }
         });
-        Assert.Equal(440, s.Width);
+        Assert.Equal(640, s.Width);
         Assert.Equal(500, s.IntervalMs);
         Assert.Equal(85, s.TemperatureWarning);
         Assert.Equal(0, s.Screen);

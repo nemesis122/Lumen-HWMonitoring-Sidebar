@@ -92,6 +92,7 @@ public sealed class CoolingCard : Card
 						MinWidth = 30.0
 					};
 					TextBlock textBlock2 = Ui.Text("", 11.5, P.Ink, FontWeight.Medium, numbers: true);
+                    TextColours.Bind(meter,"fan:"+item.Name);
 					textBlock2.Width = 72.0;
 					textBlock2.TextAlignment = TextAlignment.Right;
 					fans.Children.Add(Ui.Columns("Auto,*,Auto", textBlock, meter, textBlock2));

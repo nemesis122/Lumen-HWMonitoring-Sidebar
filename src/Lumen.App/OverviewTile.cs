@@ -547,6 +547,8 @@ public sealed class OverviewTile : Border, IWidget, INamed
 
 	private void Fill(Cell cell, OverviewRow r, int index, History h)
 	{
+        if(cell.Shape!=null)TextColours.Bind(cell.Shape,r.Key);
+        if(cell.Chart!=null)TextColours.Bind(cell.Chart,r.Key);
 		cell.Caption.Text = Caption(r);
 		cell.Main.Text = r.Main;
 		cell.Sub.Text = r.Sub;

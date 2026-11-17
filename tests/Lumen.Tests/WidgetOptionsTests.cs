@@ -113,7 +113,7 @@ public class WidgetOptionsTests
                 int layouts = 0; window.LayoutUpdated += (_, _) => layouts++;
                 for (int i = 0; i < 3; i++) { Dispatcher.UIThread.RunJobs(); window.CaptureRenderedFrame(); }
                 Assert.Equal(0, layouts);
-                Assert.Empty(UiHost.LayoutWarnings);
+                Assert.True(UiHost.LayoutWarnings.IsEmpty,$"{style}/{edge}: "+string.Join("; ",UiHost.LayoutWarnings.Take(3)));
             }
             finally { window.Close(); }
         }

@@ -39,6 +39,7 @@ public sealed class GpuCard : Card
 				Palette = p
 			};
 			Body.Children.Add(Ui.Stack(5.0, Ui.Columns("*,Auto", Card.Label("VRAM", p), vram), vramBar));
+            TextColours.Bind(vramBar,"gpu.vram.used");
 		}
 		stats = Stats(("gpu.power", L.T("Power")), ("gpu.hotspot", L.T("Hot spot")), ("gpu.fan", L.T("Fan")));
         WidgetPresentation.Sensor(hero, "gpu.temp");

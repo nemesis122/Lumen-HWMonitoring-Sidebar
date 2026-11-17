@@ -256,7 +256,12 @@ public enum WidgetStyle
     CaseVioletOrbit,
     CaseIndustrialSteel,
     CaseCompactSensors,
-    CaseLargeValues
+    CaseLargeValues,
+    CaseAmdEdition,
+    CaseNvidiaEdition,
+    CaseIntelEdition,
+    CaseStudio,
+    CaseCommandCenter
 }
 
 

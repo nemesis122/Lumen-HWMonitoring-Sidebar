@@ -5,7 +5,7 @@ using Avalonia.Media;
 
 namespace Lumen.App;
 
-public sealed class Meter : Control
+public sealed class Meter : Control, IColourGraph
 {
 	private bool started;
 
@@ -14,6 +14,7 @@ public sealed class Meter : Control
 	public Color Color { get; set; } = Colors.DeepSkyBlue;
 
 	public Palette? Palette { get; set; }
+	public Color? Tint { get; set; }
 
 	public int Segments { get; set; }
 
@@ -81,7 +82,7 @@ public sealed class Meter : Control
 			context.DrawRectangle(brush, null, new RoundedRect(rect, Math.Min(num2, 2.0)));
 			if (num7 > 0.0)
 			{
-				Color color = (RampBySegment ? Palette.At(((double)i + 0.5) / (double)Segments) : Color);
+				Color color = Tint ?? (RampBySegment ? Palette.At(((double)i + 0.5) / (double)Segments) : Color);
 				context.DrawRectangle(new SolidColorBrush(color), null, new RoundedRect(rect.WithWidth(num5 * num7), Math.Min(num2, 2.0)));
 			}
 		}

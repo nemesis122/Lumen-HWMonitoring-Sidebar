@@ -77,11 +77,13 @@ public sealed class InstrumentTile : SummaryTile
             if (values.TryGetValue(row.Key,out var field)) { field.Text = row.Value; ToolTip.SetTip(field,row.Label + ": " + row.Value); }
         }
         transfers.Update(rows.Where(DriveTransferPairs.IsRate).ToArray(), style, P, Last.Snap);
-        foreach (var (key,scale) in scales) scale.Set(Level(rows.First(r => r.Key == key)), Accent, P.Soft);
-        foreach (var (id,scale) in usage) scale.Set(Last.Snap.Disks.FirstOrDefault(d => d.Id == id)?.UsedPercent / 100, Accent, P.Soft);
+        foreach (var (key,scale) in scales) { TextColours.Bind(scale,key);scale.Set(Level(rows.First(r => r.Key == key)), Accent, P.Soft); }
+        foreach (var (id,scale) in usage) { TextColours.Bind(scale,"drive:"+id+":used");scale.Set(Last.Snap.Disks.FirstOrDefault(d => d.Id == id)?.UsedPercent / 100, Accent, P.Soft); }
+        if(memoryLevel!=null)TextColours.Bind(memoryLevel,"mem.load");
         memoryLevel?.Set(Last.Snap.Memory?.Load / 100, Accent, P.Soft);
         foreach (var (key,chart) in charts)
         {
+            TextColours.Bind(chart,key);
             var gpu = GpuGroup.Visible(Last.Snap,S).ElementAtOrDefault(Index);
             string source = key.StartsWith("gpu.") && gpu != null ? "gpu." + gpu.Id + key[3..] : key;
             var samples = Last.History.Read(source); chart.IsVisible = samples.Any(double.IsFinite);
@@ -156,7 +158,7 @@ public sealed class InstrumentTile : SummaryTile
     }
 }
 
-public sealed class InstrumentScale : Control
+public sealed class InstrumentScale : Control, IColourGraph
 {
     public bool Labels { get; init; }
     public bool Temperature { get; init; }

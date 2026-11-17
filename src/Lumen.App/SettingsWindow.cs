@@ -17,7 +17,7 @@ using Lumen.Core;
 
 namespace Lumen.App;
 
-public sealed class SettingsWindow : Window
+public sealed partial class SettingsWindow : Window
 {
 	private readonly Settings s;
 
@@ -1002,7 +1002,17 @@ public sealed class SettingsWindow : Window
             Rect(4,1,56,32,fill,4);
             if (AioDesigns.Dashboard(style))
             {
-                if (CaseDesigns.Contains(style))
+                if (CaseEditionDesigns.Contains(style))
+                {
+                    var look=CaseEditionDesigns.For(style);var ink=Palette.Brush(Color.Parse(look.Accent));
+                    Rect(5,2,54,30,Palette.Brush(Color.Parse("#0B1017")),3);
+                    Rect(24,5,17,25,brush3,2);Rect(29,11,7,7,ink,2);Rect(26,23,13,3,ink,1);
+                    if(look.Layout==CaseEditionDesigns.Arrangement.Intel){Rect(8,4,46,6,ink,1);Rect(8,13,14,15,fill,1);}
+                    else if(look.Layout==CaseEditionDesigns.Arrangement.Command){Rect(8,5,13,15,ink,2);Rect(8,25,46,4,ink,1);}
+                    else {Rect(8,5,14,8,ink,2);Rect(8,17,14,12,fill,2);}
+                    Rect(43,9,12,9,ink,2);Rect(43,21,12,8,fill,2);
+                }
+                else if (CaseDesigns.Contains(style))
                 {
                     var look = CaseDesigns.For(style);
                     var accent = Palette.Brush(Color.Parse(look.Accent));
@@ -1786,6 +1796,7 @@ public sealed class SettingsWindow : Window
                 Ui.Columns("140,*", Ui.Text(L.T("Label size"), 12.5, p.Soft), Slide(0.5, 2.0, 0.05, slot.LabelScale, v => slot.LabelScale = v, v => $"{v * 100:0} %")));
             sizing.Margin = new Thickness(28, 8, 0, 8);
             stackPanel.Children.Add(sizing);
+            stackPanel.Children.Add(WidgetColourSection(slot));
             var sensors = new StackPanel { Spacing = 2, Margin = new Thickness(28, 4, 0, 8) };
             sensors.Children.Add(SectionTitle(L.T("Sensor values")));
             var recommended = new Button { Name = "sensor-recommended-" + slot.Kind, Content = L.T("Recommended selection"), Padding = new Thickness(10, 5), Margin = new Thickness(0, 4, 0, 8) };
@@ -1866,7 +1877,7 @@ public sealed class SettingsWindow : Window
                         WidgetSensors.Select(s, aioOverview, aioKey, aioCheck.IsChecked == true, this.snapshot());
                         changed(); Build();
                     };
-                    sensors.Children.Add(aioCheck);
+                    sensors.Children.Add(SensorColourRow(slot, aioKey, aioCheck));
                 }
             }
             else
@@ -1897,7 +1908,7 @@ public sealed class SettingsWindow : Window
                     // Refresh group checkboxes too; enabling a child also opens its legacy parent.
                     Build();
                 };
-                sensors.Children.Add(sensorCheck);
+                sensors.Children.Add(SensorColourRow(slot, sensorKey, sensorCheck));
             }
             }
             if (sensors.Children.Count == 1) sensors.Children.Add(Ui.Text(L.T("No sensor values for this widget."), 12, p.Soft));
@@ -2129,23 +2140,10 @@ public sealed class SettingsWindow : Window
 				s.Colors = hex;
 			}));
 		}
-		WrapPanel TextSwatches(Func<string> get, Action<string> set)
-		{
-			WrapPanel panel = new WrapPanel { MaxWidth = 330.0, HorizontalAlignment = HorizontalAlignment.Right };
-			LinearGradientBrush own = new LinearGradientBrush
-			{
-				StartPoint = new RelativePoint(0.0, 0.0, RelativeUnit.Relative),
-				EndPoint = new RelativePoint(1.0, 0.0, RelativeUnit.Relative)
-			};
-			own.GradientStops.Add(new GradientStop(Color.Parse(p.Dark ? "#FFFFFF" : "#151B2A"), 0.0));
-			own.GradientStops.Add(new GradientStop(Color.Parse("#8A93A3"), 1.0));
-			panel.Children.Add(Swatch(own, get() == "", L.T("As the design draws it"), delegate { set(""); }, 50.0));
-			foreach (var (hex, key) in new[] { ("#FFFFFF", "White"), ("#D6DAE1", "Light grey"), ("#8A93A3", "Grey"), ("#151B2A", "Black") }.Concat(Palette.Presets.Where(x => x.Hex != "#94A3B8")))
-				panel.Children.Add(Swatch(Palette.Brush(Color.Parse(hex)), get().Equals(hex, StringComparison.OrdinalIgnoreCase), L.T(key), delegate { set(hex); }));
-			return panel;
-		}
-		WrapPanel valueSwatches = TextSwatches(() => s.ValueColor, v => s.ValueColor = v);
-		WrapPanel labelSwatches = TextSwatches(() => s.LabelColor, v => s.LabelColor = v);
+        var titleColour = ColourChoice("global-title-colour", () => s.TitleColor, c => s.TitleColor = c, "As the design draws it");
+        var valueColour = ColourChoice("global-value-colour", () => s.ValueColor, c => s.ValueColor = c, "As the design draws it");
+        var labelColour = ColourChoice("global-label-colour", () => s.LabelColor, c => s.LabelColor = c, "As the design draws it");
+        var graphColour = ColourChoice("global-graph-colour", () => s.GraphColor, c => s.GraphColor = c, "As the design draws it");
 		bool flag2 = s.Theme switch
 		{
 			ThemeMode.Dark => true,
@@ -2183,7 +2181,7 @@ public sealed class SettingsWindow : Window
 		}
 		return new Control[5]
 		{
-			Section(L.T("Colours"), Row(L.T("Theme"), editor, null, "Theme"), Row(L.T("Colour scheme"), wrapPanel, text + ((s.Colors == "state") ? "" : (" · " + L.T("Hot readings still turn amber and red."))), "Colors"), Row(L.T("Value colour"), valueSwatches, L.T("Numbers and amounts in every design. Hot readings still turn amber and red."), "ValueColor"), Row(L.T("Label colour"), labelSwatches, L.T("Names and captions (CPU, Load, Temp …) in every design."), "LabelColor"), Row(L.T("Background"), wrapPanel2, help, "Background")),
+            Section(L.T("Colours"), Row(L.T("Theme"), editor, null, "Theme"), Row(L.T("Colour scheme"), wrapPanel, text + ((s.Colors == "state") ? "" : (" · " + L.T("Hot readings still turn amber and red."))), "Colors"), Row(L.T("Title colour"), titleColour, null, "TitleColor"), Row(L.T("Value colour"), valueColour, L.T("Default for values. Widgets and sensors can override it."), "ValueColor"), Row(L.T("Label colour"), labelColour, L.T("Default for names and captions."), "LabelColor"), Row(L.T("Graph colour"), graphColour, null, "GraphColor"), Row(L.T("Automatic warning colours"), Toggle(s.AutomaticWarningColors, v => s.AutomaticWarningColors = v), L.T("Use amber/red for hot readings; widgets and sensors can override this."), "AutomaticWarningColors"), Row(L.T("Background"), wrapPanel2, help, "Background")),
 			Section(L.T("Effects"), Row(L.T("Glass effect"), Toggle(s.Glass, delegate(bool v)
 			{
 				s.Glass = v;
@@ -2455,7 +2453,7 @@ public sealed class SettingsWindow : Window
 		}, (int)s.Density, delegate(int i)
 		{
 			s.Density = (Density)i;
-		}, rebuild: true), s.Horizontal ? L.T("In the bar, Compact makes the widgets smaller and tighter.") : L.T("Automatic fills the height up to the taskbar, without scrolling."), "Density"), (s.Horizontal && s.BarFullWidth) ? null : Row(s.Horizontal ? L.T("Widget width") : L.T("Width"), Slide(240.0, 440.0, 10.0, s.Width, delegate(double v)
+		}, rebuild: true), s.Horizontal ? L.T("In the bar, Compact makes the widgets smaller and tighter.") : L.T("Automatic fills the height up to the taskbar, without scrolling."), "Density"), (s.Horizontal && s.BarFullWidth) ? null : Row(s.Horizontal ? L.T("Widget width") : L.T("Width"), Slide(Settings.MinColumnWidth, Settings.MaxColumnWidth, 10.0, s.Width, delegate(double v)
 		{
 			s.Width = v;
 		}, (double v) => $"{v:0} px"), null, "Width"));

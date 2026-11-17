@@ -6,7 +6,7 @@ using Avalonia.Media;
 
 namespace Lumen.App;
 
-public sealed class AreaChart : Control
+public sealed class AreaChart : Control, IColourGraph
 {
 	private double shift;
 

@@ -61,7 +61,7 @@ public sealed class PureLoadIndicator : Border
 }
 
 // Ten equal segments; partial fills preserve small loads such as 1% or 6%.
-public sealed class PureSegmentTrack : Control
+public sealed class PureSegmentTrack : Control, IColourGraph
 {
     public double Fraction { get; private set; }
     private Color accent, track;

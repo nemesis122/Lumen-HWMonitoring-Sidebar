@@ -151,6 +151,7 @@ public sealed class PillTile : SummaryTile
 		}
 		// The capsule shows download and upload side by side, so it is not filled for one of them.
 		fill.Animate((Kind is WidgetKind.Network or WidgetKind.Drives) ? 0.0 : (sum.Second ?? sum.Fraction), Palette.Alpha(c, P.Dark ? 0.24 : 0.2));
+        if(sum.Second.HasValue)BindSecondary(fill);else BindPrimary(fill);
 		string text = sum.Glyph + c;
 		if (iconKey != text)
 		{

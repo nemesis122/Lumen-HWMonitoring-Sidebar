@@ -70,6 +70,7 @@ public sealed class ComparisonTile : SummaryTile
     private AreaChart Plot(string key,Color color)
     {
         var chart=new AreaChart{Height=M.Chart*(style==WidgetStyle.Duplex?.45:.35),Color=color,FillOpacity=.08,LineWidth=1.4};
+        TextColours.Bind(chart,key);
         // Parallel charts retain their geometry; elastic reading rows absorb free height.
         chart.Tag="fixed";
         charts[key]=chart;return chart;

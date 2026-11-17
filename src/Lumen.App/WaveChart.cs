@@ -7,7 +7,7 @@ using Avalonia.Media;
 namespace Lumen.App;
 
 // Native vector graphics: all plotted samples and levels come from actual readings.
-public sealed class WaveChart : Control
+public sealed class WaveChart : Control, IColourGraph
 {
     public Palette Theme { get; set; } = null!;
     private double[] samples = Array.Empty<double>();

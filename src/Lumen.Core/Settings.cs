@@ -10,6 +10,8 @@ namespace Lumen.Core;
 
 public sealed class Settings
 {
+    public const double MinColumnWidth = 240;
+    public const double MaxColumnWidth = 640;
 	public const string StateColors = "state";
 
 	public const string WindowsAccent = "windows";
@@ -101,6 +103,9 @@ public sealed class Settings
 
 	/// <summary>Colour of the names and captions (CPU, Load, Temp …) in every design; "" keeps the design's own colour.</summary>
 	public string LabelColor { get; set; } = "";
+    public string TitleColor { get; set; } = "";
+    public string GraphColor { get; set; } = "";
+    public bool AutomaticWarningColors { get; set; } = true;
 
 	// English on the first start; the system language ("auto") and the others stay selectable.
 	public string Language { get; set; } = "en";
@@ -246,6 +251,7 @@ public sealed class Settings
         WidgetStyle.SplitFlap,
         WidgetStyle.MeasureTape,
         WidgetStyle.HardwareMap,
+        WidgetStyle.CaseAmdEdition,WidgetStyle.CaseNvidiaEdition,WidgetStyle.CaseIntelEdition,WidgetStyle.CaseStudio,WidgetStyle.CaseCommandCenter,
         WidgetStyle.CaseCyanGlass, WidgetStyle.AioBoardCard, WidgetStyle.AioDoubleTable,
         WidgetStyle.AioQuadrants, WidgetStyle.AioNetworkCenter,
         WidgetStyle.AioTypeBlock, WidgetStyle.AioOrbitNetwork, WidgetStyle.AioThermalGrid,
@@ -473,7 +479,7 @@ public sealed class Settings
 				item.Accent = (item.Accent != null && IsHexColor(item.Accent.Trim())) ? item.Accent.Trim() : "";
 			}
 		}
-		s.Width = (double.IsFinite(s.Width) ? Math.Clamp(s.Width, 240.0, 440.0) : 300.0);
+		s.Width = (double.IsFinite(s.Width) ? Math.Clamp(s.Width, MinColumnWidth, MaxColumnWidth) : 300.0);
 		s.IntervalMs = Math.Clamp(s.IntervalMs, 500, 5000);
 		s.TemperatureWarning = (double.IsFinite(s.TemperatureWarning) ? Math.Clamp(s.TemperatureWarning, 50.0, 110.0) : 85.0);
 		s.Opacity = (double.IsFinite(s.Opacity) ? Math.Clamp(s.Opacity, 0.2, 1.0) : 0.55);
@@ -617,6 +623,7 @@ public sealed class Settings
             if (s.Widgets.Any(w => w.Kind == WidgetKind.Overview && AioDesigns.Contains(w.Style))) AioDesigns.ShowAllParts(s);
             s.AioWidgetSwitches = true;
         }
+        ColourRules.Normalize(s);
 		return s;
 	}
 

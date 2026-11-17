@@ -1,8 +1,24 @@
-# Lumen 4.5.1 – Fonts, colours and flexible layouts
+# Lumen 4.5.2 – Case editions, sensor colours and wider layouts
 
-A portable hardware-monitoring sidebar for Windows 10 and 11 with **104 designs**, including **46 All-in-One designs** that show the whole PC in one card. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
+A portable hardware-monitoring sidebar for Windows 10 and 11 with **109 designs**, including **51 All-in-One designs** that show the whole PC in one card. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
 
-**[Download Lumen 4.5.1](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.5.1)** · [All designs](docs/style-gallery.md) · [Release notes 4.5.1](docs/release-notes/v4.5.1.md) · [4.5.0](docs/release-notes/v4.5.0.md) · [4.4.0](docs/release-notes/v4.4.0.md) · [4.3.0](docs/release-notes/v4.3.0.md) · [4.2.1](docs/release-notes/v4.2.1.md) · [4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
+**[Download Lumen 4.5.2](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v4.5.2)** · [All designs](docs/style-gallery.md) · [Release notes 4.5.2](docs/release-notes/v4.5.2.md) · [4.5.1](docs/release-notes/v4.5.1.md) · [4.5.0](docs/release-notes/v4.5.0.md) · [4.4.0](docs/release-notes/v4.4.0.md) · [4.3.0](docs/release-notes/v4.3.0.md) · [4.2.1](docs/release-notes/v4.2.1.md) · [4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
+
+## New in 4.5.2
+
+- **Five new live case editions:** AMD, NVIDIA, Intel, Studio and Command Center, each with different native widgets and layouts. Hardware models and values come from your detected devices.
+- **240–640 px per column**, **one to six columns**, and **one to six named registers**. Automatic density fills the work area above the taskbar; Comfortable/Compact retain scrolling. [Layout guide](docs/width640.md).
+- **Widget and sensor colours:** independent title/label/value/graph overrides, palette or HEX, inheritance/reset and optional automatic warning colours. Profiles and exported themes include the settings. [Colour guide](docs/widget-sensor-colours.md).
+- **Colour assignment fixes** for Panel/Black graphs and bars, core cells, gauges, additional sensor rows, volume bars, repeated RAM readings and Notes editing.
+- **More stable layouts:** corrected wide-height fitting, narrow/extreme-size case widgets, shifting memory values and enlarged rings. Selected sensors, fonts and placement remain configurable.
+- **29 font options retained**, with separate global fonts for titles, labels, values and graph text, including readable, technical, monospaced, bold and graffiti/marker styles.
+
+Enable **Placement → Whole screen** for the wide Command Center. Existing width,
+columns, registers, density and sensor choices are preserved when selecting a design.
+
+[Full 4.5.2 release notes, screenshots and update instructions](docs/release-notes/v4.5.2.md)
+
+![Command Center in whole-screen mode, demo telemetry](docs/images/v4.5.2/CaseCommandCenter-3-columns.png)
 
 ## New in 4.5.1
 

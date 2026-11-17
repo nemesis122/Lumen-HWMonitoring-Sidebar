@@ -42,6 +42,7 @@ public sealed class DrivesCard : Card
 					Palette = P
 				};
 				TextBlock textBlock3 = Ui.Text("", 11.5, P.Soft, FontWeight.Normal, numbers: true);
+                TextColours.Bind(meter,"drive:"+item2.Id+":used");
 				TextBlock textBlock4 = Rate();
 				TextBlock textBlock5 = Rate();
                 WidgetPresentation.Sensor(textBlock4, "drives.read");

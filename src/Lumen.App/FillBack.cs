@@ -5,7 +5,7 @@ using Avalonia.Media;
 
 namespace Lumen.App;
 
-public sealed class FillBack : Control
+public sealed class FillBack : Control, IColourGraph
 {
 	private bool started;
 

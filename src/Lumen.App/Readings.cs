@@ -128,7 +128,7 @@ public static class Readings
 			foreach (VolumeInfo item4 in s.Volumes.Where((VolumeInfo v) => set.Shows("volume:" + v.Name)).Take(8))
 			{
 				double num2 = item4.UsedPercent / 100.0;
-				list.Add(new Reading(item4.Name, Format.Percent(item4.UsedPercent), num2, (num2 >= 0.9) ? p.Ramp[^1] : ((num2 >= 0.8) ? p.Ramp[2] : p.Cool)));
+				list.Add(new Reading(item4.Name, Format.Percent(item4.UsedPercent), num2, (num2 >= 0.9) ? p.Ramp[^1] : ((num2 >= 0.8) ? p.Ramp[2] : p.Cool)){Key="volume:"+item4.Name+":used"});
 			}
 			if (list.Count > 0)
 			{
