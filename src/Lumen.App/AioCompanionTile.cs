@@ -56,6 +56,7 @@ public sealed class AioCompanionTile : Border,IWidget,INamed
     /// <summary>The palette the extra's content is drawn with: the design's accent for Panel and Black designs.</summary>
     public static Palette Themed(WidgetStyle design,Palette p,Settings s)
     {
+        if(DarkAioDesigns.Contains(design))return p.Themed(Accents.Design(DarkAioDesigns.For(design).Accent,p),Color.Parse("#0C141C"));
         if(CaseEditionDesigns.Contains(design))return p.Themed(p.Chosen??Color.Parse(CaseEditionDesigns.For(design).Accent),Color.Parse("#0C141C"));
         if(AioDesigns.Red(design)&&!AioDesigns.Black(design)){var r=PanelTheme.For("red",p.Chosen);return p.Themed(r.Accent,r.Section);}
         if(AioDesigns.Panel(design)){var t=PanelTheme.For(s.PanelTheme,p.Chosen);return p.Themed(t.Accent,t.Section);}

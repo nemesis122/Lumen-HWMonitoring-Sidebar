@@ -67,7 +67,7 @@ public sealed partial class AioTile
 
     private void UpdateDashboard()
     {
-        UpdateCasePlots();
+
         if(CaseEditionDesigns.Contains(style))UpdateCaseEditionValues();
         foreach (var (key, min, max) in dashboardLimits)
         {
@@ -205,6 +205,7 @@ public sealed partial class AioTile
 
     private void BuildDashboard(List<AioReading> rows)
     {
+        if (DarkAioDesigns.Contains(style)) { BuildDarkDesign(rows); return; }
         if (CaseEditionDesigns.Contains(style)) { BuildCaseEdition(rows); return; }
         if (CaseDesigns.Contains(style)) { BuildCaseOverlay(rows); return; }
         dashboardLimits.Clear(); dashboardTraffic = null; coreBars = null; mainboardCores = null;

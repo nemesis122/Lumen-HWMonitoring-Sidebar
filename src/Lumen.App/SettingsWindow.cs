@@ -928,6 +928,11 @@ public sealed partial class SettingsWindow : Window
 	public static string StyleName(WidgetStyle style)
 	{
         if(style is WidgetStyle.AioMainboardMap or WidgetStyle.AioMainboardDesktop or WidgetStyle.AioMainboardStrips or WidgetStyle.AioMainboardGauges or WidgetStyle.AioMainboardMatrix or WidgetStyle.AioMainboardType)return AioDesigns.Name(style);
+        if (DarkAioDesigns.Contains(style))
+        {
+            var design = DarkAioDesigns.For(style);
+            return $"{design.Number} · {design.Name}";
+        }
         if (AioDesigns.Contains(style)) return "AIO · " + AioDesigns.Name(style);
 		return style switch
 		{
@@ -1007,7 +1012,32 @@ public sealed partial class SettingsWindow : Window
             Rect(4,1,56,32,fill,4);
             if (AioDesigns.Dashboard(style))
             {
-                if (CaseEditionDesigns.Contains(style))
+                if (DarkAioDesigns.Contains(style))
+                {
+                    var look = DarkAioDesigns.For(style);
+                    var tint = Palette.Brush(p.Chosen ?? Accents.Design(look.Accent, p));
+                    var secondary = Palette.Brush(p.Chosen ?? Accents.Design(look.Secondary, p));
+                    int family = (look.Number - 62) / 6;
+                    bool rings = look.Number is 68 or 71 or 82 or 85 or 90;
+                    bool rail = family is 0 or 2 or 3;
+                    if (rings)
+                    {
+                        Ellipse(12, 5, 13, 13, tint); Ellipse(38, 5, 13, 13, secondary);
+                        Ellipse(15, 8, 7, 7, fill); Ellipse(41, 8, 7, 7, fill);
+                        Rect(10, 24, 44, 4, fill2, 1);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < 3; i++)
+                        {
+                            double y = 5 + i * 8;
+                            if (rail) Rect(9, y, 13, 6, brush3, 1);
+                            Rect(rail ? 26 : 10, y + 1, 11 + (look.Number + i * 7) % 18, 2, i == 1 ? secondary : tint, 1);
+                            Rect(40, y + 4, 11, 1, fill2, 1);
+                        }
+                    }
+                }
+                else if (CaseEditionDesigns.Contains(style))
                 {
                     var look=CaseEditionDesigns.For(style);var ink=Palette.Brush(Color.Parse(look.Accent));
                     Rect(5,2,54,30,Palette.Brush(Color.Parse("#0B1017")),3);

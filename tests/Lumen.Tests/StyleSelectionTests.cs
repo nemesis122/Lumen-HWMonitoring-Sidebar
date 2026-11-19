@@ -52,7 +52,17 @@ public class StyleSelectionTests
         WidgetStyle.AioTypeBlock, WidgetStyle.AioOrbitNetwork, WidgetStyle.AioThermalGrid, WidgetStyle.AioSignalRack, WidgetStyle.AioIsometricCore, WidgetStyle.AioPrecision, WidgetStyle.AioStudioLight, WidgetStyle.AioInstrument, WidgetStyle.AioAuroraFusion, WidgetStyle.AioCarbonPulse, WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings
         , WidgetStyle.AioMainboardMap, WidgetStyle.AioMainboardDesktop,
         WidgetStyle.AioMainboardCores,
-        WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelHeader, WidgetStyle.AioPanelPlain, WidgetStyle.AioMainboardMapRed, WidgetStyle.AioMainboardCoresRed, WidgetStyle.AioTypeBlockRed, WidgetStyle.AioOrbitNetworkRed, WidgetStyle.AioThermalGridRed, WidgetStyle.AioSignalRackRed, WidgetStyle.AioIsometricCoreRed, WidgetStyle.AioPrecisionRed, WidgetStyle.AioStudioLightRed, WidgetStyle.AioInstrumentRed, WidgetStyle.AioAuroraFusionRed, WidgetStyle.AioCarbonPulseRed, WidgetStyle.AioIsometricAtlasRed, WidgetStyle.AioIsometricTilesRed, WidgetStyle.AioIsometricRigRed, WidgetStyle.AioIsometricPedestalsRed, WidgetStyle.AioIsometricCompactRed, WidgetStyle.AioIsometricRingsRed
+        WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelHeader, WidgetStyle.AioPanelPlain, WidgetStyle.AioMainboardMapRed, WidgetStyle.AioMainboardCoresRed, WidgetStyle.AioTypeBlockRed, WidgetStyle.AioOrbitNetworkRed, WidgetStyle.AioThermalGridRed, WidgetStyle.AioSignalRackRed, WidgetStyle.AioIsometricCoreRed, WidgetStyle.AioPrecisionRed, WidgetStyle.AioStudioLightRed, WidgetStyle.AioInstrumentRed, WidgetStyle.AioAuroraFusionRed, WidgetStyle.AioCarbonPulseRed, WidgetStyle.AioIsometricAtlasRed, WidgetStyle.AioIsometricTilesRed, WidgetStyle.AioIsometricRigRed, WidgetStyle.AioIsometricPedestalsRed, WidgetStyle.AioIsometricCompactRed, WidgetStyle.AioIsometricRingsRed,
+        WidgetStyle.AioTitaniumRack, WidgetStyle.AioNeonBackplate, WidgetStyle.AioAirflowMap,
+        WidgetStyle.AioTitaniumRackOriginal,
+        WidgetStyle.AioNeonBackplateOriginal,
+        WidgetStyle.AioAirflowMapOriginal,
+        WidgetStyle.AioTitaniumRackB,
+        WidgetStyle.AioNeonBackplateB,
+        WidgetStyle.AioAirflowMapB,
+        WidgetStyle.AioTitaniumRackC,
+        WidgetStyle.AioNeonBackplateC,
+        WidgetStyle.AioAirflowMapC
     };
     const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
 
@@ -73,7 +83,7 @@ public class StyleSelectionTests
                 var loaded = Settings.Load(file);
                 var restored = loaded.Widgets.Single(w => w.Kind == WidgetKind.Cpu);
                 bool toCyan = Settings.RemovedLayouts.Contains(style) || style == WidgetStyle.AioMinMax;
-                Assert.Equal(Expected.Contains(style) ? style : toCyan ? WidgetStyle.CaseCyanGlass : WidgetStyle.Standard, restored.Style);
+                Assert.Equal(Expected.Contains(style) ? style : toCyan ? WidgetStyle.CaseCyanGlass : DarkAioDesigns.WasRemoved(style) ? WidgetStyle.AioTitaniumRack : WidgetStyle.Standard, restored.Style);
                 Assert.Equal(3, restored.Page); Assert.Equal(2, restored.Column);
                 Assert.Equal("My CPU", restored.Name); Assert.False(restored.Visible);
                 Assert.Equal("keep notes", loaded.Notes); Assert.Equal(350, loaded.Width);
@@ -157,7 +167,7 @@ public class StyleSelectionTests
         foreach (var style in Settings.Retired)
         {
             var control = Cards.Create(WidgetKind.Cpu, style, 0, palette, Metrics.For(Density.Fit), settings);
-            if (Settings.RemovedLayouts.Contains(style) || style == WidgetStyle.AioMinMax) Assert.IsType<AioCompanionTile>(control);
+            if (Settings.RemovedLayouts.Contains(style) || style == WidgetStyle.AioMinMax || DarkAioDesigns.WasRemoved(style)) Assert.IsType<AioCompanionTile>(control);
             else Assert.IsType<CpuCard>(control);
         }
         return true;

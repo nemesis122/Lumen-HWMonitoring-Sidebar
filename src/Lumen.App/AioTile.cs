@@ -102,8 +102,11 @@ public sealed partial class AioTile : Border, IWidget, INamed
             +"|"+(slot?.ShowTitle??true)+(slot?.ShowHardware??true)+(slot?.Name??"")+"|"+L.Language+"|"+settings.Fahrenheit+"|"+(AioDesigns.Panel(style)?settings.PanelTheme+settings.PanelGauges+slot?.Accent:"")+(AioDesigns.Black(style)?AioDesigns.BlackLookOf(settings,style)+slot?.Accent:"");
         if((snap.Cpu?.CoreLoads.Count??0)>=2)lastCoreLoads=snap.Cpu!.CoreLoads;
         next+="|"+lastCoreLoads.Count+AioReadings.Selected(settings,"aio.cpu.coreloads");
-        next+="|"+settings.ShowNames+settings.Shows("aio.graphs")+slot?.HardwareName+"|"+string.Join('|',source.Widgets.Select(w=>w.Name+w.HardwareName+w.ShowHardware+w.ShowTitle+(AioDesigns.Switches.Contains(w.Kind)?w.Visible:true)));
+        next+="|"+settings.ShowNames+settings.Shows("aio.graphs")+slot?.HardwareName+"|"+string.Join('|',source.Widgets.Select(w=>w.Name+w.HardwareName+w.ShowHardware+w.ShowTitle+w.Accent+(AioDesigns.Switches.Contains(w.Kind)?w.Visible:true)));
         if (IsDashboard) next += "|columns:" + source.Columns;
+        if (DarkAioDesigns.Contains(style))
+            next += "|" + DriveOwner?.ShowTitle + "|" + DriveOwner?.ShowHardware
+                + "|" + DriveOwner?.Name + "|" + DriveOwner?.HardwareName + "|" + string.Join('|', snap.Disks.Select(d => d.Name));
         if(next!=shape) { shape=next; Build(list); if(settings.Horizontal)Horizontalize(); }
         UpdateCoreBars();
         foreach(var (key,meter) in meters) TextColours.Bind(meter,key);
@@ -136,6 +139,8 @@ public sealed partial class AioTile : Border, IWidget, INamed
             ToolTip.SetTip(chart,series.Any(double.IsFinite)?L.T("History chart"):L.T("No data"));
         }
         UpdateReferencePlots(h);
+        UpdateCasePlots();
+
         if (AioDesigns.Dashboard(style)) UpdateDashboard();
         if(AioDesigns.Panel(style))UpdatePanel(h);
         if(AioDesigns.Black(style))UpdateBlack(h);

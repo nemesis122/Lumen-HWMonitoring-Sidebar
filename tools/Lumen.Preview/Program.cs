@@ -361,6 +361,21 @@ if (args.Contains("--evo") || args.Contains("--dial"))
     Console.WriteLine("Preview rendered: " + output);
     return;
 }
+bool threeProfile = args.Contains("--three-profile");
+if (threeProfile)
+{
+    snapshot = snapshot with
+    {
+        Cpu = snapshot.Cpu! with { Name = "Intel Core i7-10700", Temperature = 52, Load = 3, ClockMhz = 4620,
+            Voltage = 1.235, PowerW = 13, CoreLoads = new double[] { 6, 0, 3, 5, 3, 2, 0, 0, 0, 3, 0, 8, 0, 19, 2, 2 } },
+        Gpus = new[] { new GpuInfo("intel", "Intel UHD Graphics 630", null, null, 1, null, 0, null, .4 * 1024, 7.9 * 1024) { Integrated = true } },
+        Memory = new MemoryInfo(9.5, 15.7),
+        Disks = new[] { new DiskInfo("c", "NVMe Samsung 512GB", null, 36, 0, 14000) { Letters = "C:" },
+            new DiskInfo("e", "SSD", 34, 57, 502, 0) { Letters = "E:" } },
+        Network = new NetworkInfo("Intel I219-LM", 20000 / 8, 83000 / 8, 1_000_000_000, null),
+        Ping = null, HardwareSensors = Array.Empty<SensorNode>()
+    };
+}
 foreach (var style in styles)
 foreach (bool dark in new[] { true, false })
 {
@@ -369,10 +384,19 @@ foreach (bool dark in new[] { true, false })
     if (Environment.GetEnvironmentVariable("BG") is string bg) s.Background = bg;
     if (Environment.GetEnvironmentVariable("SCHEME") is string scheme) s.Colors = scheme;
     foreach (var w in s.Widgets) { w.Visible = kinds.Contains(w.Kind); if (Settings.HasStyles(w.Kind)) w.Style = style; }
+    if (threeProfile)
+    {
+        s.AioWidgetSwitches = true;
+        s.Columns = 1;
+        s.Pages = 2;
+        s.PageNames = new() { "HW", "INFO" };
+    }
     var p = Palette.For(s, dark, null);
     var view = new SidebarView(s, p);
     view.Update(snapshot, history);
-    Shot(view, $"side-{style}-{(dark ? "dark" : "light")}", 640, 1040, p);
+    double sideWidth = double.TryParse(Environment.GetEnvironmentVariable("SIDE_WIDTH"), out var shotWidth) ? shotWidth : 640;
+    double sideHeight = double.TryParse(Environment.GetEnvironmentVariable("SIDE_HEIGHT"), out var shotHeight) ? shotHeight : 1040;
+    Shot(view, $"side-{style}-{(dark ? "dark" : "light")}", sideWidth, sideHeight, p);
 }
 if (args.Contains("--bar"))
 foreach (var style in styles)

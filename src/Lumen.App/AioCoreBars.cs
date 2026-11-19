@@ -45,6 +45,7 @@ public sealed class AioCoreBars : Control, IColourGraph, RedSkin.IOneColour
     /// <summary>Red designs: one red, no lighter second tone (set by RedSkin).</summary>
     public bool OneColour { get; set; }
     public bool Compact { get; set; }
+    public bool NumbersOnly { get; init; }
     private readonly Color ink, muted, track;
     private IReadOnlyList<double> loads = Array.Empty<double>();
     public AioCoreBars(Color ink, Color muted, Color track) { this.ink = ink; this.muted = muted; this.track = track; }
@@ -55,11 +56,11 @@ public sealed class AioCoreBars : Control, IColourGraph, RedSkin.IOneColour
     }
     private const double Gap = 4, MinColumn = 15, Labels = 28;
     /// <summary>Cores per row: as many as fit with a readable name and load below; more cores wrap onto further rows.</summary>
-    private int MostPerRow(double width) => Math.Max(1, Math.Min(loads.Count, (int)Math.Floor((width + Gap) / (MinColumn + Gap))));
+    private int MostPerRow(double width) => Math.Max(1, Math.Min(loads.Count, (int)Math.Floor((width + Gap) / ((NumbersOnly ? 27 : MinColumn) + Gap))));
     private int Rows(double width) => loads.Count == 0 ? 0 : (int)Math.Ceiling(loads.Count / (double)MostPerRow(width));
     // Rows are filled evenly (16 cores: 8 + 8, not 11 + 5).
     private int PerRow(double width) => Rows(width) == 0 ? 1 : (int)Math.Ceiling(loads.Count / (double)Rows(width));
-    private double BarHeight(double width) => Compact ? 14 : Rows(width) > 1 ? 34 : 46;
+    private double BarHeight(double width) => NumbersOnly ? 0 : Compact ? 14 : Rows(width) > 1 ? 34 : 46;
     // The height depends on the width and the number of cores only, never on the values, so nothing below moves.
     protected override Size MeasureOverride(Size available)
     {
@@ -94,13 +95,20 @@ public sealed class AioCoreBars : Control, IColourGraph, RedSkin.IOneColour
         var number = new Typeface(Ui.GraphFont, FontStyle.Normal, FontWeight.SemiBold);
         double size = Math.Clamp(col * .5, 8, 11);
         var back = Palette.Brush(Color.FromArgb(Math.Max(track.A, (byte)120), track.R, track.G, track.B));
+        double peak = NumbersOnly ? loads.Where(double.IsFinite).DefaultIfEmpty(0).Max() : 0;
         for (int i = 0; i < loads.Count; i++)
         {
             double x = (i % perRow) * (col + Gap), top = (i / perRow) * (barHeight + Labels + 6);
             double f = double.IsFinite(loads[i]) ? Math.Clamp(loads[i] / 100, 0, 1) : 0;
-            c.DrawRectangle(back, null, new Rect(x, top, col, barHeight), radius, radius);
-            double h = Math.Max(Math.Min(radius * 2, barHeight), barHeight * f);
-            c.DrawRectangle(Palette.Brush(Tint is Color tint ? RedSkin.Tint(Heat(f), tint, OneColour) : Heat(f)), null, new Rect(x, top + barHeight - h, col, h), radius, radius);
+            if (NumbersOnly)
+                c.DrawRectangle(back, null, new Rect(x, top, col, Labels), radius, radius);
+            else
+            {
+                c.DrawRectangle(back, null, new Rect(x, top, col, barHeight), radius, radius);
+                double h = Math.Max(Math.Min(radius * 2, barHeight), barHeight * f);
+                c.DrawRectangle(Palette.Brush(Tint is Color tint ? RedSkin.Tint(Heat(f), tint, OneColour) : Heat(f)),
+                    null, new Rect(x, top + barHeight - h, col, h), radius, radius);
+            }
             void Centered(string text, Typeface face, Color color, double y)
             {
                 var ft = new FormattedText(text, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, face, size, Palette.Brush(color));
@@ -109,7 +117,7 @@ public sealed class AioCoreBars : Control, IColourGraph, RedSkin.IOneColour
                     c.DrawText(ft, new Point(x + col / 2 - ft.Width / 2, y));
             }
             Centered("C" + (i + 1), typeface, LabelInk is Color li ? li : muted, top + barHeight + 2);
-            Centered(double.IsFinite(loads[i]) ? Math.Round(loads[i]).ToString("0") : "—", number, ValueInk ?? ink, top + barHeight + 14);
+            Centered(double.IsFinite(loads[i]) ? Math.Round(loads[i]).ToString("0") + (NumbersOnly ? " %" : "") : "—", number, NumbersOnly && peak > 0 && loads[i] == peak && Tint is Color highlight ? highlight : ValueInk ?? ink, top + barHeight + 14);
         }
     }
 }

@@ -192,7 +192,7 @@ public sealed class Settings
 	public Dictionary<string, string> Labels { get; set; } = new Dictionary<string, string>();
 
 	public static IEnumerable<WidgetStyle> Selectable => new[]
-	{
+    {
 		WidgetStyle.Standard,
 		WidgetStyle.Segments,
 		WidgetStyle.Table,
@@ -262,7 +262,7 @@ public sealed class Settings
         WidgetStyle.AioMainboardCores,
         WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelHeader, WidgetStyle.AioPanelPlain,
         WidgetStyle.AioMainboardMapRed, WidgetStyle.AioMainboardCoresRed, WidgetStyle.AioTypeBlockRed, WidgetStyle.AioOrbitNetworkRed, WidgetStyle.AioThermalGridRed, WidgetStyle.AioSignalRackRed, WidgetStyle.AioIsometricCoreRed, WidgetStyle.AioPrecisionRed, WidgetStyle.AioStudioLightRed, WidgetStyle.AioInstrumentRed, WidgetStyle.AioAuroraFusionRed, WidgetStyle.AioCarbonPulseRed, WidgetStyle.AioIsometricAtlasRed, WidgetStyle.AioIsometricTilesRed, WidgetStyle.AioIsometricRigRed, WidgetStyle.AioIsometricPedestalsRed, WidgetStyle.AioIsometricCompactRed, WidgetStyle.AioIsometricRingsRed
-	};
+	}.Concat(DarkAioDesigns.All.Select(item => item.Style));
 
 	public int ColumnCount
 	{
@@ -321,6 +321,7 @@ public sealed class Settings
 
 	public static WidgetStyle Successor(WidgetStyle style) =>
         style == WidgetStyle.AioMinMax || RemovedLayouts.Contains(style) ? WidgetStyle.CaseCyanGlass
+            : DarkAioDesigns.WasRemoved(style) ? WidgetStyle.AioTitaniumRack
             : Selectable.Contains(style) ? style : WidgetStyle.Standard;
 
 	public static List<WidgetSlot> DefaultWidgets()
