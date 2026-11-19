@@ -37,11 +37,14 @@ public class AioAtlasDriveTests
             {
                 var text = row.GetLogicalDescendants().OfType<TextBlock>().ToArray();
                 Assert.Contains(text, t => t.Text == letter);
-                foreach (var key in new[] { "aio.system.disk." + id, $"aio.drives.{id}.read", $"aio.drives.{id}.write", $"aio.drives.{id}.used" })
+                var keys = new[] { "aio.system.disk." + id, $"aio.drives.{id}.read", $"aio.drives.{id}.write", $"aio.drives.{id}.used" };
+                foreach (var key in keys.Where(settings.ForSlot(slot).Shows))
                 {
                     Assert.Single(text, t => SensorDetails.KeyOf(t) == key);
                     Assert.Single(card.GetLogicalDescendants().OfType<TextBlock>(), t => SensorDetails.KeyOf(t) == key);
                 }
+                foreach (var key in keys.Where(key => !settings.ForSlot(slot).Shows(key)))
+                    Assert.DoesNotContain(text, t => SensorDetails.KeyOf(t) == key);
                 Assert.Single(row.GetLogicalDescendants().OfType<AioMeter>());
                 if (AioDesigns.CompactDriveLayout(style) && AioDesigns.Red(style))
                     Assert.Single(row.GetLogicalDescendants().OfType<PanelArt>(), art => art.Kind == "ssd");
