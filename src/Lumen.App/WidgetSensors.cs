@@ -62,7 +62,7 @@ public static class WidgetSensors
         WidgetKind.Calendar => "calendar.week", WidgetKind.Fps => "fps.app", WidgetKind.Drives => "drives.count", _ => SecondaryKey(kind)
     };
 
-    public static IReadOnlyList<(string Key, string Label)> Options(WidgetKind kind, Snapshot? snap, WidgetStyle style = WidgetStyle.Standard)
+    public static IReadOnlyList<(string Key, string Label)> Options(WidgetKind kind, Snapshot? snap, WidgetStyle? style = null)
     {
         var primary = PrimaryKey(kind);
         var result = new List<(string Key, string Label)>();

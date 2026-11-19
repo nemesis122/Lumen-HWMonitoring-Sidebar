@@ -344,12 +344,22 @@ public sealed partial class AioTile
             modules.Add(InstrumentModule(part.Id, part.Title, Glyphs.Power, BodyInset(body), kind));
         }
         if (modules.Count == 0) content.Children.Add(InstrumentLabel(L.T("No data"), 12));
-        else if (!settings.Horizontal && source.Columns > 1)
+        else if (settings.Horizontal)
+        {
+            foreach (var module in modules) content.Children.Add(module);
+        }
+        else if (source.Columns > 1)
         {
             dashboardLayout = new DashboardFlow(source.Columns, modules.Select(c => (c, 1d)).ToArray());
             content.Children.Add(dashboardLayout);
         }
-        else foreach (var module in modules) content.Children.Add(module);
+        else
+        {
+            var flow = new DashboardVertical(6);
+            for (int i = 0; i < modules.Count; i++) flow.Add(modules[i], i == modules.Count - 1);
+            dashboardLayout = flow;
+            content.Children.Add(flow);
+        }
     }
 
     private void UpdateInstrumentDashboard()

@@ -61,7 +61,7 @@ public static class AioReadings
             // never reported is left out, one that drops out for a moment keeps its place.
             bool none(double? x,[System.Runtime.CompilerServices.CallerArgumentExpression(nameof(x))]string what="")=>
                 !x.HasValue&&(g.Integrated||(g.Temperature??g.Load).HasValue)&&!Unreported.Reported(g.Id,what,x);
-            if(instruments || !none(g.Temperature))Add(k+"temp","GPU","Temp.",Temp(g.Temperature),g.Temperature,100,"gpu."+g.Id+".temp",g.Id);
+            if(!none(g.Temperature))Add(k+"temp","GPU","Temp.",Temp(g.Temperature),g.Temperature,100,"gpu."+g.Id+".temp",g.Id);
             if(!none(g.HotSpot))Add(k+"hotspot","GPU","Hotspot",Temp(g.HotSpot),g.HotSpot,110,device:g.Id);
             if(!none(g.MemoryJunction))Add(k+"junction","GPU","VRAM Temp.",Temp(g.MemoryJunction),g.MemoryJunction,110,device:g.Id);
             Add(k+"load","GPU","Load",Format.Percent(g.Load),g.Load,100,"gpu."+g.Id+".load",g.Id);
@@ -173,13 +173,13 @@ public static class AioReadings
     private static string Identity(SensorNode node,SensorValue sensor) => sensor.Id.Length>0 ? sensor.Id : node.Id+":"+sensor.Type+":"+sensor.Index+":"+sensor.Name;
     private static IEnumerable<SensorNode> Flatten(IEnumerable<SensorNode> nodes) => nodes.SelectMany(n=>new[]{n}.Concat(Flatten(n.Sub)));
 
-    public static IEnumerable<(string Key,string Label)> Options(Snapshot? snapshot, WidgetStyle style = WidgetStyle.Standard)
+    public static IEnumerable<(string Key,string Label)> Options(Snapshot? snapshot, WidgetStyle? style = null)
     {
         foreach(var g in Groups) yield return (g.Key,"AIO · "+L.T(g.Label));
         yield return ("aio.graphs","AIO · "+L.T("History chart"));
         yield return ("aio.cpu.coreloads","AIO · CPU · "+L.T("Core load"));
         yield return ("aio.cpu.cores","AIO · "+L.T("Core temperatures"));
-        if (AioDesigns.Instruments(style))
+        if (style == null || AioDesigns.Instruments(style.Value))
         {
             yield return (InstrumentFps, "AIO · Performance · FPS");
             yield return (InstrumentRefresh, "AIO · Performance · Hz");
@@ -202,12 +202,5 @@ public static class AioReadings
             }
             else yield return (r.Key,r.Group=="Drives"?"AIO · "+L.T("Drives")+" · "+DriveName(snapshot,r.Device)+" · "+L.T(r.Label):"AIO · "+r.Group+" · "+L.T(r.Label));
         }
-        if (AioDesigns.Instruments(style))
-            for (int i = 0; i < gpuOrder.Length; i++)
-            {
-                var gpu = gpuOrder[i];
-                string key = "aio.gpu." + gpu.Id + ".temp";
-                if (all.All(r => r.Key != key)) yield return (key, "AIO · GPU " + (i + 1) + " · " + gpu.Name + " · " + L.T("Temperature"));
-            }
     }
 }
