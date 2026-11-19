@@ -41,8 +41,9 @@ public static partial class TextColours
             if (!seen.TryGetValue(text, out var known)) seen.Add(text, known = new Seen { Original = current, Applied = current });
             else if (current != known.Applied) known.Original = current; // the card set its own colour since: start from that
             var original = known.Original;
-            if (!Neutral(original)) { known.Applied = current; continue; }
-            bool isValue = values != null ? values.Contains(text) || text is AioValueText : text is AioValueText || HasDigit(text.Text);
+            bool follows = (text is AioValueText || values?.Contains(text) == true) && Follows(text, root);
+            if (!Neutral(original) && !follows) { known.Applied = current; continue; }
+            bool isValue = follows || (values != null ? values.Contains(text) || text is AioValueText : text is AioValueText || HasDigit(text.Text));
             if ((isValue ? value : label) is not Color chosen) { known.Applied = current; continue; }
             var colour = Color.FromArgb(original.A, chosen.R, chosen.G, chosen.B);
             known.Applied = colour;

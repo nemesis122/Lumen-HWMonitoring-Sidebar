@@ -69,7 +69,7 @@ public sealed partial class AioTile
         string name = Naming.Title(DriveOwner, index, letters);
         string model = DriveModel(group.Key);
         var headingColor = AtlasDriveAccent();
-        var badge = AtlasDriveBadge(name, headingColor);
+        var badge = AtlasDriveBadge(name, headingColor, group.First().Key);
         if (compactColumns != null)
         {
             Control icon = red ? new PanelArt { Kind = "ssd", Theme = PanelTheme.For("red", headingColor),
@@ -123,14 +123,14 @@ public sealed partial class AioTile
         return tile;
     }
 
-    private Border? AtlasDriveBadge(string name, Color color)
+    private Border? AtlasDriveBadge(string name, Color color, string key)
     {
         if (DriveOwner?.ShowTitle == false || slot?.ShowTitle == false) return null;
         var text = TextFonts.Mark(AtlasDriveText(name, 10, color), TextRole.Title);
         ToolTip.SetTip(text, name);
-        return new Border { Child = text, Padding = new Thickness(4, 1), CornerRadius = new CornerRadius(4),
+        return TextColours.Frame(new Border { Child = text, Padding = new Thickness(4, 1), CornerRadius = new CornerRadius(4),
             HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, BorderThickness = new Thickness(1),
-            BorderBrush = Palette.Brush(color), Background = Palette.Brush(SeeThrough(Palette.Mix(back, color, .12))) };
+            BorderBrush = Palette.Brush(color), Background = Palette.Brush(SeeThrough(Palette.Mix(back, color, .12))) }, key);
     }
 
     private void AddDriveModel(StackPanel body, string model)

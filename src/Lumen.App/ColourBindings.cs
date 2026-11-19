@@ -18,7 +18,39 @@ public static partial class TextColours
     public static readonly AttachedProperty<string> SensorProperty = AvaloniaProperty.RegisterAttached<Control, string>("ColourSensor", typeof(TextColours), "");
     public static readonly AttachedProperty<string> SecondSensorProperty = AvaloniaProperty.RegisterAttached<Control, string>("ColourSecondSensor", typeof(TextColours), "");
     public static readonly AttachedProperty<bool> GraphSurfaceProperty = AvaloniaProperty.RegisterAttached<Control, bool>("ColourGraphSurface", typeof(TextColours), false);
+    /// <summary>A decorative outline in the design's accent (voltage boxes, drive letters): it takes the graph colour.</summary>
+    public static readonly AttachedProperty<bool> FrameProperty = AvaloniaProperty.RegisterAttached<Control, bool>("ColourFrame", typeof(TextColours), false);
     public static void BindHeat(Border cell,string key) { Bind(cell,key);cell.SetValue(GraphSurfaceProperty,true); }
+    public static T Frame<T>(T border, string key) where T : Border { Bind(border, key); border.SetValue(FrameProperty, true); return border; }
+
+    /// <summary>
+    /// Readings of the drive, network and voltage parts of an AIO card are drawn in the design's accent, but they are
+    /// values like every other: the value colour chosen in Appearance replaces that accent (user request 4.5.5).
+    /// </summary>
+    internal static bool Follows(TextBlock text, Control root)
+    {
+        if (root is not AioTile) return false;
+        for (Control? node = text; node != null && node != root; node = node.Parent as Control)
+        {
+            string key = DirectKey(node);
+            if (key.Length == 0) continue;
+            return key.StartsWith("aio.drives.") || key.StartsWith("aio.system.disk.") || key.StartsWith("aio.network.") || key.StartsWith("aio.rails.");
+        }
+        return false;
+    }
+
+    private sealed class FrameState { public IBrush? Original, Applied; }
+    private static readonly ConditionalWeakTable<Border, FrameState> frames = new();
+    private static void ApplyFrame(Border frame, Color? colour)
+    {
+        if (!colour.HasValue && !frames.TryGetValue(frame, out _)) return;
+        var state = frames.GetOrCreateValue(frame);
+        if (!ReferenceEquals(frame.BorderBrush, state.Applied)) state.Original = frame.BorderBrush;
+        state.Applied = colour is { } tint
+            ? Palette.Brush(Color.FromArgb(state.Original is ISolidColorBrush b ? b.Color.A : (byte)255, tint.R, tint.G, tint.B))
+            : state.Original;
+        frame.BorderBrush = state.Applied;
+    }
     public static void Own(Control root, WidgetSlot? slot, bool? dark = null, int? index = null)
     {
         var owner = owners.GetOrCreateValue(root); owner.Slot = slot; if (dark.HasValue) owner.Dark = dark.Value;
@@ -130,7 +162,7 @@ public static partial class TextColours
             if (!warning) state.Normal = state.Original;
             Color target = state.Original;
             var chosen = Parse(effective.Hex);
-            if (chosen.HasValue && (effective.Explicit || role is ColourRole.Title or ColourRole.Graph || Neutral(state.Original) || !effective.AutomaticWarnings)) target = chosen.Value;
+            if (chosen.HasValue && (effective.Explicit || role is ColourRole.Title or ColourRole.Graph || Neutral(state.Original) || !effective.AutomaticWarnings || role == ColourRole.Value && Follows(text, root))) target = chosen.Value;
             if (warning && effective.AutomaticWarnings)
                 target = Warm(state.Original) ? state.Original : Warning(temp ?? s.TemperatureWarning, s.TemperatureWarning);
             else if (warning && !effective.AutomaticWarnings)
@@ -138,6 +170,11 @@ public static partial class TextColours
             target = Color.FromArgb(state.Original.A, target.R, target.G, target.B);
             state.Applied = target;
             if (target != current) text.Foreground = new SolidColorBrush(target, brush.Opacity);
+        }
+        foreach (var frame in root.GetLogicalDescendants().OfType<Border>().Where(b => b.GetValue(FrameProperty)))
+        {
+            string key = DirectKey(frame);
+            ApplyFrame(frame, Parse(ColourRules.Resolve(s, owner.Slot ?? s.ActiveWidget, key, ColourRole.Graph, Component(frame, root, key)).Hex));
         }
         foreach (var control in root.GetLogicalDescendants().OfType<Control>().Prepend(root))
         {
@@ -230,6 +267,7 @@ public static partial class TextColours
                 if(t.Foreground is ISolidColorBrush b && b.Color==state.Applied)t.Foreground=Palette.Brush(state.Original);
                 overrideTexts.Remove(t);
             }
+            if(c is Border frame && frame.GetValue(FrameProperty))ApplyFrame(frame,null);
             ApplyGraph(c,null);
         }
     }
