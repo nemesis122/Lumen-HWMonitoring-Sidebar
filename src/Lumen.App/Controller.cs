@@ -249,7 +249,10 @@ public sealed class Controller
 				{
 					ping.Target = settings.PingTarget;
 				}
-				bool num2 = settings.Widgets.Any((WidgetSlot w) => w.Visible && w.Kind == WidgetKind.Fps) && platform.IsAdministrator;
+				var instruments = settings.Widgets.FirstOrDefault(w => w.Visible && w.Kind == WidgetKind.Overview && AioDesigns.Instruments(w.Style));
+				var instrumentSettings = instruments == null ? null : settings.ForSlot(instruments);
+				bool num2 = platform.IsAdministrator && (settings.Widgets.Any(w => w.Visible && w.Kind == WidgetKind.Fps)
+					|| instrumentSettings?.Shows(AioReadings.InstrumentFps) == true);
 				if (num2 && fps == null)
 				{
 					fps = new FpsMonitor();
@@ -265,7 +268,9 @@ public sealed class Controller
 					Ping = ping?.Read(),
 					Usage = usage.Record(snapshot, settings.BaseWatts),
 					Media = media?.Read(),
-					Fps = fps?.Read()
+					Fps = fps?.Read(),
+					RefreshHz = instrumentSettings?.Shows(AioReadings.InstrumentRefresh) == true
+						? MonitorRefresh.Read(window?.TryGetPlatformHandle()?.Handle ?? IntPtr.Zero) : null
 				};
 			}
 			history.Record(snapshot);

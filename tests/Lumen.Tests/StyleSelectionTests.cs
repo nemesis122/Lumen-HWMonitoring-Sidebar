@@ -62,7 +62,8 @@ public class StyleSelectionTests
         WidgetStyle.AioAirflowMapB,
         WidgetStyle.AioTitaniumRackC,
         WidgetStyle.AioNeonBackplateC,
-        WidgetStyle.AioAirflowMapC
+        WidgetStyle.AioAirflowMapC,
+        WidgetStyle.AioTealInstruments, WidgetStyle.AioAmberInstruments
     };
     const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
 

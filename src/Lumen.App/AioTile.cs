@@ -58,7 +58,7 @@ public sealed partial class AioTile : Border, IWidget, INamed
         // With the sidebar's own background the text always follows it (dark background → light text),
         // so Studio Light and Pop Console stay readable on a dark sidebar.
         // Every AIO design is dark on a dark sidebar; only a light theme makes Studio Light / Pop Console (or an own background) light.
-        bool light=!p.Dark&&(p.OwnBackground||style is WidgetStyle.AioStudioLight or WidgetStyle.AioPopConsole);
+        bool light=!p.Dark&&(p.OwnBackground||AioDesigns.Instruments(style)||style is WidgetStyle.AioStudioLight or WidgetStyle.AioPopConsole);
         lightSurface=light;
         ink=Color.Parse(light?"#151B2A":"#EEF4FF"); muted=Color.Parse(light?"#46516B":"#B2BFD1");
         back=p.OwnBackground?p.Card:light?C("#F9FAFE"):Color.Parse(style switch { WidgetStyle.AioPrecision=>"#0D172B",WidgetStyle.AioChromatic=>"#170D2D",_=>"#0C1017" });
@@ -104,9 +104,12 @@ public sealed partial class AioTile : Border, IWidget, INamed
         next+="|"+lastCoreLoads.Count+AioReadings.Selected(settings,"aio.cpu.coreloads");
         next+="|"+settings.ShowNames+settings.Shows("aio.graphs")+slot?.HardwareName+"|"+string.Join('|',source.Widgets.Select(w=>w.Name+w.HardwareName+w.ShowHardware+w.ShowTitle+w.Accent+(AioDesigns.Switches.Contains(w.Kind)?w.Visible:true)));
         if (IsDashboard) next += "|columns:" + source.Columns;
-        if (DarkAioDesigns.Contains(style))
+        if (AioDesigns.Instruments(style)) next += "|rails:" + list.Any(r => r.Group == "Rails" && r.Number.HasValue)
+            + "|" + DriveOwner?.DriveOrder + "|" + string.Join('|', snap.Disks.Select(d => d.Name + ":" + d.Letters));
+        if (DarkAioDesigns.Contains(style) || AioDesigns.AtlasDriveLayout(designStyle))
             next += "|" + DriveOwner?.ShowTitle + "|" + DriveOwner?.ShowHardware
-                + "|" + DriveOwner?.Name + "|" + DriveOwner?.HardwareName + "|" + string.Join('|', snap.Disks.Select(d => d.Name));
+                + "|" + DriveOwner?.Name + "|" + DriveOwner?.HardwareName + "|" + DriveOwner?.DriveOrder
+                + "|" + string.Join('|', snap.Disks.Select(d => d.Id + ":" + d.Name + ":" + d.Letters));
         if(next!=shape) { shape=next; Build(list); if(settings.Horizontal)Horizontalize(); }
         UpdateCoreBars();
         foreach(var (key,meter) in meters) TextColours.Bind(meter,key);
@@ -142,6 +145,7 @@ public sealed partial class AioTile : Border, IWidget, INamed
         UpdateCasePlots();
 
         if (AioDesigns.Dashboard(style)) UpdateDashboard();
+        if (AioDesigns.Instruments(style)) UpdateInstrumentDashboard();
         if(AioDesigns.Panel(style))UpdatePanel(h);
         if(AioDesigns.Black(style))UpdateBlack(h);
         WidgetPresentation.Apply(this,settings);

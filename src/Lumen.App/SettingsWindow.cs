@@ -927,6 +927,9 @@ public sealed partial class SettingsWindow : Window
 
 	public static string StyleName(WidgetStyle style)
 	{
+        if (AioDesigns.Instruments(style)) return style == WidgetStyle.AioTealInstruments
+            ? (L.Language == "de" ? "Instrumente · Türkis" : "Instruments · Teal")
+            : (L.Language == "de" ? "Instrumente · Bernstein" : "Instruments · Amber");
         if(style is WidgetStyle.AioMainboardMap or WidgetStyle.AioMainboardDesktop or WidgetStyle.AioMainboardStrips or WidgetStyle.AioMainboardGauges or WidgetStyle.AioMainboardMatrix or WidgetStyle.AioMainboardType)return AioDesigns.Name(style);
         if (DarkAioDesigns.Contains(style))
         {
@@ -1012,7 +1015,17 @@ public sealed partial class SettingsWindow : Window
             Rect(4,1,56,32,fill,4);
             if (AioDesigns.Dashboard(style))
             {
-                if (DarkAioDesigns.Contains(style))
+                if (AioDesigns.Instruments(style))
+                {
+                    bool gold = style == WidgetStyle.AioAmberInstruments;
+                    var primary = Palette.Brush(p.Chosen ?? Accents.Design(gold ? "#FFB82E" : "#73DCE0", p));
+                    var secondary = Palette.Brush(p.Chosen ?? Accents.Design(gold ? "#EBEDEB" : "#D987C6", p));
+                    Ellipse(15, 6, 17, 17, primary); Ellipse(37, 8, 13, 13, secondary);
+                    Ellipse(18, 9, 11, 11, fill); Ellipse(40, 11, 7, 7, fill);
+                    Rect(9, 26, 46, 2, primary, 1);
+                    if (gold) { Rect(10, 8, 2, 12, primary, 1); Rect(53, 8, 2, 12, secondary, 1); }
+                }
+                else if (DarkAioDesigns.Contains(style))
                 {
                     var look = DarkAioDesigns.For(style);
                     var tint = Palette.Brush(p.Chosen ?? Accents.Design(look.Accent, p));
@@ -1846,7 +1859,7 @@ public sealed partial class SettingsWindow : Window
                     s.HiddenValues.RemoveAll(key=>key.StartsWith("aio."));
                 }
                 if (slot.Kind == WidgetKind.Cpu) s.ShowIntegratedGpu = false;
-                foreach (var option in WidgetSensors.Options(slot.Kind, this.snapshot()))
+                foreach (var option in WidgetSensors.Options(slot.Kind, this.snapshot(), slot.Style))
                 {
                     s.HiddenValues.Remove(option.Key);
                     slot.HiddenSensors.Remove(option.Key);
@@ -1893,7 +1906,7 @@ public sealed partial class SettingsWindow : Window
                 // General AIO switches (e.g. history graphs) belong to no widget: they are listed with the CPU.
                 // What the card shows right now: a fan that never turned is listed but unticked until the user ticks it.
                 var aioShown = sensorSnapshot == null ? new HashSet<string>() : AioReadings.For(sensorSnapshot, s.ForSlot(aioSlot)).Select(r => r.Key).ToHashSet();
-                foreach (var option in AioReadings.Options(sensorSnapshot).Where(o => AioDesigns.SwitchFor(o.Key) == slot.Kind || AioDesigns.SwitchFor(o.Key) == null && slot.Kind == WidgetKind.Cpu))
+                foreach (var option in AioReadings.Options(sensorSnapshot, aioCardStyle).Where(o => AioDesigns.SwitchFor(o.Key) == slot.Kind || AioDesigns.SwitchFor(o.Key) == null && slot.Kind == WidgetKind.Cpu))
                 {
                     string aioKey = option.Key;
                     var aioCheck = new CheckBox
@@ -1921,7 +1934,7 @@ public sealed partial class SettingsWindow : Window
             availableSettings.Widgets.ForEach(widget => widget.HiddenSensors.Clear());
             var sensorAvailability = sensorSnapshot == null ? new List<CompleteReading>()
                 : CompleteReadings.For(slot.Kind, 0, sensorSnapshot, new History(), availableSettings.ForWidget(slot.Kind), p);
-            foreach (var option in WidgetSensors.Options(slot.Kind, sensorSnapshot))
+            foreach (var option in WidgetSensors.Options(slot.Kind, sensorSnapshot, slot.Style))
             {
                 string sensorKey = option.Key;
                 var sensorCheck = new CheckBox

@@ -205,6 +205,7 @@ public sealed partial class AioTile
 
     private void BuildDashboard(List<AioReading> rows)
     {
+        if (AioDesigns.Instruments(style)) { BuildInstrumentDashboard(rows); return; }
         if (DarkAioDesigns.Contains(style)) { BuildDarkDesign(rows); return; }
         if (CaseEditionDesigns.Contains(style)) { BuildCaseEdition(rows); return; }
         if (CaseDesigns.Contains(style)) { BuildCaseOverlay(rows); return; }
@@ -215,6 +216,8 @@ public sealed partial class AioTile
         if (settings.ShowNames && slot is { ShowHardware: true, HardwareName.Length: > 0 }) content.Children.Add(DashboardText(slot.HardwareName));
         var parts = DashboardParts(rows);
         if (parts.Count == 0) { content.Children.Add(DashboardText(L.T("No data"), 13)); return; }
+        var network = AioDesigns.NetworkFooterLayout(designStyle) ? parts.Find(p => p.Id == "net") : null;
+        if (network != null) parts.Remove(network);
         Control Get(string id) => parts.FirstOrDefault(p => p.Id == id) is { } part ? DashboardSection(part) : new Border { IsVisible = false };
         IEnumerable<DashboardPart> Pick(params string[] ids) => ids.SelectMany(id => parts.Where(p => p.Id == id));
         Control layout;
@@ -229,11 +232,6 @@ public sealed partial class AioTile
                     .Concat(parts.Where(p => p.Id is not ("ssd" or "net")).Select(p => (DashboardSection(p), (double)p.Rows.Count + 4))).ToArray(), firstColumnReserved: true);
             }
             else if (style == WidgetStyle.AioSummaryDetails) layout = DashboardTop(DashboardSummary(parts), DashboardFlow(parts, columns, rail: true));
-            else if (style == WidgetStyle.AioNetworkCenter)
-            {
-                var network = parts.FirstOrDefault(p => p.Id == "net");
-                layout = network == null ? DashboardFlow(parts, columns) : DashboardTop(DashboardNetwork(network), DashboardFlow(parts.Where(p => p.Id != "net").ToList(), columns));
-            }
             else layout = DashboardFlow(parts, columns, style is WidgetStyle.AioSensorTable or WidgetStyle.AioMinMax, style == WidgetStyle.AioMinMax);
         }
         else
@@ -245,7 +243,7 @@ public sealed partial class AioTile
             case WidgetStyle.AioTwoHalves:
                 layout = DashboardPair(DashboardStack(Pick("cpu", "ram", "fan", "power", "other")), DashboardStack(Pick("gpu", "ssd", "net")), "dashboard-two-halves"); break;
             case WidgetStyle.AioDoubleTable:
-                layout = DashboardStretch(DashboardPair(Get("cpu"), Get("gpu"), "dashboard-pair-cpu-gpu"), DashboardPair(Get("ram"), Get("ssd"), "dashboard-pair-memory-drives"), DashboardPair(Get("fan"), Get("net"), "dashboard-pair-cooling-network"), Get("power"), Get("other")); break;
+                layout = DashboardStretch(DashboardPair(Get("cpu"), Get("gpu"), "dashboard-pair-cpu-gpu"), DashboardPair(Get("ram"), Get("ssd"), "dashboard-pair-memory-drives"), Get("fan"), Get("power"), Get("other")); break;
             case WidgetStyle.AioQuadrants:
                 layout = DashboardStretch(DashboardPair(Get("cpu"), Get("gpu"), "dashboard-upper-quadrants"), DashboardPair(DashboardFrame(DashboardStack(Pick("ram", "ssd"))), DashboardFrame(DashboardStack(Pick("fan", "power", "net", "other"))), "dashboard-lower-quadrants")); break;
             case WidgetStyle.AioCasePlan:
@@ -254,9 +252,20 @@ public sealed partial class AioTile
                 var picture = DashboardArtwork(casePlan, parts, casePlan);
                 layout = DashboardPair(DashboardStretch(picture, Get("ssd"), Get("net")), DashboardStack(Pick("cpu", "gpu", "ram", "fan", "power", "other")), "dashboard-illustrated-columns"); break;
             case WidgetStyle.AioNetworkCenter:
-                var network = parts.FirstOrDefault(p => p.Id == "net");
-                layout = network == null ? DashboardFlow(parts, columns) : DashboardTop(DashboardNetwork(network), DashboardFlow(parts.Where(p => p.Id != "net").ToList(), columns)); break;
+                layout = DashboardFlow(parts, columns); break;
             default: throw new InvalidOperationException("Unknown dashboard");
+        }
+        if (network != null)
+        {
+            var footer = style == WidgetStyle.AioNetworkCenter ? DashboardNetwork(network) : DashboardSection(network);
+            if (parts.Count == 0) layout = footer;
+            else
+            {
+                var stack = new DashboardVertical(7);
+                stack.Add(layout);
+                stack.Add(footer, false);
+                layout = stack;
+            }
         }
         dashboardLayout = layout; content.Children.Add(layout);
         if (style is WidgetStyle.AioSensorTable or WidgetStyle.AioMinMax)

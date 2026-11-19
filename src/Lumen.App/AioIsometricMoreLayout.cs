@@ -194,6 +194,7 @@ public sealed partial class AioTile
         for (int i = 0; i < parts.Length; i++)
         {
             var p = parts[i];
+            if (p.Kind is "fan" or "psu" or "net") ReferenceDrives();
             // The value column is as wide as the widest value it can show ("↓ 88.8 Mbit/s"), from the start;
             // the name beside it takes what is left. So the value never needs to shrink or move.
             // Wide values (fan speed, network rates) get their own full-width line below the name.
@@ -205,7 +206,7 @@ public sealed partial class AioTile
             if (p.Kind == "ram" || p.Details.Length > 0) side.Children.Add(IsoDetails(p.Details, false, 12, p.Kind == "ram" ? p.Main : null));
             var art = new Border { Width = 56, Height = 44, VerticalAlignment = VerticalAlignment.Top, Child = Part(p.Art, 56, 44) };
             var row = Ui.Columns("Auto,*", art, side); row.ColumnSpacing = 10;
-            RefSection(row, p.Color, i == parts.Length - 1);
+            RefSection(row, p.Color, i == parts.Length - 1, network: p.Kind == "net");
         }
     }
 
@@ -243,7 +244,7 @@ public sealed partial class AioTile
         var fans = Rs("Cooling");
         if (fans.Length > 0) { content.Children.Add(Divider()); RefSection(FanGrid(fans, 46, true), Cyan); }
         var rates = Rs("Network");
-        if (rates.Length > 0) { if (fans.Length == 0) content.Children.Add(Divider()); RefSection(ArtRow(Part("router", 96, 70), Stack(5, PartTitle(L.T("Network"), Cyan, ""), NetworkValues(rates, 16))), Cyan, true); }
+        if (rates.Length > 0) { if (fans.Length == 0) content.Children.Add(Divider()); RefSection(ArtRow(Part("router", 96, 70), Stack(5, PartTitle(L.T("Network"), Cyan, ""), NetworkValues(rates, 16))), Cyan, true, network: true); }
     }
 
     // ---------------------------------------------------------------- Isometric Rig (draft C)
@@ -394,9 +395,11 @@ public sealed partial class AioTile
             {
                 var heading = Text(title, 10.5, tint); TextFonts.Mark(heading, TextRole.Title); heading.FontWeight = FontWeight.Bold; heading.LetterSpacing = 1.2;
                 var line = new Border { Height = 1, Background = Palette.Brush(Palette.Mix(tint, back, .7)), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
-                list.Children.Add(Stack(6, Ui.Columns("Auto,*", heading, line), FixedCols(cols, cells)));
+                var block = Stack(6, Ui.Columns("Auto,*", heading, line), FixedCols(cols, cells));
+                if (title == L.T("NETWORK")) RefSection(block, tint, true, network: true);
+                else list.Children.Add(block);
             }
-            RefSection(list, Cyan, true);
+            if (list.Children.Count > 0) RefSection(list, Cyan, true);
         }
     }
 }

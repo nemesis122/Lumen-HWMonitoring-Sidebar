@@ -300,7 +300,9 @@ public enum WidgetStyle
     AioAirflowMapB,
     AioTitaniumRackC,
     AioNeonBackplateC,
-    AioAirflowMapC
+    AioAirflowMapC,
+    AioTealInstruments,
+    AioAmberInstruments
 }
 
 

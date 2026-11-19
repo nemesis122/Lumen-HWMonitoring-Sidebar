@@ -31,6 +31,19 @@ void Shot(Control content, string name, double width, double height, Palette p)
     for (int i = 0; i < 4; i++) { Dispatcher.UIThread.RunJobs(); window.CaptureRenderedFrame(); }
     using var image = window.CaptureRenderedFrame() ?? throw new InvalidOperationException(name);
     image.Save(Path.Combine(output, name + ".png"));
+    if (args.Contains("--atlas-drives"))
+    {
+        var rows = content.GetLogicalDescendants().OfType<Border>()
+            .Where(b => b.Tag is string tag && tag.StartsWith("atlas-drive:"))
+            .Select(b => (Row: b, Origin: b.TranslatePoint(default, content)))
+            .Where(b => b.Origin.HasValue).ToArray();
+        if (rows.Length > 0)
+        {
+            double top = Math.Floor(rows.Min(b => b.Origin!.Value.Y)) - 24;
+            double bottom = Math.Ceiling(rows.Max(b => b.Origin!.Value.Y + b.Row.Bounds.Height)) + 6;
+            Console.WriteLine($"DRIVES|{name}|{top:0}|{bottom:0}");
+        }
+    }
     window.Close();
 }
 
@@ -362,6 +375,7 @@ if (args.Contains("--evo") || args.Contains("--dial"))
     return;
 }
 bool threeProfile = args.Contains("--three-profile");
+bool instrumentProfile = args.Contains("--instrument-profile");
 if (threeProfile)
 {
     snapshot = snapshot with
@@ -375,6 +389,25 @@ if (threeProfile)
         Network = new NetworkInfo("Intel I219-LM", 20000 / 8, 83000 / 8, 1_000_000_000, null),
         Ping = null, HardwareSensors = Array.Empty<SensorNode>()
     };
+    if (instrumentProfile)
+    {
+        snapshot = snapshot with
+        {
+            BoardName = null, BoardTemps = Array.Empty<TempReading>(),
+            Fans = new[] { new FanInfo("Rear", 840, null), new FanInfo("Front", 980, null),
+                new FanInfo("Top", 760, null), new FanInfo("Bottom", 920, null), new FanInfo("Pump", 2320, null),
+                new FanInfo("CPU", 1120, null) },
+            Fps = null, RefreshHz = null
+        };
+        for (int i = 0; i < 60; i++)
+            history.Record(snapshot with
+            {
+                Time = snapshot.Time.AddSeconds(i - 60),
+                Cpu = snapshot.Cpu! with { Load = 18 + 16 * Math.Sin(i * .34) + i % 7 },
+                Gpus = new[] { snapshot.Gpus[0] with { Load = 12 + 9 * Math.Sin(i * .41 + 2) + i % 5 } }
+            });
+        history.Record(snapshot);
+    }
 }
 foreach (var style in styles)
 foreach (bool dark in new[] { true, false })
@@ -390,6 +423,7 @@ foreach (bool dark in new[] { true, false })
         s.Columns = 1;
         s.Pages = 2;
         s.PageNames = new() { "HW", "INFO" };
+        if (instrumentProfile) s.HiddenValues.Add("aio.cpu.coreloads");
     }
     var p = Palette.For(s, dark, null);
     var view = new SidebarView(s, p);

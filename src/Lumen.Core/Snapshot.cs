@@ -31,5 +31,6 @@ public sealed record Snapshot(DateTime Time, CpuInfo? Cpu, IReadOnlyList<GpuInfo
 	public IReadOnlyList<VolumeInfo> Volumes { get; init; } = Array.Empty<VolumeInfo>();
 
 	public FpsInfo? Fps { get; init; }
+	public double? RefreshHz { get; init; }
 
 }

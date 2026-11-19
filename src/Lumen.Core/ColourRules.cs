@@ -55,7 +55,8 @@ public static class ColourRules
     public static bool Active(Settings s) => !s.AutomaticWarningColors || s.TitleColor.Length > 0 || s.GraphColor.Length > 0
         || s.Widgets.Any(w => !w.Colours.InheritGlobal && !w.Colours.Empty || w.SensorColours.Values.Any(c => !c.Empty));
 
-    public static WidgetKind? Kind(string key) => key.StartsWith("aio.") ? AioDesigns.SwitchFor(key)
+    public static WidgetKind? Kind(string key) => key.StartsWith("aio.performance.") ? WidgetKind.Fps
+        : key.StartsWith("aio.") ? AioDesigns.SwitchFor(key)
         : key.StartsWith("cpu.") ? WidgetKind.Cpu : key.StartsWith("gpu.") ? WidgetKind.Gpu
         : key.StartsWith("mem.") ? WidgetKind.Memory : key.StartsWith("net.") ? WidgetKind.Network
         : key.StartsWith("drives.") || key.StartsWith("drive:") ? WidgetKind.Drives
@@ -69,6 +70,7 @@ public static class ColourRules
         if (key.StartsWith("aio.cpu.")) yield return key[4..];
         else if (key.StartsWith("aio.gpu.")) yield return "gpu." + key[(key.LastIndexOf('.') + 1)..];
         else if (key.StartsWith("aio.network.")) yield return "net." + key[12..];
+        else if (key == "aio.performance.fps") yield return "fps.value";
         else if (key == "aio.system.ram") yield return "mem.load";
         else if (key.StartsWith("aio.system.ram.")) yield return "mem." + (key[15..] == "free" ? "free" : key[15..]);
         else if (key.StartsWith("aio.system.disk.")) { yield return "drive:" + key[16..] + ":temp"; yield return "drives.temp"; }

@@ -128,7 +128,11 @@ public sealed partial class AioTile
             if(processors.Count>0)sections.Children.Add(new MainboardDriveGrid(processors));
             if(coreRow!=null)sections.Children.Add(coreRow);
             if(utilities.Count>0)sections.Children.Add(new MainboardDriveGrid(utilities));
-            if(drives.Count>0)sections.Children.Add(new MainboardDriveGrid(drives));
+            if (AtlasDriveBody(atlasDriveReadings) is { } storage)
+                sections.Children.Add(new Border { Child = storage, Tag = "aio-section", Padding = new Thickness(8),
+                    Background = Palette.Brush(SeeThrough(Palette.Mix(back, Cyan, .035))),
+                    BorderBrush = Palette.Brush(Palette.Mix(track, Cyan, .62)), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(6) });
+            else if(drives.Count>0)sections.Children.Add(new MainboardDriveGrid(drives));
             if(temperatureRow!=null)sections.Children.Add(temperatureRow);
         }
         else if (left.Children.Count > 0 || right.Children.Count > 0) sections.Children.Add(columns);
@@ -157,7 +161,13 @@ public sealed partial class AioTile
                     new Viewbox{Height=21,Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,
                         HorizontalAlignment=HorizontalAlignment.Left,Child=V(r,15,Cyan)})
             }).ToArray();
-            sections.Children.Add(Module("NETWORK", "router", new[] { FixedCols(cells.Length, cells) }));
+            var networkModule = Module("NETWORK", "router", new[] { FixedCols(cells.Length, cells) });
+            if (AioDesigns.NetworkFooterLayout(designStyle))
+            {
+                anchors.Remove(networkModule);
+                networkFooter.Add(networkModule);
+            }
+            else sections.Children.Add(networkModule);
         }
         var board = new Grid { Children = { new MainboardTraces(anchors, Cyan, lightSurface,wideCores?1:3), sections }, Tag = "aio-section" };
         content.Children.Add(board);

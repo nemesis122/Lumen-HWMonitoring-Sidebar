@@ -29,7 +29,7 @@ public sealed partial class AioTile
                 RefSection(Stack(7,new[]{Text(group.First().Group,18)}.Cast<Control>().Concat(group.Select(r=>(Control)Ui.Columns("*,Auto",Text(RefLabel(r),13),V(r,r.Key.EndsWith(".temp")?20:15)))).ToArray()),Accent(group.First()));
             ReferenceCooling(true);IsometricRails();
             var systems=SystemWithoutDrives();if(systems.Length>0)RefSection(Cols(2,systems.Select(r=>(Control)Stack(4,Text(r.Label,13),V(r,20,Accent(r)))).ToArray()),Cyan);
-            ReferenceDrives();if(Rs("Network").Length>0)RefSection(ReferenceNetwork(),Cyan,true);return;
+            ReferenceDrives();if(Rs("Network").Length>0)RefSection(ReferenceNetwork(),Cyan,true, network: true);return;
         }
         var fans=Rs("Cooling");
         var canvas=new Canvas{Width=334,Height=fans.Length==0?500:660+Math.Max(0,(fans.Length-1)/5)*112};
@@ -92,7 +92,7 @@ public sealed partial class AioTile
                 var row=Ui.Columns("Auto,*",arrow,FitLeft(V(r,15,ink)));row.ColumnSpacing=3;return (Control)row;
             }).ToArray());
             var link=rates.FirstOrDefault(r=>r.Key.EndsWith(".link"));
-            RefSection(link==null?Stack(6,heading,rows):Stack(6,heading,rows,NetLine(link,20,13,ink)),Cyan,true);
+            RefSection(link==null?Stack(6,heading,rows):Stack(6,heading,rows,NetLine(link,20,13,ink)),Cyan,true, network: true);
         }
     }
     private IBrush IsometricGlass()=>new LinearGradientBrush{StartPoint=new RelativePoint(0,0,RelativeUnit.Relative),EndPoint=new RelativePoint(1,1,RelativeUnit.Relative),GradientStops={new(SeeThrough(Palette.Mix(back,ink,.07)),0),new(SeeThrough(back),1)}};

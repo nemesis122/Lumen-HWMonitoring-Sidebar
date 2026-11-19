@@ -8,7 +8,24 @@ public static class AioDesigns
         WidgetStyle.AioBoardCard, WidgetStyle.AioDoubleTable,
         WidgetStyle.AioQuadrants, WidgetStyle.AioNetworkCenter
     };
-    public static bool Dashboard(WidgetStyle style) => DashboardStyles.Contains(style) || CaseDesigns.Contains(style) || CaseEditionDesigns.Contains(style) || DarkAioDesigns.Contains(style);
+    public static bool Instruments(WidgetStyle style) => style is WidgetStyle.AioTealInstruments or WidgetStyle.AioAmberInstruments;
+    public static bool AtlasDriveLayout(WidgetStyle style) => Base(style) is
+        WidgetStyle.AioTypeBlock or WidgetStyle.AioOrbitNetwork or WidgetStyle.AioThermalGrid or WidgetStyle.AioSignalRack
+        or WidgetStyle.AioIsometricCore or WidgetStyle.AioPrecision or WidgetStyle.AioStudioLight or WidgetStyle.AioInstrument
+        or WidgetStyle.AioAuroraFusion or WidgetStyle.AioCarbonPulse or WidgetStyle.AioIsometricRig
+        or WidgetStyle.AioIsometricCompact or WidgetStyle.AioMainboardMap
+        or WidgetStyle.AioMainboardDesktop or WidgetStyle.AioMainboardCores;
+    public static bool NetworkFooterLayout(WidgetStyle style) => AtlasDriveLayout(style)
+        || DashboardStyles.Contains(style) || style == WidgetStyle.AioIsometricRings;
+    public static bool CompactNetworkLayout(WidgetStyle style) => Base(style) is
+        WidgetStyle.AioTypeBlock or WidgetStyle.AioOrbitNetwork or WidgetStyle.AioThermalGrid
+        or WidgetStyle.AioIsometricCore or WidgetStyle.AioPrecision or WidgetStyle.AioStudioLight
+        or WidgetStyle.AioInstrument or WidgetStyle.AioAuroraFusion or WidgetStyle.AioCarbonPulse;
+    public static bool CompactDriveLayout(WidgetStyle style) => Base(style) is
+        WidgetStyle.AioTypeBlock or WidgetStyle.AioOrbitNetwork or WidgetStyle.AioThermalGrid or WidgetStyle.AioSignalRack
+        or WidgetStyle.AioPrecision or WidgetStyle.AioStudioLight or WidgetStyle.AioInstrument or WidgetStyle.AioAuroraFusion
+        or WidgetStyle.AioCarbonPulse or WidgetStyle.AioIsometricCompact;
+    public static bool Dashboard(WidgetStyle style) => DashboardStyles.Contains(style) || CaseDesigns.Contains(style) || CaseEditionDesigns.Contains(style) || DarkAioDesigns.Contains(style) || Instruments(style);
     public static bool DashboardWide(WidgetStyle style) => style is WidgetStyle.AioBoardCard or WidgetStyle.AioDoubleTable or WidgetStyle.AioQuadrants;
     public static readonly WidgetStyle[] Styles = new[]
     {
@@ -25,7 +42,7 @@ public static class AioDesigns
         WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings,
         WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelHeader, WidgetStyle.AioPanelPlain
         , WidgetStyle.AioMainboardMapRed, WidgetStyle.AioMainboardCoresRed, WidgetStyle.AioTypeBlockRed, WidgetStyle.AioOrbitNetworkRed, WidgetStyle.AioThermalGridRed, WidgetStyle.AioSignalRackRed, WidgetStyle.AioIsometricCoreRed, WidgetStyle.AioPrecisionRed, WidgetStyle.AioStudioLightRed, WidgetStyle.AioInstrumentRed, WidgetStyle.AioAuroraFusionRed, WidgetStyle.AioCarbonPulseRed, WidgetStyle.AioIsometricAtlasRed, WidgetStyle.AioIsometricTilesRed, WidgetStyle.AioIsometricRigRed, WidgetStyle.AioIsometricPedestalsRed, WidgetStyle.AioIsometricCompactRed, WidgetStyle.AioIsometricRingsRed
-    }.Concat(DarkAioDesigns.All.Select(item => item.Style)).ToArray();
+    }.Concat(DarkAioDesigns.All.Select(item => item.Style)).Concat(new[] { WidgetStyle.AioTealInstruments, WidgetStyle.AioAmberInstruments }).ToArray();
     /// <summary>The sensor-panel family: hardware pictures beside red-label values, colour and gauge style chosen in Customise.</summary>
     public static bool Panel(WidgetStyle style) => Base(style) is WidgetStyle.AioPanel or WidgetStyle.AioPanelRings or WidgetStyle.AioPanelBadges or WidgetStyle.AioPanelHeader or WidgetStyle.AioPanelPlain;
     public static readonly (string Key,string Name)[] PanelThemes={("red","Red"),("cyan","Cyber cyan"),("purple","Neon purple"),("gold","Gold"),("carbon","Carbon orange"),("glass","Glass red"),("lime","Toxic lime"),("silver","Ice silver")};
@@ -124,7 +141,10 @@ public static class AioDesigns
         or WidgetKind.Power or WidgetKind.Memory or WidgetKind.Drives or WidgetKind.Network or WidgetKind.Overview;
     public static bool SensorDefault(WidgetStyle style,string key)
     {
+        if (AtlasDriveLayout(style) && key.StartsWith("aio.system.disk.")) return true;
         style=Base(style); // a Red design starts with the sensors of its base design
+        if (Instruments(style) && (key is "aio.cpu.power" or "aio.network.link" || key.StartsWith("aio.system.ram.") ||
+            key.StartsWith("aio.system.disk.") || key.StartsWith("aio.drives.") && !key.EndsWith(".used"))) return false;
         if((CaseEditionDesigns.Contains(style)||DarkAioDesigns.Contains(style))&&key.StartsWith("aio.drives.")&&
             (key.EndsWith(".life")||key.EndsWith(".hours")||key.EndsWith(".activity")))return false;
         if(key.StartsWith("aio.gpu.")&&key.EndsWith(".extra")) return false; // a second graphics card is off by default
@@ -168,6 +188,8 @@ public static class AioDesigns
     public static string Name(WidgetStyle style) => style switch
     {
         _ when DarkAioDesigns.Contains(style) => DarkAioDesigns.For(style).Name,
+        WidgetStyle.AioTealInstruments => "Teal Instruments",
+        WidgetStyle.AioAmberInstruments => "Amber Instruments",
         _ when CaseEditionDesigns.Contains(style) => CaseEditionDesigns.For(style).Name,
         _ when CaseDesigns.Contains(style) => CaseDesigns.For(style).Name,
         WidgetStyle.AioSensorTable => "Sensor Table",

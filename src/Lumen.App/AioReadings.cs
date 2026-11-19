@@ -12,6 +12,8 @@ public sealed record AioReading(string Key, string Group, string Label, string V
 /// <summary>Live values only. Driver-provided identities survive ordering, equal values and missing sensors.</summary>
 public static class AioReadings
 {
+    internal const string InstrumentFps = "aio.performance.fps";
+    internal const string InstrumentRefresh = "aio.performance.refresh";
     public static readonly (string Key,string Label)[] Groups =
     {
         ("aio.cpu","CPU"), ("aio.gpu","GPU"), ("aio.cooling","Cooling"),
@@ -24,6 +26,7 @@ public static class AioReadings
     {
         lock(KnownFans)foreach(var known in settings.KnownFans)KnownFans.Add(known);
         var rows = new List<AioReading>();
+        bool instruments = settings.ActiveWidget is { } slot && AioDesigns.Instruments(slot.Style);
         string Temp(double? n) => n.HasValue && double.IsFinite(n.Value) ? Format.Temperature(n,settings.Fahrenheit)+" "+Format.TemperatureUnit(settings.Fahrenheit) : "—";
         void Add(string key,string group,string label,string value,double? number = null,double max = 100,string history = "",string device = "")
         {
@@ -58,7 +61,7 @@ public static class AioReadings
             // never reported is left out, one that drops out for a moment keeps its place.
             bool none(double? x,[System.Runtime.CompilerServices.CallerArgumentExpression(nameof(x))]string what="")=>
                 !x.HasValue&&(g.Integrated||(g.Temperature??g.Load).HasValue)&&!Unreported.Reported(g.Id,what,x);
-            if(!none(g.Temperature))Add(k+"temp","GPU","Temp.",Temp(g.Temperature),g.Temperature,100,"gpu."+g.Id+".temp",g.Id);
+            if(instruments || !none(g.Temperature))Add(k+"temp","GPU","Temp.",Temp(g.Temperature),g.Temperature,100,"gpu."+g.Id+".temp",g.Id);
             if(!none(g.HotSpot))Add(k+"hotspot","GPU","Hotspot",Temp(g.HotSpot),g.HotSpot,110,device:g.Id);
             if(!none(g.MemoryJunction))Add(k+"junction","GPU","VRAM Temp.",Temp(g.MemoryJunction),g.MemoryJunction,110,device:g.Id);
             Add(k+"load","GPU","Load",Format.Percent(g.Load),g.Load,100,"gpu."+g.Id+".load",g.Id);
@@ -144,6 +147,11 @@ public static class AioReadings
         if(s.Ping?.Ms is double ping)Detail("aio.network.ping","Network","Ping",Format.Milliseconds(ping),ping,1000);
         if(s.Ping?.JitterMs is double jitter)Detail("aio.network.jitter","Network","Jitter",Format.Milliseconds(jitter),jitter,1000);
         if(s.Ping?.LossPercent is double loss)Detail("aio.network.loss","Network","Loss",Format.Percent(loss),loss);
+        if (instruments)
+        {
+            Add(InstrumentFps,"Performance","FPS",Format.Number(s.Fps?.Fps),s.Fps?.Fps,240,"fps");
+            Add(InstrumentRefresh,"Performance","Hz",Format.Number(s.RefreshHz),s.RefreshHz,240);
+        }
         return rows;
     }
     private const double DriveRateMaximum=2_000_000_000;
@@ -165,12 +173,17 @@ public static class AioReadings
     private static string Identity(SensorNode node,SensorValue sensor) => sensor.Id.Length>0 ? sensor.Id : node.Id+":"+sensor.Type+":"+sensor.Index+":"+sensor.Name;
     private static IEnumerable<SensorNode> Flatten(IEnumerable<SensorNode> nodes) => nodes.SelectMany(n=>new[]{n}.Concat(Flatten(n.Sub)));
 
-    public static IEnumerable<(string Key,string Label)> Options(Snapshot? snapshot)
+    public static IEnumerable<(string Key,string Label)> Options(Snapshot? snapshot, WidgetStyle style = WidgetStyle.Standard)
     {
         foreach(var g in Groups) yield return (g.Key,"AIO · "+L.T(g.Label));
         yield return ("aio.graphs","AIO · "+L.T("History chart"));
         yield return ("aio.cpu.coreloads","AIO · CPU · "+L.T("Core load"));
         yield return ("aio.cpu.cores","AIO · "+L.T("Core temperatures"));
+        if (AioDesigns.Instruments(style))
+        {
+            yield return (InstrumentFps, "AIO · Performance · FPS");
+            yield return (InstrumentRefresh, "AIO · Performance · Hz");
+        }
         if(snapshot==null)yield break;
         var cards=GpuGroup.All(snapshot);var main=GpuGroup.Main(cards);
         int number=2;
@@ -189,5 +202,12 @@ public static class AioReadings
             }
             else yield return (r.Key,r.Group=="Drives"?"AIO · "+L.T("Drives")+" · "+DriveName(snapshot,r.Device)+" · "+L.T(r.Label):"AIO · "+r.Group+" · "+L.T(r.Label));
         }
+        if (AioDesigns.Instruments(style))
+            for (int i = 0; i < gpuOrder.Length; i++)
+            {
+                var gpu = gpuOrder[i];
+                string key = "aio.gpu." + gpu.Id + ".temp";
+                if (all.All(r => r.Key != key)) yield return (key, "AIO · GPU " + (i + 1) + " · " + gpu.Name + " · " + L.T("Temperature"));
+            }
     }
 }

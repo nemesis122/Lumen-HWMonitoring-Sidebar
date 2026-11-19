@@ -62,7 +62,7 @@ public static class WidgetSensors
         WidgetKind.Calendar => "calendar.week", WidgetKind.Fps => "fps.app", WidgetKind.Drives => "drives.count", _ => SecondaryKey(kind)
     };
 
-    public static IReadOnlyList<(string Key, string Label)> Options(WidgetKind kind, Snapshot? snap)
+    public static IReadOnlyList<(string Key, string Label)> Options(WidgetKind kind, Snapshot? snap, WidgetStyle style = WidgetStyle.Standard)
     {
         var primary = PrimaryKey(kind);
         var result = new List<(string Key, string Label)>();
@@ -117,7 +117,7 @@ public static class WidgetSensors
         if (kind == WidgetKind.Volumes && snap != null)
             foreach (var volume in snap.Volumes) Add("volume:" + volume.Name, volume.Name + " " + volume.Label);
         if (kind == WidgetKind.Overview)
-            foreach (var option in AioReadings.Options(snap)) Add(option.Key,option.Label);
+            foreach (var option in AioReadings.Options(snap, style)) Add(option.Key,option.Label);
         return result;
     }
 

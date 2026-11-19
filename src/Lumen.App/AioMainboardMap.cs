@@ -42,7 +42,7 @@ public sealed partial class AioTile
             row.ColumnSpacing = 6;
             return row;
         }
-        Control Box(string title, string art, IEnumerable<Control> rows, Point target, string model = "",Color? tone=null,bool identify=true)
+        Control Box(string title, string art, IEnumerable<Control> rows, Point? target, string model = "",Color? tone=null,bool identify=true)
         {
             var accent=tone??MapFor(art);int number=identify?MainboardMapColors.Number(art):0;
             var header = Ui.Columns("Auto,*", Part(art, 26, 24), FitLeft(TextFonts.Mark(Text((number>0?number+" ":"")+title, 15, ink), TextRole.Title)));
@@ -56,7 +56,7 @@ public sealed partial class AioTile
             foreach(var row in rows) body.Children.Add(row);
             var card = new Border { Child = body, Padding = new Thickness(10), CornerRadius = new CornerRadius(6),
                 BorderThickness = new Thickness(number>0?1.5:1), BorderBrush = Palette.Brush(accent), Background = Palette.Brush(SeeThrough(back)), Tag="map-"+art };
-            targets.Add((card,target));
+            if (target is { } position) targets.Add((card,position));
             return card;
         }
         if(Rs("CPU").Length > 0)
@@ -79,12 +79,13 @@ public sealed partial class AioTile
                 PartModel(WidgetKind.Gpu,gpuIndex,snapshot.Gpus.FirstOrDefault(g=>g.Id==gpu.Key)?.Name??"")));
             gpuIndex++;
         }
-        Control network = new Border();
         if(Rs("Network").Length>0)
         {
             var values=Rs("Network").Select(r=>(Control)Stack(3,
                 FitLeft(Text(r.Key.EndsWith(".down")?"↓ DL":r.Key.EndsWith(".up")?"↑ UP":"Link",10,muted)),FitLeft(V(r,13,r.Key.EndsWith(".up")?MapViolet:r.Key.EndsWith(".link")?ink:MapCyan)))).ToArray();
-            network=Box("NETWORK","router",new[]{FixedCols(values.Length,values)},new Point(.05,.22));
+            var network = Box("NETWORK", "router", new[] { FixedCols(values.Length, values) }, null);
+            network.Tag = "aio-section";
+            networkFooter.Add(network);
         }
         if(R("ram","System") is {} ram)
         {
@@ -93,15 +94,13 @@ public sealed partial class AioTile
             right.Children.Add(Box("RAM","ram",new Control[]{FitLeft(load),FitLeft(capacity),PartMeter(ram,Cyan)},new Point(.76,.28)));
         }
         if(Rs("Rails").Length>0) right.Children.Add(Box("PSU","psu",Rs("Rails").Select(Row),new Point(.93,.34)));
-        int driveIndex=0;
-        foreach(var drive in PartDrives())
+        if (AtlasDriveBody(atlasDriveReadings) is { } storage)
         {
-            var tone=driveIndex%2==0?MapCyan:MapViolet;
-            var rows=new List<Control>();
-            if(drive.Temp!=null) rows.Add(FitLeft(V(drive.Temp,22,ink)));
-            rows.AddRange(drive.Rows.Select(Row));
-            if(drive.Rows.FirstOrDefault(r=>r.Key.EndsWith(".used")) is {} used) rows.Add(PartMeter(used,tone));
-            driveCards.Add(Box(AioReadings.DriveName(snapshot,drive.Id),"ssd",rows,new Point(driveIndex++%2==0?.42:.74,.88),tone:tone));
+            var card = new Border { Child = storage, Tag = "map-ssd", BorderThickness = new Thickness(1),
+                BorderBrush = Palette.Brush(AtlasDriveAccent()), CornerRadius = new CornerRadius(6), Padding = new Thickness(8),
+                Background = Palette.Brush(SeeThrough(back)) };
+            driveCards.Add(card);
+            targets.Add((card, new Point(.42, .88)));
         }
         if(lastCoreLoads.Count>=2 && AioReadings.Selected(settings,"aio.cpu.coreloads") && Rs("CPU").Length>0)
         {
@@ -114,7 +113,7 @@ public sealed partial class AioTile
         var drives=new MainboardDriveGrid(driveCards);
         // Bound the map before FitPanel searches for a scale. Otherwise reducing text size
         // widens the unscaled board again, feeding back into another reduction.
-        content.Children.Add(new MainboardMapLayout(left,image,right,drives,network,bottom,targets,Cyan)
+        content.Children.Add(new MainboardMapLayout(left,image,right,drives,bottom,targets,Cyan)
             {Tag="aio-section",MaxWidth=1400,HorizontalAlignment=HorizontalAlignment.Center});
     }
 }
@@ -122,22 +121,22 @@ public sealed partial class AioTile
 /// <summary>Sidebar: full-width board followed by CPU/GPU and RAM/PSU rows. Wide windows keep the map callouts.</summary>
 public sealed class MainboardMapLayout : Panel
 {
-    private readonly Control board,network,bottom;
+    private readonly Control board,bottom;
     private readonly MainboardDriveGrid left,right;
     private readonly MainboardDriveGrid drives;
     private readonly MapConnections connections;
     public bool Wide { get; private set; }
     internal bool InTopPair(Control card)=>left.Children.IndexOf(card) is 0 or 1;
-    internal bool InFooter(Control card)=>card.Parent==bottom||(!Wide&&ReferenceEquals(card,network));
+    internal bool InFooter(Control card)=>card.Parent==bottom;
     internal bool IsDrive(Control card)=>drives.Children.Contains(card);
-    public MainboardMapLayout(MainboardDriveGrid left,Control image,MainboardDriveGrid right,MainboardDriveGrid drives,Control network,Control bottom,IReadOnlyList<(Control Card,Point Target)> targets,Color color)
+    public MainboardMapLayout(MainboardDriveGrid left,Control image,MainboardDriveGrid right,MainboardDriveGrid drives,Control bottom,IReadOnlyList<(Control Card,Point Target)> targets,Color color)
     {
-        this.left=left;this.right=right;this.drives=drives;this.network=network;this.bottom=bottom;
+        this.left=left;this.right=right;this.drives=drives;this.bottom=bottom;
         var art=new Grid{RowDefinitions=new RowDefinitions("Auto,*"),RowSpacing=6};
         art.Children.Add(Ui.Text("MAINBOARD",12,color));Grid.SetRow(image,1);art.Children.Add(image);
         board=new Border{Child=art,Padding=new Thickness(8),CornerRadius=new CornerRadius(6),BorderThickness=new Thickness(1),BorderBrush=Palette.Brush(color),Tag="mainboard-panel"};
         connections=new MapConnections(this,image,targets,color);
-        Children.Add(left);Children.Add(board);Children.Add(right);Children.Add(drives);Children.Add(network);Children.Add(bottom);Children.Add(connections);
+        Children.Add(left);Children.Add(board);Children.Add(right);Children.Add(drives);Children.Add(bottom);Children.Add(connections);
     }
     protected override Size MeasureOverride(Size available)
     {
@@ -151,9 +150,9 @@ public sealed class MainboardMapLayout : Panel
         double boardHeight=Wide?Math.Min(600,middle):Math.Clamp(width*.72,160,330);
         board.Measure(new Size(middle,boardHeight));
         drives.Measure(new Size(Wide?side:width,double.PositiveInfinity));
-        network.Measure(new Size(Wide?side:width,double.PositiveInfinity));bottom.Measure(new Size(width,double.PositiveInfinity));
-        double height=Wide?Math.Max(boardHeight,Math.Max(left.DesiredSize.Height+12+network.DesiredSize.Height,right.DesiredSize.Height+12+drives.DesiredSize.Height)):
-            boardHeight+12+left.DesiredSize.Height+12+right.DesiredSize.Height+12+drives.DesiredSize.Height+12+network.DesiredSize.Height;
+        bottom.Measure(new Size(width,double.PositiveInfinity));
+        double height=Wide?Math.Max(boardHeight,Math.Max(left.DesiredSize.Height,right.DesiredSize.Height+12+drives.DesiredSize.Height)):
+            boardHeight+12+left.DesiredSize.Height+12+right.DesiredSize.Height+12+drives.DesiredSize.Height;
         return new Size(width,height+16+bottom.DesiredSize.Height);
     }
     protected override Size ArrangeOverride(Size final)
@@ -168,18 +167,16 @@ public sealed class MainboardMapLayout : Panel
         {
             left.Arrange(new Rect(0,0,side,left.DesiredSize.Height));
             right.Arrange(new Rect(final.Width-side,0,side,right.DesiredSize.Height));
-            network.Arrange(new Rect(0,left.DesiredSize.Height+12,side,network.DesiredSize.Height));
             drives.Arrange(new Rect(final.Width-side,right.DesiredSize.Height+12,side,drives.DesiredSize.Height));
-            height=Math.Max(boardHeight,Math.Max(left.DesiredSize.Height+12+network.DesiredSize.Height,right.DesiredSize.Height+12+drives.DesiredSize.Height));
+            height=Math.Max(boardHeight,Math.Max(left.DesiredSize.Height,right.DesiredSize.Height+12+drives.DesiredSize.Height));
         }
         else
         {
             double y=boardHeight+12;
             left.Arrange(new Rect(12,y,side,left.DesiredSize.Height));y+=left.DesiredSize.Height+12;
             right.Arrange(new Rect(12,y,side,right.DesiredSize.Height));y+=right.DesiredSize.Height+12;
-            drives.Arrange(new Rect(0,y,final.Width,drives.DesiredSize.Height));y+=drives.DesiredSize.Height+12;
-            network.Arrange(new Rect(0,y,final.Width,network.DesiredSize.Height));
-            height=y+network.DesiredSize.Height;
+            drives.Arrange(new Rect(0,y,final.Width,drives.DesiredSize.Height));
+            height=y+drives.DesiredSize.Height;
         }
         bottom.Arrange(new Rect(0,height+16,final.Width,bottom.DesiredSize.Height));
         connections.Arrange(new Rect(final));connections.InvalidateVisual();
@@ -190,12 +187,18 @@ public sealed class MainboardMapLayout : Panel
 public sealed class MainboardDriveGrid : Panel
 {
     public int MaxColumns { get; set; }=2;
+    public double MinimumColumnWidth { get; init; }
     private double[] rows=Array.Empty<double>();
     public MainboardDriveGrid(IEnumerable<Control>? cards=null){foreach(var card in cards??Array.Empty<Control>())Children.Add(card);}
+    private int Columns(double width)
+    {
+        int availableColumns = MinimumColumnWidth > 0 ? Math.Max(1, (int)((width + 12) / (MinimumColumnWidth + 12))) : MaxColumns;
+        return Math.Max(1, Math.Min(Math.Min(MaxColumns, availableColumns), Children.Count));
+    }
     protected override Size MeasureOverride(Size available)
     {
         double width=double.IsFinite(available.Width)?available.Width:380;
-        int columns=Math.Max(1,Math.Min(MaxColumns,Children.Count));
+        int columns=Columns(width);
         double cell=Math.Max(0,(width-12*(columns-1))/columns);
         rows=new double[(Children.Count+columns-1)/columns];
         for(int i=0;i<Children.Count;i++)
@@ -207,7 +210,7 @@ public sealed class MainboardDriveGrid : Panel
     }
     protected override Size ArrangeOverride(Size final)
     {
-        int columns=Math.Max(1,Math.Min(MaxColumns,Children.Count));
+        int columns=Columns(final.Width);
         double cell=Math.Max(0,(final.Width-12*(columns-1))/columns),y=0;
         for(int row=0;row<rows.Length;row++)
         {

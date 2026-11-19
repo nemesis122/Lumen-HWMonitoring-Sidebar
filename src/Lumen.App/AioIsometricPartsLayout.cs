@@ -223,7 +223,7 @@ public sealed partial class AioTile
     }
 
     // ---------------------------------------------------------------- Isometric Tiles (draft B)
-    private Control Tile(Control body, Color color) => new Border
+    private Border Tile(Control body, Color color) => new()
     {
         CornerRadius = new CornerRadius(14), Background = Palette.Brush(SeeThrough(Palette.Mix(back, ink, .035))),
         BorderBrush = Palette.Brush(Palette.Mix(back, color, .38)), BorderThickness = new Thickness(1), Padding = new Thickness(9, 8),

@@ -16,6 +16,7 @@ public sealed partial class AioTile
     private readonly HashSet<string> referenceUsed=new();
     private List<AioReading> referenceRows=new();
     private bool drivesPlaced;
+    private readonly List<Control> networkFooter = new();
     private readonly HashSet<string> diagramDisks=new();
     private static readonly Lazy<Bitmap> isometricArt=new(()=>new Bitmap(AssetLoader.Open(new Uri("avares://Lumen/Assets/Aio/reference-isometric.png"))));
     // A Red design draws every accent in the red of the Panel designs (lighter reds for the second colours).
@@ -99,7 +100,7 @@ public sealed partial class AioTile
         foreach(var (key,second,plot) in referencePlots)plot.Set(Series(key),second==null?null:Series(second));
     }
     private Control RefHeading(string title,string glyph,Color color)=>Ui.Columns("Auto,*",new Border{Margin=new Thickness(0,0,7,0),Child=Ui.Glyph(glyph,color,21)},TextFonts.Mark(Text(Translate(title),19,color),TextRole.Title));
-    private void RefSection(Control body,Color color,bool last=false)
+    private void RefSection(Control body,Color color,bool last=false,bool network=false)
     {
         Control section;
         // Aurora Fusion: no glowing wavy frame per section (user request); plain sections with thin dividers.
@@ -107,7 +108,13 @@ public sealed partial class AioTile
         else if(style==WidgetStyle.AioPopConsole)section=new AioReferenceSurface{Alpha=cardAlpha/255d,Mode="pop",Dark=!lightSurface,Tint=color,Padding=new Thickness(12,14),Child=body};
         else if(style==WidgetStyle.AioPrecision)section=new Border{BorderBrush=Palette.Brush(C("#34445E")),BorderThickness=new Thickness(1),CornerRadius=new CornerRadius(12),Padding=new Thickness(9,8),Child=body};
         else section=new Border{Padding=new Thickness(9,style==WidgetStyle.AioSignalRack?5:10),Child=body};
-        section.Tag="aio-section";content.Children.Add(section);
+        section.Tag="aio-section";
+        if (network && AioDesigns.NetworkFooterLayout(designStyle))
+        {
+            networkFooter.Add(section);
+            return;
+        }
+        content.Children.Add(section);
         if(!last && style is not (WidgetStyle.AioPrecision or WidgetStyle.AioCarbonPulse or WidgetStyle.AioPopConsole))
         {var divider=Divider();if(style==WidgetStyle.AioSignalRack)divider.Margin=new Thickness(0,2);content.Children.Add(divider);}
     }
@@ -129,6 +136,14 @@ public sealed partial class AioTile
     private void BuildReference(List<AioReading> rows)
     {
         content.Children.Clear();fields.Clear();formats.Clear();meters.Clear();charts.Clear();rings.Clear();heat.Clear();referencePlots.Clear();referenceUsed.Clear();referenceRows=rows;drivesPlaced=false;diagramDisks.Clear();
+        atlasDrivesPlaced = false;
+        networkFooter.Clear();
+        var atlasLayout = AioDesigns.AtlasDriveLayout(designStyle);
+        var networkAtBottom = AioDesigns.NetworkFooterLayout(designStyle);
+        var compactNetwork = AioDesigns.CompactNetworkLayout(designStyle);
+        atlasDriveReadings = atlasLayout ? rows.Where(DiskReading).ToArray() : Array.Empty<AioReading>();
+        if (atlasLayout || compactNetwork)
+            referenceRows = rows.Where(r => !(atlasLayout && DiskReading(r)) && !(compactNetwork && r.Group == "Network")).ToList();
         casePlots.Clear();
         Padding=new Thickness(style is WidgetStyle.AioAuroraFusion or WidgetStyle.AioPopConsole?5:3);content.Spacing=style is WidgetStyle.AioPrecision or WidgetStyle.AioCarbonPulse?4:0;content.Tag=null;
         CornerRadius=new CornerRadius(style==WidgetStyle.AioTypeBlock?8:20);
@@ -161,12 +176,23 @@ public sealed partial class AioTile
         }
         ReferenceDrives();
         if(!MainboardDesign(style)&&!AioDesigns.Panel(style)&&!AioDesigns.Black(style)) ReferenceCoreBars();
-        if(red)RedFont();
-        if(skin is Color tint)RedSkin.Apply(this,tint,red);
+        if (compactNetwork) ReferenceCompactNetwork(rows.Where(r => r.Group == "Network").ToArray());
+        if (!networkAtBottom) ApplyReferenceSkin();
         // Explicitly selected additional devices/sensors stay available without duplicating the reference's main values.
         var extras=rows.Where(r=>!referenceUsed.Contains(r.Key)).ToArray();
         foreach(var group in extras.GroupBy(r=>r.Group+":"+r.Device))
-            RefSection(Stack(6,group.Select(r=>RefRow(r)).ToArray()),Accent(group.First()),true);
+            RefSection(Stack(6,group.Select(r=>RefRow(r)).ToArray()),Accent(group.First()),true, network: group.First().Group == "Network");
+        if (networkAtBottom)
+        {
+            content.Children.AddRange(networkFooter);
+            ApplyReferenceSkin();
+        }
+
+        void ApplyReferenceSkin()
+        {
+            if(red)RedFont();
+            if(skin is Color tint)RedSkin.Apply(this,tint,red);
+        }
     }
     private void ReferenceModelNames()
     {
@@ -222,7 +248,12 @@ public sealed partial class AioTile
         ReferenceCooling();ReferenceRails();
         var system=SystemWithoutDrives();var systemBody=Stack(6,RefHeading(L.T("System"),Glyphs.Drive,Cyan));
         if(style==WidgetStyle.AioChromatic)systemBody.Children.Add(ReferenceTiles(system));else foreach(var r in system)systemBody.Children.Add(RefRow(r,true,style==WidgetStyle.AioInstrument?2:0));
-        if(system.Length>0){systemBody.Children.Add(ReferenceNetwork());RefSection(systemBody,Cyan,true);}else if(Rs("Network").Length>0)RefSection(ReferenceNetwork(),Cyan,true);
+        if (AioDesigns.NetworkFooterLayout(designStyle))
+        {
+            if (system.Length > 0) RefSection(systemBody, Cyan, true);
+            if (Rs("Network").Length > 0) RefSection(Stack(5, Text(L.T("Network"), 13, muted), ReferenceNetwork()), Cyan, true, network: true);
+        }
+        else if(system.Length>0){systemBody.Children.Add(ReferenceNetwork());RefSection(systemBody,Cyan,true);}else if(Rs("Network").Length>0)RefSection(ReferenceNetwork(),Cyan,true);
     }
     private Control ReferenceTiles(IEnumerable<AioReading> rs)
     {
@@ -273,6 +304,59 @@ public sealed partial class AioTile
     {
         var rows=Rs("Network");return Cols(2,rows.Select(r=>NetLine(r,20,14)).ToArray());
     }
+
+    private void ReferenceCompactNetwork(AioReading[] rows)
+    {
+        if (rows.Length == 0) return;
+        var owner = source.Widgets.FirstOrDefault(w => w.Kind == WidgetKind.Network);
+        var accent = Color.TryParse(owner?.Accent, out var local) ? Accents.Readable(local, palette) : Accent(null);
+        var body = Stack(4);
+
+        if (slot?.ShowTitle != false && owner?.ShowTitle != false)
+        {
+            string title = Naming.Title(owner, 0, L.T("Network"));
+            if (string.IsNullOrWhiteSpace(owner?.Name)) title = title.ToUpperInvariant();
+            var heading = TextFonts.Mark(Text(title, 11, accent), TextRole.Title);
+            heading.FontWeight = FontWeight.SemiBold;
+            heading.LetterSpacing = .7;
+            heading.TextWrapping = TextWrapping.NoWrap;
+            heading.TextTrimming = TextTrimming.CharacterEllipsis;
+            var line = new Border { Height = 1, VerticalAlignment = VerticalAlignment.Center,
+                Background = Palette.Brush(SeeThrough(Palette.Mix(back, accent, .4))) };
+            var header = Ui.Columns("Auto,*", heading, line);
+            header.ColumnSpacing = 8;
+            body.Children.Add(header);
+        }
+
+        var metrics = new[] { ("aio.network.down", "↓ DL"), ("aio.network.up", "↑ UP"), ("aio.network.link", L.T("Link")) };
+        var cells = new List<Control>(3);
+        foreach (var (key, caption) in metrics)
+        {
+            var reading = rows.FirstOrDefault(r => r.Key == key);
+            if (reading != null) cells.Add(CompactNetworkCell(reading, caption));
+        }
+        if (cells.Count > 0)
+        {
+            var columns = FixedCols(cells.Count, cells.ToArray());
+            columns.Tag = "compact-network-values";
+            columns.ColumnSpacing = 8;
+            body.Children.Add(columns);
+        }
+        foreach (var reading in rows.Where(r => !referenceUsed.Contains(r.Key)))
+            body.Children.Add(CompactNetworkCell(reading, L.T(reading.Label)));
+
+        RefSection(body, accent, true, network: true);
+    }
+
+    private Control CompactNetworkCell(AioReading reading, string caption)
+    {
+        var label = TextColours.Bind(Text(caption, 10, muted), reading.Key);
+        label.TextWrapping = TextWrapping.NoWrap;
+        ToolTip.SetTip(label, L.T(reading.Label));
+        var value = V(reading, 13, ink);
+        value.TextWrapping = TextWrapping.NoWrap;
+        return Stack(1, FitLeft(label), FitLeft(value));
+    }
     /// <summary>Download/upload carry an arrow; the link speed is a plain labelled value (no graph).</summary>
     private Control NetLine(AioReading r,double arrow,double size,Color? color=null)
     {
@@ -288,6 +372,7 @@ public sealed partial class AioTile
     private AioReading[] SystemWithoutDrives()=>Rs("System").Where(r=>!r.Key.StartsWith("aio.system.disk.")).ToArray();
     private Control? DrivesBody()
     {
+        if (AioDesigns.AtlasDriveLayout(designStyle)) return AtlasDriveBody(atlasDriveReadings, heading: false);
         var rows=Rs("Drives");
         // The readings already follow the user's drive order.
         var order=referenceRows.Where(r=>r.Group=="Drives"||r.Key.StartsWith("aio.system.disk.")).Select(r=>r.Device).Distinct().ToList();
@@ -355,6 +440,11 @@ public sealed partial class AioTile
     }
     private void ReferenceDrives()
     {
+        if (AioDesigns.AtlasDriveLayout(designStyle))
+        {
+            if (AtlasDriveBody(atlasDriveReadings) is { } storage) RefSection(storage, AtlasDriveAccent(), true);
+            return;
+        }
         if(drivesPlaced)return;drivesPlaced=true;
         var body=DrivesBody();if(body==null)return;
         Control heading=TableReference?RefHeading(L.T("Drives"),Glyphs.Drive,Cyan):Text(L.T("Drives"),style==WidgetStyle.AioTypeBlock?16:13,style==WidgetStyle.AioPopConsole?ink:muted);
@@ -375,7 +465,9 @@ public sealed partial class AioTile
         if(Rs("Network").Length>0)
         {
             Control network=Stack(4,Text(L.T("Network"),13),Stack(4,Rs("Network").Select(r=>NetLine(r,17,12)).ToArray()));
-            if(style==WidgetStyle.AioPopConsole)network=new AioReferenceSurface{Alpha=cardAlpha/255d,Mode="pop",Dark=!lightSurface,Tint=C("#D9FF18"),Padding=new Thickness(7),Child=network};cells.Add(network);
+            if(style==WidgetStyle.AioPopConsole)network=new AioReferenceSurface{Alpha=cardAlpha/255d,Mode="pop",Dark=!lightSurface,Tint=C("#D9FF18"),Padding=new Thickness(7),Child=network};
+            if (AioDesigns.NetworkFooterLayout(designStyle)) RefSection(network, Cyan, true, network: true);
+            else cells.Add(network);
         }
         if(cells.Count>0)RefSection(Cols(3,cells.ToArray()),style==WidgetStyle.AioPopConsole?C("#ECECE8"):Cyan,true);
     }
@@ -425,7 +517,7 @@ public sealed partial class AioTile
         map.Height=Math.Max(375,pillTop+4);
         RefSection(Fit(map),Cyan);
         if(satellites.Length>4)RefSection(Cols(4,satellites.Skip(4).Select(r=>(Control)Satellite(r)).ToArray()),Cyan);
-        ReferenceCooling(true);ReferenceRails();if(Rs("Network").Length>0)RefSection(Stack(8,Text(L.T("Network"),13,muted),ReferenceNetwork()),Cyan,true);
+        ReferenceCooling(true);ReferenceRails();if(Rs("Network").Length>0)RefSection(Stack(8,Text(L.T("Network"),13,muted),ReferenceNetwork()),Cyan,true, network: true);
     }
     private void ReferenceThermal()
     {
@@ -460,10 +552,10 @@ public sealed partial class AioTile
     private void ReferenceRack()
     {
         int index=0;
-        void Band(string caption,Control body)
+        void Band(string caption,Control body,bool network=false)
         {
             var line=Ui.Columns("Auto,*",Text((++index).ToString("00")+"  ",13,muted),Text(caption,14));
-            RefSection(Stack(5,line,body),Cyan);
+            RefSection(Stack(5,line,body),Cyan,network:network);
         }
         foreach(var r in referenceRows.Where(r=>r.Key=="aio.cpu.load"||r.Group=="GPU"&&r.Key.EndsWith(".load")))
         {
@@ -474,10 +566,10 @@ public sealed partial class AioTile
         foreach(var r in referenceRows.Where(r=>r.Key.EndsWith(".voltage")))RefSection(Ui.Columns("*,Auto",Text((++index).ToString("00")+"   "+r.Group+" · "+L.T("Voltage"),13),V(r,18)),Cyan);
         var fans=Rs("Cooling");if(AioReadings.Selected(settings,"aio.cooling"))Band(L.T("Cooling")+" (rpm)",fans.Length==0?Text(L.T("No data"),12):Stack(7,fans.Select((r,i)=>RefRow(r,true,3,ColorsFor(i))).ToArray()));
         var rails=Rs("Rails");if(rails.Length>0)Band(Translate(L.T("Voltages")),Cols(3,rails.Select((r,i)=>(Control)new Border{BorderBrush=Palette.Brush(ColorsFor(i)),BorderThickness=new Thickness(1),CornerRadius=new CornerRadius(6),Padding=new Thickness(4),Child=Stack(0,Text(r.Label,11,muted),Fit(V(r,17)))}).ToArray()));
-        drivesPlaced=true;if(DrivesBody() is Control drives)Band(L.T("Drives"),drives);
+        drivesPlaced=true;if(DrivesBody() is Control drives)Band(DriveOwner?.ShowTitle == false || slot?.ShowTitle == false ? "" : Naming.Title(DriveOwner, 0, L.T("Drives")),drives);
         var down=R("down","Network");var up=R("up","Network");var link=R("link","Network");
-        if(down!=null||up!=null)Band(L.T("Network"),Ui.Columns("2*,1*",HistoryPlot(down??up!,64,up!=null&&down!=null?"mirror":"area",Cyan,down!=null?up:null),Stack(12,Rs("Network").Where(r=>r!=link).Select(r=>FitLeft(V(r,13,r==down?Cyan:Amber))).ToArray())));
-        if(link!=null)RefSection(Ui.Columns("*,Auto",Text((++index).ToString("00")+"   "+L.T("Link speed"),13),V(link,16)),Cyan);
+        if(down!=null||up!=null)Band(L.T("Network"),Ui.Columns("2*,1*",HistoryPlot(down??up!,64,up!=null&&down!=null?"mirror":"area",Cyan,down!=null?up:null),Stack(12,Rs("Network").Where(r=>r!=link).Select(r=>FitLeft(V(r,13,r==down?Cyan:Amber))).ToArray())),network:true);
+        if(link!=null)RefSection(Ui.Columns("*,Auto",Text((++index).ToString("00")+"   "+L.T("Link speed"),13),V(link,16)),Cyan,network:true);
     }
     private void ReferenceIsometric()=>BuildIsometricCard();
     private void ReferenceSculpted()
