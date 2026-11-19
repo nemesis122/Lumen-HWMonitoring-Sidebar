@@ -27,6 +27,11 @@ public class AioInstrumentDashboardTests
         card.Update(snapshot, history);
 
         TextBlock Reading(string key) => Assert.Single(card.GetLogicalDescendants().OfType<TextBlock>(), t => SensorDetails.KeyOf(t) == key);
+        Assert.DoesNotContain("aio.performance.fps", SensorDetails.VisibleKeys(card));
+        Assert.DoesNotContain("aio.performance.refresh", SensorDetails.VisibleKeys(card));
+        WidgetSensors.Select(settings, slot, "aio.performance.fps", true, snapshot);
+        WidgetSensors.Select(settings, slot, "aio.performance.refresh", true, snapshot);
+        card.Update(snapshot, history);
         Assert.Equal("117", Reading("aio.performance.fps").Text);
         Assert.Equal("144", Reading("aio.performance.refresh").Text);
         Assert.Equal(Format.Temperature(snapshot.Cpu!.Temperature, true), Reading("aio.cpu.temp").Text);

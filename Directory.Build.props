@@ -6,6 +6,7 @@
     <LangVersion>latest</LangVersion>
     <AvaloniaVersion>11.3.22</AvaloniaVersion>
     <Version>4.5.5</Version>
+    <!-- FPS and display refresh rate are opt-in in the instrument designs. -->
     <AssemblyVersion>$(Version).0</AssemblyVersion>
     <FileVersion>$(AssemblyVersion)</FileVersion>
     <InformationalVersion>$(Version)</InformationalVersion>

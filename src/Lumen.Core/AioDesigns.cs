@@ -141,6 +141,7 @@ public static class AioDesigns
         or WidgetKind.Power or WidgetKind.Memory or WidgetKind.Drives or WidgetKind.Network or WidgetKind.Overview;
     public static bool SensorDefault(WidgetStyle style,string key)
     {
+        if (key is "aio.performance.fps" or "aio.performance.refresh") return false;
         if (AtlasDriveLayout(style) && key.StartsWith("aio.system.disk.")) return true;
         style=Base(style); // a Red design starts with the sensors of its base design
         if (Instruments(style) && (key is "aio.cpu.power" or "aio.network.link" || key.StartsWith("aio.system.ram.") ||
