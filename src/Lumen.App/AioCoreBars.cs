@@ -21,7 +21,8 @@ public sealed partial class AioTile
         coreBars = null;
         var loads = lastCoreLoads;
         if (loads.Count < 2 || !AioReadings.Selected(settings, "aio.cpu.coreloads") || !referenceRows.Any(r => r.Group == "CPU")) return;
-        coreBars = new AioCoreBars(ink, muted, track) { Loads = loads };
+        // Isometric Atlas / Tiles: a compact heatmap (one coloured cell per core) instead of mostly empty bars with tiny numbers.
+        coreBars = new AioCoreBars(ink, muted, track) { Loads = loads, Heatmap = style is WidgetStyle.AioIsometricAtlas or WidgetStyle.AioIsometricTiles };
         var section = new Border { Padding = new Thickness(9, 4, 9, 8), Child = coreBars, Tag = "aio-section" };
         // Right after the part of the design that shows the CPU values; otherwise after the hardware names.
         var cpuTexts = fields.Where(f => f.Key.StartsWith("aio.cpu.")).SelectMany(f => f.Value).ToHashSet();
@@ -46,6 +47,9 @@ public sealed class AioCoreBars : Control, IColourGraph, RedSkin.IOneColour
     public bool OneColour { get; set; }
     public bool Compact { get; set; }
     public bool NumbersOnly { get; init; }
+    /// <summary>One cell per core, filled with the load colour; core name small at the top, load large in the middle.</summary>
+    public bool Heatmap { get; init; }
+    private const double HeatCell = 32, HeatGap = 4;
     private readonly Color ink, muted, track;
     private IReadOnlyList<double> loads = Array.Empty<double>();
     public AioCoreBars(Color ink, Color muted, Color track) { this.ink = ink; this.muted = muted; this.track = track; }
@@ -56,7 +60,7 @@ public sealed class AioCoreBars : Control, IColourGraph, RedSkin.IOneColour
     }
     private const double Gap = 4, MinColumn = 15, Labels = 28;
     /// <summary>Cores per row: as many as fit with a readable name and load below; more cores wrap onto further rows.</summary>
-    private int MostPerRow(double width) => Math.Max(1, Math.Min(loads.Count, (int)Math.Floor((width + Gap) / ((NumbersOnly ? 27 : MinColumn) + Gap))));
+    private int MostPerRow(double width) => Math.Max(1, Math.Min(loads.Count, (int)Math.Floor((width + Gap) / ((Heatmap ? 30 : NumbersOnly ? 27 : MinColumn) + Gap))));
     private int Rows(double width) => loads.Count == 0 ? 0 : (int)Math.Ceiling(loads.Count / (double)MostPerRow(width));
     // Rows are filled evenly (16 cores: 8 + 8, not 11 + 5).
     private int PerRow(double width) => Rows(width) == 0 ? 1 : (int)Math.Ceiling(loads.Count / (double)Rows(width));
@@ -66,6 +70,7 @@ public sealed class AioCoreBars : Control, IColourGraph, RedSkin.IOneColour
     {
         double width = double.IsFinite(available.Width) ? available.Width : 260;
         int rows = Rows(width);
+        if (Heatmap) return new Size(width, rows * HeatCell + Math.Max(0, rows - 1) * HeatGap);
         return new Size(width, rows * (BarHeight(width) + Labels) + Math.Max(0, rows - 1) * 6);
     }
     internal static Color Heat(double f)
@@ -88,6 +93,7 @@ public sealed class AioCoreBars : Control, IColourGraph, RedSkin.IOneColour
     public override void Render(DrawingContext c)
     {
         double w = Bounds.Width; if (loads.Count == 0 || w < 10) return;
+        if (Heatmap) { RenderHeatmap(c, w); return; }
         int perRow = PerRow(w); double barHeight = BarHeight(w);
         double col = (w - Gap * (perRow - 1)) / perRow;
         double radius = Math.Min(5, col / 2);
@@ -118,6 +124,33 @@ public sealed class AioCoreBars : Control, IColourGraph, RedSkin.IOneColour
             }
             Centered("C" + (i + 1), typeface, LabelInk is Color li ? li : muted, top + barHeight + 2);
             Centered(double.IsFinite(loads[i]) ? Math.Round(loads[i]).ToString("0") + (NumbersOnly ? " %" : "") : "—", number, NumbersOnly && peak > 0 && loads[i] == peak && Tint is Color highlight ? highlight : ValueInk ?? ink, top + barHeight + 14);
+        }
+    }
+
+    private void RenderHeatmap(DrawingContext c, double w)
+    {
+        int perRow = PerRow(w);
+        double col = (w - HeatGap * (perRow - 1)) / perRow;
+        var name = new Typeface(Ui.GraphFont, FontStyle.Normal, FontWeight.Medium);
+        var number = new Typeface(Ui.GraphFont, FontStyle.Normal, FontWeight.SemiBold);
+        var empty = Color.FromArgb(Math.Max(track.A, (byte)120), track.R, track.G, track.B);
+        for (int i = 0; i < loads.Count; i++)
+        {
+            double x = (i % perRow) * (col + HeatGap), y = (i / perRow) * (HeatCell + HeatGap);
+            double f = double.IsFinite(loads[i]) ? Math.Clamp(loads[i] / 100, 0, 1) : 0;
+            var heat = Tint is Color tint ? RedSkin.Tint(Heat(f), tint, OneColour) : Heat(f);
+            // Idle cores stay a calm dark cell with a hint of colour; the cell fills with colour as the load rises.
+            var fill = Palette.Mix(empty, heat, .18 + .72 * Math.Sqrt(f));
+            c.DrawRectangle(Palette.Brush(fill), new Pen(Palette.Brush(Color.FromArgb(70, heat.R, heat.G, heat.B)), 1), new Rect(x + .5, y + .5, col - 1, HeatCell - 1), 5, 5);
+            void Draw(string text, Typeface face, double size, Color color, double top)
+            {
+                var ft = new FormattedText(text, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, face, size, Palette.Brush(color));
+                double s = ft.Width > col - 4 ? (col - 4) / ft.Width : 1;
+                using (c.PushTransform(Matrix.CreateTranslation(-(x + col / 2), -top) * Matrix.CreateScale(s, s) * Matrix.CreateTranslation(x + col / 2, top)))
+                    c.DrawText(ft, new Point(x + col / 2 - ft.Width / 2, top));
+            }
+            Draw("C" + (i + 1), name, 8.5, LabelInk ?? Color.FromArgb(190, ink.R, ink.G, ink.B), y + 2);
+            Draw(double.IsFinite(loads[i]) ? Math.Round(loads[i]).ToString("0") : "—", number, 12.5, ValueInk ?? ink, y + 13);
         }
     }
 }

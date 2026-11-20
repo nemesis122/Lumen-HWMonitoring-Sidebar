@@ -22,6 +22,8 @@ public sealed partial class AioTile : Border, IWidget, INamed
     public HashSet<TextBlock> ValueTexts => fields.Values.SelectMany(x=>x).ToHashSet();
     private readonly Dictionary<TextBlock,Func<AioReading,string>> formats = new();
     private readonly List<(string Key,AioMeter Meter)> meters = new();
+    /// <summary>Parts that change with a live reading beyond its text (idle fans, warning outlines).</summary>
+    private readonly List<(string Key,Action<AioReading?> Apply)> watchers = new();
     private readonly List<(string Key,AreaChart Chart)> charts = new();
     private readonly List<(string Key,AioRing Ring)> rings = new();
     private readonly List<(string Key,Border Cell)> heat = new();
@@ -142,6 +144,7 @@ public sealed partial class AioTile : Border, IWidget, INamed
             ToolTip.SetTip(chart,series.Any(double.IsFinite)?L.T("History chart"):L.T("No data"));
         }
         UpdateReferencePlots(h);
+        foreach(var (key,apply) in watchers) apply(readings.GetValueOrDefault(key));
         UpdateCasePlots();
 
         if (AioDesigns.Dashboard(style)) UpdateDashboard();

@@ -18,20 +18,34 @@ public sealed partial class AioTile
 {
     private static readonly Dictionary<string, Lazy<Bitmap>> isometricParts =
         new[] { "cpu", "gpu", "ram", "ssd", "fan0", "fan1", "fan2", "fan3", "fan4", "psu", "router" }
+            .SelectMany(n => new[] { n, n + "_red" })
             .ToDictionary(n => n, n => new Lazy<Bitmap>(() => new Bitmap(AssetLoader.Open(new Uri("avares://Lumen/Assets/Aio/Parts/" + n + ".png")))));
+
+    /// <summary>Red designs (without an own colour from Appearance) show every illustration in the one red: no teal, purple or amber glow.</summary>
+    private bool RedParts => red && skin == RedSkin.Red;
 
     private Control Part(string name, double width, double height) => new Image
     {
-        Source = isometricParts[name].Value, MaxWidth = width, MaxHeight = height, Stretch = Stretch.Uniform,
+        Source = isometricParts[RedParts ? name + "_red" : name].Value, MaxWidth = width, MaxHeight = height, Stretch = Stretch.Uniform,
         HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Tag = "graphic"
     };
+
+    /// <summary>
+    /// The picture at the top of a tile: one slot of a fixed height (growing with the graphic size) and the full tile width,
+    /// so every tile in a row starts its title on the same line and the pictures have the same weight.
+    /// </summary>
+    private Control ArtSlot(string name, double height) => new Border { Height = height, Tag = "graphic", Child = Part(name, height * 1.32, height) };
 
     /// <summary>The model name shown under a part's title (the widget's own name settings apply).</summary>
     private string PartModel(WidgetKind kind, int index, string model)
     {
         if (!settings.ShowNames || slot?.ShowHardware == false) return "";
         var owned = source.Widgets.FirstOrDefault(w => w.Kind == kind);
-        return Naming.ShowHardware(owned, settings) ? Naming.Hardware(owned, index, model) : "";
+        if (!Naming.ShowHardware(owned, settings)) return "";
+        string name = Naming.Hardware(owned, index, model);
+        // Atlas / Tiles: a built-in name is shortened (maker and filler words dropped) instead of being cut off at the end;
+        // an own name stays as typed. Other designs that borrow this helper keep the full name.
+        return name == model && style is WidgetStyle.AioIsometricAtlas or WidgetStyle.AioIsometricTiles ? Naming.Short(model) : name;
     }
 
     private Control PartTitle(string title, Color color, string model)
@@ -56,14 +70,37 @@ public sealed partial class AioTile
     private Control SmallValue(AioReading r, double size = 14) =>
         Stack(1, FitLeft(Text(RefLabel(r), 11, muted)), FitLeft(V(r, size)));
 
+    /// <summary>
+    /// Hotspot / memory junction: a calm outline that only turns into a warning (amber, then red) when the reading
+    /// reaches the temperature warning of the settings. A red outline at a normal 47 °C read like an alarm (user feedback).
+    /// </summary>
     private Control Pill(AioReading r, Color color, double size = 15)
     {
-        var line = Ui.Columns("*,Auto", FitLeft(Text(RefLabel(r), 12, color)), V(r, size, ink)); line.ColumnSpacing = 6;
-        return new Border
+        var label = Text(RefLabel(r), 12, muted);
+        var line = Ui.Columns("*,Auto", FitLeft(label), V(r, size, ink)); line.ColumnSpacing = 6;
+        var calm = Palette.Mix(back, color, .45);
+        var pill = new Border
         {
-            BorderBrush = Palette.Brush(color), BorderThickness = new Thickness(1.2), CornerRadius = new CornerRadius(9),
-            Background = Palette.Brush(SeeThrough(Palette.Mix(back, color, .13))), Padding = new Thickness(8, 3), Child = line
+            BorderBrush = Palette.Brush(calm), BorderThickness = new Thickness(1.2), CornerRadius = new CornerRadius(9),
+            Background = Palette.Brush(SeeThrough(Palette.Mix(back, color, .07))), Padding = new Thickness(8, 3), Child = line
         };
+        watchers.Add((r.Key, row =>
+        {
+            double limit = settings.TemperatureWarning;
+            Color? alarm = row?.Number is double t && t >= limit ? C(t >= limit + 10 ? "#EF4444" : "#F59E0B") : null;
+            pill.BorderBrush = Palette.Brush(alarm ?? calm);
+            pill.Background = Palette.Brush(SeeThrough(Palette.Mix(back, alarm ?? color, alarm.HasValue ? .16 : .07)));
+        }));
+        return pill;
+    }
+
+    /// <summary>A large number with its unit small after it (°C, %), the same in every tile.</summary>
+    private Control BigPercent(AioReading r, double size, Color color)
+    {
+        var t = V(r, size, color); formats[t] = row => row.Number is double n ? Math.Round(n).ToString("0") : "—"; t.Text = formats[t](r);
+        if (t is AioValueText tight) tight.Cap = 0; // the unit sits right after the number (a percentage rarely changes its digit count)
+        var unit = Text("%", size * .34, color); unit.VerticalAlignment = VerticalAlignment.Bottom; unit.Margin = new Thickness(1, 0, 0, size * .13);
+        return new AioReferenceValue(t, new StackPanel { Orientation = Orientation.Horizontal, Children = { t, unit } });
     }
 
     private Control FitRight(Control value)
@@ -93,10 +130,21 @@ public sealed partial class AioTile
             var value = V(r, 16);
             if (rpmBelow) { formats[value] = row => row.Number.HasValue ? Format.Number(row.Number) : "—"; value.Text = formats[value](r); }
             value.HorizontalAlignment = HorizontalAlignment.Center;
-            var name = Text(Translate(L.T(r.Label)), 11, muted); name.HorizontalAlignment = HorizontalAlignment.Center; name.TextAlignment = TextAlignment.Center;
+            var name = Text(style is WidgetStyle.AioIsometricAtlas or WidgetStyle.AioIsometricTiles ? Naming.Short(Translate(L.T(r.Label))) : Translate(L.T(r.Label)), 11, muted); name.HorizontalAlignment = HorizontalAlignment.Center; name.TextAlignment = TextAlignment.Center;
             name.MaxLines = 2; name.TextTrimming = TextTrimming.CharacterEllipsis;
-            var cell = Stack(1, Part(twoTone?(i%2==0?"fan0":"fan2"):uniform ? "fan0" : FanArt[i % FanArt.Length], art, art * .87), name, Fit(value));
-            if (rpmBelow) { var unit = Text("rpm", 9, muted); unit.HorizontalAlignment = HorizontalAlignment.Center; cell.Children.Add(unit); }
+            var picture = Part(twoTone?(i%2==0?"fan0":"fan2"):uniform ? "fan0" : FanArt[i % FanArt.Length], art, art * .87);
+            var cell = Stack(1, picture, name, Fit(value));
+            TextBlock? unit = null;
+            if (rpmBelow) { unit = Text("rpm", 9, muted); unit.HorizontalAlignment = HorizontalAlignment.Center; cell.Children.Add(unit); }
+            // A fan that stands still (0 rpm, e.g. a GPU fan in zero-fan mode) is dimmed and says "Idle" instead of looking like a running one.
+            formats[value] = row => row.Number is 0 ? L.T("Idle") : rpmBelow ? (row.Number.HasValue ? Format.Number(row.Number) : "—") : Display(row);
+            value.Text = formats[value](r);
+            watchers.Add((r.Key, row =>
+            {
+                bool idle = row?.Number is 0;
+                picture.Opacity = idle ? .38 : 1;
+                if (unit != null) unit.Opacity = idle ? 0 : 1;
+            }));
             return (Control)cell;
         }).ToArray());
     }
@@ -135,7 +183,7 @@ public sealed partial class AioTile
         {
             var r = Find(part); if (r == null) return (Control)new Border();
             string label = part == "temp" ? "Temp." : Translate(L.T(r.Label));
-            return Stack(1, FitLeft(Text(label, 11, muted)), FitLeft(V(r, 14, part == "temp" ? Amber : Accent(r))));
+            return Stack(1, FitLeft(Text(label, 11, muted)), part == "temp" ? MainTemp(r, 14, Amber) : FitLeft(V(r, 14, Accent(r))));
         }).ToArray());
         columns.ColumnSpacing = 4;
         var body = Stack(4, columns);
@@ -183,9 +231,9 @@ public sealed partial class AioTile
         var ram = R("ram", "System");
         if (ram != null)
         {
-            var percent = V(ram, 32, Cyan); formats[percent] = row => Format.Percent(row.Number); percent.Text = formats[percent](ram);
+            var percent = BigPercent(ram, 32, Cyan);
             var amount = AmountText(ram, 14, ink); fields[ram.Key].Add(amount); formats[amount] = Amount;
-            var side = Stack(5, PartTitle(L.T("Memory"), Cyan, ""), FitLeft(percent), FitLeft(amount), PartMeter(ram, Cyan));
+            var side = Stack(5, PartTitle(L.T("Memory"), Cyan, ""), percent, FitLeft(amount), PartMeter(ram, Cyan));
             RefSection(ArtRow(Part("ram", 112, 88), side), Cyan);
         }
         var drives = PartDrives();
@@ -253,7 +301,7 @@ public sealed partial class AioTile
             string model = cpu ? PartModel(WidgetKind.Cpu, 0, snapshot.Cpu?.Name ?? "") : PartModel(WidgetKind.Gpu, index, snapshot.Gpus.FirstOrDefault(g => g.Id == first.Device)?.Name ?? "");
             var head = Ui.Columns("Auto,*", Text(title, 15, color), temp == null ? new Border() : FitRight(MainTemp(temp, 26, color))); head.ColumnSpacing = 6;
             // CPU and GPU art share one slot of the same height, so both titles and readings start on the same line.
-            var body = Stack(5, new Border { Height = 86, Tag = "graphic", Child = Part(cpu ? "cpu" : "gpu", 112, 86) }, head);
+            var body = Stack(5, ArtSlot(cpu ? "cpu" : "gpu", 86), head);
             if (model.Length > 0) { var m = Text(model, 10, muted); m.TextTrimming = TextTrimming.CharacterEllipsis; m.TextWrapping = TextWrapping.NoWrap; body.Children.Add(m); }
             if (load != null) body.Children.Add(LoadLine(load, color, 13));
             var pills = rows.Where(r => r.Key.EndsWith(".hotspot") || r.Key.EndsWith(".junction")).ToArray();
@@ -262,7 +310,9 @@ public sealed partial class AioTile
             if (cpu) foreach (var r in rest) body.Children.Add(LabelValue(RefLabel(r), r, 13));
             else if (rest.Length > 0)
             {
-                var strip = FixedCols(Math.Min(4, rest.Length), rest.Select(r => SmallValue(r, 13)).ToArray());
+                // Two columns, so a longer value such as "1.9 / 15.9 GB" keeps the size of the others instead of shrinking.
+                var strip = FixedCols(Math.Min(rest.Length > 2 ? 2 : rest.Length, 4), rest.Select(r => SmallValue(r, 13)).ToArray());
+                if (strip is Grid sg) sg.RowSpacing = 6;
                 details.Add(Tile(gpuIds.Count > 1 ? Stack(4, Text(title, 11, Purple), strip) : strip, Purple));
             }
             chips.Add(Tile(body, color));
@@ -274,22 +324,22 @@ public sealed partial class AioTile
         var ram = R("ram", "System");
         if (ram != null)
         {
-            var percent = V(ram, 26, Cyan); formats[percent] = row => Format.Percent(row.Number); percent.Text = formats[percent](ram);
+            var percent = BigPercent(ram, 26, Cyan);
             var amount = AmountText(ram, 13, ink); fields[ram.Key].Add(amount); formats[amount] = Amount;
             var ramHead = Ui.Columns("Auto,*", Text("RAM", 15, Cyan), FitRight(percent)); ramHead.ColumnSpacing = 6;
-            pair.Add(Tile(Stack(5, Part("ram", 112, 76), ramHead, FitLeft(amount), PartMeter(ram, Cyan)), Cyan));
+            pair.Add(Tile(Stack(5, ArtSlot("ram", 76), ramHead, FitLeft(amount), PartMeter(ram, Cyan)), Cyan));
         }
         var rails = Rs("Rails");
         if (rails.Length > 0)
-            pair.Add(Tile(Stack(5, new[] { Part("psu", 100, 76), PartTitle(L.T("Power supply"), Amber, "") }.Concat(rails.Select(r => LabelValue(r.Label, r, 13))).ToArray()), Amber));
+            pair.Add(Tile(Stack(5, new[] { ArtSlot("psu", 76), PartTitle(L.T("Power supply"), Amber, "") }.Concat(rails.Select(r => LabelValue(r.Label, r, 13))).ToArray()), Amber));
         TileRow(pair.ToArray());
 
         var driveTiles = PartDrives().Select(drive =>
         {
             var body = Stack(5, DriveArt(drive.Id, 92));
-            if (drive.Temp != null) { var t = Ui.Columns("Auto,*", Text("Temp.", 12, muted), FitRight(V(drive.Temp, 22, Amber))); t.ColumnSpacing = 6; body.Children.Add(t); }
-            var rates = drive.Rows.Where(r => !r.Key.EndsWith(".used")).ToArray();
-            if (rates.Length > 0) body.Children.Add(FixedCols(rates.Length, rates.Select(r => SmallValue(r, 13)).ToArray()));
+            if (drive.Temp != null) { var t = Ui.Columns("Auto,*", Text("Temp.", 12, muted), FitRight(MainTemp(drive.Temp, 22, Amber))); t.ColumnSpacing = 6; body.Children.Add(t); }
+            // Read and write as label/value rows at the size of the other values (side by side they shrank to a few pixels).
+            foreach (var r in drive.Rows.Where(r => !r.Key.EndsWith(".used"))) body.Children.Add(LabelValue(Translate(L.T(r.Label)), r, 13));
             var used = drive.Rows.FirstOrDefault(r => r.Key.EndsWith(".used"));
             if (used != null) body.Children.Add(Stack(4, LabelValue(Translate(L.T(used.Label)), used, 13), PartMeter(used, Purple)));
             return Tile(body, Amber);

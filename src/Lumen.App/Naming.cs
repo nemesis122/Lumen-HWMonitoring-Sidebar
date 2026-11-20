@@ -56,6 +56,25 @@ public static class Naming
 		return slot.HardwareName.Trim();
 	}
 
+	/// <summary>
+	/// A built-in CPU/GPU name without the maker and filler words, so the part that matters fits:
+	/// "AMD Ryzen 7 9800X3D 8-Core Processor" → "Ryzen 7 9800X3D", "AMD Radeon RX 9070 XT" → "RX 9070 XT",
+	/// "NVIDIA GeForce RTX 4090" → "RTX 4090", "13th Gen Intel(R) Core(TM) i7-13700K" → "Core i7-13700K".
+	/// </summary>
+	public static string Short(string name)
+	{
+		if (string.IsNullOrWhiteSpace(name)) return name ?? "";
+		string n = System.Text.RegularExpressions.Regex.Replace(name, @"\((R|TM|tm|r)\)|®|™", "");
+		n = System.Text.RegularExpressions.Regex.Replace(n, @"\b\d+(th|st|nd|rd) Gen\b", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+		n = System.Text.RegularExpressions.Regex.Replace(n, @"\b(\d+|Six|Eight|Twelve|Sixteen)-Core( Processor)?\b", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+		n = System.Text.RegularExpressions.Regex.Replace(n, @"\b(Processor|CPU|Graphics Card|with Radeon Graphics|w/ Radeon \w+ Graphics)\b", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+		n = System.Text.RegularExpressions.Regex.Replace(n, @"^\s*(AMD|Intel|NVIDIA)\s+", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+		n = System.Text.RegularExpressions.Regex.Replace(n, @"^\s*(Radeon|GeForce)\s+(?=(RX|RTX|GTX|GT|Pro|VII)\b)", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+		n = System.Text.RegularExpressions.Regex.Replace(n, @"\s*@\s*[\d.]+\s*GHz", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+		n = System.Text.RegularExpressions.Regex.Replace(n, @"\s{2,}", " ").Trim(' ', ',', '-');
+		return n.Length == 0 ? name.Trim() : n;
+	}
+
 	public static bool ShowHardware(WidgetSlot? slot, Settings s)
 	{
 		if (s.ShowNames)

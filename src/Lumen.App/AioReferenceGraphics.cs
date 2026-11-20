@@ -217,6 +217,12 @@ public sealed class AioReferenceHistory : Control, IColourGraph, RedSkin.IOneCol
     public Color Color { get; init; }
     public Color OtherColor { get; init; } = Color.Parse("#F9BC44");
     public string Mode { get; init; } = "area";
+    /// <summary>
+    /// Network traffic: a logarithmic scale, so the everyday few kbit/s stay visible next to a short download peak
+    /// (on a linear scale the line was flat with one spike).
+    /// </summary>
+    public bool Log { get; init; }
+    private double Level(double value,double max)=>Log?Math.Clamp(Math.Log10(1+99*Math.Max(0,value)/max)/2,0,1):Math.Clamp(value/max,0,1);
     private double[] values=Array.Empty<double>(), other=Array.Empty<double>();
     public void Set(double[] first,double[]? second=null){values=first;other=second??Array.Empty<double>();InvalidateVisual();}
     public override void Render(DrawingContext c)
@@ -233,7 +239,7 @@ public sealed class AioReferenceHistory : Control, IColourGraph, RedSkin.IOneCol
                 for(int i=0;i<data.Length;i++)
                 {
                     if(!double.IsFinite(data[i])){started=false;continue;}
-                    double x=w*i/(data.Length-1),level=Math.Clamp(data[i]/max,0,1),y=origin+(invert?1:-1)*amplitude*level;
+                    double x=w*i/(data.Length-1),level=Level(data[i],max),y=origin+(invert?1:-1)*amplitude*level;
                     if(Mode=="bars")
                     {double slot=w/data.Length;c.DrawRectangle(Palette.Brush(OneColour?color:Palette.Mix(color,Colors.White,level*.3)),null,new Rect(slot*i,origin-amplitude*level,Math.Max(1,slot-1),amplitude*level));continue;}
                     if(started)s.LineTo(new Point(x,y));else{s.BeginFigure(new Point(x,y),false);started=true;}a.LineTo(new Point(x,y));

@@ -747,7 +747,7 @@ public sealed partial class SettingsWindow : Window
 					{
 						designName.TextWrapping = TextWrapping.Wrap;
 						designName.TextAlignment = TextAlignment.Center;
-						designName.MaxWidth = 100;
+						designName.MaxWidth = 116;
 					}
 				}
 			}
@@ -935,8 +935,8 @@ public sealed partial class SettingsWindow : Window
         if(style is WidgetStyle.AioMainboardMap or WidgetStyle.AioMainboardDesktop or WidgetStyle.AioMainboardStrips or WidgetStyle.AioMainboardGauges or WidgetStyle.AioMainboardMatrix or WidgetStyle.AioMainboardType)return AioDesigns.Name(style);
         if (DarkAioDesigns.Contains(style))
         {
-            var design = DarkAioDesigns.For(style);
-            return $"{design.Number} · {design.Name}";
+            // No number in front of the design name (user request); the names alone are distinct.
+            return DarkAioDesigns.For(style).Name;
         }
         if (AioDesigns.Contains(style)) return "AIO · " + AioDesigns.Name(style);
 		return style switch
@@ -992,8 +992,32 @@ public sealed partial class SettingsWindow : Window
         }
         else if(leavingDesktop)s.FullScreen=false;
     }
+	private static readonly Dictionary<WidgetStyle, Avalonia.Media.Imaging.Bitmap?> designPreviews = new();
+
+	/// <summary>A real preview of the design (rendered with demonstration readings, see DesignThumbnailTests); null when none is stored.</summary>
+	private static Avalonia.Media.Imaging.Bitmap? DesignPreview(WidgetStyle style)
+	{
+		if (designPreviews.TryGetValue(style, out var known)) return known;
+		Avalonia.Media.Imaging.Bitmap? bitmap = null;
+		try
+		{
+			var uri = new Uri("avares://Lumen/Assets/Thumbs/" + style + ".png");
+			if (Avalonia.Platform.AssetLoader.Exists(uri)) using (var stream = Avalonia.Platform.AssetLoader.Open(uri)) bitmap = new Avalonia.Media.Imaging.Bitmap(stream);
+		}
+		catch { bitmap = null; }
+		return designPreviews[style] = bitmap;
+	}
+
 	private Control StyleThumb(WidgetStyle style)
 	{
+		// Every design shows a small real picture of itself, so 120+ designs can be told apart at a glance (user request 5.0.1).
+		if (DesignPreview(style) is { } preview)
+			return new Border
+			{
+				Width = 112.0, Height = 65.0, CornerRadius = new CornerRadius(6.0), ClipToBounds = true,
+				BorderBrush = Palette.Brush(p.Stroke), BorderThickness = new Thickness(1.0), Background = Brushes.Black,
+				Child = new Image { Source = preview, Stretch = Stretch.UniformToFill }
+			};
 		Canvas c = new Canvas
 		{
 			Width = 64.0,

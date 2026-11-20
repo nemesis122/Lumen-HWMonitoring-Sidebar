@@ -92,7 +92,7 @@ public sealed partial class AioTile
     {
         if(!settings.Shows("aio.graphs"))return new Border();
         referenceUsed.Add(r.Key);if(second!=null)referenceUsed.Add(second.Key);
-        var graph=new AioReferenceHistory{Color=color??Accent(r),OtherColor=Amber,Mode=mode,Height=height,Tag="graphic"};referencePlots.Add((r.Key,second?.Key,graph));return graph;
+        var graph=new AioReferenceHistory{Color=color??Accent(r),OtherColor=Amber,Mode=mode,Height=height,Tag="graphic",Log=r.Key.StartsWith("aio.network.")};referencePlots.Add((r.Key,second?.Key,graph));return graph;
     }
     private void UpdateReferencePlots(History h)
     {
@@ -135,7 +135,7 @@ public sealed partial class AioTile
     }
     private void BuildReference(List<AioReading> rows)
     {
-        content.Children.Clear();fields.Clear();formats.Clear();meters.Clear();charts.Clear();rings.Clear();heat.Clear();referencePlots.Clear();referenceUsed.Clear();referenceRows=rows;drivesPlaced=false;diagramDisks.Clear();
+        content.Children.Clear();fields.Clear();formats.Clear();meters.Clear();watchers.Clear();charts.Clear();rings.Clear();heat.Clear();referencePlots.Clear();referenceUsed.Clear();referenceRows=rows;drivesPlaced=false;diagramDisks.Clear();
         atlasDrivesPlaced = false;
         networkFooter.Clear();
         var atlasLayout = AioDesigns.AtlasDriveLayout(designStyle);

@@ -22,7 +22,8 @@ public class StyleSelectionTests
             var actual=(Palette)paletteField.GetValue(window)!;
             Assert.Equal(Palette.For(settings,actual.Dark,null).Cool,actual.Cool);
             var thumb=(Control)typeof(SettingsWindow).GetMethod("StyleThumb",flags)!.Invoke(window,new object[]{WidgetStyle.Terminal})!;
-            Assert.Contains(thumb.GetLogicalDescendants().OfType<Avalonia.Controls.Shapes.Shape>(),shape=>shape.Fill is Avalonia.Media.ISolidColorBrush brush&&brush.Color==actual.Cool);
+            // 5.0.1: the picker shows a real preview of the design (fixed demo picture); the palette still refreshes.
+            Assert.IsType<Avalonia.Controls.Image>(((Border)thumb).Child);
         }
         try
         {
