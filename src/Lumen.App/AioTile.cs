@@ -214,7 +214,7 @@ public sealed partial class AioTile : Border, IWidget, INamed
         {
             var owned=source.Widgets.FirstOrDefault(w=>w.Kind==kind);
             label=Naming.Title(owned,0,label);
-            model=Naming.ShowHardware(owned,settings)?Naming.Hardware(owned,0,model??""):"";
+            model=Naming.ShowHardware(owned,settings)?Naming.HardwareShort(owned,0,model??""):"";
         }
         label=Translate(label);
         var heading=Text(label,15,C(lightSurface?"#174FA8":"#A8E5E9")); TextFonts.Mark(heading, TextRole.Title);

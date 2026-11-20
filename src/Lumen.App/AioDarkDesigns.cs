@@ -273,7 +273,7 @@ public sealed partial class AioTile
         if (hardware.Any(p => p.Id == "cpu") && lastCoreLoads.Count >= 2 && AioReadings.Selected(settings, "aio.cpu.coreloads"))
         {
             var accent = DarkAccent(look, WidgetKind.Cpu);
-            coreBars = new AioCoreBars(ink, muted, DarkSurface(.03)) { Loads = lastCoreLoads, Tint = accent,
+            coreBars = new AioCoreBars(ink, muted, DarkSurface(.03)) { Loads = lastCoreLoads, Tint = accent, Heatmap = true,
                 NumbersOnly = true, Compact = true, Tag = "graphic" };
             content.Children.Add(DarkCard(Stack(5, DarkCaption(L.T("Cores"), ink, 13, true),
                 TextColours.Bind(coreBars, "aio.cpu.coreloads")), "cpu"));

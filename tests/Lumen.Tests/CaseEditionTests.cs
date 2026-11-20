@@ -121,8 +121,8 @@ public class CaseEditionTests
         WidgetSensors.Select(s,slot,GpuGroup.ExtraKey(intel),true,snapshot);
         var card=new AioTile(design,Palette.For(true,false),Metrics.For(Density.Fit),s);card.Own(slot,0);card.Update(snapshot,history);
         var scene=Assert.Single(card.GetLogicalDescendants().OfType<CaseEditionPanel>());var gpu=scene.Widgets.Where(w=>w.Component=="gpu").ToArray();Assert.Equal(2,gpu.Length);
-        Assert.Contains(gpu,w=>w.Control.GetLogicalDescendants().OfType<TextBlock>().Any(t=>t.Text==amd.Name));
-        Assert.Contains(gpu,w=>w.Control.GetLogicalDescendants().OfType<TextBlock>().Any(t=>t.Text==intel.Name));
+        Assert.Contains(gpu,w=>w.Control.GetLogicalDescendants().OfType<TextBlock>().Any(t=>t.Text==Naming.Short(amd.Name)));
+        Assert.Contains(gpu,w=>w.Control.GetLogicalDescendants().OfType<TextBlock>().Any(t=>t.Text==Naming.Short(intel.Name)));
         Assert.Contains("aio.gpu.discrete-one.temp",SensorDetails.VisibleKeys(card));Assert.Contains("aio.gpu.other-two.load",SensorDetails.VisibleKeys(card));return true;
     });
 }

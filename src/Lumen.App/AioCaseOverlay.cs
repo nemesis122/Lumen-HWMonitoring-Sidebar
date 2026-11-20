@@ -112,7 +112,7 @@ public sealed partial class AioTile
                 body.Children.Add(FixedCols(2, cores.Select(r => (Control)Stack(1, DashboardText(r.Label, 9), FitRight(V(r, 10, accent)))).ToArray()));
             if (part.Id == "cpu" && lastCoreLoads.Count >= 2 && AioReadings.Selected(settings, "aio.cpu.coreloads"))
             {
-                coreBars = new AioCoreBars(Colors.White, C("#BBC6D1"), C("#29313E")) { Loads = lastCoreLoads, Tint = accent, Compact = refined };
+                coreBars = new AioCoreBars(Colors.White, C("#BBC6D1"), C("#29313E")) { Loads = lastCoreLoads, Tint = accent, Compact = refined, Heatmap = true };
                 body.Children.Add(coreBars);
             }
             if (look.Graphs && settings.Shows("aio.graphs") && part.Rows.FirstOrDefault(r => r.Number.HasValue) is { } chartRow)

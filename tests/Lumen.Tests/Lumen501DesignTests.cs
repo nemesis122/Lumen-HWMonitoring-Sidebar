@@ -36,7 +36,7 @@ public class Lumen501DesignTests
     }
 
     [Fact]
-    public void Isometric_tiles_show_short_model_names_and_a_core_heatmap() => UiHost.Run(() =>
+    public void Aio_designs_show_short_model_names_and_a_core_heatmap() => UiHost.Run(() =>
     {
         var (card, _) = Tiles(WidgetStyle.AioIsometricTiles);
         var texts = card.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
@@ -47,13 +47,14 @@ public class Lumen501DesignTests
     });
 
     [Fact]
-    public void A_fan_at_zero_rpm_is_dimmed_and_reads_idle() => UiHost.Run(() =>
+    public void A_fan_at_zero_rpm_simply_reads_zero() => UiHost.Run(() =>
     {
+        // User preference: a stopped fan reads 0 rpm, no "Idle" text.
         var (card, _) = Tiles(WidgetStyle.AioIsometricTiles, snap =>
             snap with { Fans = snap.Fans.Select((f, i) => i == 0 ? f with { Rpm = 0 } : f).ToArray() });
-        var idle = card.GetLogicalDescendants().OfType<TextBlock>().Where(t => t.Text == "Idle").ToList();
-        Assert.Single(idle);
-        Assert.Contains(card.GetLogicalDescendants().OfType<Image>(), i => i.Opacity < .5);
+        var texts = card.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
+        Assert.DoesNotContain("Idle", texts);
+        Assert.Contains("0", texts);
         return true;
     });
 

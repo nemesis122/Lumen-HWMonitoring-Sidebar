@@ -189,7 +189,7 @@ public sealed partial class AioTile
         var cores=part.Rows.Where(r=>r.Group=="Cores").ToArray();if(cores.Length>0)body.Children.Add(FixedCols(2,cores.Select(EditionLine).ToArray()));
         if(part.Id=="cpu" && lastCoreLoads.Count>=2 && AioReadings.Selected(settings,"aio.cpu.coreloads"))
         {
-            coreBars=new AioCoreBars(Colors.White,C("#BFCCD6"),C("#29343F")){Loads=lastCoreLoads,Tint=accent,Compact=true,OneColour=true,Tag="graphic"};
+            coreBars=new AioCoreBars(Colors.White,C("#BFCCD6"),C("#29343F")){Loads=lastCoreLoads,Tint=accent,Compact=true,OneColour=true,Heatmap=true,Tag="graphic"};
             TextColours.Bind(coreBars,"aio.cpu.coreloads");
             var coreContent=Stack(4,EditionText(L.T("Cores")+" ("+lastCoreLoads.Count+")",10,C("#BDCBD5")),coreBars);
             if(look.Layout==Edition.Intel)return new DashboardColumns(body,coreContent);

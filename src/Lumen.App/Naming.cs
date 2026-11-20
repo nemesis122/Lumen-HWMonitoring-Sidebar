@@ -75,6 +75,13 @@ public static class Naming
 		return n.Length == 0 ? name.Trim() : n;
 	}
 
+	/// <summary>The hardware name for AIO designs: an own name as typed, a built-in name shortened (see <see cref="Short"/>).</summary>
+	public static string HardwareShort(WidgetSlot? slot, int index, string builtIn)
+	{
+		string name = Hardware(slot, index, builtIn);
+		return name == builtIn ? Short(builtIn) : name;
+	}
+
 	public static bool ShowHardware(WidgetSlot? slot, Settings s)
 	{
 		if (s.ShowNames)

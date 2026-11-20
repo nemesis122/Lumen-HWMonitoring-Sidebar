@@ -24,7 +24,7 @@ public sealed partial class AioTile
         if(Math.Max(settings.ActiveWidget?.Labels??1,Math.Max(settings.ActiveWidget?.Hero??1,settings.ActiveWidget?.Values??1))>1.15)
         {
             // At large text sizes, put the callouts into normal document flow.
-            RefSection(Fit(new AioIsometricArtwork(isometricArt.Value){Width=334,Height=500,FanCount=0,ShowCpu=Rs("CPU").Length>0,ShowGpu=Rs("GPU").Length>0,ShowRam=R("ram","System")!=null,ShowDisk=Rs("System").Any(r=>!r.Key.EndsWith("ram"))}),Cyan);
+            RefSection(Fit(new AioIsometricArtwork(IsometricPicture){Width=334,Height=500,FanCount=0,ShowCpu=Rs("CPU").Length>0,ShowGpu=Rs("GPU").Length>0,ShowRam=R("ram","System")!=null,ShowDisk=Rs("System").Any(r=>!r.Key.EndsWith("ram"))}),Cyan);
             foreach(var group in referenceRows.Where(r=>r.Group is "CPU" or "GPU").GroupBy(r=>r.Group+":"+r.Device))
                 RefSection(Stack(7,new[]{Text(group.First().Group,18)}.Cast<Control>().Concat(group.Select(r=>(Control)Ui.Columns("*,Auto",Text(RefLabel(r),13),V(r,r.Key.EndsWith(".temp")?20:15)))).ToArray()),Accent(group.First()));
             ReferenceCooling(true);IsometricRails();
@@ -34,7 +34,7 @@ public sealed partial class AioTile
         var fans=Rs("Cooling");
         var canvas=new Canvas{Width=334,Height=fans.Length==0?500:660+Math.Max(0,(fans.Length-1)/5)*112};
         canvas.Children.Add(new AioIsometricConnections{Width=334,Height=590,FanCount=fans.Length,ShowCpu=Rs("CPU").Length>0,ShowGpu=Rs("GPU").Length>0,ShowRam=R("ram","System")!=null,ShowDisk=Rs("System").Any(r=>!r.Key.EndsWith("ram"))});
-        canvas.Children.Add(new AioIsometricArtwork(isometricArt.Value){Width=334,Height=590,FanCount=fans.Length,ShowCpu=Rs("CPU").Length>0,ShowGpu=Rs("GPU").Length>0,ShowRam=R("ram","System")!=null,ShowDisk=Rs("System").Any(r=>!r.Key.EndsWith("ram"))});
+        canvas.Children.Add(new AioIsometricArtwork(IsometricPicture){Width=334,Height=590,FanCount=fans.Length,ShowCpu=Rs("CPU").Length>0,ShowGpu=Rs("GPU").Length>0,ShowRam=R("ram","System")!=null,ShowDisk=Rs("System").Any(r=>!r.Key.EndsWith("ram"))});
 
         void Box(IEnumerable<AioReading> source,double x,double y,double width,string caption,Color edge)
         {
@@ -58,10 +58,10 @@ public sealed partial class AioTile
         int badgeIndex=0;
         foreach(var r in gpu.Where(r=>r.Device==primary&&(r.Key.EndsWith(".hotspot")||r.Key.EndsWith(".junction"))))
         {
-            var text=Text(RefLabel(r),14,C("#11131C"));text.FontWeight=FontWeight.Bold;
-            var value=V(r,18,C("#11131C"));value.FontWeight=FontWeight.Bold;
+            var text=Text(RefLabel(r),14,muted);text.FontWeight=FontWeight.Bold;
+            var value=V(r,18,ink);value.FontWeight=FontWeight.Bold;
             var line=Ui.Columns("*,Auto",FitLeft(text),value);line.ColumnSpacing=5;
-            var badge=new Border{Width=130,Padding=new Thickness(6,3),CornerRadius=new CornerRadius(4),Background=Palette.Brush(r.Key.EndsWith(".hotspot")?Coral:Purple),Child=line};
+            var badge=WarnWhenHot(new Border{Width=130,Padding=new Thickness(6,3),CornerRadius=new CornerRadius(4),BorderThickness=new Thickness(1.2),Child=line},r,r.Key.EndsWith(".hotspot")?Coral:Purple);
             Place(badge,202,244+badgeIndex++*40);
         }
         Box(Rs("System").Where(r=>r.Key.EndsWith("ram")),258,344,74,"RAM",Palette.Mix(Cyan,back,.6));

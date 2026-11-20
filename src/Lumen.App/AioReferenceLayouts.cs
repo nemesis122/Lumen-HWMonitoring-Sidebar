@@ -19,6 +19,9 @@ public sealed partial class AioTile
     private readonly List<Control> networkFooter = new();
     private readonly HashSet<string> diagramDisks=new();
     private static readonly Lazy<Bitmap> isometricArt=new(()=>new Bitmap(AssetLoader.Open(new Uri("avares://Lumen/Assets/Aio/reference-isometric.png"))));
+    // Isometric Core Red: the same picture with every glow in the one red.
+    private static readonly Lazy<Bitmap> isometricArtRed=new(()=>new Bitmap(AssetLoader.Open(new Uri("avares://Lumen/Assets/Aio/reference-isometric_red.png"))));
+    private Bitmap IsometricPicture=>RedParts?isometricArtRed.Value:isometricArt.Value;
     // A Red design draws every accent in the red of the Panel designs (lighter reds for the second colours).
     private Color Cyan=>skin is not null?SkinA:C("#24D5DD");
     private Color Purple=>skin is not null?SkinB:C("#AA79EE");
@@ -202,7 +205,7 @@ public sealed partial class AioTile
         {
             if(!referenceRows.Any(r=>r.Group==group))return;
             var owned=source.Widgets.FirstOrDefault(w=>w.Kind==kind);if(!Naming.ShowHardware(owned,settings))return;
-            var label=Naming.Title(owned,index,fallback);var hardware=Naming.Hardware(owned,index,model);if(hardware.Length==0)return;
+            var label=Naming.Title(owned,index,fallback);var hardware=Naming.HardwareShort(owned,index,model);if(hardware.Length==0)return;
             names.Children.Add(Ui.Columns("Auto,*",Text(label.Length==0?"":label+" · ",10,muted),Text(hardware,10,muted)));
         }
         if(diagram || style is WidgetStyle.AioMainboardStrips or WidgetStyle.AioMainboardGauges or WidgetStyle.AioMainboardMatrix or WidgetStyle.AioMainboardType)
@@ -240,7 +243,7 @@ public sealed partial class AioTile
             var owned=source.Widgets.FirstOrDefault(w=>w.Kind==(name=="CPU"?WidgetKind.Cpu:WidgetKind.Gpu));
             var body=Stack(3,RefHeading(Naming.Title(owned,0,name),name=="CPU"?Glyphs.Cpu:Glyphs.Gpu,color));
             if(settings.ShowNames&&slot?.ShowHardware!=false)
-            {string? model=name=="CPU"?snapshot.Cpu?.Name:snapshot.Gpus.FirstOrDefault(g=>g.Id==group.First().Device)?.Name;model=Naming.ShowHardware(owned,settings)?Naming.Hardware(owned,0,model??""):"";if(!string.IsNullOrEmpty(model))body.Children.Add(Text(model,10,muted));}
+            {string? model=name=="CPU"?snapshot.Cpu?.Name:snapshot.Gpus.FirstOrDefault(g=>g.Id==group.First().Device)?.Name;model=Naming.ShowHardware(owned,settings)?Naming.HardwareShort(owned,0,model??""):"";if(!string.IsNullOrEmpty(model))body.Children.Add(Text(model,10,muted));}
             if(style==WidgetStyle.AioChromatic)body.Children.Add(ReferenceTiles(group));
             else foreach(var r in group)body.Children.Add(RefRow(r,true,style==WidgetStyle.AioInstrument&&settings.Shows("aio.graphs")?1:0));
             RefSection(body,color);
@@ -509,8 +512,8 @@ public sealed partial class AioTile
             {
                 Color tint=r.Key.EndsWith(".hotspot")?Coral:muted;
                 string caption=(gpuIds.Count>1?"GPU "+(gpuIds.IndexOf(r.Device)+1)+" · ":"")+RefLabel(r)+" ";
-                return (Control)new Border{BorderBrush=Palette.Brush(tint),BorderThickness=new Thickness(1),CornerRadius=new CornerRadius(16),Padding=new Thickness(9,3),Margin=new Thickness(3,0),Background=Palette.Brush(SeeThrough(back)),
-                    Child=new AioFit{Child=new Viewbox{Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,Child=new AioWidest{Child=Ui.Columns("Auto,Auto",Text(caption,13,tint),V(r,16,tint))}}}};
+                return (Control)WarnWhenHot(new Border{BorderThickness=new Thickness(1),CornerRadius=new CornerRadius(16),Padding=new Thickness(9,3),Margin=new Thickness(3,0),
+                    Child=new AioFit{Child=new Viewbox{Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,Child=new AioWidest{Child=Ui.Columns("Auto,Auto",Text(caption,13,muted),V(r,16,ink))}}}},r,tint);
             }).ToArray();
             var row=FixedCols(pills.Length,pills);row.Width=334;Canvas.SetLeft(row,0);Canvas.SetTop(row,pillTop);map.Children.Add(row);pillTop+=36;
         }
@@ -542,8 +545,8 @@ public sealed partial class AioTile
             string caption=first.Group=="GPU"&&Rs("GPU").Select(r=>r.Device).Distinct().Count()>1?"GPU "+(Rs("GPU").Select(r=>r.Device).Distinct().ToList().IndexOf(first.Device)+1):first.Group;
             Control body=FixedCols(3,FitLeft(Text(caption,22)),t==null?new Border():Fit(V(t,24,Cyan)),load==null?new Border():Fit(V(load,19)));
             left.Children.Add(body);
-            var hot=group.FirstOrDefault(r=>r.Key.EndsWith(".hotspot"));if(hot!=null)left.Children.Add(Frame(Ui.Columns("*,Auto",Text("Hotspot",14,C("#21151C")),V(hot,22,C("#21151C"))),Coral,6,3));
-            var junction=group.FirstOrDefault(r=>r.Key.EndsWith(".junction"));if(junction!=null)left.Children.Add(Frame(Ui.Columns("*,Auto",Text(L.T("Memory junction"),14,C("#151021")),V(junction,22,C("#151021"))),Purple,6,3));
+            var hot=group.FirstOrDefault(r=>r.Key.EndsWith(".hotspot"));if(hot!=null)left.Children.Add(WarnWhenHot(new Border{CornerRadius=new CornerRadius(3),BorderThickness=new Thickness(1.2),Padding=new Thickness(6),Child=Ui.Columns("*,Auto",Text("Hotspot",14,muted),V(hot,22,ink))},hot,Coral));
+            var junction=group.FirstOrDefault(r=>r.Key.EndsWith(".junction"));if(junction!=null)left.Children.Add(WarnWhenHot(new Border{CornerRadius=new CornerRadius(3),BorderThickness=new Thickness(1.2),Padding=new Thickness(6),Child=Ui.Columns("*,Auto",Text(L.T("Memory junction"),14,muted),V(junction,22,ink))},junction,Purple));
         }
         var rail=new Border{BorderBrush=Palette.Brush(track),BorderThickness=new Thickness(1,0,0,0),Padding=new Thickness(7,0,0,0),Child=right};
         var split=Ui.Columns("3*,1*",left,rail);split.Tag="aio-thermal-split";split.ColumnSpacing=8;RefSection(split,Cyan);

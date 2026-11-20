@@ -106,7 +106,7 @@ public static class AioReadings
         foreach(var g in gpus)
             if(g.FanRpm.HasValue && !nodes.Any(n=>n.IsGpu&&(n.Id==g.Id||n.Name==g.Name)&&n.All.Any(v=>v.Type=="Fan"))
                 && !fans.Any(f=>f.Id.Contains(g.Id,StringComparison.OrdinalIgnoreCase)||f.Name.Contains(g.Name,StringComparison.OrdinalIgnoreCase)))
-                fans.Add(("gpu:"+g.Id,g.Name,g.FanRpm));
+                fans.Add(("gpu:"+g.Id,Naming.Short(g.Name),g.FanRpm)); // "RTX 3080", not "NVIDIA GeForce RT…"
         foreach(var f in fans.DistinctBy(f=>f.Id))
             Add("aio.cooling."+f.Id,"Cooling",Names.Fan(f.Name,settings),Format.Rpm(f.Rpm),f.Rpm,3000);
         foreach(var (id,name) in new[]{("12","+12 V"),("5","+5 V"),("3.3","+3.3 V")})

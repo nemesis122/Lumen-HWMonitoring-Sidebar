@@ -42,10 +42,9 @@ public sealed partial class AioTile
         if (!settings.ShowNames || slot?.ShowHardware == false) return "";
         var owned = source.Widgets.FirstOrDefault(w => w.Kind == kind);
         if (!Naming.ShowHardware(owned, settings)) return "";
-        string name = Naming.Hardware(owned, index, model);
-        // Atlas / Tiles: a built-in name is shortened (maker and filler words dropped) instead of being cut off at the end;
-        // an own name stays as typed. Other designs that borrow this helper keep the full name.
-        return name == model && style is WidgetStyle.AioIsometricAtlas or WidgetStyle.AioIsometricTiles ? Naming.Short(model) : name;
+        // CPU and GPU: a built-in name is shortened (maker and filler words dropped) instead of being cut off at the end,
+        // in every AIO design; an own name stays as typed. Drive and memory names stay as they are.
+        return kind is WidgetKind.Cpu or WidgetKind.Gpu ? Naming.HardwareShort(owned, index, model) : Naming.Hardware(owned, index, model);
     }
 
     private Control PartTitle(string title, Color color, string model)
@@ -78,20 +77,28 @@ public sealed partial class AioTile
     {
         var label = Text(RefLabel(r), 12, muted);
         var line = Ui.Columns("*,Auto", FitLeft(label), V(r, size, ink)); line.ColumnSpacing = 6;
-        var calm = Palette.Mix(back, color, .45);
-        var pill = new Border
+        return WarnWhenHot(new Border
         {
-            BorderBrush = Palette.Brush(calm), BorderThickness = new Thickness(1.2), CornerRadius = new CornerRadius(9),
-            Background = Palette.Brush(SeeThrough(Palette.Mix(back, color, .07))), Padding = new Thickness(8, 3), Child = line
-        };
-        watchers.Add((r.Key, row =>
+            BorderThickness = new Thickness(1.2), CornerRadius = new CornerRadius(9), Padding = new Thickness(8, 3), Child = line
+        }, r, color);
+    }
+
+    /// <summary>
+    /// A box around a temperature (GPU hotspot, memory junction) in every design: a calm outline in the design's colour,
+    /// amber from the temperature warning of the settings, red 10 °C above it.
+    /// </summary>
+    private Border WarnWhenHot(Border box, AioReading r, Color color)
+    {
+        var calm = Palette.Mix(back, color, .45);
+        void Show(AioReading? row)
         {
             double limit = settings.TemperatureWarning;
             Color? alarm = row?.Number is double t && t >= limit ? C(t >= limit + 10 ? "#EF4444" : "#F59E0B") : null;
-            pill.BorderBrush = Palette.Brush(alarm ?? calm);
-            pill.Background = Palette.Brush(SeeThrough(Palette.Mix(back, alarm ?? color, alarm.HasValue ? .16 : .07)));
-        }));
-        return pill;
+            box.BorderBrush = Palette.Brush(alarm ?? calm);
+            box.Background = Palette.Brush(SeeThrough(Palette.Mix(back, alarm ?? color, alarm.HasValue ? .16 : .07)));
+        }
+        Show(r); watchers.Add((r.Key, Show));
+        return box;
     }
 
     /// <summary>A large number with its unit small after it (°C, %), the same in every tile.</summary>
@@ -130,21 +137,13 @@ public sealed partial class AioTile
             var value = V(r, 16);
             if (rpmBelow) { formats[value] = row => row.Number.HasValue ? Format.Number(row.Number) : "—"; value.Text = formats[value](r); }
             value.HorizontalAlignment = HorizontalAlignment.Center;
-            var name = Text(style is WidgetStyle.AioIsometricAtlas or WidgetStyle.AioIsometricTiles ? Naming.Short(Translate(L.T(r.Label))) : Translate(L.T(r.Label)), 11, muted); name.HorizontalAlignment = HorizontalAlignment.Center; name.TextAlignment = TextAlignment.Center;
+            var name = Text(Naming.Short(Translate(L.T(r.Label))), 11, muted); name.HorizontalAlignment = HorizontalAlignment.Center; name.TextAlignment = TextAlignment.Center;
             name.MaxLines = 2; name.TextTrimming = TextTrimming.CharacterEllipsis;
             var picture = Part(twoTone?(i%2==0?"fan0":"fan2"):uniform ? "fan0" : FanArt[i % FanArt.Length], art, art * .87);
             var cell = Stack(1, picture, name, Fit(value));
             TextBlock? unit = null;
             if (rpmBelow) { unit = Text("rpm", 9, muted); unit.HorizontalAlignment = HorizontalAlignment.Center; cell.Children.Add(unit); }
-            // A fan that stands still (0 rpm, e.g. a GPU fan in zero-fan mode) is dimmed and says "Idle" instead of looking like a running one.
-            formats[value] = row => row.Number is 0 ? L.T("Idle") : rpmBelow ? (row.Number.HasValue ? Format.Number(row.Number) : "—") : Display(row);
-            value.Text = formats[value](r);
-            watchers.Add((r.Key, row =>
-            {
-                bool idle = row?.Number is 0;
-                picture.Opacity = idle ? .38 : 1;
-                if (unit != null) unit.Opacity = idle ? 0 : 1;
-            }));
+            // A fan that stands still simply reads 0 rpm (user preference: no "Idle" text).
             return (Control)cell;
         }).ToArray());
     }

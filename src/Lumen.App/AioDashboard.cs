@@ -168,7 +168,7 @@ public sealed partial class AioTile
         foreach (var row in part.Rows) body.Add(DashboardRow(row, limits));
         if (part.Id == "cpu" && lastCoreLoads.Count >= 2 && AioReadings.Selected(settings, "aio.cpu.coreloads"))
         {
-            coreBars = new AioCoreBars(ink, muted, track) { Loads = lastCoreLoads, Tint = DashboardAccent };
+            coreBars = new AioCoreBars(ink, muted, track) { Loads = lastCoreLoads, Tint = DashboardAccent, Heatmap = true };
             body.Add(coreBars, false);
         }
         var frame = DashboardFrame(rail ? Ui.Columns("48,*", DashboardImage(part.Id, 48, 58), body) : body);

@@ -21,8 +21,8 @@ public sealed partial class AioTile
         coreBars = null;
         var loads = lastCoreLoads;
         if (loads.Count < 2 || !AioReadings.Selected(settings, "aio.cpu.coreloads") || !referenceRows.Any(r => r.Group == "CPU")) return;
-        // Isometric Atlas / Tiles: a compact heatmap (one coloured cell per core) instead of mostly empty bars with tiny numbers.
-        coreBars = new AioCoreBars(ink, muted, track) { Loads = loads, Heatmap = style is WidgetStyle.AioIsometricAtlas or WidgetStyle.AioIsometricTiles };
+        // Every AIO design: a compact heatmap (one coloured cell per core) instead of mostly empty bars with tiny numbers.
+        coreBars = new AioCoreBars(ink, muted, track) { Loads = loads, Heatmap = true };
         var section = new Border { Padding = new Thickness(9, 4, 9, 8), Child = coreBars, Tag = "aio-section" };
         // Right after the part of the design that shows the CPU values; otherwise after the hardware names.
         var cpuTexts = fields.Where(f => f.Key.StartsWith("aio.cpu.")).SelectMany(f => f.Value).ToHashSet();

@@ -169,8 +169,8 @@ public class CaseOverlayTests
         var card=new AioTile(design,Palette.For(true,false),Metrics.For(Density.Fit),s);card.Own(slot,0);card.Update(snapshot,history);
         var scene=Assert.Single(card.GetLogicalDescendants().OfType<CaseOverlayPanel>());
         var gpu=scene.Widgets.Where(w=>w.Component=="gpu").ToArray();Assert.Equal(2,gpu.Length);
-        Assert.Contains(gpu,w=>w.Control.GetLogicalDescendants().OfType<TextBlock>().Any(t=>t.Text==a.Name));
-        Assert.Contains(gpu,w=>w.Control.GetLogicalDescendants().OfType<TextBlock>().Any(t=>t.Text==b.Name));
+        Assert.Contains(gpu,w=>w.Control.GetLogicalDescendants().OfType<TextBlock>().Any(t=>t.Text==Naming.Short(a.Name)));
+        Assert.Contains(gpu,w=>w.Control.GetLogicalDescendants().OfType<TextBlock>().Any(t=>t.Text==Naming.Short(b.Name)));
         Assert.Contains("aio.gpu.discrete-one.temp",SensorDetails.VisibleKeys(card));Assert.Contains("aio.gpu.other-two.load",SensorDetails.VisibleKeys(card));
         return true;
     });
