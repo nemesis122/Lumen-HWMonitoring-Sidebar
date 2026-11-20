@@ -253,7 +253,7 @@ public sealed partial class AioTile
             string model = cpu ? PartModel(WidgetKind.Cpu, 0, snapshot.Cpu?.Name ?? "") : PartModel(WidgetKind.Gpu, index, snapshot.Gpus.FirstOrDefault(g => g.Id == first.Device)?.Name ?? "");
             var head = Ui.Columns("Auto,*", Text(title, 15, color), temp == null ? new Border() : FitRight(MainTemp(temp, 26, color))); head.ColumnSpacing = 6;
             // CPU and GPU art share one slot of the same height, so both titles and readings start on the same line.
-            var body = Stack(5, new Border { Height = 86, Child = Part(cpu ? "cpu" : "gpu", 112, 86) }, head);
+            var body = Stack(5, new Border { Height = 86, Tag = "graphic", Child = Part(cpu ? "cpu" : "gpu", 112, 86) }, head);
             if (model.Length > 0) { var m = Text(model, 10, muted); m.TextTrimming = TextTrimming.CharacterEllipsis; m.TextWrapping = TextWrapping.NoWrap; body.Children.Add(m); }
             if (load != null) body.Children.Add(LoadLine(load, color, 13));
             var pills = rows.Where(r => r.Key.EndsWith(".hotspot") || r.Key.EndsWith(".junction")).ToArray();
