@@ -6,12 +6,35 @@ using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using Lumen.Core;
 
 namespace Lumen.App;
 
 public static class Ui
 {
+	private static readonly Lazy<Bitmap> NemesisArtwork = new(() =>
+	{
+		using var stream = AssetLoader.Open(new Uri("avares://Lumen/Assets/nemesis.png"));
+		return new Bitmap(stream);
+	});
+
+	public static Image NemesisLogo(double size)
+	{
+		var logo = new Image
+		{
+			Source = NemesisArtwork.Value,
+			Width = size,
+			Height = size,
+			Stretch = Stretch.Uniform,
+			VerticalAlignment = VerticalAlignment.Center,
+			IsHitTestVisible = false
+		};
+		RenderOptions.SetBitmapInterpolationMode(logo, BitmapInterpolationMode.HighQuality);
+		return logo;
+	}
+
 	public static readonly FontFamily Inter = new FontFamily("fonts:Inter#Inter, $Default");
 
 	private static readonly FontFeatureCollection Tabular = new FontFeatureCollection
