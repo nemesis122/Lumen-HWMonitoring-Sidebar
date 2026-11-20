@@ -1,4 +1,3 @@
-using Path = Avalonia.Controls.Shapes.Path;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -96,29 +95,7 @@ public sealed class SidebarView : Border
 			Edge.Bottom => new Thickness(0.0, 1.0, 0.0, 0.0), 
 			_ => new Thickness(0.0, 0.0, 1.0, 0.0), 
 		}));
-		Path path = new Path
-		{
-			Data = StreamGeometry.Parse("M3.2,12.8 A6.5,6.5 0 1 1 12.8,12.8"),
-			Stroke = new LinearGradientBrush
-			{
-				StartPoint = new RelativePoint(0.0, 1.0, RelativeUnit.Relative),
-				EndPoint = new RelativePoint(1.0, 1.0, RelativeUnit.Relative),
-				GradientStops = 
-				{
-					new GradientStop(p.Ramp[0], 0.0),
-					new GradientStop(p.Ramp[1], 0.55),
-					new GradientStop(p.Ramp[2], 1.0)
-				}
-			},
-			StrokeThickness = 2.6,
-			StrokeLineCap = PenLineCap.Round,
-			Width = 16.0,
-			Height = 16.0,
-			Stretch = Stretch.Uniform,
-			VerticalAlignment = VerticalAlignment.Center
-		};
-		TextBlock textBlock = Ui.Text("lumen", 15.0, p.Ink, FontWeight.DemiBold);
-		textBlock.LetterSpacing = 0.2;
+		Image logo = Ui.NemesisLogo(settings.Horizontal ? 26.0 : 36.0);
 		statusDot = new Ellipse
 		{
 			Width = 6.0,
@@ -151,7 +128,7 @@ public sealed class SidebarView : Border
 			sidebarView.SettingsRequested?.Invoke();
 		};
 		bool flag = settings.Pages > 1 && settings.HasPageNames;
-		Grid grid = (flag ? Ui.Columns("Auto,Auto,Auto,*,Auto", path, textBlock, border, new Control(), button) : Ui.Columns("Auto,Auto,Auto,*,Auto", path, textBlock, border, tabs, button));
+		Grid grid = Ui.Columns("Auto,Auto,*,Auto", logo, border, flag ? new Control() : tabs, button);
 		if (flag)
 		{
 			tabs.Margin = new Thickness(2.0, 0.0, 0.0, 0.0);
@@ -165,7 +142,6 @@ public sealed class SidebarView : Border
 				e.Handled = true;
 			}
 		};
-		textBlock.Margin = new Thickness(7.0, 0.0, 0.0, 1.0);
 		TextBlock textBlock2 = Ui.Text(L.T("Temperatures need administrator rights and the PawnIO driver."), 11.5, p.Ink);
 		textBlock2.TextWrapping = TextWrapping.Wrap;
 		textBlock2.TextTrimming = TextTrimming.None;

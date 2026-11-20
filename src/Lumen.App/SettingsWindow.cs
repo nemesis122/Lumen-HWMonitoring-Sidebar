@@ -178,6 +178,7 @@ public sealed partial class SettingsWindow : Window
 			Child = Ui.Columns("Auto,Auto,*,Auto", reset, resetPage, new Control(), done)
 		};
 		title = Ui.Text("", 22.0, p.Ink, FontWeight.DemiBold);
+		title.VerticalAlignment = VerticalAlignment.Center;
 		lead = Ui.Text("", 12.5, p.Soft);
 		search = new TextBox
 		{
@@ -194,7 +195,8 @@ public sealed partial class SettingsWindow : Window
 		{
 			Build();
 		};
-		StackPanel stackPanel = Ui.Stack(2.0, title, lead, search);
+		StackPanel heading = Ui.Row(9.0, Ui.NemesisLogo(34.0), title);
+		StackPanel stackPanel = Ui.Stack(2.0, heading, lead, search);
 		stackPanel.Margin = new Thickness(26.0, 24.0, 16.0, 12.0);
 		DockPanel dockPanel = new DockPanel
 		{
