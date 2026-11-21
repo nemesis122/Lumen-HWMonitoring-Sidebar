@@ -115,7 +115,7 @@ public sealed partial class AioTile
                 coreBars = new AioCoreBars(Colors.White, C("#BBC6D1"), C("#29313E")) { Loads = lastCoreLoads, Tint = accent, Compact = refined, Heatmap = true };
                 body.Children.Add(coreBars);
             }
-            if (look.Graphs && settings.Shows("aio.graphs") && part.Rows.FirstOrDefault(r => r.Number.HasValue) is { } chartRow)
+            if (look.Graphs && part.Rows.FirstOrDefault(r => r.Number.HasValue) is { } chartRow && AioReadings.Graphs(settings, chartRow.Key))
             {
                 var plot = new CaseSparkline(accent) { Height = 22, Tag = "case-sparkline" };
                 casePlots.Add((chartRow.Key, plot)); body.Children.Add(plot);

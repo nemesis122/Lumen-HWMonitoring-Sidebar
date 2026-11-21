@@ -164,7 +164,8 @@ public sealed partial class AioTile
         var hz = rows.Find(r => r.Key == AioReadings.InstrumentRefresh);
         var cpu = rows.Find(r => r.Group == "CPU" && r.Key.EndsWith(".load"));
         var gpu = rows.Find(r => r.Group == "GPU" && r.Key.EndsWith(".load"));
-        var graph = settings.Shows("aio.graphs") ? cpu ?? gpu : null;
+        // The processor chart; the graphics chart only when there is no processor load at all (not when its history is switched off).
+        var graph = cpu != null ? (AioReadings.Graphs(settings, cpu.Key) ? cpu : null) : snapshot?.Cpu?.Load is not null ? null : gpu != null && AioReadings.Graphs(settings, gpu.Key) ? gpu : null;
         if (fps == null && hz == null && graph == null && network == null) return null;
         var body = Stack(5);
         if (fps != null || hz != null) body.Children.Add(InstrumentFaces(fps, hz, "FPS", "Hz", "FPS", "Hz", WidgetKind.Fps));

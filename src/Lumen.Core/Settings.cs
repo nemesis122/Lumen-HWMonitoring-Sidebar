@@ -477,9 +477,15 @@ public sealed class Settings
 			if (item != null)
 			{
 				item.Style = Successor(item.Style);
+				// 5.0.2: the one "aio.graphs" switch (shown under Processor) becomes one switch per part. Switched off
+				// there, it meant the processor chart; switched on in a Panel design, it meant all charts.
+				if (item.HiddenSensors?.Remove("aio.graphs") == true) item.HiddenSensors.Add("aio.cpu.history");
+				if (item.AioEnabledSensors?.Remove("aio.graphs") == true)
+					foreach (string g in new[] { "aio.cpu", "aio.gpu", "aio.cooling", "aio.system", "aio.drives", "aio.network" }) item.AioEnabledSensors.Add(g + ".history");
 				item.Accent = (item.Accent != null && IsHexColor(item.Accent.Trim())) ? item.Accent.Trim() : "";
 			}
 		}
+		if (s.HiddenValues?.Remove("aio.graphs") == true) s.HiddenValues.Add("aio.cpu.history");
 		s.Width = (double.IsFinite(s.Width) ? Math.Clamp(s.Width, MinColumnWidth, MaxColumnWidth) : 300.0);
 		s.IntervalMs = Math.Clamp(s.IntervalMs, 500, 5000);
 		s.TemperatureWarning = (double.IsFinite(s.TemperatureWarning) ? Math.Clamp(s.TemperatureWarning, 50.0, 110.0) : 85.0);

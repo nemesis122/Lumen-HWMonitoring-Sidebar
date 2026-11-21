@@ -46,7 +46,7 @@ public class AioInstrumentDashboardTests
         Assert.DoesNotContain(rate, SensorDetails.VisibleKeys(card));
         WidgetSensors.Select(settings, slot, rate, true, snapshot);
         WidgetSensors.Select(settings, slot, "aio.cpu.load", false, snapshot);
-        WidgetSensors.Select(settings, slot, "aio.graphs", false, snapshot);
+        foreach(var graphKey in AioReadings.GraphGroups)WidgetSensors.Select(settings,slot,graphKey+".history",false,snapshot);
         card.Update(snapshot with { Fps = null }, history);
         Assert.Equal("—", Reading("aio.performance.fps").Text);
         Assert.Contains(rate, SensorDetails.VisibleKeys(card));

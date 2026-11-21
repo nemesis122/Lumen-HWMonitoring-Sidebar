@@ -277,7 +277,7 @@ public sealed partial class AioTile
                 if (network != null)
                 {
                     top.Children.Add(DashboardHeader(network));
-                    if (settings.Shows("aio.graphs") && network.Rows.Any(r => r.Key is "aio.network.down" or "aio.network.up"))
+                    if (AioReadings.Graphs(settings, "aio.network.down") && network.Rows.Any(r => r.Key is "aio.network.down" or "aio.network.up"))
                     {
                         var down = network.Rows.Any(r => r.Key == "aio.network.down"); var up = network.Rows.Any(r => r.Key == "aio.network.up");
                         top.Children.Add(TextFonts.Mark(DashboardText(L.T("Download / Upload")), TextRole.Graph));

@@ -164,7 +164,7 @@ public class AioDesignTests
         var (snap,h)=Render.Demo();var s=Settings.Starter();var slot=s.Widgets.Single(w=>w.Kind==WidgetKind.Overview);slot.Style=style;
         var card=new AioTile(style,Palette.For(true,false),Metrics.For(Density.Fit),s);card.Own(slot,0);card.Update(snap,h);
         Assert.True(card.GetLogicalDescendants().OfType<AreaChart>().Any()||card.GetLogicalDescendants().OfType<AioReferenceHistory>().Any()||card.GetLogicalDescendants().OfType<AioMeter>().Any(m=>m.Historical));
-        var keys=SensorDetails.VisibleKeys(card).Order().ToArray();WidgetSensors.Select(s,slot,"aio.graphs",false,snap);card.Update(snap,h);
+        var keys=SensorDetails.VisibleKeys(card).Order().ToArray();foreach(var graphKey in AioReadings.GraphGroups)WidgetSensors.Select(s,slot,graphKey+".history",false,snap);card.Update(snap,h);
         Assert.Empty(card.GetLogicalDescendants().OfType<AreaChart>());Assert.DoesNotContain(card.GetLogicalDescendants().OfType<AioMeter>(),m=>m.Historical);
         Assert.Empty(card.GetLogicalDescendants().OfType<AioReferenceHistory>());
         Assert.Equal(keys,SensorDetails.VisibleKeys(card).Order().ToArray());return true;
@@ -231,7 +231,7 @@ public class AioDesignTests
         foreach(var w in s.Widgets)w.Style=WidgetStyle.AioTypeBlock;
         AioDesigns.ShowAllParts(s);
         var overview=s.Widgets.Single(w=>w.Kind==WidgetKind.Overview);overview.Visible=false;
-        var fan=AioReadings.Options(snap).First(o=>o.Key.StartsWith("aio.cooling.")&&o.Key!="aio.cooling").Key;
+        var fan=AioReadings.Options(snap).First(o=>o.Key.StartsWith("aio.cooling.")&&o.Key!="aio.cooling"&&!AioReadings.IsGraphKey(o.Key)).Key;
         var junction=AioReadings.Options(snap).First(o=>o.Key.EndsWith(".junction")).Key;
         AioTile Card()
         {
@@ -265,7 +265,7 @@ public class AioDesignTests
             expanded.Add(WidgetKind.Cooling); expanded.Add(WidgetKind.Gpu);
             build.Invoke(window, null);
             var boxes = Content().GetLogicalDescendants().OfType<CheckBox>().Where(c => c.Tag is string k && k.StartsWith("aio.")).ToArray();
-            var fan = boxes.First(c => ((string)c.Tag!).StartsWith("aio.cooling.") && (string)c.Tag! != "aio.cooling");
+            var fan = boxes.First(c => ((string)c.Tag!).StartsWith("aio.cooling.") && (string)c.Tag! != "aio.cooling" && !AioReadings.IsGraphKey((string)c.Tag!));
             var junction = boxes.First(c => ((string)c.Tag!).EndsWith(".junction"));
             Assert.True(fan.IsChecked); Assert.True(junction.IsChecked);
             string fanKey = (string)fan.Tag!, junctionKey = (string)junction.Tag!;

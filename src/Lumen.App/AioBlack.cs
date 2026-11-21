@@ -393,7 +393,7 @@ public sealed partial class AioTile
     /// <summary>History curve of a reading; nothing when graphs are switched off.</summary>
     private Control? BArea(AioReading r, Color color, double height)
     {
-        if (!settings.Shows("aio.graphs")) return null;
+        if (!AioReadings.Graphs(settings, r.Key)) return null;
         var area = new BlackArea { Color = color, Height = height, Tag = "graphic" };
         TextColours.Bind(area,r.Key);
         blackPlots.Add((r.Key, area));

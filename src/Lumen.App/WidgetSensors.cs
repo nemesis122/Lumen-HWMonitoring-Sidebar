@@ -59,7 +59,9 @@ public static class WidgetSensors
     {
         WidgetKind.Memory => "mem.used", WidgetKind.Ping => "ping.jitter",
         WidgetKind.Volumes => "volumes.free", WidgetKind.WorldClocks => "world.offset",
-        WidgetKind.Calendar => "calendar.week", WidgetKind.Fps => "fps.app", WidgetKind.Drives => "drives.count", _ => SecondaryKey(kind)
+        WidgetKind.Calendar => "calendar.week", WidgetKind.Fps => "fps.app", WidgetKind.Drives => "drives.count",
+        WidgetKind.Cooling => "cooling.fancount", // the "Fans 5/6" line belongs to the "Running fans" switch
+        _ => SecondaryKey(kind)
     };
 
     public static IReadOnlyList<(string Key, string Label)> Options(WidgetKind kind, Snapshot? snap, WidgetStyle? style = null)

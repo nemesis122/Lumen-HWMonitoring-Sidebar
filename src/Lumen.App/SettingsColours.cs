@@ -74,7 +74,7 @@ public sealed partial class SettingsWindow
     }
     private Control SensorColourRow(WidgetSlot slot, string key, CheckBox check)
     {
-        if (AioReadings.Groups.Any(g => g.Key == key) || SensorDefaults.Groups.ContainsKey(key) || key.EndsWith(".extra") || key == "aio.graphs") return check;
+        if (AioReadings.Groups.Any(g => g.Key == key) || SensorDefaults.Groups.ContainsKey(key) || key.EndsWith(".extra") || AioReadings.IsGraphKey(key)) return check;
         SensorColours Current() => slot.SensorColours.TryGetValue(key, out var value) ? value : new();
         SensorColours Edit() { if (!slot.SensorColours.TryGetValue(key, out var value)) slot.SensorColours[key] = value = new(); return value; }
         var current = Current();

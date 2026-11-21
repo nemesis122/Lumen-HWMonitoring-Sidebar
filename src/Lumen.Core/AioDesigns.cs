@@ -139,16 +139,19 @@ public static class AioDesigns
     public static bool Contains(WidgetStyle style) => Styles.Contains(style);
     public static bool Hardware(WidgetKind kind) => kind is WidgetKind.Cpu or WidgetKind.Gpu or WidgetKind.Cooling
         or WidgetKind.Power or WidgetKind.Memory or WidgetKind.Drives or WidgetKind.Network or WidgetKind.Overview;
+    public static bool IsGraphSwitch(string key) => key is "aio.cpu.history" or "aio.gpu.history" or "aio.cooling.history" or "aio.system.history" or "aio.drives.history" or "aio.network.history";
     public static bool SensorDefault(WidgetStyle style,string key)
     {
         if (key is "aio.performance.fps" or "aio.performance.refresh") return false;
         style=Base(style); // a Red design starts with the sensors of its base design
+        // Per-part history charts (aio.cpu.history, aio.network.history …): on, except in the Panel designs, which show values only.
+        if(IsGraphSwitch(key)) return !Panel(style);
         if (Instruments(style) && (key is "aio.cpu.power" or "aio.network.link" || key.StartsWith("aio.system.ram.") ||
             key.StartsWith("aio.system.disk.") || key.StartsWith("aio.drives.") && !key.EndsWith(".used"))) return false;
         if((CaseEditionDesigns.Contains(style)||DarkAioDesigns.Contains(style))&&key.StartsWith("aio.drives.")&&
             (key.EndsWith(".life")||key.EndsWith(".hours")||key.EndsWith(".activity")))return false;
         if(key.StartsWith("aio.gpu.")&&key.EndsWith(".extra")) return false; // a second graphics card is off by default
-        if(key=="aio.graphs"&&Panel(style)) return false; // Panel designs show values only; history charts can be switched on
+        // (history switches are decided at the top)
         if(key=="aio.cpu.cores"||key.StartsWith("aio.cpu.core.")) return style==WidgetStyle.AioThermalGrid;
         if(style==WidgetStyle.AioSignalRack)
             return !key.EndsWith("clock") && !key.EndsWith("hotspot") && !key.EndsWith("junction")

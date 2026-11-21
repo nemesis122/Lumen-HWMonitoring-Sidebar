@@ -99,7 +99,7 @@ public class DashboardTests
     {
         var (s, slot, card, snapshot, h) = Create(WidgetStyle.AioNetworkCenter);
         Assert.Single(card.GetLogicalDescendants().OfType<DashboardTrafficPlot>());
-        WidgetSensors.Select(s, slot, "aio.graphs", false, snapshot); card.Update(snapshot, h);
+        foreach(var graphKey in AioReadings.GraphGroups)WidgetSensors.Select(s,slot,graphKey+".history",false,snapshot); card.Update(snapshot, h);
         Assert.Empty(card.GetLogicalDescendants().OfType<DashboardTrafficPlot>());
         Assert.Contains("aio.network.down", SensorDetails.VisibleKeys(card));
         WidgetSensors.Select(s, slot, "aio.network", false, snapshot); card.Update(snapshot, h);

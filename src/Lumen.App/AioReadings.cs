@@ -19,6 +19,31 @@ public static class AioReadings
         ("aio.cpu","CPU"), ("aio.gpu","GPU"), ("aio.cooling","Cooling"),
         ("aio.rails","Voltages"), ("aio.system","System"), ("aio.drives","Drives"), ("aio.network","Network"), ("aio.board","Mainboard")
     };
+    /// <summary>
+    /// Each part has its own history-chart switch (aio.cpu.history, aio.network.history …). Until 5.0.2 one switch
+    /// "aio.graphs" (listed under Processor) hid every chart of the design, the network history included.
+    /// </summary>
+    public static readonly string[] GraphGroups = { "aio.cpu", "aio.gpu", "aio.cooling", "aio.system", "aio.drives", "aio.network" };
+    public static string? GraphKey(string readingKey) =>
+        GraphGroups.FirstOrDefault(g => readingKey.StartsWith(g + ".")) is string g ? g + ".history" : null;
+    public static bool IsGraphKey(string key) => GraphGroups.Any(g => key == g + ".history");
+    /// <summary>Whether the history chart of this reading's part is switched on.</summary>
+    public static bool Graphs(Settings settings, string readingKey) => GraphKey(readingKey) is not string key || settings.Shows(key);
+    public static string GraphState(Settings settings) => string.Concat(GraphGroups.Select(g => settings.Shows(g + ".history") ? "1" : "0"));
+
+    /// <summary>
+    /// A value of a further graphics card whose card was just switched off in the settings: it leaves at once instead of
+    /// being held as "—" like a value that briefly drops out (found by the sensor selection test).
+    /// </summary>
+    public static bool CardSwitchedOff(Snapshot snap, Settings settings, string key)
+    {
+        if (!key.StartsWith("aio.gpu.")) return false;
+        var all = GpuGroup.All(snap); var main = GpuGroup.Main(all);
+        var card = all.FirstOrDefault(g => key.StartsWith("aio.gpu." + g.Id + "."));
+        if (card == null || card == main) return false;
+        return !Selected(settings, GpuGroup.ExtraKey(card)) && !(card.Integrated && settings.ShowIntegratedGpu && settings.Shows("aio.gpu"));
+    }
+
     public static bool Selected(Settings settings,string key) => settings.Shows(key) && AioDesigns.SwitchedOn(settings,key)
         && Groups.Where(g => key.StartsWith(g.Key + ".")).All(g => settings.Shows(g.Key));
 
@@ -176,7 +201,7 @@ public static class AioReadings
     public static IEnumerable<(string Key,string Label)> Options(Snapshot? snapshot, WidgetStyle? style = null)
     {
         foreach(var g in Groups) yield return (g.Key,"AIO · "+L.T(g.Label));
-        yield return ("aio.graphs","AIO · "+L.T("History chart"));
+        foreach(var g in GraphGroups) yield return (g+".history","AIO · "+L.T(Groups.First(x=>x.Key==g).Label)+" · "+L.T("History chart"));
         yield return ("aio.cpu.coreloads","AIO · CPU · "+L.T("Core load"));
         yield return ("aio.cpu.cores","AIO · "+L.T("Core temperatures"));
         if (style == null || AioDesigns.Instruments(style.Value))

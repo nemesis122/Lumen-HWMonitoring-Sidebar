@@ -337,7 +337,7 @@ public sealed partial class AioTile
     /// <summary>Label and grid graph of a reading's history; nothing when graphs are switched off.</summary>
     private Control? PanelPlot(AioReading r, string? label)
     {
-        if (!settings.Shows("aio.graphs")) return null;
+        if (!AioReadings.Graphs(settings, r.Key)) return null;
         var graph = new PanelGraph { Theme = panel, Height = 46, Tag = "graphic" };
         TextColours.Bind(graph,r.Key);
         panelPlots.Add((r.Key, graph));

@@ -93,9 +93,9 @@ public sealed partial class AioTile
     }
     private Control HistoryPlot(AioReading r,double height=32,string mode="area",Color? color=null,AioReading? second=null)
     {
-        if(!settings.Shows("aio.graphs"))return new Border();
+        if(!AioReadings.Graphs(settings,r.Key))return new Border();
         referenceUsed.Add(r.Key);if(second!=null)referenceUsed.Add(second.Key);
-        var graph=new AioReferenceHistory{Color=color??Accent(r),OtherColor=Amber,Mode=mode,Height=height,Tag="graphic",Log=r.Key.StartsWith("aio.network.")};referencePlots.Add((r.Key,second?.Key,graph));return graph;
+        var graph=new AioReferenceHistory{Color=color??Accent(r),OtherColor=Amber,Mode=mode,Height=height,Tag="graphic",Log=r.Key.StartsWith("aio.network.")};referencePlots.Add((r.Key,second?.Key,graph));TextColours.Bind(graph,r.Key,second?.Key);return graph;
     }
     private void UpdateReferencePlots(History h)
     {
@@ -245,7 +245,7 @@ public sealed partial class AioTile
             if(settings.ShowNames&&slot?.ShowHardware!=false)
             {string? model=name=="CPU"?snapshot.Cpu?.Name:snapshot.Gpus.FirstOrDefault(g=>g.Id==group.First().Device)?.Name;model=Naming.ShowHardware(owned,settings)?Naming.HardwareShort(owned,0,model??""):"";if(!string.IsNullOrEmpty(model))body.Children.Add(Text(model,10,muted));}
             if(style==WidgetStyle.AioChromatic)body.Children.Add(ReferenceTiles(group));
-            else foreach(var r in group)body.Children.Add(RefRow(r,true,style==WidgetStyle.AioInstrument&&settings.Shows("aio.graphs")?1:0));
+            else foreach(var r in group)body.Children.Add(RefRow(r,true,style==WidgetStyle.AioInstrument&&AioReadings.Graphs(settings,r.Key)?1:0));
             RefSection(body,color);
         }
         ReferenceCooling();ReferenceRails();

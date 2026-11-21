@@ -91,12 +91,22 @@ public sealed partial class AioTile : Border, IWidget, INamed
         foreach(var key in known.Keys.ToArray())
         {
             if(fresh.ContainsKey(key)){misses.Remove(key);continue;}
-            if(!AioReadings.Selected(settings,key)||known[key].Group=="Cores"&&!AioReadings.Selected(settings,"aio.cpu.cores")||(misses[key]=misses.GetValueOrDefault(key)+1)>SensorHold.Patience)
+            if(!AioReadings.Selected(settings,key)||known[key].Group=="Cores"&&!AioReadings.Selected(settings,"aio.cpu.cores")||AioReadings.CardSwitchedOff(snap,settings,key)||(misses[key]=misses.GetValueOrDefault(key)+1)>SensorHold.Patience)
             {known.Remove(key);misses.Remove(key);continue;}
             fresh[key]=known[key] with {Value="—",Number=null};
         }
-        foreach(var r in fresh.Values)known[r.Key]=r;
-        list=known.Keys.Where(fresh.ContainsKey).Select(k=>fresh[k]).ToList();
+        // A stable order: the readings' own order, with a held value ("—") kept where it was. Before 5.0.2 the order came
+        // from a dictionary that reshuffled after a sensor was switched off and on, so a design that charts "the first
+        // value" of a part (Case Studio, Isometric Rings) could switch to another sensor (found by the sensor selection test).
+        var canon=list.Select(r=>r.Key).ToList();var oldOrder=known.Keys.ToList();var order=new List<string>(canon);
+        foreach(var held in oldOrder.Where(k=>fresh.ContainsKey(k)&&!canon.Contains(k)))
+        {
+            int at=oldOrder.IndexOf(held);string? before=null;
+            for(int j=at-1;j>=0&&before==null;j--)if(order.Contains(oldOrder[j]))before=oldOrder[j];
+            order.Insert(before==null?0:order.IndexOf(before)+1,held);
+        }
+        known.Clear();foreach(var k in order)known[k]=fresh[k];
+        list=order.Select(k=>fresh[k]).ToList();
         readings.Clear(); foreach(var r in list) readings[r.Key]=r;
         foreach(var r in list) samples.Add(r.Key,r.Number);
         if (AioDesigns.Dashboard(style)) SampleDashboard(list, h);
@@ -104,7 +114,7 @@ public sealed partial class AioTile : Border, IWidget, INamed
             +"|"+(slot?.ShowTitle??true)+(slot?.ShowHardware??true)+(slot?.Name??"")+"|"+L.Language+"|"+settings.Fahrenheit+"|"+(AioDesigns.Panel(style)?settings.PanelTheme+settings.PanelGauges+slot?.Accent:"")+(AioDesigns.Black(style)?AioDesigns.BlackLookOf(settings,style)+slot?.Accent:"");
         if((snap.Cpu?.CoreLoads.Count??0)>=2)lastCoreLoads=snap.Cpu!.CoreLoads;
         next+="|"+lastCoreLoads.Count+AioReadings.Selected(settings,"aio.cpu.coreloads");
-        next+="|"+settings.ShowNames+settings.Shows("aio.graphs")+slot?.HardwareName+"|"+string.Join('|',source.Widgets.Select(w=>w.Name+w.HardwareName+w.ShowHardware+w.ShowTitle+w.Accent+(AioDesigns.Switches.Contains(w.Kind)?w.Visible:true)));
+        next+="|"+settings.ShowNames+AioReadings.GraphState(settings)+slot?.HardwareName+"|"+string.Join('|',source.Widgets.Select(w=>w.Name+w.HardwareName+w.ShowHardware+w.ShowTitle+w.Accent+(AioDesigns.Switches.Contains(w.Kind)?w.Visible:true)));
         if (IsDashboard) next += "|columns:" + source.Columns;
         if (AioDesigns.Instruments(style)) next += "|rails:" + list.Any(r => r.Group == "Rails" && r.Number.HasValue)
             + "|" + DriveOwner?.DriveOrder + "|" + string.Join('|', snap.Disks.Select(d => d.Name + ":" + d.Letters));

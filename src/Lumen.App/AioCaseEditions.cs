@@ -133,7 +133,7 @@ public sealed partial class AioTile
     private Control EditionBody(DashboardPart part,CaseEditionDesigns.Look look,Color accent)
     {
         var rows=part.Rows.Where(r=>r.Group!="Cores").ToList();var used=new HashSet<string>();var body=Stack(5);
-        bool plots=settings.Shows("aio.graphs");
+        bool plots=rows.Any(r=>AioReadings.Graphs(settings,r.Key)); // this part's own history switch
         if(part.Id=="fan")
         {
             if(look.Layout==Edition.Studio)return EditionCells(rows.Select(r=>EditionDial(r,accent)),4,90);
