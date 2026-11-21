@@ -13,7 +13,7 @@ using Xunit;
 /// </summary>
 public class AioSensorSelectionTests
 {
-    public static IEnumerable<object[]> Designs => AioDesigns.Styles.Distinct().Select(s => new object[] { s });
+    public static IEnumerable<object[]> Designs => AioDesigns.Styles.Distinct().SelectMany(s => HardwareVariants.Names.Select(h => new object[] { s, h }));
 
     /// <summary>What a card shows: sensor key and kind of control (t = text, h = history chart, g = other graphic).</summary>
     internal static HashSet<(string Key, char Kind)> Shown(Control root)
@@ -44,8 +44,8 @@ public class AioSensorSelectionTests
     {
         string key = item.Key;
         // A value of a further graphics card, switched on, brings that card (with its other chosen values) onto the card.
-        if (System.Text.RegularExpressions.Regex.Match(option, @"^aio\.gpu\.([^.]+)\.") is { Success: true } gpu && key.StartsWith("aio.gpu." + gpu.Groups[1].Value + ".")) return true;
-        if (AioReadings.IsGraphKey(option)) return item.Kind == 'h' && key.StartsWith(option[..^".history".Length] + ".");
+        if (System.Text.RegularExpressions.Regex.Match(option, @"^aio\.gpu\.([^.]+)\.") is { Success: true } gpu && (key.StartsWith("aio.gpu." + gpu.Groups[1].Value + ".") || key == "aio.cooling.gpu:" + gpu.Groups[1].Value)) return true;
+        if (AioReadings.IsGraphKey(option)) return item.Kind == 'h' && AioReadings.GraphKey(key) == option;
         if (key == option || key.StartsWith(option + ".")) return true;
         if (option == "aio.cpu.cores") return key.StartsWith("aio.cpu.core.");
         if (option.EndsWith(".extra")) return key.StartsWith(option[..^".extra".Length] + ".");
@@ -55,7 +55,7 @@ public class AioSensorSelectionTests
     private static string Part(string key) => System.Text.RegularExpressions.Regex.Match(key, @"^aio\.(gpu\.[^.]+|drives\.[^.]+|[^.]+)").Value;
     internal static bool SamePart(string option, string key)
     {
-        if (AioReadings.IsGraphKey(option)) return key.StartsWith(option[..^".history".Length] + ".");
+        if (AioReadings.IsGraphKey(option)) return AioReadings.GraphKey(key) == option || key.StartsWith(option[..^".history".Length] + ".");
         // The same drive: its temperature (System) and its read/write/used (Drives).
         var disk = System.Text.RegularExpressions.Regex.Match(option, @"^aio\.system\.disk\.([^.]+)");
         if (disk.Success && key.StartsWith("aio.drives." + disk.Groups[1].Value + ".")) return true;
@@ -63,21 +63,21 @@ public class AioSensorSelectionTests
         return Part(option) is { Length: > 0 } p && (Part(key) == p || p is "aio.gpu" or "aio.drives" && key.StartsWith(p + "."));
     }
 
-    private static (AioTile Card, Settings S, WidgetSlot Slot, Snapshot Snap, History H) Build(WidgetStyle style)
+    private static (AioTile Card, Settings S, WidgetSlot Slot, Snapshot Snap, History H) Build(WidgetStyle style, string hardware)
     {
         var s = Settings.Starter(); s.HiddenValues.Clear(); DesignWidgetSelection.Apply(s, style); AioDesigns.ShowAllParts(s);
         foreach (var w in s.Widgets) w.HiddenSensors.Clear();
         var slot = s.Widgets.Single(w => w.Kind == WidgetKind.Overview);
-        var (snap, h) = Render.Demo();
+        var (snap, h) = HardwareVariants.For(hardware);
         var card = new AioTile(style, Palette.For(true, false), Metrics.For(Density.Fit), s.ForSlot(slot)); card.Own(slot, 0);
         card.Update(snap, h);
         return (card, s, slot, snap, h);
     }
 
-    internal static List<string> Problems(WidgetStyle style)
+    internal static List<string> Problems(WidgetStyle style, string hardware)
     {
         var problems = new List<string>();
-        var (card, s, slot, snap, h) = Build(style);
+        var (card, s, slot, snap, h) = Build(style, hardware);
         var view = s.ForSlot(slot);
         var options = AioReadings.Options(snap, style).Select(o => o.Key).Distinct().ToArray();
         var baseline = Shown(card);
@@ -120,11 +120,11 @@ public class AioSensorSelectionTests
     }
 
     [Theory, MemberData(nameof(Designs))]
-    public void Every_sensor_switch_changes_only_its_own_items(WidgetStyle style) => UiHost.Run(() =>
+    public void Every_sensor_switch_changes_only_its_own_items(WidgetStyle style, string hardware) => UiHost.Run(() =>
     {
-        var problems = Problems(style);
+        var problems = Problems(style, hardware).Select(p => hardware + ": " + p).ToList();
         if (Environment.GetEnvironmentVariable("LUMEN_SENSOR_REPORT") is { Length: > 0 } dir)
-        { Directory.CreateDirectory(dir); File.WriteAllLines(Path.Combine(dir, style + ".txt"), problems); }
+        { Directory.CreateDirectory(dir); File.WriteAllLines(Path.Combine(dir, style + "-" + hardware + ".txt"), problems); }
         Assert.True(problems.Count == 0, string.Join("\n", problems.Take(30)));
         return true;
     });

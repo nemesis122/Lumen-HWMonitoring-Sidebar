@@ -10,7 +10,7 @@ using Xunit;
 public class WidgetSensorSelectionTests
 {
     private static readonly WidgetKind[] Kinds = Settings.Starter().Widgets.Select(w => w.Kind).Where(k => k != WidgetKind.Overview).Distinct().ToArray();
-    public static IEnumerable<object[]> Designs => Settings.Selectable.Where(s => !AioDesigns.Contains(s)).Select(s => new object[] { s });
+    public static IEnumerable<object[]> Designs => Settings.Selectable.Where(s => !AioDesigns.Contains(s)).SelectMany(s => HardwareVariants.Names.Select(h => new object[] { s, h }));
 
     private static bool Belongs(string option, (string Key, char Kind) item)
     {
@@ -30,6 +30,8 @@ public class WidgetSensorSelectionTests
         if (option == "weather.forecast") return key.StartsWith("weather:");
         // The running-fans count counts the chosen fans: without fans there is nothing to count.
         if (option == "cooling.fans") return key.StartsWith("fan:") || key == "cooling.fancount";
+        // One fan: its count line counts it.
+        if (option.StartsWith("fan:") && key == "cooling.fancount") return true;
         if (option == "cooling.board") return key.StartsWith("temp:");
         return false;
     }
@@ -43,10 +45,10 @@ public class WidgetSensorSelectionTests
         return AioSensorSelectionTests.Shown(card);
     }
 
-    internal static List<string> Problems(WidgetStyle style)
+    internal static List<string> Problems(WidgetStyle style, string hardware)
     {
         var problems = new List<string>();
-        var (snap, h) = Render.Demo();
+        var (snap, h) = HardwareVariants.For(hardware);
         foreach (var kind in Kinds)
         {
             var s = Settings.Starter(); s.HiddenValues.Clear();
@@ -69,6 +71,9 @@ public class WidgetSensorSelectionTests
                     // The widget may draw another graphic of the same kind of item instead (e.g. fan bars once board temperatures are off).
                     // A design with a fixed number of places fills a freed place with another value of the same widget.
                     added = added.Where(i => !(Head(i.Item1) == Head(option) || kind == WidgetKind.Cooling && i.Item2 is 'g' or 'h')).ToList();
+                    // With its last value switched off, a widget shows its empty placeholder ("—") under its main key.
+                    if (changed.All(c => c.Item1 == WidgetSensors.PrimaryKey(kind) || !baseline.Contains(c) && c.Item2 == 't' && c.Item1 == WidgetSensors.PrimaryKey(kind) || baseline.Contains(c)))
+                        added = added.Where(i => i.Item1 != WidgetSensors.PrimaryKey(kind)).ToList();
                     if (foreign.Count > 0) problems.Add($"{style} {kind} '{option}' off also removes: {string.Join(", ", foreign.Take(5))}");
                     if (added.Count > 0) problems.Add($"{style} {kind} '{option}' off adds: {string.Join(", ", added.Take(5))}");
                 }
@@ -84,11 +89,11 @@ public class WidgetSensorSelectionTests
     }
 
     [Theory, MemberData(nameof(Designs))]
-    public void Every_sensor_switch_changes_only_its_own_items(WidgetStyle style) => UiHost.Run(() =>
+    public void Every_sensor_switch_changes_only_its_own_items(WidgetStyle style, string hardware) => UiHost.Run(() =>
     {
-        var problems = Problems(style);
+        var problems = Problems(style, hardware).Select(p => hardware + ": " + p).ToList();
         if (Environment.GetEnvironmentVariable("LUMEN_SENSOR_REPORT") is { Length: > 0 } dir)
-        { Directory.CreateDirectory(dir); File.WriteAllLines(Path.Combine(dir, "widget-" + style + ".txt"), problems); }
+        { Directory.CreateDirectory(dir); File.WriteAllLines(Path.Combine(dir, "widget-" + style + "-" + hardware + ".txt"), problems); }
         Assert.True(problems.Count == 0, string.Join("\n", problems.Take(30)));
         return true;
     });

@@ -57,16 +57,19 @@ public class AioHistorySwitchTests
 
     [Fact]
     public void Each_part_lists_its_own_history_switch() =>
-        Assert.Equal(AioReadings.GraphGroups.Select(g => g + ".history"), AioReadings.Options(null).Select(o => o.Key).Where(AioReadings.IsGraphKey));
+        Assert.Equal(AioReadings.GraphSwitches.Select(g => g.Key), AioReadings.Options(null).Select(o => o.Key).Where(AioReadings.IsGraphKey));
 }
 
 public class AioHistorySwitchPlacementTests
 {
-    [Fact]
-    public void Each_history_switch_is_listed_under_its_own_part() =>
-        Assert.All(AioReadings.GraphGroups, g => Assert.Equal(AioDesigns.SwitchFor(g + ".temp") ?? AioDesigns.SwitchFor(g), AioDesigns.SwitchFor(g + ".history")));
+    [Theory]
+    [InlineData("aio.cpu.history", WidgetKind.Cpu)] [InlineData("aio.gpu.history", WidgetKind.Gpu)]
+    [InlineData("aio.cooling.history", WidgetKind.Cooling)] [InlineData("aio.system.ram.history", WidgetKind.Memory)]
+    [InlineData("aio.drives.history", WidgetKind.Drives)] [InlineData("aio.network.history", WidgetKind.Network)]
+    public void Each_history_switch_is_listed_under_its_own_part(string key, WidgetKind section) => Assert.Equal(section, AioDesigns.SwitchFor(key));
 
-    [Fact]
-    public void The_network_history_switch_is_under_network() =>
-        Assert.Equal(WidgetKind.Network, AioDesigns.SwitchFor("aio.network.history"));
+    [Theory]
+    [InlineData("aio.system.ram", "aio.system.ram.history")] [InlineData("aio.system.disk.nvme0", "aio.drives.history")]
+    [InlineData("aio.drives.nvme0.read", "aio.drives.history")] [InlineData("aio.network.down", "aio.network.history")]
+    public void Each_reading_uses_the_history_switch_of_its_part(string reading, string history) => Assert.Equal(history, AioReadings.GraphKey(reading));
 }

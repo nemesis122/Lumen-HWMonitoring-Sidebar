@@ -481,7 +481,12 @@ public sealed class Settings
 				// there, it meant the processor chart; switched on in a Panel design, it meant all charts.
 				if (item.HiddenSensors?.Remove("aio.graphs") == true) item.HiddenSensors.Add("aio.cpu.history");
 				if (item.AioEnabledSensors?.Remove("aio.graphs") == true)
-					foreach (string g in new[] { "aio.cpu", "aio.gpu", "aio.cooling", "aio.system", "aio.drives", "aio.network" }) item.AioEnabledSensors.Add(g + ".history");
+					foreach (string g in new[] { "aio.cpu", "aio.gpu", "aio.cooling", "aio.system.ram", "aio.drives", "aio.network" }) item.AioEnabledSensors.Add(g + ".history");
+				// "System" is no longer one switch: switched off, it meant RAM (the drive temperatures are switched under Drives);
+				// the interim "System · History chart" is the RAM history.
+				if (item.HiddenSensors?.Remove("aio.system") == true && !item.HiddenSensors.Contains("aio.system.ram")) item.HiddenSensors.Add("aio.system.ram");
+				if (item.HiddenSensors?.Remove("aio.system.history") == true) item.HiddenSensors.Add("aio.system.ram.history");
+				if (item.AioEnabledSensors?.Remove("aio.system.history") == true) item.AioEnabledSensors.Add("aio.system.ram.history");
 				item.Accent = (item.Accent != null && IsHexColor(item.Accent.Trim())) ? item.Accent.Trim() : "";
 			}
 		}

@@ -139,7 +139,7 @@ public static class AioDesigns
     public static bool Contains(WidgetStyle style) => Styles.Contains(style);
     public static bool Hardware(WidgetKind kind) => kind is WidgetKind.Cpu or WidgetKind.Gpu or WidgetKind.Cooling
         or WidgetKind.Power or WidgetKind.Memory or WidgetKind.Drives or WidgetKind.Network or WidgetKind.Overview;
-    public static bool IsGraphSwitch(string key) => key is "aio.cpu.history" or "aio.gpu.history" or "aio.cooling.history" or "aio.system.history" or "aio.drives.history" or "aio.network.history";
+    public static bool IsGraphSwitch(string key) => key is "aio.cpu.history" or "aio.gpu.history" or "aio.cooling.history" or "aio.system.ram.history" or "aio.drives.history" or "aio.network.history";
     public static bool SensorDefault(WidgetStyle style,string key)
     {
         if (key is "aio.performance.fps" or "aio.performance.refresh") return false;
@@ -172,6 +172,8 @@ public static class AioDesigns
         if(In("aio.board"))return WidgetKind.Cooling;
         if(key.StartsWith("aio.system.disk.")||In("aio.drives"))return WidgetKind.Drives;
         if(In("aio.network"))return WidgetKind.Network;
+        if(In("aio.performance"))return WidgetKind.Gpu; // FPS and refresh rate of the Instruments designs
+        if(key=="aio.system")return WidgetKind.Memory;  // the old part switch (RAM and drive temperatures), no longer listed
         return null;
     }
     public static readonly WidgetKind[] Switches={WidgetKind.Cpu,WidgetKind.Gpu,WidgetKind.Cooling,WidgetKind.Power,WidgetKind.Memory,WidgetKind.Drives,WidgetKind.Network};

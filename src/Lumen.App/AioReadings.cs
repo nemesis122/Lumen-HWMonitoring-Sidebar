@@ -23,13 +23,24 @@ public static class AioReadings
     /// Each part has its own history-chart switch (aio.cpu.history, aio.network.history …). Until 5.0.2 one switch
     /// "aio.graphs" (listed under Processor) hid every chart of the design, the network history included.
     /// </summary>
-    public static readonly string[] GraphGroups = { "aio.cpu", "aio.gpu", "aio.cooling", "aio.system", "aio.drives", "aio.network" };
+    /// <summary>History switches: key, label, and the readings they cover. RAM is listed under Memory and the drive
+    /// temperatures under Drives (not one "System" switch under Processor, user feedback).</summary>
+    public static readonly (string Key, string Label, string[] Readings)[] GraphSwitches =
+    {
+        ("aio.cpu.history", "CPU", new[] { "aio.cpu." }),
+        ("aio.gpu.history", "GPU", new[] { "aio.gpu." }),
+        ("aio.cooling.history", "Cooling", new[] { "aio.cooling." }),
+        ("aio.system.ram.history", "RAM", new[] { "aio.system.ram" }),
+        ("aio.drives.history", "Drives", new[] { "aio.drives.", "aio.system.disk." }),
+        ("aio.network.history", "Network", new[] { "aio.network." }),
+    };
+    public static readonly string[] GraphGroups = GraphSwitches.Select(g => g.Key[..^".history".Length]).ToArray();
     public static string? GraphKey(string readingKey) =>
-        GraphGroups.FirstOrDefault(g => readingKey.StartsWith(g + ".")) is string g ? g + ".history" : null;
-    public static bool IsGraphKey(string key) => GraphGroups.Any(g => key == g + ".history");
+        GraphSwitches.FirstOrDefault(g => g.Readings.Any(readingKey.StartsWith)).Key;
+    public static bool IsGraphKey(string key) => GraphSwitches.Any(g => g.Key == key);
     /// <summary>Whether the history chart of this reading's part is switched on.</summary>
     public static bool Graphs(Settings settings, string readingKey) => GraphKey(readingKey) is not string key || settings.Shows(key);
-    public static string GraphState(Settings settings) => string.Concat(GraphGroups.Select(g => settings.Shows(g + ".history") ? "1" : "0"));
+    public static string GraphState(Settings settings) => string.Concat(GraphSwitches.Select(g => settings.Shows(g.Key) ? "1" : "0"));
 
     /// <summary>
     /// A value of a further graphics card whose card was just switched off in the settings: it leaves at once instead of
@@ -37,9 +48,10 @@ public static class AioReadings
     /// </summary>
     public static bool CardSwitchedOff(Snapshot snap, Settings settings, string key)
     {
-        if (!key.StartsWith("aio.gpu.")) return false;
+        if (!key.StartsWith("aio.gpu.") && !key.StartsWith("aio.cooling.gpu:")) return false;
         var all = GpuGroup.All(snap); var main = GpuGroup.Main(all);
-        var card = all.FirstOrDefault(g => key.StartsWith("aio.gpu." + g.Id + "."));
+        // The card's own values and its fan (aio.cooling.gpu:<id>, found on a PC with two graphics cards).
+        var card = all.FirstOrDefault(g => key.StartsWith("aio.gpu." + g.Id + ".") || key == "aio.cooling.gpu:" + g.Id);
         if (card == null || card == main) return false;
         return !Selected(settings, GpuGroup.ExtraKey(card)) && !(card.Integrated && settings.ShowIntegratedGpu && settings.Shows("aio.gpu"));
     }
@@ -200,8 +212,9 @@ public static class AioReadings
 
     public static IEnumerable<(string Key,string Label)> Options(Snapshot? snapshot, WidgetStyle? style = null)
     {
-        foreach(var g in Groups) yield return (g.Key,"AIO · "+L.T(g.Label));
-        foreach(var g in GraphGroups) yield return (g+".history","AIO · "+L.T(Groups.First(x=>x.Key==g).Label)+" · "+L.T("History chart"));
+        // Every part switch, except "System": its RAM is switched under Memory and its drive temperatures under Drives.
+        foreach(var g in Groups.Where(g=>g.Key!="aio.system")) yield return (g.Key,"AIO · "+L.T(g.Label));
+        foreach(var g in GraphSwitches) yield return (g.Key,"AIO · "+L.T(g.Label)+" · "+L.T("History chart"));
         yield return ("aio.cpu.coreloads","AIO · CPU · "+L.T("Core load"));
         yield return ("aio.cpu.cores","AIO · "+L.T("Core temperatures"));
         if (style == null || AioDesigns.Instruments(style.Value))
@@ -225,6 +238,10 @@ public static class AioReadings
                 var device = index >= 0 ? gpuOrder[index] : null;
                 yield return (r.Key, "AIO · GPU " + (index + 1) + " · " + (device?.Name ?? r.Device) + " · " + L.T(r.Label));
             }
+            // "System" is not a part the user sees: RAM reads "RAM · …" under Memory, a drive temperature "C: · Temp." under Drives.
+            else if (r.Key == "aio.system.ram") yield return (r.Key, "AIO · RAM");
+            else if (r.Key.StartsWith("aio.system.ram.")) yield return (r.Key, "AIO · RAM · " + L.T(r.Label));
+            else if (r.Key.StartsWith("aio.system.disk.")) yield return (r.Key, "AIO · " + DriveName(snapshot, r.Device) + " · " + L.T("Temp."));
             else yield return (r.Key,r.Group=="Drives"?"AIO · "+L.T("Drives")+" · "+DriveName(snapshot,r.Device)+" · "+L.T(r.Label):"AIO · "+r.Group+" · "+L.T(r.Label));
         }
     }

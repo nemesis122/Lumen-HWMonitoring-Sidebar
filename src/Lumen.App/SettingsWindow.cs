@@ -1894,7 +1894,11 @@ public sealed partial class SettingsWindow : Window
                 changed(); Build();
             };
             sensors.Children.Add(recommended);
-            if (slot.Kind == WidgetKind.Cpu)
+            // "Integrated graphics" (built into the processor) stays with the processor. With an AIO design the integrated
+            // graphics is listed under the graphics card as a further card ("GPU 2 · …") — the same choice, so not shown twice.
+            var overviewForIntegrated = s.Widgets.FirstOrDefault(w => w.Kind == WidgetKind.Overview);
+            bool aioLists = overviewForIntegrated != null && (AioDesigns.Contains(overviewForIntegrated.Style) && overviewForIntegrated.Visible || AioDesigns.Contains(slot.Style));
+            if (slot.Kind == WidgetKind.Cpu && !aioLists)
             {
                 var integrated = new CheckBox
                 {
