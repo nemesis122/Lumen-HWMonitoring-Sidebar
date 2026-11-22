@@ -1,14 +1,16 @@
-# Lumen 5.0.2 – Design polish and a checked sensor selection
+# Lumen 5.1.0 – Cyberpunk, Neumorph and a living Ocean background
 
-A portable hardware-monitoring sidebar for Windows 10 and 11 with **123 designs**, including All-in-One designs that show the whole PC in one card. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
+A portable hardware-monitoring sidebar for Windows 10 and 11 with **135 designs**, including All-in-One designs that show the whole PC in one card. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
 
-**[Download Lumen 5.0.2](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v5.0.2)** · [All releases](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases) · [Design gallery](docs/style-gallery.md) · [Release notes 4.5.2](docs/release-notes/v4.5.2.md) · [4.5.1](docs/release-notes/v4.5.1.md) · [4.5.0](docs/release-notes/v4.5.0.md) · [4.4.0](docs/release-notes/v4.4.0.md) · [4.3.0](docs/release-notes/v4.3.0.md) · [4.2.1](docs/release-notes/v4.2.1.md) · [4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
+**[Download Lumen 5.1.0](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v5.1.0)** · [All releases](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases) · [Design gallery](docs/style-gallery.md) · [Release notes 4.5.2](docs/release-notes/v4.5.2.md) · [4.5.1](docs/release-notes/v4.5.1.md) · [4.5.0](docs/release-notes/v4.5.0.md) · [4.4.0](docs/release-notes/v4.4.0.md) · [4.3.0](docs/release-notes/v4.3.0.md) · [4.2.1](docs/release-notes/v4.2.1.md) · [4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
 
-## New in 5.0.2
+## New in 5.1.0
 
-Core heatmap and short names in every AIO design, a history switch per part, every sensor switch listed in its own section (RAM under Memory, drives under Drives), and a sensor selection tested on five kinds of PC.
+12 new AIO designs – 6 Cyberpunk (Arasaka, Netrunner, Militech, Afterlife, Redline, Black Ice) and 6 Neumorph (Black Red, Hero, Parts, Red Parts, Cyan, Mono) – and an optional living "Ocean" background whose water level follows the CPU temperature and whose waves follow the load.
 
-[5.0.2 release notes](docs/release-notes/v5.0.2.md) · [Previous release 5.0.1](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v5.0.1)
+<img src="docs/images/v5.1.0/cyberpunk-designs.png" width="760" alt="Cyberpunk designs">
+
+[5.1.0 release notes](docs/release-notes/v5.1.0.md) · [Previous release 5.0.2](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v5.0.2)
 
 ## New in 5.0.1
 
@@ -228,9 +230,9 @@ Logs and reports stay local. Nothing is uploaded automatically.
 
 ## Download and run
 
-Download [Lumen-5.0.2.exe](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/download/v5.0.2/Lumen-5.0.2.exe) for the portable Windows x64 application. No separate .NET installation is required. Close an older running instance before starting the new EXE. Settings are stored beside the EXE, with an AppData fallback when that folder is read-only.
+Download [Lumen-5.1.0.exe](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/download/v5.1.0/Lumen-5.1.0.exe) for the portable Windows x64 application. No separate .NET installation is required. Close an older running instance before starting the new EXE. Settings are stored beside the EXE, with an AppData fallback when that folder is read-only.
 
-The [5.0.2 release page](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v5.0.2) includes the source archive and SHA-256 checksum.
+The [5.1.0 release page](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v5.1.0) includes the source archive and SHA-256 checksum.
 
 ## Build and verify
 

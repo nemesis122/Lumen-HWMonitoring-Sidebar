@@ -37,6 +37,8 @@ public sealed class SidebarView : Border
 
 	private FloatPanel? floating;
 
+	private readonly LiveBackdrop? backdrop;
+
 	private Border? floatHeader;
 
 	// A card was moved in the floating sidebar; the new position should be saved.
@@ -233,7 +235,16 @@ public sealed class SidebarView : Border
 			dockPanel.Children.Add(tabs);
 		}
 		dockPanel.Children.Add(item);
-		base.Child = dockPanel;
+		if (settings.LiveBackground != "off")
+		{
+			// The living background lies under the cards and fills the whole sidebar.
+			backdrop = new LiveBackdrop(settings.LiveBackground);
+			base.Child = new Panel { Children = { backdrop, dockPanel } };
+		}
+		else
+		{
+			base.Child = dockPanel;
+		}
 		if (flag2)
 		{
 			fit.Fitted += Squeezed;
@@ -636,6 +647,7 @@ public sealed class SidebarView : Border
 	{
 		last = s;
 		lastHistory = h;
+		backdrop?.Feed(s);
 		var (c, text) = s.Access switch
 		{
 			SensorAccess.Full => (p.Calm, L.T("LIVE")), 

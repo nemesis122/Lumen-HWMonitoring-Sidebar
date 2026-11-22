@@ -88,6 +88,9 @@ public sealed class Settings
 
 	public bool SmoothTransitions { get; set; }
 
+	/// <summary>Animated background behind the cards: "off" or "ocean" (water level = CPU temperature, waves = load).</summary>
+	public string LiveBackground { get; set; } = "off";
+
 	public bool Modern { get; set; } = true;
 
 	public double Opacity { get; set; } = 0.55;
@@ -262,7 +265,8 @@ public sealed class Settings
         WidgetStyle.AioMainboardCores,
         WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelHeader, WidgetStyle.AioPanelPlain,
         WidgetStyle.AioMainboardMapRed, WidgetStyle.AioMainboardCoresRed, WidgetStyle.AioTypeBlockRed, WidgetStyle.AioOrbitNetworkRed, WidgetStyle.AioThermalGridRed, WidgetStyle.AioSignalRackRed, WidgetStyle.AioIsometricCoreRed, WidgetStyle.AioPrecisionRed, WidgetStyle.AioStudioLightRed, WidgetStyle.AioInstrumentRed, WidgetStyle.AioAuroraFusionRed, WidgetStyle.AioCarbonPulseRed, WidgetStyle.AioIsometricAtlasRed, WidgetStyle.AioIsometricTilesRed, WidgetStyle.AioIsometricRigRed, WidgetStyle.AioIsometricPedestalsRed, WidgetStyle.AioIsometricCompactRed, WidgetStyle.AioIsometricRingsRed
-	}.Concat(DarkAioDesigns.All.Select(item => item.Style)).Concat(new[] { WidgetStyle.AioTealInstruments, WidgetStyle.AioAmberInstruments });
+	}.Concat(DarkAioDesigns.All.Select(item => item.Style)).Concat(new[] { WidgetStyle.AioTealInstruments, WidgetStyle.AioAmberInstruments })
+        .Concat(NeoDesigns.All.Select(item => item.Style));
 
 	public int ColumnCount
 	{
@@ -495,6 +499,7 @@ public sealed class Settings
 		s.IntervalMs = Math.Clamp(s.IntervalMs, 500, 5000);
 		s.TemperatureWarning = (double.IsFinite(s.TemperatureWarning) ? Math.Clamp(s.TemperatureWarning, 50.0, 110.0) : 85.0);
 		s.Opacity = (double.IsFinite(s.Opacity) ? Math.Clamp(s.Opacity, 0.2, 1.0) : 0.55);
+		s.LiveBackground = s.LiveBackground == "ocean" ? "ocean" : "off";
 		s.TextScale = (double.IsFinite(s.TextScale) ? Math.Clamp(s.TextScale, 0.5, 2.0) : 1.0);
 		s.Screen = Math.Max(0, s.Screen);
 		s.FloatPositions = (s.FloatPositions ?? new Dictionary<string, double[]>()).Where((KeyValuePair<string, double[]> kv) => kv.Value != null && kv.Value.Length == 2 && kv.Value.All(double.IsFinite)).ToDictionary((KeyValuePair<string, double[]> kv) => kv.Key, (KeyValuePair<string, double[]> kv) => kv.Value);

@@ -302,7 +302,19 @@ public enum WidgetStyle
     AioNeonBackplateC,
     AioAirflowMapC,
     AioTealInstruments,
-    AioAmberInstruments
+    AioAmberInstruments,
+    AioCyberArasaka,
+    AioCyberNetrunner,
+    AioCyberMilitech,
+    AioCyberAfterlife,
+    AioCyberRedline,
+    AioCyberBlackIce,
+    AioNeoBlackRed,
+    AioNeoHero,
+    AioNeoParts,
+    AioNeoRedParts,
+    AioNeoCyanHero,
+    AioNeoMono
 }
 
 

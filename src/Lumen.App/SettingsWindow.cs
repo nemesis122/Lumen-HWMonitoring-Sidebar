@@ -2245,12 +2245,12 @@ public sealed partial class SettingsWindow : Window
 		string help = L.T(Palette.Backgrounds.FirstOrDefault(((string Key, string Name, string DarkSurface, string DarkCard, string LightSurface, string LightCard) b) => b.Key == s.Background).Name ?? Palette.Backgrounds[0].Name);
 		string text = ((s.Colors == "state") ? L.T("By state (blue to red)") : ((s.Colors == "windows") ? L.T("Windows accent colour") : ((s.Colors == "mono") ? L.T("Grey – only warnings in colour") : L.T(Palette.Presets.FirstOrDefault(((string Hex, string Name) x) => x.Hex.Equals(s.Colors, StringComparison.OrdinalIgnoreCase)).Name ?? ""))));
 		Control control = null;
-		if (s.Glass)
+		if (s.Glass || s.LiveBackground != "off")
 		{
 			control = Row(L.T("Opacity"), Slide(0.2, 1.0, 0.05, s.Opacity, delegate(double v)
 			{
 				s.Opacity = v;
-			}, (double v) => $"{v * 100.0:0} %"), L.T("Only with the glass effect."), "Opacity");
+			}, (double v) => $"{v * 100.0:0} %"), L.T(s.Glass ? "Only with the glass effect." : "How much of the live background shows through the cards."), "Opacity");
 			control.Margin = new Thickness(16.0, 0.0, 0.0, 0.0);
 		}
 		else
@@ -2263,7 +2263,7 @@ public sealed partial class SettingsWindow : Window
 			Section(L.T("Effects"), Row(L.T("Glass effect"), Toggle(s.Glass, delegate(bool v)
 			{
 				s.Glass = v;
-			}, notify: true, rebuild: true), L.T("Translucent background with blur"), "Glass"), control, Row(L.T("Modern look"), Toggle(s.Modern, delegate(bool v)
+			}, notify: true, rebuild: true), L.T("Translucent background with blur"), "Glass"), control, Row(L.T("Live background"), Choice(new[] { L.T("Off"), L.T("Ocean") }, s.LiveBackground == "ocean" ? 1 : 0, i => s.LiveBackground = i == 1 ? "ocean" : "off", rebuild: true), L.T("Animated water behind the cards: the water level follows the CPU temperature, waves and bubbles follow the load."), "LiveBackground"), Row(L.T("Modern look"), Toggle(s.Modern, delegate(bool v)
 			{
 				s.Modern = v;
 			}, notify: true, rebuild: true), L.T("Cards without borders, rounder corners, icons in tinted circles, bolder numbers."), "Modern"), Row(L.T("Smooth transitions"), Toggle(s.SmoothTransitions, delegate(bool v)

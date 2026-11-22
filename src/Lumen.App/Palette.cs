@@ -133,6 +133,14 @@ public sealed class Palette
 		var palette = For(dark, s.Glass, s.Opacity, accent, s.HighContrast, s.Background, s.Colors == "mono");
 		palette.OwnBackground = !string.IsNullOrEmpty(s.Background) && s.Background != "graphite";
 		palette.Chosen = s.Colors == "mono" ? null : accent;
+		// A live background shows between and through the cards: the cards take the opacity setting even without glass.
+		if (s.LiveBackground != "off" && !s.Glass)
+		{
+			byte a = (byte)Math.Round(Math.Clamp(s.Opacity * 0.98, 0.0, 1.0) * 255.0);
+			palette = new Palette { Dark = palette.Dark, Surface = palette.Surface, Card = Color.FromArgb(a, palette.Card.R, palette.Card.G, palette.Card.B),
+				Stroke = palette.Stroke, Ink = palette.Ink, Soft = palette.Soft, Faint = palette.Faint, Track = palette.Track, Ramp = palette.Ramp,
+				OwnBackground = palette.OwnBackground, Chosen = palette.Chosen };
+		}
 		return palette;
 	}
 

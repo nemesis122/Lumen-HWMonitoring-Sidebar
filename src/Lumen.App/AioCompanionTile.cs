@@ -58,6 +58,7 @@ public sealed class AioCompanionTile : Border,IWidget,INamed
     {
         if(AioDesigns.Instruments(design))return p.Themed(Accents.Design(design == WidgetStyle.AioAmberInstruments ? "#FFB82E" : "#73DCE0",p),Color.Parse("#171B1C"));
         if(DarkAioDesigns.Contains(design))return p.Themed(Accents.Design(DarkAioDesigns.For(design).Accent,p),Color.Parse("#0C141C"));
+        if(NeoDesigns.Contains(design)){var look=NeoDesigns.For(design);return p.Themed(p.Chosen??Color.Parse(look.Accents[0]),Color.Parse(look.Surface));}
         if(CaseEditionDesigns.Contains(design))return p.Themed(p.Chosen??Color.Parse(CaseEditionDesigns.For(design).Accent),Color.Parse("#0C141C"));
         if(AioDesigns.Red(design)&&!AioDesigns.Black(design)){var r=PanelTheme.For("red",p.Chosen);return p.Themed(r.Accent,r.Section);}
         if(AioDesigns.Panel(design)){var t=PanelTheme.For(s.PanelTheme,p.Chosen);return p.Themed(t.Accent,t.Section);}

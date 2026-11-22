@@ -42,7 +42,8 @@ public static class AioDesigns
         WidgetStyle.AioIsometricAtlas, WidgetStyle.AioIsometricTiles, WidgetStyle.AioIsometricRig, WidgetStyle.AioIsometricPedestals, WidgetStyle.AioIsometricCompact, WidgetStyle.AioIsometricRings,
         WidgetStyle.AioPanel, WidgetStyle.AioPanelRings, WidgetStyle.AioPanelHeader, WidgetStyle.AioPanelPlain
         , WidgetStyle.AioMainboardMapRed, WidgetStyle.AioMainboardCoresRed, WidgetStyle.AioTypeBlockRed, WidgetStyle.AioOrbitNetworkRed, WidgetStyle.AioThermalGridRed, WidgetStyle.AioSignalRackRed, WidgetStyle.AioIsometricCoreRed, WidgetStyle.AioPrecisionRed, WidgetStyle.AioStudioLightRed, WidgetStyle.AioInstrumentRed, WidgetStyle.AioAuroraFusionRed, WidgetStyle.AioCarbonPulseRed, WidgetStyle.AioIsometricAtlasRed, WidgetStyle.AioIsometricTilesRed, WidgetStyle.AioIsometricRigRed, WidgetStyle.AioIsometricPedestalsRed, WidgetStyle.AioIsometricCompactRed, WidgetStyle.AioIsometricRingsRed
-    }.Concat(DarkAioDesigns.All.Select(item => item.Style)).Concat(new[] { WidgetStyle.AioTealInstruments, WidgetStyle.AioAmberInstruments }).ToArray();
+    }.Concat(DarkAioDesigns.All.Select(item => item.Style)).Concat(new[] { WidgetStyle.AioTealInstruments, WidgetStyle.AioAmberInstruments })
+        .Concat(NeoDesigns.All.Select(item => item.Style)).ToArray();
     /// <summary>The sensor-panel family: hardware pictures beside red-label values, colour and gauge style chosen in Customise.</summary>
     public static bool Panel(WidgetStyle style) => Base(style) is WidgetStyle.AioPanel or WidgetStyle.AioPanelRings or WidgetStyle.AioPanelBadges or WidgetStyle.AioPanelHeader or WidgetStyle.AioPanelPlain;
     public static readonly (string Key,string Name)[] PanelThemes={("red","Red"),("cyan","Cyber cyan"),("purple","Neon purple"),("gold","Gold"),("carbon","Carbon orange"),("glass","Glass red"),("lime","Toxic lime"),("silver","Ice silver")};
@@ -193,6 +194,7 @@ public static class AioDesigns
     public static string Name(WidgetStyle style) => style switch
     {
         _ when DarkAioDesigns.Contains(style) => DarkAioDesigns.For(style).Name,
+        _ when NeoDesigns.Contains(style) => NeoDesigns.For(style).Name,
         WidgetStyle.AioTealInstruments => "Teal Instruments",
         WidgetStyle.AioAmberInstruments => "Amber Instruments",
         _ when CaseEditionDesigns.Contains(style) => CaseEditionDesigns.For(style).Name,

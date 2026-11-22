@@ -35,7 +35,7 @@ public class StyleSelectionTests
         finally{window.Close();}
         return true;
     });
-    static readonly WidgetStyle[] Expected =
+    static readonly WidgetStyle[] Expected = new[]
     {
         WidgetStyle.Standard, WidgetStyle.Segments, WidgetStyle.Table,
         WidgetStyle.Pill, WidgetStyle.FillBars, WidgetStyle.Split, WidgetStyle.PillRow,
@@ -65,7 +65,7 @@ public class StyleSelectionTests
         WidgetStyle.AioNeonBackplateC,
         WidgetStyle.AioAirflowMapC,
         WidgetStyle.AioTealInstruments, WidgetStyle.AioAmberInstruments
-    };
+    }.Concat(NeoDesigns.All.Select(l => l.Style)).ToArray(); // Cyberpunk and Neumorph (5.1.0)
     const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
 
     [Fact]
