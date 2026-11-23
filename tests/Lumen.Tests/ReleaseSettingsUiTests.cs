@@ -13,7 +13,7 @@ using Lumen.Core;
 using Xunit;
 
 /// <summary>
-/// Release check 5.1.0 (user request: "Sensor zuordnen, ausschalten, einschalten, Darstellung, History-Chart ab- und
+/// Release check 5.1.0, LUMEN_RELEASE_CHECK=1 for all designs (user request: "Sensor zuordnen, ausschalten, einschalten, Darstellung, History-Chart ab- und
 /// einschalten – auf alles"): every design, driven end to end through the real Settings window. Each sensor switch
 /// (history charts included) is clicked off and on again in Settings → Widgets; after every click the sidebar is built
 /// again the way the app does it (Normalize, new SidebarView, Update). Each appearance control (Settings → Appearance
@@ -27,11 +27,17 @@ public class ReleaseSettingsUiTests
         public override bool AutostartEnabled => false;
     }
 
+    /// <summary>Without LUMEN_RELEASE_CHECK=1 (the full check takes hours), a few designs of every kind: a card design,
+    /// the Dial, a Cyberpunk, a Neumorph and two art designs.</summary>
+    private static readonly WidgetStyle[] Quick = { WidgetStyle.Standard, WidgetStyle.Dial, WidgetStyle.AioCyberArasaka, WidgetStyle.AioNeoHero, WidgetStyle.AioArtThermal, WidgetStyle.AioArtDotMatrix };
+
     private static IEnumerable<WidgetStyle> Shard()
     {
         var all = Settings.Selectable.Distinct().ToArray();
         if (Environment.GetEnvironmentVariable("LUMEN_STYLES") is { Length: > 0 } names)
             all = all.Where(s => names.Split(',').Contains(s.ToString())).ToArray();
+        else if (Environment.GetEnvironmentVariable("LUMEN_RELEASE_CHECK") != "1" && Environment.GetEnvironmentVariable("LUMEN_SHARD") == null)
+            all = all.Where(Quick.Contains).ToArray();
         if (Environment.GetEnvironmentVariable("LUMEN_SHARD") is { } shard && shard.Split('/') is [var a, var b] && int.TryParse(a, out int i) && int.TryParse(b, out int n))
             return all.Where((_, k) => k % n == i);
         return all;
