@@ -314,7 +314,17 @@ public enum WidgetStyle
     AioNeoParts,
     AioNeoRedParts,
     AioNeoCyanHero,
-    AioNeoMono
+    AioNeoMono,
+    AioArtDotMatrix,
+    AioArtTronGrid,
+    AioArtCodeRain,
+    AioArtTokyoNeon,
+    AioArtThermal,
+    AioArtPhone,
+    AioArtScope,
+    AioArtStealth,
+    AioArtBlackGold,
+    AioArtSumiInk
 }
 
 

@@ -38,6 +38,9 @@ public static class AioReadings
     public static string? GraphKey(string readingKey) =>
         GraphSwitches.FirstOrDefault(g => g.Readings.Any(readingKey.StartsWith)).Key;
     public static bool IsGraphKey(string key) => GraphSwitches.Any(g => g.Key == key);
+    /// <summary>Detail values that a design lists only when the user ticks them (or a dashboard design lists them all).</summary>
+    public static bool IsDetailKey(string key) => System.Text.RegularExpressions.Regex.IsMatch(key,
+        @"^aio\.(system\.ram\.(used|free|total)|board\..+\.temp|drives\.[^.]+\.(life|hours|activity)|network\.(ping|jitter|loss))$");
     /// <summary>Whether the history chart of this reading's part is switched on.</summary>
     public static bool Graphs(Settings settings, string readingKey) => GraphKey(readingKey) is not string key || settings.Shows(key);
     public static string GraphState(Settings settings) => string.Concat(GraphSwitches.Select(g => settings.Shows(g.Key) ? "1" : "0"));
@@ -214,7 +217,7 @@ public static class AioReadings
     {
         // Every part switch, except "System": its RAM is switched under Memory and its drive temperatures under Drives.
         foreach(var g in Groups.Where(g=>g.Key!="aio.system")) yield return (g.Key,"AIO · "+L.T(g.Label));
-        foreach(var g in GraphSwitches) yield return (g.Key,"AIO · "+L.T(g.Label)+" · "+L.T("History chart"));
+        foreach(var g in GraphSwitches.Where(g=>HistorySupport.Draws(style,g.Key))) yield return (g.Key,"AIO · "+L.T(g.Label)+" · "+L.T("History chart"));
         yield return ("aio.cpu.coreloads","AIO · CPU · "+L.T("Core load"));
         yield return ("aio.cpu.cores","AIO · "+L.T("Core temperatures"));
         if (style == null || AioDesigns.Instruments(style.Value))

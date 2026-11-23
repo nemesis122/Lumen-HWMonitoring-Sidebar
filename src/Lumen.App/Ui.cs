@@ -48,6 +48,12 @@ public static class Ui
 	/// <summary>Orbitron, the font of the Panel designs (embedded, OFL).</summary>
 	public static readonly FontFamily Orbitron = new FontFamily("avares://Lumen/Assets/Fonts#Orbitron");
 
+	/// <summary>Doto, a dot-matrix face (embedded, OFL): the LED board design.</summary>
+	public static readonly FontFamily Doto = new FontFamily("avares://Lumen/Assets/Fonts#Doto");
+
+	/// <summary>Playfair Display, a high-contrast serif (embedded, OFL): Black &amp; Gold and Sumi-e Ink.</summary>
+	public static readonly FontFamily Playfair = new FontFamily("avares://Lumen/Assets/Fonts#Playfair Display");
+
 	/// <summary>A design's own font (Orbitron, Mono, Digital …) unless the user chose a typeface other than Inter: then that one, in every design.</summary>
 	public static FontFamily DesignFont(FontFamily own) => FontKey == "inter" ? own : Font;
 

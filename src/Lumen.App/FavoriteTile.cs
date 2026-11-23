@@ -112,7 +112,9 @@ public sealed class FavoriteTile : SummaryTile
         units[row.Key] = unit;
         var readout = Ui.Row(0, number, unit);
         var label = Ui.Text(row.Key == "net.down" ? "↓ " + L.T("Download") : row.Key == "net.up" ? "↑ " + L.T("Upload") : row.Label, 10, P.Soft);
-        Control face = Kind == WidgetKind.Drives ? SteadyHeight.Of(new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Left, Child = readout }) : readout;
+        // Every main value shrinks to its column when it does not fit (a large main value size, two values side by side):
+        // it never runs into its neighbour or over the edge of the card.
+        Control face = SteadyHeight.Of(new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Left, Child = readout });
         var cell = Ui.Stack(4, label, face);
         cell.Margin = new Thickness(0, 0, 8, 0);
         return cell;

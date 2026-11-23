@@ -199,7 +199,8 @@ public sealed partial class AioTile
             // the name beside it takes what is left. So the value never needs to shrink or move.
             // Wide values (fan speed, network rates) get their own full-width line below the name.
             Control head;
-            if (p.Kind is "net" or "fan") head = Stack(0, IsoTitle(p.Title, p.Color, 15, HorizontalAlignment.Left), IsoMains(p, 22, HorizontalAlignment.Right, false));
+            // The power supply too: its rail ("12.192 V") is as wide as a fan speed and left the card at a large main value size.
+            if (p.Kind is "net" or "fan" or "psu") head = Stack(0, IsoTitle(p.Title, p.Color, 15, HorizontalAlignment.Left), IsoMains(p, 22, HorizontalAlignment.Right, false));
             else { var g = Ui.Columns("*,Auto", IsoTitle(p.Title, p.Color, 15, HorizontalAlignment.Left), IsoMains(p, 22, HorizontalAlignment.Right, false)); g.ColumnSpacing = 6; head = g; }
             var side = Stack(2, head);
             if (p.Model.Length > 0) side.Children.Add(IsoModel(p.Model, false));

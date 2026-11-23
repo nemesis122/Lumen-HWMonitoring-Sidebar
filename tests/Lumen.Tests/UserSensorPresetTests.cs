@@ -43,6 +43,8 @@ public class UserSensorPresetTests
             foreach (var option in options)
             {
                 Assert.Equal(Enabled[kind].Contains(option.Key), settings.ForWidget(kind).Shows(option.Key));
+                // A history switch the design does not draw is not listed (5.1.0 release check), but still set.
+                if (!HistorySupport.Draws(WidgetStyle.Standard, option.Key)) continue;
                 Assert.Equal(Enabled[kind].Contains(option.Key), Content().GetLogicalDescendants().OfType<CheckBox>().Single(c => Equals(c.Tag, option.Key)).IsChecked);
             }
             if (kind == WidgetKind.Cpu) Assert.False(settings.ShowIntegratedGpu);

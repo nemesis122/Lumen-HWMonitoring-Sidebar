@@ -257,7 +257,11 @@ public sealed class DialTile : SummaryTile
 		{
 			return null;
 		}
-		return new Spec(key, label, text(v), DayStats.Series(k), null, color);
+		// The small curve of a tile is its history chart: "History chart" (and, for the load, "History chart · Load")
+		// switch it off; the tile keeps the room of the curve, so nothing moves.
+		bool curve = (Summaries.ChartKey(Kind) is not string chart || S.Shows(chart))
+			&& !(key == "load" && Kind is WidgetKind.Cpu or WidgetKind.Gpu && !S.Shows(WidgetSensors.SecondaryKey(Kind) + ".history"));
+		return new Spec(key, label, text(v), curve ? DayStats.Series(k) : null, null, color);
 	}
 
 	private void Cpu(Snapshot snap, List<Spec?> specs)
@@ -463,8 +467,9 @@ public sealed class DialTile : SummaryTile
 			network.Children.Add(legend);
 		}
 		// The last 60 seconds, like a live network view.
-		double[] a = down ? history.Read("net.down").TakeLast(60).ToArray() : Array.Empty<double>();
-		double[] b = upShown ? history.Read("net.up").TakeLast(60).ToArray() : Array.Empty<double>();
+		// Each direction has its own history switch: a direction switched off draws no curve.
+		double[] a = down && S.Shows("net.down.history") ? history.Read("net.down").TakeLast(60).ToArray() : Array.Empty<double>();
+		double[] b = upShown && S.Shows("net.up.history") ? history.Read("net.up").TakeLast(60).ToArray() : Array.Empty<double>();
 		double max = Math.Max(1024, a.Concat(b).Where(double.IsFinite).DefaultIfEmpty(0).Max());
 		double top = Nice(max);
 		downChart.Max = top;

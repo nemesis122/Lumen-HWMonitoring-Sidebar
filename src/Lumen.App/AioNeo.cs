@@ -8,19 +8,31 @@ using Lumen.Core;
 namespace Lumen.App;
 
 /// <summary>
-/// The Cyberpunk and Neumorph designs (5.1.0). Cyberpunk: dark panels with a coloured edge and a cut corner, big glowing
-/// numbers, uppercase captions in Oxanium. Neumorph: soft raised panels and pressed-in wells drawn from the card colour,
-/// with rings (Dials, Hero) or bars (Bars). Every value is bound to its AIO sensor, so the sensor choices, the widget
-/// switches and "only what the hardware has" work as in every AIO design; a value shown large on top is not repeated
-/// below, and anything else the user ticks ends in a last panel instead of being lost.
+/// The Cyberpunk and Neumorph designs (5.1.0) and the ten art designs (5.2.0). Cyberpunk: dark panels with a coloured
+/// edge and a cut corner, big glowing numbers, uppercase captions in Oxanium. Neumorph: soft raised panels and pressed-in
+/// wells drawn from the card colour, with rings (Dials, Hero) or bars (Bars). The art designs use the same two skeletons
+/// (panels per part, or rings/tiles/rows on top) with their own panels, fonts and decorations: LED dot matrix, Tron grid,
+/// code rain, Tokyo neon, thermal camera, phone widgets, oscilloscope, stealth, black and gold, sumi-e ink.
+/// Every value is bound to its AIO sensor, so the sensor choices, the widget switches and "only what the hardware has" work
+/// as in every AIO design; a value shown large on top is not repeated below, and anything else the user ticks ends in a
+/// last panel instead of being lost.
 /// </summary>
 public sealed partial class AioTile
 {
     private NeoDesigns.Look neo = NeoDesigns.All[0];
     private Color[] nAcc = { Colors.White };
-    private Color nSurface, nDark, nLight, nInk, nLabel, nTrack;
-    private FontFamily nFont = Ui.Inter;
-    private bool Cyber => neo.Kind == NeoDesigns.Family.Cyber;
+    private Color nSurface, nDark, nLight, nInk, nLabel, nTrack, nPanel;
+    private FontFamily nFont = Ui.Inter, nValueFont = Ui.Inter;
+    private NeoDesigns.Family Fam => neo.Kind;
+    private bool Cyber => Fam == NeoDesigns.Family.Cyber;
+    private bool Soft => Fam == NeoDesigns.Family.Neumorph;
+    /// <summary>Designs built from panels, one per part (processor and graphics first).</summary>
+    private bool PanelPath => Fam is NeoDesigns.Family.Cyber or NeoDesigns.Family.Rain or NeoDesigns.Family.Neon or NeoDesigns.Family.Scope or NeoDesigns.Family.Stealth;
+    /// <summary>Designs that write captions and titles in capitals.</summary>
+    private bool Upper => Fam is NeoDesigns.Family.Cyber or NeoDesigns.Family.Matrix or NeoDesigns.Family.Tron or NeoDesigns.Family.Rain
+        or NeoDesigns.Family.Neon or NeoDesigns.Family.Scope or NeoDesigns.Family.Stealth or NeoDesigns.Family.Thermal;
+    /// <summary>Designs whose big numbers glow in the accent.</summary>
+    private bool Glowing => Fam is NeoDesigns.Family.Matrix or NeoDesigns.Family.Tron or NeoDesigns.Family.Rain or NeoDesigns.Family.Neon or NeoDesigns.Family.Scope;
     private Color NA => nAcc[0];
     private Color NB => nAcc[Math.Min(1, nAcc.Length - 1)];
     private Color NAcc(int i) => nAcc[i % nAcc.Length];
@@ -35,33 +47,77 @@ public sealed partial class AioTile
         // An own background (Appearance) replaces the design's card colour; panels draw it opaque, the card keeps its alpha.
         nSurface = palette.OwnBackground ? Color.FromArgb(255, back.R, back.G, back.B) : Color.Parse(neo.Surface);
         nDark = Palette.Mix(nSurface, Colors.Black, .55); nLight = Palette.Mix(nSurface, Colors.White, .075);
-        nInk = lightSurface ? ink : Color.Parse("#F1F4F8");
-        nLabel = lightSurface ? muted : Color.Parse("#9AA1AC");
-        nTrack = lightSurface ? track : Palette.Mix(nSurface, Colors.White, .1);
-        nFont = Cyber ? Ui.DesignFont(Ui.FamilyFor("oxanium")) : Ui.DesignFont(Ui.Inter);
+        nInk = lightSurface ? ink : Color.Parse(Fam switch
+        {
+            NeoDesigns.Family.Matrix => "#FFE0BA", NeoDesigns.Family.Rain => "#C8FFD4", NeoDesigns.Family.Scope => "#D2FFE4", NeoDesigns.Family.Tron => "#E2FBFF",
+            NeoDesigns.Family.Stealth => "#E4E4E8", NeoDesigns.Family.Gold => "#F1E7D0", NeoDesigns.Family.Ink => "#F2EFE8", _ => "#F1F4F8"
+        });
+        nLabel = lightSurface ? muted : Fam switch
+        {
+            // Greyish tints, so a chosen label colour still replaces them.
+            NeoDesigns.Family.Matrix => Color.Parse("#B8A58A"), NeoDesigns.Family.Rain or NeoDesigns.Family.Scope => Color.Parse("#8FAA97"),
+            NeoDesigns.Family.Gold => Color.Parse("#B9AD92"), NeoDesigns.Family.Ink => Color.Parse("#9A968E"), NeoDesigns.Family.Phone => Color.Parse("#8E8E93"),
+            NeoDesigns.Family.Stealth => Color.Parse("#7A7A82"), _ => Color.Parse("#9AA1AC")
+        };
+        nTrack = lightSurface ? track : Fam switch
+        {
+            NeoDesigns.Family.Matrix => Palette.Mix(NA, Colors.Black, .85), NeoDesigns.Family.Tron or NeoDesigns.Family.Neon or NeoDesigns.Family.Rain or NeoDesigns.Family.Scope => Palette.Mix(NA, nSurface, .82),
+            NeoDesigns.Family.Gold => Palette.Mix(NA, nSurface, .8), NeoDesigns.Family.Phone => Color.Parse("#2C2C2E"), _ => Palette.Mix(nSurface, Colors.White, .1)
+        };
+        // The colour of a panel or tile, drawn from the card colour so an own background reaches it.
+        nPanel = Fam switch
+        {
+            NeoDesigns.Family.Phone => Palette.Mix(nSurface, Colors.White, .11), NeoDesigns.Family.Thermal => Palette.Mix(nSurface, Colors.White, .05),
+            NeoDesigns.Family.Stealth => Palette.Mix(nSurface, Colors.White, .03), NeoDesigns.Family.Matrix => Palette.Mix(nSurface, NA, .03),
+            NeoDesigns.Family.Scope => Palette.Mix(nSurface, NA, .04), _ => nSurface
+        };
+        nFont = Ui.DesignFont(Fam switch
+        {
+            NeoDesigns.Family.Cyber or NeoDesigns.Family.Tron => Ui.FamilyFor("oxanium"),
+            NeoDesigns.Family.Matrix or NeoDesigns.Family.Scope => Ui.FamilyFor("ibm-plex-mono"),
+            NeoDesigns.Family.Rain or NeoDesigns.Family.Thermal => Ui.FamilyFor("jetbrains-mono"),
+            NeoDesigns.Family.Neon or NeoDesigns.Family.Stealth or NeoDesigns.Family.Gold or NeoDesigns.Family.Ink => Ui.FamilyFor("lato"),
+            _ => Ui.Inter
+        });
+        nValueFont = Ui.DesignFont(Fam switch
+        {
+            NeoDesigns.Family.Matrix => Ui.Doto, NeoDesigns.Family.Stealth => Ui.FamilyFor("anton"),
+            NeoDesigns.Family.Gold or NeoDesigns.Family.Ink => Ui.Playfair, _ => nFont
+        });
         Background = Palette.Brush(palette.OwnBackground ? palette.Card : SeeThrough(nSurface));
-        BorderBrush = Palette.Brush(Cyber ? BlackDraw.A(NA, .45) : Palette.Mix(nSurface, Colors.White, .05));
+        BorderBrush = Palette.Brush(Fam switch
+        {
+            NeoDesigns.Family.Cyber or NeoDesigns.Family.Tron => BlackDraw.A(NA, .45), NeoDesigns.Family.Neon or NeoDesigns.Family.Gold => BlackDraw.A(NA, .3),
+            NeoDesigns.Family.Matrix or NeoDesigns.Family.Rain or NeoDesigns.Family.Scope => BlackDraw.A(NA, .18), _ => Palette.Mix(nSurface, Colors.White, .05)
+        });
         BorderThickness = new Thickness(1);
-        CornerRadius = new CornerRadius(Cyber ? 4 : 26);
-        Padding = new Thickness(Cyber ? 8 : 14);
-        content.Spacing = Cyber ? 10 : 16;
+        CornerRadius = new CornerRadius(Fam switch
+        {
+            NeoDesigns.Family.Cyber or NeoDesigns.Family.Tron or NeoDesigns.Family.Gold or NeoDesigns.Family.Ink => 4, NeoDesigns.Family.Rain => 2,
+            NeoDesigns.Family.Neumorph => 26, NeoDesigns.Family.Phone => 30, NeoDesigns.Family.Matrix => 8, _ => 16
+        });
+        Padding = new Thickness(Fam switch { NeoDesigns.Family.Cyber => 8, NeoDesigns.Family.Neumorph or NeoDesigns.Family.Gold or NeoDesigns.Family.Ink => 14, _ => 10 });
+        content.Spacing = Fam switch { NeoDesigns.Family.Neumorph => 16, NeoDesigns.Family.Gold or NeoDesigns.Family.Ink => 14, _ => 10 };
 
         var top = new HashSet<string>();
-        if (Cyber) CyberParts(top); else NeumorphTop(top);
+        if (PanelPath) CyberParts(top); else NeumorphTop(top);
 
         // Everything not shown yet: the rest of every part in the design's own panels.
-        if (!Cyber) NeumorphDetails(top);
+        if (!PanelPath) NeumorphDetails(top);
         NeoMemory(top);
         NeoDrives(top);
         NeoNetwork(top);
         NeoFans(top);
         NeoRails(top);
         var extras = referenceRows.Where(r => !referenceUsed.Contains(r.Key) && !top.Contains(r.Key)).ToArray();
-        if (extras.Length > 0) content.Children.Add(NPanel(Cyber ? "MISC_SENSORS" : "More", NGrid(extras.Select(r => NKV(r)), 2)));
+        if (extras.Length > 0) content.Children.Add(NPanel(T("MISC_SENSORS", "More"), NGrid(extras.Select(r => NKV(r)), 2)));
         foreach (var r in referenceRows) referenceUsed.Add(r.Key);
     }
 
-    // ------------------------------------------------------------------ Cyberpunk: processor and graphics
+    /// <summary>A panel title: the Cyberpunk code name, or the plain name (in capitals where the design writes so).</summary>
+    private string T(string cyber, string plain) => Cyber ? cyber : Upper ? L.T(plain).ToUpperInvariant() : L.T(plain);
+
+    // ------------------------------------------------------------------ panel designs: processor and graphics
     private void CyberParts(HashSet<string> top)
     {
         var cpu = Rs("CPU");
@@ -69,9 +125,9 @@ public sealed partial class AioTile
         if (neo.Layout == NeoDesigns.Arrangement.Split && cpu.Length > 0 && gpus.Count > 0)
         {
             var first = gpus[0].ToArray();
-            var left = CyberColumn("CPU", "cpu", cpu, top, NModelLine(WidgetKind.Cpu, 0, snapshot.Cpu?.Name));
+            var left = CyberColumn("CPU", "cpu", cpu, top, NModelLine(WidgetKind.Cpu, 0, snapshot.Cpu?.Name), 0);
             var right = CyberColumn(GpuTitle(first[0].Device, 0, true), GpuArt(first[0].Device), first, top,
-                NModelLine(WidgetKind.Gpu, 0, snapshot.Gpus.FirstOrDefault(g => g.Id == first[0].Device)?.Name));
+                NModelLine(WidgetKind.Gpu, 0, snapshot.Gpus.FirstOrDefault(g => g.Id == first[0].Device)?.Name), 1);
             var split = Ui.Columns("*,*", left, right); split.ColumnSpacing = 14;
             var body = Stack(10, split);
             if (CyberCores() is { } cores) body.Children.Add(cores);
@@ -81,9 +137,9 @@ public sealed partial class AioTile
         }
         if (cpu.Length > 0)
         {
-            var body = CyberHero("cpu", cpu, top);
+            var body = CyberHero("cpu", cpu, top, 0);
             if (CyberCores() is { } cores) body.Children.Add(cores);
-            content.Children.Add(NPanel("CPU_CORE", body, PartModel(WidgetKind.Cpu, 0, snapshot.Cpu?.Name ?? "")));
+            content.Children.Add(NPanel(T("CPU_CORE", "Processor"), body, PartModel(WidgetKind.Cpu, 0, snapshot.Cpu?.Name ?? ""), 0));
         }
         for (int i = 0; i < gpus.Count; i++) CyberSection(gpus[i].ToArray(), i, top);
     }
@@ -91,26 +147,26 @@ public sealed partial class AioTile
     private void CyberSection(AioReading[] rows, int index, HashSet<string> top)
     {
         var info = snapshot.Gpus.FirstOrDefault(g => g.Id == rows[0].Device);
-        content.Children.Add(NPanel(GpuTitle(rows[0].Device, index, false), CyberHero(GpuArt(rows[0].Device), rows, top), PartModel(WidgetKind.Gpu, index, info?.Name ?? "")));
+        content.Children.Add(NPanel(GpuTitle(rows[0].Device, index, false), CyberHero(GpuArt(rows[0].Device), rows, top, 1), PartModel(WidgetKind.Gpu, index, info?.Name ?? ""), 1));
     }
 
     private string GpuTitle(string? device, int index, bool shortForm)
     {
         var info = snapshot.Gpus.FirstOrDefault(g => g.Id == device);
-        if (info?.Integrated == true) return Cyber ? (shortForm ? "iGPU" : "IGPU_UNIT") : "Integrated graphics";
+        if (info?.Integrated == true) return Cyber ? (shortForm ? "iGPU" : "IGPU_UNIT") : Soft ? "Integrated graphics" : shortForm ? "iGPU" : L.T("Integrated graphics");
         if (Cyber) return shortForm ? (index == 0 ? "GPU" : "GPU " + (index + 1)) : index == 0 ? "GPU_UNIT" : "GPU_UNIT_" + (index + 1);
         return index == 0 ? "GPU" : "GPU " + (index + 1);
     }
     private string GpuArt(string? device) => "gpu";
 
     /// <summary>Picture (optional) and the big temperature left, the other values right, the history below.</summary>
-    private StackPanel CyberHero(string art, AioReading[] rows, HashSet<string> top)
+    private StackPanel CyberHero(string art, AioReading[] rows, HashSet<string> top, int colour)
     {
         var main = rows.FirstOrDefault(r => r.Key.EndsWith(".temp")) ?? rows.FirstOrDefault(r => r.Key.EndsWith(".load")) ?? rows[0];
         top.Add(main.Key);
         var left = Stack(2);
         if (neo.Parts) left.Children.Add(NPart(art, art == "gpu" ? 128 : 104));
-        left.Children.Add(NBig(main, 46));
+        left.Children.Add(NBig(main, BigSize(46), true, colour));
         var list = Stack(3, Ordered(rows.Where(r => r != main)).Select(r => NKV(r)).ToArray());
         var row = Ui.Columns("Auto,*", left, new Border { VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(14, 0, 0, 4), Child = list });
         var body = Stack(8, row);
@@ -118,18 +174,27 @@ public sealed partial class AioTile
         if (main.Group == "CPU") AddCoreTemps(body);
         return body;
     }
+    private double BigSize(double cyber) => Fam switch
+    {
+        NeoDesigns.Family.Stealth => cyber + 8, NeoDesigns.Family.Rain or NeoDesigns.Family.Scope => cyber - 6, _ => cyber
+    };
 
     /// <summary>Split layout: one column of a part (tag, picture, big number, values, history).</summary>
-    private Control CyberColumn(string tag, string art, AioReading[] rows, HashSet<string> top, Control? model)
+    private Control CyberColumn(string tag, string art, AioReading[] rows, HashSet<string> top, Control? model, int colour)
     {
         var main = rows.FirstOrDefault(r => r.Key.EndsWith(".temp")) ?? rows.FirstOrDefault(r => r.Key.EndsWith(".load")) ?? rows[0];
         top.Add(main.Key);
-        var label = NText(tag, 10.5, Colors.Black, true); label.LetterSpacing = 1.5;
-        var badge = new Border { Background = Palette.Brush(NA), Padding = new Thickness(6, 1), HorizontalAlignment = HorizontalAlignment.Left, Child = label };
-        var column = Stack(4, badge);
+        Control head;
+        if (Cyber)
+        {
+            var label = NText(tag, 10.5, Colors.Black, true); label.LetterSpacing = 1.5;
+            head = new Border { Background = Palette.Brush(NA), Padding = new Thickness(6, 1), HorizontalAlignment = HorizontalAlignment.Left, Child = label };
+        }
+        else head = NHeading(tag, NAcc(colour));
+        var column = Stack(4, head);
         if (model != null) column.Children.Add(model);
         if (neo.Parts) column.Children.Add(NPart(art, art == "gpu" ? 140 : 118));
-        column.Children.Add(NBig(main, 52));
+        column.Children.Add(NBig(main, BigSize(52), true, colour));
         foreach (var r in Ordered(rows.Where(r => r != main))) column.Children.Add(NKV(r));
         if (NHistory(main) is { } plot) column.Children.Add(plot);
         if (main.Group == "CPU") AddCoreTemps(column);
@@ -141,7 +206,7 @@ public sealed partial class AioTile
         if (lastCoreLoads.Count < 2 || !AioReadings.Selected(settings, "aio.cpu.coreloads") || Rs("CPU").Length == 0) return null;
         coreBars = new AioCoreBars(nInk, nLabel, nTrack) { Loads = lastCoreLoads, Tint = NA, Heatmap = true, Tag = "graphic" };
         TextColours.Bind(coreBars, "aio.cpu.coreloads");
-        var caption = NText(Cyber ? "THREAD_MATRIX" : "Cores", 10.5, Cyber ? NA : nLabel, true); TextFonts.Mark(caption, TextRole.Title);
+        var caption = NText(Cyber ? "THREAD_MATRIX" : Upper ? L.T("Cores").ToUpperInvariant() : L.T("Cores"), 10.5, Cyber || Glowing ? NA : nLabel, true); TextFonts.Mark(caption, TextRole.Title);
         return Stack(6, caption, coreBars);
     }
 
@@ -152,7 +217,7 @@ public sealed partial class AioTile
         body.Children.Add(NGrid(temps.Select(r => NKV(r, r.Label.Replace("Core", "C"))), 4));
     }
 
-    // ------------------------------------------------------------------ Neumorph: rings or bars on top
+    // ------------------------------------------------------------------ ring designs: rings, tiles or rows on top
     private void NeumorphTop(HashSet<string> top)
     {
         var cpuTemp = R("temp") ?? R("load");
@@ -172,64 +237,171 @@ public sealed partial class AioTile
         {
             foreach (var (r, caption, art, colour) in items) content.Children.Add(NBarRow(r, caption, art, NAcc(colour)));
         }
+        else if (Fam == NeoDesigns.Family.Thermal)
+        {
+            var tiles = items.Select((i, n) => NHeat(i.R, i.Caption, n < 2 ? 112 : 84)).ToArray();
+            content.Children.Add(new Border { Tag = "aio-section", Child = NGrid(tiles.Take(2), 2, 10) });
+            if (tiles.Length > 2) content.Children.Add(new Border { Tag = "aio-section", Child = NGrid(tiles.Skip(2), 3, 8) });
+        }
         else if (neo.Layout == NeoDesigns.Arrangement.Hero)
         {
             var (r, caption, _, colour) = items[0];
             var hero = NDial(r, caption, NAcc(colour), 220);
             hero.HorizontalAlignment = HorizontalAlignment.Center;
-            content.Children.Add(new Border { Tag = "aio-section", Child = hero });
+            content.Children.Add(Decorated(new Border { Tag = "aio-section", Child = hero }, true));
             var rest = items.Skip(1).Select(i => (Control)NDial(i.R, i.Caption, NAcc(i.Colour), 96)).ToArray();
             if (rest.Length > 0) content.Children.Add(new Border { Tag = "aio-section", Child = NGrid(rest, Math.Min(3, rest.Length), 12) });
         }
         else
         {
             var dials = items.Select(i => (Control)NDial(i.R, i.Caption, NAcc(i.Colour), 138)).ToArray();
-            content.Children.Add(new Border { Tag = "aio-section", Child = NGrid(dials, 2, 14) });
+            content.Children.Add(Decorated(new Border { Tag = "aio-section", Child = NGrid(dials, 2, 14) }, false));
         }
-        if (CyberCores() is { } cores) content.Children.Add(NRaised(cores, new Thickness(14)));
+        if (CyberCores() is { } cores) content.Children.Add(Shell(cores, new Thickness(14)));
     }
 
-    /// <summary>A raised ring: coloured arc around a pressed-in centre with the value and its caption.</summary>
+    /// <summary>The section of rings on top with its design's backdrop: the Tron floor, the seal of the ink painting.</summary>
+    private Control Decorated(Border section, bool hero)
+    {
+        if (Fam is not (NeoDesigns.Family.Tron or NeoDesigns.Family.Ink) || Fam == NeoDesigns.Family.Ink && !hero) return section;
+        section.Tag = null;
+        if (Fam == NeoDesigns.Family.Tron)
+            return new Grid { Tag = "aio-section", Children = { new ArtTronFloor(NA) { Margin = new Thickness(-4, 0) }, section } };
+        return new Grid { Tag = "aio-section", Children = { section, new ArtStamp(NAcc(3)) { HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top } } };
+    }
+
+    /// <summary>A ring: coloured arc with the value and its caption in the middle, dressed by the design.</summary>
     private Control NDial(AioReading r, string caption, Color colour, double size)
     {
         // Font sizes follow the design size, not the graphic size: the size settings scale them on their own.
         double design = size;
         size *= settings.ActiveWidget?.Graphics ?? 1;
-        var ring = new AioRing(colour, nTrack, false, true) { Width = size, Height = size };
+        var ring = new AioRing(colour, nTrack, false, Soft || Fam == NeoDesigns.Family.Gold) { Width = size, Height = size };
         rings.Add((r.Key, ring));
-        double inner = size * .66;
-        var well = new Border
-        {
-            Width = inner, Height = inner, CornerRadius = new CornerRadius(inner / 2), Background = Palette.Brush(SeeThrough(nSurface)),
-            BoxShadow = Inset(4), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center
-        };
         double big = design > 150 ? 40 : design > 110 ? 28 : 20;
         // One text with its unit in a box of fixed width, centred: a value that gains or loses a digit moves nothing.
         var number = NV(r, big); number.TextAlignment = TextAlignment.Center; number.HorizontalAlignment = HorizontalAlignment.Stretch; number.TextWrapping = TextWrapping.NoWrap;
         if (r.Key == "aio.system.ram") { formats[number] = row => Format.Percent(row.Number); number.Text = formats[number](r); }
         else if (r.Key.EndsWith(".temp") || r.Key.StartsWith("aio.system.disk.")) { formats[number] = row => Format.Temperature(row.Number, settings.Fahrenheit) + " " + Format.TemperatureUnit(settings.Fahrenheit); number.Text = formats[number](r); }
-        var value = new Border { Width = big * 4, Child = number, HorizontalAlignment = HorizontalAlignment.Center };
-        var label = NText(caption, design > 150 ? 12 : 10, nLabel, true); label.HorizontalAlignment = HorizontalAlignment.Center;
+        if (Glowing) number.Effect = Glow(colour, 10);
+        // A larger main value size shrinks back into the ring instead of being cut off at its edge.
+        var value = new Border { Width = big * 4, HorizontalAlignment = HorizontalAlignment.Center,
+            Child = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Child = number } };
+        var label = NText(Upper ? caption.ToUpperInvariant() : caption, design > 150 ? 12 : 10, Fam is NeoDesigns.Family.Tron or NeoDesigns.Family.Gold ? colour : nLabel, true);
+        label.HorizontalAlignment = HorizontalAlignment.Center;
         var face = Stack(0, value, label); face.HorizontalAlignment = HorizontalAlignment.Center; face.VerticalAlignment = VerticalAlignment.Center;
-        var disc = new Border
+        var dial = new Grid { Width = size, Height = size };
+        switch (Fam)
         {
-            Width = size, Height = size, CornerRadius = new CornerRadius(size / 2), Background = Palette.Brush(SeeThrough(nSurface)), BoxShadow = Raised(7)
-        };
-        var dial = new Grid { Width = size, Height = size, Children = { disc, ring, well, Squeeze(face, size * .2) } };
+            case NeoDesigns.Family.Neumorph:
+            {
+                double inner = size * .66;
+                dial.Children.Add(new Border { Width = size, Height = size, CornerRadius = new CornerRadius(size / 2), Background = Palette.Brush(SeeThrough(nSurface)), BoxShadow = Raised(7) });
+                dial.Children.Add(ring);
+                dial.Children.Add(new Border
+                {
+                    Width = inner, Height = inner, CornerRadius = new CornerRadius(inner / 2), Background = Palette.Brush(SeeThrough(nSurface)),
+                    BoxShadow = Inset(4), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center
+                });
+                break;
+            }
+            case NeoDesigns.Family.Tron:
+                dial.Children.Add(new Border
+                {
+                    Width = size * .9, Height = size * .9, CornerRadius = new CornerRadius(size), BorderThickness = new Thickness(2), BorderBrush = Palette.Brush(colour),
+                    Background = Palette.Brush(SeeThrough(Palette.Mix(nSurface, colour, .06))), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+                    BoxShadow = new BoxShadows(new BoxShadow { Blur = 14, Color = BlackDraw.A(colour, .55) }, new[] { new BoxShadow { Blur = 12, Color = BlackDraw.A(colour, .3), IsInset = true } })
+                });
+                dial.Children.Add(ring);
+                break;
+            case NeoDesigns.Family.Phone:
+                dial.Children.Add(new Border { Width = size, Height = size, CornerRadius = new CornerRadius(size * .24), Background = Palette.Brush(SeeThrough(nPanel)) });
+                ring.Width = ring.Height = size * .86; dial.Children.Add(ring);
+                break;
+            case NeoDesigns.Family.Gold:
+                dial.Children.Add(new Ellipse { Width = size, Height = size, Fill = Palette.Brush(SeeThrough(Palette.Mix(nSurface, colour, .04))), Stroke = Palette.Brush(BlackDraw.A(colour, .75)), StrokeThickness = 1.2 });
+                dial.Children.Add(new ArtTicks(colour) { Width = size * .92, Height = size * .92, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
+                ring.Width = ring.Height = size * .74; dial.Children.Add(ring);
+                break;
+            default:
+                dial.Children.Add(ring);
+                break;
+        }
+        dial.Children.Add(Squeeze(face, size * .2));
         // A narrow sidebar or a large graphic size: the whole ring shrinks to its column instead of leaving the card.
-        return new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, MaxWidth = size, MaxHeight = size,
+        // Not clipped: the soft shadow of the raised disc reaches past the ring and would otherwise end in a square.
+        return new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, MaxWidth = size, MaxHeight = size, ClipToBounds = false,
             HorizontalAlignment = HorizontalAlignment.Center, Child = dial };
     }
 
-    /// <summary>A raised row: picture in a well (Parts designs), caption and value, a bar in a groove.</summary>
+    /// <summary>Thermal camera: a tile glowing in the colour of its reading (iron palette), with a spot-meter crosshair.</summary>
+    private Control NHeat(AioReading r, string caption, double height)
+    {
+        // The font size follows the design size, not the graphic size: the size settings scale it on their own.
+        double size = height > 100 ? 30 : 20;
+        height *= settings.ActiveWidget?.Graphics ?? 1;
+        var number = NV(r, size); number.TextWrapping = TextWrapping.NoWrap; number.HorizontalAlignment = HorizontalAlignment.Center;
+        if (r.Key == "aio.system.ram") { formats[number] = row => Format.Percent(row.Number); number.Text = formats[number](r); }
+        else if (r.Key.EndsWith(".temp") || r.Key.StartsWith("aio.system.disk.")) { formats[number] = row => Format.Temperature(row.Number, settings.Fahrenheit) + "°"; number.Text = formats[number](r); }
+        number.Effect = new DropShadowEffect { BlurRadius = 6, OffsetX = 0, OffsetY = 0, Color = Color.FromArgb(200, 0, 0, 0) };
+        var label = NText(caption.ToUpperInvariant(), 10, nInk, true); label.Margin = new Thickness(10, 8, 10, 0); label.TextTrimming = TextTrimming.CharacterEllipsis;
+        label.Effect = new DropShadowEffect { BlurRadius = 4, OffsetX = 0, OffsetY = 0, Color = Color.FromArgb(200, 0, 0, 0) };
+        var value = new Border { Margin = new Thickness(6, 0, 6, 8), VerticalAlignment = VerticalAlignment.Bottom, Child = Fit(number) };
+        // Caption on top, value at the bottom, each in its own row: they never meet, however small the tile.
+        var cross = new ArtCrosshair(Colors.White) { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        var face = new Grid { RowDefinitions = new RowDefinitions("Auto,*"), Children = { cross, label, value } };
+        Grid.SetRowSpan(cross, 2); Grid.SetRow(value, 1);
+        var tile = new Border { Height = height, CornerRadius = new CornerRadius(14), ClipToBounds = true, Child = face };
+        double scale = r.Key.EndsWith(".temp") || r.Key.StartsWith("aio.system.disk.") ? 1 : 0;
+        void Paint(AioReading? row) => tile.Background = HeatBrush(row?.Number is double n ? (scale == 1 ? (n - 20) / 65 : n / 100) : null);
+        Paint(r); watchers.Add((r.Key, Paint));
+        return tile;
+    }
+
+    /// <summary>Thermal camera: a fan cell glowing with its speed.</summary>
+    private Control HeatCell(AioReading fan, Control cell)
+    {
+        var border = new Border { CornerRadius = new CornerRadius(10), Padding = new Thickness(4, 6), Child = cell };
+        void Paint(AioReading? row) => border.Background = HeatBrush(row?.Number is double n ? .15 + n / 3200 : null);
+        Paint(fan); watchers.Add((fan.Key, Paint));
+        return border;
+    }
+
+    /// <summary>The iron palette of a thermal camera (black, purple, red, orange, yellow, white), or the chosen accent.</summary>
+    private IBrush HeatBrush(double? level)
+    {
+        double t = Math.Clamp(level ?? 0, 0, 1);
+        Color Iron(double x)
+        {
+            x = Math.Clamp(x, 0, 1);
+            if (nAcc.Length == 1 || Color.TryParse(slot?.Accent, out _) || skin != null) return Palette.Mix(nPanel, NA, .15 + .8 * x);
+            var stops = new[] { (0.0, "#08061A"), (.25, "#500A78"), (.5, "#D22828"), (.7, "#FA8214"), (.88, "#FFDC3C"), (1.0, "#FFFFE6") };
+            for (int i = 1; i < stops.Length; i++)
+                if (x <= stops[i].Item1)
+                    return Palette.Mix(Color.Parse(stops[i - 1].Item2), Color.Parse(stops[i].Item2), (x - stops[i - 1].Item1) / (stops[i].Item1 - stops[i - 1].Item1));
+            return Color.Parse("#FFFFE6");
+        }
+        if (level == null) return Palette.Brush(SeeThrough(nPanel));
+        return new RadialGradientBrush
+        {
+            Center = new RelativePoint(.5, .55, RelativeUnit.Relative), GradientOrigin = new RelativePoint(.5, .55, RelativeUnit.Relative),
+            RadiusX = new RelativeScalar(.7, RelativeUnit.Relative), RadiusY = new RelativeScalar(.7, RelativeUnit.Relative),
+            GradientStops = { new(SeeThrough(Iron(t)), 0), new(SeeThrough(Iron(t - .22)), .55), new(SeeThrough(Iron(.1)), 1) }
+        };
+    }
+
+    /// <summary>A row: picture in a well (Parts designs), caption and value, a bar in a groove (Neumorph) or on an LED board.</summary>
     private Control NBarRow(AioReading r, string caption, string art, Color colour)
     {
-        var value = r.Key == "aio.system.ram" ? NPercent(r, 24) : NBig(r, 24, false);
-        var head = Ui.Columns("*,Auto", FitLeft(NText(caption, 11.5, nLabel, true)), value);
-        var meter = new AioMeter(colour, Color.FromArgb(0, 0, 0, 0), 0) { Height = 8, Margin = new Thickness(3) };
+        var value = r.Key == "aio.system.ram" ? NPercent(r, 24) : NBig(r, Fam == NeoDesigns.Family.Matrix ? 30 : 24, false);
+        if (Fam == NeoDesigns.Family.Matrix) value.HorizontalAlignment = HorizontalAlignment.Right;
+        var head = Ui.Columns("*,Auto", FitLeft(NText(Upper ? caption.ToUpperInvariant() : caption, 11.5, Fam == NeoDesigns.Family.Matrix ? colour : nLabel, true)), value);
+        var meter = new AioMeter(colour, Color.FromArgb(0, 0, 0, 0), 0) { Height = Fam == NeoDesigns.Family.Matrix ? 5 : 8, Margin = new Thickness(3) };
         meters.Add((r.Key, meter));
-        var groove = new Border { CornerRadius = new CornerRadius(7), Background = Palette.Brush(SeeThrough(nSurface)), BoxShadow = Inset(3), Child = meter };
-        var info = Stack(8, head, groove);
+        Control bar = Soft
+            ? new Border { CornerRadius = new CornerRadius(7), Background = Palette.Brush(SeeThrough(nSurface)), BoxShadow = Inset(3), Child = meter }
+            : new Border { CornerRadius = new CornerRadius(3), Background = Palette.Brush(SeeThrough(nTrack)), Child = meter };
+        var info = Stack(8, head, bar);
         if (r.Key == "aio.system.ram") { var amount = NText(Amount(r), 11, nLabel, false, true); formats[amount] = Amount; AddField(r.Key, amount); info.Children.Add(FitLeft(amount)); }
         Control body = info;
         if (neo.Parts)
@@ -241,17 +413,17 @@ public sealed partial class AioTile
             };
             var row = Ui.Columns("Auto,*", well, new Border { VerticalAlignment = VerticalAlignment.Center, Child = info }); row.ColumnSpacing = 14; body = row;
         }
-        return NRaised(body, new Thickness(14, 12));
+        return Shell(body, new Thickness(14, 12));
     }
 
-    /// <summary>Neumorph: the remaining processor and graphics values in one panel, two columns.</summary>
+    /// <summary>Ring designs: the remaining processor and graphics values in one panel, two columns.</summary>
     private void NeumorphDetails(HashSet<string> top)
     {
         var parts = new List<Control>();
         var cpu = Ordered(Rs("CPU").Where(r => !top.Contains(r.Key)));
         if (cpu.Count > 0 || Rs("Cores").Length > 0)
         {
-            var column = Stack(3, NHeading("CPU"));
+            var column = Stack(3, NHeading("CPU", NAcc(0)));
             if (NModelLine(WidgetKind.Cpu, 0, snapshot.Cpu?.Name) is { } cpuModel) column.Children.Add(cpuModel);
             foreach (var r in cpu) column.Children.Add(NKV(r));
             if (R("temp") is { } t && NHistory(t) is { } plot) column.Children.Add(plot);
@@ -263,7 +435,7 @@ public sealed partial class AioTile
         {
             var rows = Ordered(gpu.Where(r => !top.Contains(r.Key)));
             var info = snapshot.Gpus.FirstOrDefault(g => g.Id == gpu.Key);
-            var column = Stack(3, NHeading(GpuTitle(gpu.Key, index, false)));
+            var column = Stack(3, NHeading(GpuTitle(gpu.Key, index, false), NAcc(1)));
             if (NModelLine(WidgetKind.Gpu, index, info?.Name) is { } gpuModel) column.Children.Add(gpuModel);
             foreach (var r in rows) column.Children.Add(NKV(r));
             var main = gpu.FirstOrDefault(r => r.Key.EndsWith(".temp"));
@@ -272,10 +444,10 @@ public sealed partial class AioTile
         }
         if (parts.Count == 0) return;
         for (int i = 0; i < parts.Count; i += 2)
-            content.Children.Add(NRaised(NGrid(parts.Skip(i).Take(2), 2, 16), new Thickness(16, 14)));
+            content.Children.Add(Shell(NGrid(parts.Skip(i).Take(2), 2, 16)));
     }
 
-    // ------------------------------------------------------------------ the other parts (both families)
+    // ------------------------------------------------------------------ the other parts (all families)
     private void NeoMemory(HashSet<string> top)
     {
         var ram = R("ram", "System");
@@ -287,7 +459,7 @@ public sealed partial class AioTile
             var amount = NText(Amount(ram), 13, nInk, false, true); formats[amount] = Amount; AddField(ram.Key, amount);
             var percent = NPercent(ram, 15);
             body.Children.Add(Ui.Columns("*,Auto", FitLeft(amount), percent));
-            var meter = new AioMeter(NA, nTrack, 0) { Height = 6 }; meters.Add((ram.Key, meter)); body.Children.Add(meter);
+            var meter = new AioMeter(Cyber || Soft ? NA : NAcc(2), nTrack, 0) { Height = 6 }; meters.Add((ram.Key, meter)); body.Children.Add(meter);
             if (NHistory(ram) is { } plot) body.Children.Add(plot);
         }
         else if (ram != null)
@@ -301,7 +473,7 @@ public sealed partial class AioTile
             if (NHistory(ram) is { } plot) body.Children.Add(plot);
         }
         foreach (var r in more) body.Children.Add(NKV(r));
-        if (body.Children.Count > 0) content.Children.Add(NPanel(Cyber ? "MEM_ALLOC" : "Memory", body));
+        if (body.Children.Count > 0) content.Children.Add(NPanel(T("MEM_ALLOC", "Memory"), body, null, 2));
     }
 
     private void NeoDrives(HashSet<string> top)
@@ -325,7 +497,7 @@ public sealed partial class AioTile
             if (d.Temp != null && NHistory(d.Temp) is { } plot) block.Children.Add(plot);
             blocks.Add(block);
         }
-        content.Children.Add(NPanel(Cyber ? "STORAGE_ARRAY" : "Storage", Stack(12, blocks.ToArray())));
+        content.Children.Add(NPanel(T("STORAGE_ARRAY", "Storage"), Stack(12, blocks.ToArray()), null, 3));
     }
 
     private void NeoNetwork(HashSet<string> top)
@@ -335,41 +507,48 @@ public sealed partial class AioTile
         var down = net.FirstOrDefault(r => r.Key.EndsWith(".down")); var up = net.FirstOrDefault(r => r.Key.EndsWith(".up"));
         var link = net.FirstOrDefault(r => r.Key.EndsWith(".link"));
         var body = Stack(5);
-        foreach (var r in net.Where(r => r != link)) body.Children.Add(NKV(r, r == down ? (Cyber ? "RX ↓" : "Download") : r == up ? (Cyber ? "TX ↑" : "Upload") : null));
-        if (link != null) body.Children.Add(NKV(link, Cyber ? "LINK" : "Link"));
+        foreach (var r in net.Where(r => r != link)) body.Children.Add(NKV(r, r == down ? (Upper ? "RX ↓" : L.T("Download")) : r == up ? (Upper ? "TX ↑" : L.T("Upload")) : null));
+        if (link != null) body.Children.Add(NKV(link, Upper ? "LINK" : L.T("Link")));
         var first = down ?? up;
         if (first != null && AioReadings.Graphs(settings, first.Key))
-            body.Children.Add(HistoryPlot(first, 36, "area", NB, first == down ? up : null));
-        content.Children.Add(NPanel(Cyber ? "NET_UPLINK" : "Network", body));
+            body.Children.Add(HistoryPlot(first, Fam == NeoDesigns.Family.Scope ? 46 : 36, "area", Fam == NeoDesigns.Family.Scope ? NAcc(2) : NB, first == down ? up : null));
+        content.Children.Add(NPanel(T("NET_UPLINK", "Network"), body, null, 2));
     }
 
     private void NeoFans(HashSet<string> top)
     {
         var fans = Rs("Cooling").Where(r => !top.Contains(r.Key)).ToArray();
         if (fans.Length == 0) return;
+        bool wide = Fam is NeoDesigns.Family.Neumorph or NeoDesigns.Family.Phone or NeoDesigns.Family.Gold or NeoDesigns.Family.Ink;
         var cells = fans.Select((f, i) =>
         {
-            var value = NV(f, Cyber ? 20 : 17); formats[value] = row => row.Number.HasValue ? Format.Number(row.Number) : "—"; value.Text = formats[value](f);
+            var value = NV(f, Cyber ? 20 : Fam == NeoDesigns.Family.Matrix ? 19 : 17); formats[value] = row => row.Number.HasValue ? Format.Number(row.Number) : "—"; value.Text = formats[value](f);
             value.HorizontalAlignment = HorizontalAlignment.Center;
-            var name = NText(Naming.Short(Translate(L.T(f.Label))), 9.5, nLabel, true); name.HorizontalAlignment = HorizontalAlignment.Center;
+            var name = NText(Upper ? Naming.Short(Translate(L.T(f.Label))).ToUpperInvariant() : Naming.Short(Translate(L.T(f.Label))), 9.5, nLabel, true); name.HorizontalAlignment = HorizontalAlignment.Center;
             name.TextTrimming = TextTrimming.CharacterEllipsis; name.TextWrapping = TextWrapping.NoWrap;
             var cell = Stack(2);
             if (neo.Parts && Cyber) cell.Children.Add(NPart(FanArt[i % FanArt.Length], 36));
             cell.Children.Add(Fit(value)); cell.Children.Add(name);
-            if (Cyber) return (Control)cell;
-            return new Border { CornerRadius = new CornerRadius(16), Background = Palette.Brush(SeeThrough(nSurface)), BoxShadow = Raised(4), Padding = new Thickness(6, 10), Margin = new Thickness(3), Child = cell };
+            return Fam switch
+            {
+                NeoDesigns.Family.Neumorph => new Border { CornerRadius = new CornerRadius(16), Background = Palette.Brush(SeeThrough(nSurface)), BoxShadow = Raised(4), Padding = new Thickness(6, 10), Margin = new Thickness(3), Child = cell },
+                NeoDesigns.Family.Phone => new Border { CornerRadius = new CornerRadius(16), Background = Palette.Brush(SeeThrough(Palette.Mix(nPanel, Colors.White, .06))), Padding = new Thickness(6, 8), Child = cell },
+                NeoDesigns.Family.Tron or NeoDesigns.Family.Neon => new Border { BorderThickness = new Thickness(1), BorderBrush = Palette.Brush(BlackDraw.A(NAcc(i), .5)), CornerRadius = new CornerRadius(Fam == NeoDesigns.Family.Neon ? 8 : 0), Padding = new Thickness(4, 6), Child = cell },
+                NeoDesigns.Family.Thermal => HeatCell(f, cell),
+                _ => (Control)cell
+            };
         }).ToArray();
-        var grid = NGrid(cells, Cyber ? 4 : 3, Cyber ? 8 : 6);
+        var grid = NGrid(cells, wide ? 3 : 4, wide ? 6 : 8);
         if (AioReadings.Graphs(settings, fans[0].Key) && fans.FirstOrDefault(f => f.Number > 0) is { } spinning)
-            content.Children.Add(NPanel(Cyber ? "COOLING_ARRAY" : "Fans", Stack(8, grid, HistoryPlot(spinning, 28, "area", NA))));
-        else content.Children.Add(NPanel(Cyber ? "COOLING_ARRAY" : "Fans", grid));
+            content.Children.Add(NPanel(T("COOLING_ARRAY", "Fans"), Stack(8, grid, HistoryPlot(spinning, 28, "area", NA)), null, 0));
+        else content.Children.Add(NPanel(T("COOLING_ARRAY", "Fans"), grid, null, 0));
     }
 
     private void NeoRails(HashSet<string> top)
     {
         var rails = Rs("Rails").Where(r => !top.Contains(r.Key)).ToArray();
         if (rails.Length == 0) return;
-        content.Children.Add(NPanel(Cyber ? "POWER_RAILS" : "Power supply", NGrid(rails.Select(r => NKV(r, r.Label)), 3, 10)));
+        content.Children.Add(NPanel(T("POWER_RAILS", "Power supply"), NGrid(rails.Select(r => NKV(r, r.Label)), 3, 10), null, 1));
     }
 
     // ------------------------------------------------------------------ pieces
@@ -380,14 +559,17 @@ public sealed partial class AioTile
     }
     private TextBlock NV(AioReading r, double size, Color? color = null)
     {
-        var t = V(r, size, color ?? nInk); t.FontFamily = nFont; t.FontWeight = FontWeight.Bold; return t;
+        var t = V(r, size, color ?? nInk); t.FontFamily = nValueFont;
+        t.FontWeight = Fam is NeoDesigns.Family.Stealth or NeoDesigns.Family.Gold or NeoDesigns.Family.Ink ? FontWeight.Normal : FontWeight.Bold; return t;
     }
     private void AddField(string key, TextBlock t) { TextFonts.Mark(t, TextRole.Value); if (t is AioValueText v) v.Hint = "888.8 / 888.8 GB"; if (!fields.TryGetValue(key, out var list)) fields[key] = list = new(); list.Add(t); }
+    private static DropShadowEffect Glow(Color c, double blur) => new() { OffsetX = 0, OffsetY = 0, BlurRadius = blur, Color = BlackDraw.A(c, .85) };
 
-    /// <summary>The big number of a part: temperature with its unit small after it; Cyberpunk adds a coloured offset glow.</summary>
-    private Control NBig(AioReading r, double size, bool left = true)
+    /// <summary>The big number of a part: temperature with its unit small after it; Cyberpunk adds a coloured offset glow, the
+    /// light designs (LED, Tron, code rain, neon, oscilloscope) a soft glow in the part's colour.</summary>
+    private Control NBig(AioReading r, double size, bool left = true, int colour = 0)
     {
-        var t = NV(r, size);
+        var t = NV(r, size, Fam == NeoDesigns.Family.Stealth ? Color.Parse("#A2A2AA") : null);
         bool temperature = r.Key.EndsWith(".temp") || r.Key.StartsWith("aio.system.disk.");
         Control face = t;
         if (temperature)
@@ -397,6 +579,8 @@ public sealed partial class AioTile
             face = new StackPanel { Orientation = Orientation.Horizontal, Children = { t, unit } };
         }
         if (Cyber) t.Effect = new DropShadowEffect { OffsetX = 2.5, OffsetY = 0, BlurRadius = 0, Color = BlackDraw.A(NB, .5) };
+        else if (Glowing) t.Effect = Glow(NAcc(colour), 12);
+        else if (Fam == NeoDesigns.Family.Stealth) t.Effect = new DropShadowEffect { OffsetX = 1, OffsetY = 1, BlurRadius = 0, Color = Color.Parse("#3A3A40") };
         var value = new AioReferenceValue(t, face);
         value.HorizontalAlignment = left ? HorizontalAlignment.Left : HorizontalAlignment.Center;
         return value;
@@ -411,7 +595,7 @@ public sealed partial class AioTile
     private Control NKV(AioReading r, string? caption = null)
     {
         caption ??= Cyber ? PanelCaption(r) : RefLabel(r);
-        var row = Ui.Columns("Auto,*", NText(Cyber ? caption.ToUpperInvariant() : caption, 11.5, nLabel), FitRight(NV(r, 13.5))); row.ColumnSpacing = 8;
+        var row = Ui.Columns("Auto,*", NText(Upper ? caption.ToUpperInvariant() : caption, 11.5, nLabel), FitRight(NV(r, 13.5))); row.ColumnSpacing = 8;
         return row;
     }
     private Control NGrid(IEnumerable<Control> items, int columns, double gap = 10)
@@ -420,7 +604,8 @@ public sealed partial class AioTile
         var grid = FixedCols(Math.Min(columns, Math.Max(1, array.Length)), array);
         grid.ColumnSpacing = gap; grid.RowSpacing = Math.Min(gap, 8); return grid;
     }
-    private Control? NHistory(AioReading r) => AioReadings.Graphs(settings, r.Key) ? HistoryPlot(r, Cyber ? 32 : 30, "area", Cyber ? NA : NAcc(r.Group == "GPU" ? 1 : r.Group == "System" ? 2 : 0)) : null;
+    private Control? NHistory(AioReading r) => AioReadings.Graphs(settings, r.Key)
+        ? HistoryPlot(r, Fam == NeoDesigns.Family.Scope ? 44 : Cyber ? 32 : 30, "area", Cyber ? NA : NAcc(r.Group == "GPU" ? 1 : r.Group == "System" ? 2 : 0)) : null;
     private Control NPart(string name, double width)
     {
         width *= settings.ActiveWidget?.Graphics ?? 1;
@@ -438,38 +623,117 @@ public sealed partial class AioTile
         if (name.Length == 0) return null;
         var t = NText(name, 10, nLabel); t.TextTrimming = TextTrimming.CharacterEllipsis; t.Margin = new Thickness(0, -2, 0, 4); return t;
     }
-    private TextBlock NHeading(string title)
+    /// <summary>The colour of a heading: the accent of its part where the design colours its headings, else the caption grey.</summary>
+    private Color HeadingColour(Color part) => Fam switch
     {
-        var t = NText(Cyber ? title.ToUpperInvariant() : title, Cyber ? 11.5 : 11, Cyber ? NA : nLabel, true); TextFonts.Mark(t, TextRole.Title);
-        t.LetterSpacing = Cyber ? 1.6 : .8; t.TextTrimming = TextTrimming.CharacterEllipsis; return t;
+        NeoDesigns.Family.Cyber => NA,
+        NeoDesigns.Family.Matrix or NeoDesigns.Family.Tron or NeoDesigns.Family.Neon or NeoDesigns.Family.Rain or NeoDesigns.Family.Scope or NeoDesigns.Family.Gold => part,
+        _ => nLabel
+    };
+    private TextBlock NHeading(string title, Color? part = null)
+    {
+        var t = NText(Upper ? title.ToUpperInvariant() : title, Cyber ? 11.5 : 11, HeadingColour(part ?? NA), true); TextFonts.Mark(t, TextRole.Title);
+        t.LetterSpacing = Upper || Fam == NeoDesigns.Family.Gold ? 1.6 : .8; t.TextTrimming = TextTrimming.CharacterEllipsis;
+        if (Fam == NeoDesigns.Family.Neon) t.Effect = Glow(part ?? NA, 8);
+        return t;
     }
 
-    /// <summary>A panel of the design: Cyberpunk edge panel or Neumorph raised panel, with an optional heading.</summary>
-    private Control NPanel(string? title, Control body, string? model = null)
+    /// <summary>A body in the design's plain panel (no title): Neumorph raised, otherwise the design's panel.</summary>
+    private Control Shell(Control body, Thickness? soft = null) => Soft ? NRaised(body, soft ?? new Thickness(16, 14)) : NPanel(null, body);
+
+    /// <summary>A panel of the design with an optional heading (and the part's model after it).</summary>
+    private Control NPanel(string? title, Control body, string? model = null, int colour = 0)
     {
-        Control? heading = title == null ? null : NHeading(title);
+        var part = NAcc(colour);
+        Control? heading = title == null ? null : NHeading(title, part);
         if (heading != null && !string.IsNullOrEmpty(model))
         {
             // The part's name as the user or the hardware gives it (not upper-cased), after the panel title.
             var name = NText(model, Cyber ? 11.5 : 11, Cyber ? NA : nLabel, true); name.TextTrimming = TextTrimming.CharacterEllipsis;
-            ((TextBlock)heading).Text += " //";
+            ((TextBlock)heading).Text += Cyber ? " //" : " ·";
             var row = Ui.Columns("Auto,*", heading, name); row.ColumnSpacing = 6; heading = row;
         }
-        var inner = heading == null ? body : Stack(Cyber ? 8 : 10, heading, body);
-        if (!Cyber) return NRaised(inner, new Thickness(16, 14));
-        var panel = new Border
+        if (heading != null && Fam == NeoDesigns.Family.Stealth)
         {
-            Padding = new Thickness(12, 10, 14, 12), Child = inner, Tag = "aio-section", BorderBrush = Palette.Brush(NA), BorderThickness = new Thickness(3, 0, 0, 0),
-            CornerRadius = new CornerRadius(0, 14, 0, 0),
-            Background = new LinearGradientBrush
+            var dot = new Ellipse { Width = 6, Height = 6, Fill = Palette.Brush(NA), VerticalAlignment = VerticalAlignment.Center };
+            var row = Ui.Columns("Auto,*", dot, heading); row.ColumnSpacing = 8; heading = row;
+        }
+        if (heading != null && Fam == NeoDesigns.Family.Ink) heading = Stack(4, heading, new ArtBrushStroke(nInk));
+        var inner = heading == null ? body : Stack(Cyber ? 8 : 10, heading, body);
+        switch (Fam)
+        {
+            case NeoDesigns.Family.Neumorph: return NRaised(inner, new Thickness(16, 14));
+            case NeoDesigns.Family.Cyber:
             {
-                StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative), EndPoint = new RelativePoint(1, 0, RelativeUnit.Relative),
-                GradientStops = { new(SeeThrough(BlackDraw.A(NA, .13)), 0), new(SeeThrough(BlackDraw.A(NA, .02)), .75), new(SeeThrough(BlackDraw.A(NA, .02)), 1) }
+                var panel = new Border
+                {
+                    Padding = new Thickness(12, 10, 14, 12), Child = inner, Tag = "aio-section", BorderBrush = Palette.Brush(NA), BorderThickness = new Thickness(3, 0, 0, 0),
+                    CornerRadius = new CornerRadius(0, 14, 0, 0),
+                    Background = new LinearGradientBrush
+                    {
+                        StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative), EndPoint = new RelativePoint(1, 0, RelativeUnit.Relative),
+                        GradientStops = { new(SeeThrough(BlackDraw.A(NA, .13)), 0), new(SeeThrough(BlackDraw.A(NA, .02)), .75), new(SeeThrough(BlackDraw.A(NA, .02)), 1) }
+                    }
+                };
+                // The cut corner of the panel, drawn as a small accent triangle.
+                var notch = new Avalonia.Controls.Shapes.Path { Data = Geometry.Parse("M0,0 L12,0 L12,12 Z"), Fill = Palette.Brush(NA), Width = 12, Height = 12, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top };
+                return new Grid { Tag = "aio-section", Children = { panel, notch } };
             }
-        };
-        // The cut corner of the panel, drawn as a small accent triangle.
-        var notch = new Avalonia.Controls.Shapes.Path { Data = Geometry.Parse("M0,0 L12,0 L12,12 Z"), Fill = Palette.Brush(NA), Width = 12, Height = 12, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top };
-        return new Grid { Tag = "aio-section", Children = { panel, notch } };
+            case NeoDesigns.Family.Rain:
+            {
+                var panel = new Border
+                {
+                    Padding = new Thickness(12, 10), Child = inner, BorderThickness = new Thickness(1), BorderBrush = Palette.Brush(BlackDraw.A(part, .35)),
+                    Background = Palette.Brush(SeeThrough(BlackDraw.A(nSurface, .55)))
+                };
+                return new Grid { Tag = "aio-section", Children = { new ArtCodeRain(part), panel } };
+            }
+            case NeoDesigns.Family.Scope:
+            {
+                var panel = new Border { Padding = new Thickness(12, 10), Child = inner };
+                var screen = new Border
+                {
+                    CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(2), BorderBrush = Palette.Brush(Palette.Mix(nSurface, NA, .2)), ClipToBounds = true,
+                    Background = Palette.Brush(SeeThrough(nPanel)), Child = new Grid { Children = { new ArtGraticule(NA), panel } }
+                };
+                screen.Tag = "aio-section"; return screen;
+            }
+            default:
+            {
+                var panel = new Border { Padding = new Thickness(14, 12), Child = inner, Tag = "aio-section" };
+                switch (Fam)
+                {
+                    case NeoDesigns.Family.Matrix:
+                        panel.CornerRadius = new CornerRadius(6); panel.BorderThickness = new Thickness(1.5); panel.BorderBrush = Palette.Brush(Palette.Mix(nSurface, NA, .16));
+                        panel.Background = Palette.Brush(SeeThrough(nPanel)); break;
+                    case NeoDesigns.Family.Tron:
+                        panel.BorderThickness = new Thickness(1); panel.BorderBrush = Palette.Brush(BlackDraw.A(part, .6)); panel.Background = Palette.Brush(SeeThrough(Palette.Mix(nSurface, part, .05)));
+                        panel.BoxShadow = new BoxShadows(new BoxShadow { Blur = 10, Color = BlackDraw.A(part, .3) }); break;
+                    case NeoDesigns.Family.Neon:
+                        panel.CornerRadius = new CornerRadius(12); panel.BorderThickness = new Thickness(2); panel.BorderBrush = Palette.Brush(part);
+                        panel.Background = Palette.Brush(SeeThrough(Palette.Mix(nSurface, part, .04)));
+                        panel.BoxShadow = new BoxShadows(new BoxShadow { Blur = 14, Color = BlackDraw.A(part, .55) }, new[] { new BoxShadow { Blur = 10, Color = BlackDraw.A(part, .25), IsInset = true } }); break;
+                    case NeoDesigns.Family.Thermal:
+                        panel.CornerRadius = new CornerRadius(14); panel.Background = Palette.Brush(SeeThrough(nPanel)); break;
+                    case NeoDesigns.Family.Phone:
+                        panel.CornerRadius = new CornerRadius(24); panel.Background = Palette.Brush(SeeThrough(nPanel)); panel.Padding = new Thickness(16, 14); break;
+                    case NeoDesigns.Family.Stealth:
+                        panel.CornerRadius = new CornerRadius(14); panel.BorderThickness = new Thickness(1); panel.BorderBrush = Palette.Brush(Color.FromArgb(255, 0, 0, 0));
+                        panel.Background = new LinearGradientBrush
+                        {
+                            StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative), EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative),
+                            GradientStops = { new(SeeThrough(Palette.Mix(nPanel, Colors.White, .02)), 0), new(SeeThrough(Palette.Mix(nPanel, Colors.Black, .3)), 1) }
+                        };
+                        panel.BoxShadow = new BoxShadows(new BoxShadow { OffsetX = 1, OffsetY = 1, Color = Palette.Mix(nPanel, Colors.White, .08), IsInset = true },
+                            new[] { new BoxShadow { OffsetY = 6, Blur = 14, Color = Color.FromArgb(160, 0, 0, 0) } }); break;
+                    case NeoDesigns.Family.Gold:
+                        panel.BorderThickness = new Thickness(0, 1, 0, 0); panel.BorderBrush = Palette.Brush(BlackDraw.A(part, .5)); panel.Padding = new Thickness(4, 12, 4, 4); break;
+                    case NeoDesigns.Family.Ink:
+                        panel.Padding = new Thickness(4, 4); break;
+                }
+                return panel;
+            }
+        }
     }
     private Border NRaised(Control body, Thickness padding) => new()
     {

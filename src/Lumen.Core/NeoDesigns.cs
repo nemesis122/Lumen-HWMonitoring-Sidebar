@@ -7,7 +7,9 @@ namespace Lumen.Core;
 /// </summary>
 public static class NeoDesigns
 {
-    public enum Family { Cyber, Neumorph }
+    /// <summary>Cyber and Neumorph (5.1.0); the ten art families of 5.2.0: LED dot matrix, Tron grid, code rain, Tokyo neon,
+    /// thermal camera, phone widgets, oscilloscope, stealth, black and gold, sumi-e ink.</summary>
+    public enum Family { Cyber, Neumorph, Matrix, Tron, Rain, Neon, Thermal, Phone, Scope, Stealth, Gold, Ink }
     /// <summary>Cyber: Stack (one panel per part) or Split (processor and graphics side by side).
     /// Neumorph: Dials (2 × 2 rings), Hero (one large processor ring) or Bars (one bar per part).</summary>
     public enum Arrangement { Stack, Split, Dials, Hero, Bars }
@@ -30,6 +32,17 @@ public static class NeoDesigns
         new(WidgetStyle.AioNeoRedParts, "Neumorph Red Parts", Family.Neumorph, Arrangement.Bars, new[] { "#FF2238", "#FF2238", "#FF2238", "#FF2238" }, "#1C1416", Parts: true, RedParts: true),
         new(WidgetStyle.AioNeoCyanHero, "Neumorph Cyan", Family.Neumorph, Arrangement.Hero, new[] { "#22D3EE", "#22D3EE", "#22D3EE", "#22D3EE" }, "#121316"),
         new(WidgetStyle.AioNeoMono, "Neumorph Mono", Family.Neumorph, Arrangement.Bars, new[] { "#F2F2F2", "#F2F2F2", "#F2F2F2", "#F2F2F2" }, "#121316"),
+        // 5.2.0: ten designs from the art drafts, all on black.
+        new(WidgetStyle.AioArtDotMatrix, "LED Dot Matrix", Family.Matrix, Arrangement.Bars, new[] { "#FFA31A", "#FFA31A", "#FFA31A", "#FF6A1A" }, "#050403"),
+        new(WidgetStyle.AioArtTronGrid, "Tron Grid", Family.Tron, Arrangement.Dials, new[] { "#00E5FF", "#FF7A00", "#00E5FF", "#FF7A00" }, "#000000"),
+        new(WidgetStyle.AioArtCodeRain, "Code Rain", Family.Rain, Arrangement.Stack, new[] { "#3BFF6A", "#A8FFBC", "#3BFF6A", "#3BFF6A" }, "#000000"),
+        new(WidgetStyle.AioArtTokyoNeon, "Tokyo Neon", Family.Neon, Arrangement.Split, new[] { "#FF3DB8", "#29F0FF", "#FFE14D", "#29F0FF" }, "#030203"),
+        new(WidgetStyle.AioArtThermal, "Thermal Camera", Family.Thermal, Arrangement.Dials, new[] { "#FF8A1A", "#FFD23C", "#B4329A", "#FF8A1A" }, "#050308"),
+        new(WidgetStyle.AioArtPhone, "Phone Widgets", Family.Phone, Arrangement.Dials, new[] { "#30D158", "#FF9F0A", "#0A84FF", "#BF5AF2" }, "#000000"),
+        new(WidgetStyle.AioArtScope, "Oscilloscope", Family.Scope, Arrangement.Stack, new[] { "#7CFFB2", "#FFD84D", "#4DD8FF", "#7CFFB2" }, "#0A0B0A"),
+        new(WidgetStyle.AioArtStealth, "Stealth", Family.Stealth, Arrangement.Stack, new[] { "#FF2A2A", "#D8D8DC", "#FF2A2A", "#FF2A2A" }, "#0D0D0E"),
+        new(WidgetStyle.AioArtBlackGold, "Black & Gold", Family.Gold, Arrangement.Dials, new[] { "#D4AF6A", "#D4AF6A", "#D4AF6A", "#D4AF6A" }, "#070604"),
+        new(WidgetStyle.AioArtSumiInk, "Sumi-e Ink", Family.Ink, Arrangement.Hero, new[] { "#F2EFE8", "#F2EFE8", "#F2EFE8", "#C8102E" }, "#0B0B0A"),
     };
     private static readonly Dictionary<WidgetStyle, Look> ByStyle = All.ToDictionary(l => l.Style);
     public static bool Contains(WidgetStyle style) => ByStyle.ContainsKey(style);

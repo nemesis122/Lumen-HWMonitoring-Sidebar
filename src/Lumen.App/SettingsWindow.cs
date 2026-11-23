@@ -1885,7 +1885,8 @@ public sealed partial class SettingsWindow : Window
                     s.HiddenValues.RemoveAll(key=>key.StartsWith("aio."));
                 }
                 if (slot.Kind == WidgetKind.Cpu) s.ShowIntegratedGpu = false;
-                foreach (var option in WidgetSensors.Options(slot.Kind, this.snapshot(), slot.Style))
+                // Every history switch too, also one this design does not list: the choice still counts after a change of design.
+                foreach (var option in WidgetSensors.Options(slot.Kind, this.snapshot(), slot.Style, allHistory: true))
                 {
                     s.HiddenValues.Remove(option.Key);
                     slot.HiddenSensors.Remove(option.Key);
@@ -1943,7 +1944,13 @@ public sealed partial class SettingsWindow : Window
                     {
                         Name = "sensor-" + aioKey.Replace(':', '-').Replace('.', '-'),
                         Content = option.Label.StartsWith("AIO · ") ? option.Label[6..] : option.Label,
-                        IsChecked = s.ForSlot(aioSlot).Shows(aioKey) && (!aioKey.StartsWith("aio.cooling.") || aioShown.Contains(aioKey))
+                        // Ticked only when the card really shows it: a fan that never turned, and the detail values that the
+                        // design lists only on request (RAM used, board temperatures, drive life, ping …), start unticked.
+                        // A history chart is no reading, so it is never in the list of shown readings.
+                        IsChecked = s.ForSlot(aioSlot).Shows(aioKey) && (!aioKey.StartsWith("aio.cooling.") || AioReadings.IsGraphKey(aioKey) || aioShown.Contains(aioKey))
+                            && (!AioReadings.IsDetailKey(aioKey) || aioShown.Contains(aioKey))
+                            // A value of a further graphics card that is switched off is not shown either; ticking it brings the card.
+                            && (sensorSnapshot == null || aioKey.EndsWith(".extra") || !AioReadings.CardSwitchedOff(sensorSnapshot, s.ForSlot(aioSlot), aioKey))
                             || IntegratedExtra(aioKey) && s.ShowIntegratedGpu,
                         FontSize = 12.5, Margin = new Thickness(0, 1), Tag = aioKey
                     };
@@ -2004,7 +2011,12 @@ public sealed partial class SettingsWindow : Window
 					Margin = new Thickness(12.0, 0.0, 0.0, 0.0)
 				};
 				ToolTip.SetTip(fetch, L.T("Asks api.ipify.org once for the public address of this connection."));
-				ExternalIp.Changed += OnChanged;
+				// Subscribed only while the row is on screen: every page is built on each change, and a row that is
+				// never shown is never detached either, so the static event would keep the whole old window alive.
+				fetch.AttachedToVisualTree += delegate
+				{
+					ExternalIp.Changed += OnChanged;
+				};
 				fetch.DetachedFromVisualTree += delegate
 				{
 					ExternalIp.Changed -= OnChanged;

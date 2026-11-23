@@ -27,6 +27,16 @@ public static class WidgetSensors
         // A value of a further graphics card (integrated graphics too) brings that card into the AIO card.
         if(selected&&key.StartsWith("aio.gpu.")&&!key.EndsWith(".extra")&&key.LastIndexOf('.')>"aio.gpu.".Length)
             Set(key[..key.LastIndexOf('.')]+".extra",true);
+        // A curve of a history chart, ticked, also shows the chart it is drawn in ("History chart · Load" alone
+        // showed nothing while "History chart" was off).
+        if (selected && !key.StartsWith("aio.") && key.EndsWith(".history") && Summaries.ChartKey(slot.Kind) is string chart
+            && key.StartsWith(chart[..(chart.IndexOf('.') + 1)])) Set(chart, true);
+        // And the other way round: "History chart" ticked while all its curves are off shows them (else nothing appears).
+        if (selected && Summaries.ChartKey(slot.Kind) == key && slot.Kind is WidgetKind.Cpu or WidgetKind.Gpu or WidgetKind.Network)
+        {
+            var curves = new[] { PrimaryKey(slot.Kind) + ".history", SecondaryKey(slot.Kind) + ".history" };
+            if (curves.All(c => slot.HiddenSensors.Contains(c) || settings.HiddenValues.Contains(c))) foreach (var c in curves) Set(c, true);
+        }
         if (Groups.TryGetValue(key, out var children)) foreach (string child in children) Set(child, selected);
         if (selected) foreach (var group in Groups.Where(g => g.Value.Contains(key))) Set(group.Key, true);
         string? prefix = key == "cooling.fans" ? "fan:" : key == "cooling.board" ? "temp:" : null;
@@ -64,7 +74,7 @@ public static class WidgetSensors
         _ => SecondaryKey(kind)
     };
 
-    public static IReadOnlyList<(string Key, string Label)> Options(WidgetKind kind, Snapshot? snap, WidgetStyle? style = null)
+    public static IReadOnlyList<(string Key, string Label)> Options(WidgetKind kind, Snapshot? snap, WidgetStyle? style = null, bool allHistory = false)
     {
         var primary = PrimaryKey(kind);
         var result = new List<(string Key, string Label)>();
@@ -120,6 +130,9 @@ public static class WidgetSensors
             foreach (var volume in snap.Volumes) Add("volume:" + volume.Name, volume.Name + " " + volume.Label);
         if (kind == WidgetKind.Overview)
             foreach (var option in AioReadings.Options(snap, style)) Add(option.Key,option.Label);
+        // A "History chart" switch only where the design draws that history (Standard and Dial have no temperature
+        // curve, many designs no curve at all).
+        if (!allHistory) result.RemoveAll(option => !HistorySupport.Draws(style, option.Key));
         return result;
     }
 

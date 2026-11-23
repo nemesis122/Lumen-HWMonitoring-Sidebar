@@ -12,7 +12,7 @@ public class WidgetSensorSelectionTests
     private static readonly WidgetKind[] Kinds = Settings.Starter().Widgets.Select(w => w.Kind).Where(k => k != WidgetKind.Overview).Distinct().ToArray();
     public static IEnumerable<object[]> Designs => Settings.Selectable.Where(s => !AioDesigns.Contains(s)).SelectMany(s => HardwareVariants.Names.Select(h => new object[] { s, h }));
 
-    private static bool Belongs(string option, (string Key, char Kind) item)
+    internal static bool Belongs(string option, (string Key, char Kind) item)
     {
         string key = item.Key;
         if (option.EndsWith(".history") || option.EndsWith(".chart")) return item.Kind == 'h' || key == option;
@@ -35,7 +35,7 @@ public class WidgetSensorSelectionTests
         if (option == "cooling.board") return key.StartsWith("temp:");
         return false;
     }
-    private static string Head(string key) => key.Split('.', ':')[0] switch { "drive" => "drives", "volume" => "volumes", "process" => "proc", var h => h };
+    internal static string Head(string key) => key.Split('.', ':')[0] switch { "drive" => "drives", "volume" => "volumes", "process" => "proc", var h => h };
 
     private static HashSet<(string, char)> Draw(WidgetKind kind, WidgetStyle style, Settings s, WidgetSlot slot, Snapshot snap, History h)
     {
