@@ -33,7 +33,7 @@ public class Width640Tests
             var slider=Assert.Single(sections.SelectMany(c=>c.GetLogicalDescendants().OfType<Slider>()),s=>s.Minimum==240&&s.Maximum==640);
             slider.Value=640;Assert.Equal(640,settings.Width);
         }
-        finally{window.Close();}
+        finally{window.Close();Avalonia.Threading.Dispatcher.UIThread.RunJobs();}
         return true;
     });
     public static IEnumerable<object[]> Designs=>Settings.Selectable.Select(s=>new object[]{s});

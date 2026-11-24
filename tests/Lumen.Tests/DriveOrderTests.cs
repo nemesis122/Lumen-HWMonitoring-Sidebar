@@ -74,7 +74,7 @@ public class DriveOrderTests
                 Assert.Equal(slot.DriveOrder, loaded.Widgets.Single(w => w.Kind == WidgetKind.Drives).DriveOrder);
             }
         }
-        finally { window.Close(); }
+        finally { window.Close(); Avalonia.Threading.Dispatcher.UIThread.RunJobs(); }
         return true;
     });
 }

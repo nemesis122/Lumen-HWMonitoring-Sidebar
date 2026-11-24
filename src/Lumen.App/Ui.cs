@@ -54,6 +54,9 @@ public static class Ui
 	/// <summary>Playfair Display, a high-contrast serif (embedded, OFL): Black &amp; Gold and Sumi-e Ink.</summary>
 	public static readonly FontFamily Playfair = new FontFamily("avares://Lumen/Assets/Fonts#Playfair Display");
 
+	/// <summary>DSEG7 Classic, seven-segment digits (embedded, OFL): the Segments gallery designs.</summary>
+	public static readonly FontFamily Dseg = new FontFamily("avares://Lumen/Assets/Fonts#DSEG7 Classic");
+
 	/// <summary>A design's own font (Orbitron, Mono, Digital …) unless the user chose a typeface other than Inter: then that one, in every design.</summary>
 	public static FontFamily DesignFont(FontFamily own) => FontKey == "inter" ? own : Font;
 

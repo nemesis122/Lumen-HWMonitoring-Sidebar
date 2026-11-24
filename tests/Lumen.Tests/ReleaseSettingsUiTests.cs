@@ -236,6 +236,7 @@ public class ReleaseSettingsUiTests
         static string Cut(string t) => t.Length > 160 ? t[..160] + "…" : t;
     }
 
+    private static string Card(System.Text.RegularExpressions.Match m) => m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value;
     private static string Short(IEnumerable<(string Card, string Key, char Kind)> items) => string.Join(", ", items.Take(5).Select(i => $"{i.Card}:{i.Key}/{i.Kind}"));
 
     internal static List<string> SensorProblems(WidgetStyle style, string hardware, List<string> notes)
@@ -285,6 +286,10 @@ public class ReleaseSettingsUiTests
             {
                 var foreign = added.Where(i => !Belongs(kind, key, i)).ToList();
                 if (foreign.Count > 0) problems.Add($"'{key}' on also adds: {Short(foreign)}");
+                // A fan of the merged list named "CPU …", ticked, is the processor fan: it is shown under its own name instead of
+                // the plain "CPU" fan (one fan, listed once).
+                if (key.StartsWith("aio.cooling.merged:") && key.Contains("CPU", StringComparison.OrdinalIgnoreCase))
+                    gone = gone.Where(i => i.Key != "aio.cooling.cpu").ToList();
                 if (gone.Count > 0) problems.Add($"'{key}' on removes: {Short(gone)}");
                 // A history chart switched on must show something (the demo has history for every reading).
                 if (historySwitch && added.Count == 0 && pictureOn == rig.Picture(kind)) problems.Add($"'{key}' on: the sidebar does not change");
@@ -298,9 +303,9 @@ public class ReleaseSettingsUiTests
             {
                 var extra = back.Except(baseline).ToList(); var missing = baseline.Except(back).ToList();
                 // A value of a graphics card that is switched off, ticked, brings that card onto the sidebar (by design).
-                var gpu = System.Text.RegularExpressions.Regex.Match(key, @"^aio\.gpu\.([^.]+)\.");
-                // Ticked and unticked again, the card stays with its other values (the card has its own switch).
-                bool opensCard = gpu.Success && missing.Count == 0 && extra.All(i => i.Key.StartsWith("aio.gpu." + gpu.Groups[1].Value + "."))
+                var gpu = System.Text.RegularExpressions.Regex.Match(key, @"^aio\.(?:gpu\.([^.]+)\.|cooling\.gpu:(.+)$)");
+                // Ticked and unticked again, the card stays with its other values and its fan (the card has its own switch).
+                bool opensCard = gpu.Success && missing.Count == 0 && extra.All(i => i.Key.StartsWith("aio.gpu." + Card(gpu) + ".") || i.Key == "aio.cooling.gpu:" + Card(gpu))
                     // The instrument designs leave out voltage rails that report nothing (the demo has none) until one is ticked by hand.
                     || key.StartsWith("aio.rails.") && missing.Count == 0 && extra.All(i => i.Key.StartsWith("aio.rails."));
                 opened = opensCard;

@@ -9,16 +9,16 @@ public static class NeoDesigns
 {
     /// <summary>Cyber and Neumorph (5.1.0); the ten art families of 5.2.0: LED dot matrix, Tron grid, code rain, Tokyo neon,
     /// thermal camera, phone widgets, oscilloscope, stealth, black and gold, sumi-e ink.</summary>
-    public enum Family { Cyber, Neumorph, Matrix, Tron, Rain, Neon, Thermal, Phone, Scope, Stealth, Gold, Ink }
+    public enum Family { Cyber, Neumorph, Matrix, Tron, Rain, Neon, Thermal, Phone, Scope, Stealth, Gold, Ink, Gallery }
     /// <summary>Cyber: Stack (one panel per part) or Split (processor and graphics side by side).
     /// Neumorph: Dials (2 × 2 rings), Hero (one large processor ring) or Bars (one bar per part).</summary>
     public enum Arrangement { Stack, Split, Dials, Hero, Bars }
     /// <param name="Accents">Four accents (processor, graphics, memory, drive); Cyber designs use the first two.</param>
     /// <param name="Surface">Card colour; Neumorph also draws its light and dark shadows from it.</param>
     public sealed record Look(WidgetStyle Style, string Name, Family Kind, Arrangement Layout, string[] Accents, string Surface,
-        bool Parts = false, bool RedParts = false);
+        bool Parts = false, bool RedParts = false, GalleryDesigns.Design? Gallery = null);
 
-    public static readonly Look[] All =
+    private static readonly Look[] Own =
     {
         new(WidgetStyle.AioCyberArasaka, "Cyber Arasaka", Family.Cyber, Arrangement.Split, new[] { "#FF2238", "#F2F2F2" }, "#070203"),
         new(WidgetStyle.AioCyberNetrunner, "Cyber Netrunner", Family.Cyber, Arrangement.Stack, new[] { "#FF2BD6", "#00F0FF" }, "#0D0612"),
@@ -44,6 +44,14 @@ public static class NeoDesigns
         new(WidgetStyle.AioArtBlackGold, "Black & Gold", Family.Gold, Arrangement.Dials, new[] { "#D4AF6A", "#D4AF6A", "#D4AF6A", "#D4AF6A" }, "#070604"),
         new(WidgetStyle.AioArtSumiInk, "Sumi-e Ink", Family.Ink, Arrangement.Hero, new[] { "#F2EFE8", "#F2EFE8", "#F2EFE8", "#C8102E" }, "#0B0B0A"),
     };
+    /// <summary>All designs of this builder: the 22 own ones and the 100 gallery designs (5.3.0).</summary>
+    public static readonly Look[] All = Own.Concat(GalleryDesigns.All.Select(d => new Look(d.Style, d.Name, Family.Gallery,
+        d.Arrangement switch
+        {
+            GalleryDesigns.Layout.Split => Arrangement.Split, GalleryDesigns.Layout.Hero => Arrangement.Hero, GalleryDesigns.Layout.Bars => Arrangement.Bars,
+            GalleryDesigns.Layout.Table or GalleryDesigns.Layout.BigNumbers or GalleryDesigns.Layout.Segments => Arrangement.Stack, _ => Arrangement.Dials
+        },
+        d.World.Accents.Append(d.World.Accents[0]).ToArray(), d.World.Background, Gallery: d))).ToArray();
     private static readonly Dictionary<WidgetStyle, Look> ByStyle = All.ToDictionary(l => l.Style);
     public static bool Contains(WidgetStyle style) => ByStyle.ContainsKey(style);
     public static Look For(WidgetStyle style) => ByStyle[style];

@@ -54,7 +54,7 @@ public class UserSensorPresetTests
             var loaded = Settings.Normalize(JsonSerializer.Deserialize<Settings>(JsonSerializer.Serialize(settings, Settings.Json), Settings.Json)!);
             Assert.True(loaded.ForWidget(kind).Shows(optional));
         }
-        finally { window.Close(); }
+        finally { window.Close(); Avalonia.Threading.Dispatcher.UIThread.RunJobs(); }
         return true;
     });
 }

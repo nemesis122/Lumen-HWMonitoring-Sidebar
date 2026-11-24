@@ -79,7 +79,9 @@ public class SensorSectionPlacementTests
             Assert.Contains(found, f => f.Key == "aio.system.ram" && f.Section == WidgetKind.Memory);
             Assert.True(problems.Count == 0, string.Join("\n", problems));
         }
-        finally { window.Close(); }
+        // Run what the closed window posted: the test thread pumps no dispatcher of its own, and every window it left
+        // waiting kept about 40 MB (179 designs ran out of memory).
+        finally { window.Close(); Avalonia.Threading.Dispatcher.UIThread.RunJobs(); }
         return true;
     });
 }

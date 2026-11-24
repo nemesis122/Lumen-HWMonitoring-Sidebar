@@ -1,8 +1,16 @@
-# Lumen 5.2.0 – Ten new art designs and every switch checked
+# Lumen 5.3.0 – 100 new gallery designs
 
-A portable hardware-monitoring sidebar for Windows 10 and 11 with **145 designs**, including All-in-One designs that show the whole PC in one card. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
+A portable hardware-monitoring sidebar for Windows 10 and 11 with **245 designs**, including All-in-One designs that show the whole PC in one card. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
 
-**[Download Lumen 5.2.0](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v5.2.0)** · [All releases](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases) · [Design gallery](docs/style-gallery.md) · [Release notes 4.5.2](docs/release-notes/v4.5.2.md) · [4.5.1](docs/release-notes/v4.5.1.md) · [4.5.0](docs/release-notes/v4.5.0.md) · [4.4.0](docs/release-notes/v4.4.0.md) · [4.3.0](docs/release-notes/v4.3.0.md) · [4.2.1](docs/release-notes/v4.2.1.md) · [4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
+**[Download Lumen 5.3.0](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v5.3.0)** · [All releases](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases) · [Design gallery](docs/style-gallery.md) · [Release notes 4.5.2](docs/release-notes/v4.5.2.md) · [4.5.1](docs/release-notes/v4.5.1.md) · [4.5.0](docs/release-notes/v4.5.0.md) · [4.4.0](docs/release-notes/v4.4.0.md) · [4.3.0](docs/release-notes/v4.3.0.md) · [4.2.1](docs/release-notes/v4.2.1.md) · [4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
+
+## New in 5.3.0
+
+100 new AIO designs on black: 12 layouts (rings, hero ring, bars, tiles, table, big numbers, seven-segment, gauges, columns, split, ticker, orbit) in 20 colour worlds with 10 panel styles – every sensor, history and appearance setting works in all of them.
+
+<img src="docs/images/v5.3.0/gallery-designs.png" width="900" alt="100 gallery designs">
+
+[5.3.0 release notes](docs/release-notes/v5.3.0.md) · [Previous release 5.2.0](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v5.2.0)
 
 ## New in 5.2.0
 
@@ -238,9 +246,9 @@ Logs and reports stay local. Nothing is uploaded automatically.
 
 ## Download and run
 
-Download [Lumen-5.2.0.exe](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/download/v5.2.0/Lumen-5.2.0.exe) for the portable Windows x64 application. No separate .NET installation is required. Close an older running instance before starting the new EXE. Settings are stored beside the EXE, with an AppData fallback when that folder is read-only.
+Download [Lumen-5.3.0.exe](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/download/v5.3.0/Lumen-5.3.0.exe) for the portable Windows x64 application. No separate .NET installation is required. Close an older running instance before starting the new EXE. Settings are stored beside the EXE, with an AppData fallback when that folder is read-only.
 
-The [5.2.0 release page](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v5.2.0) includes the source archive and SHA-256 checksum.
+The [5.3.0 release page](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v5.3.0) includes the source archive and SHA-256 checksum.
 
 ## Build and verify
 

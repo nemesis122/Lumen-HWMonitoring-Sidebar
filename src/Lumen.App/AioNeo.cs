@@ -27,12 +27,14 @@ public sealed partial class AioTile
     private bool Cyber => Fam == NeoDesigns.Family.Cyber;
     private bool Soft => Fam == NeoDesigns.Family.Neumorph;
     /// <summary>Designs built from panels, one per part (processor and graphics first).</summary>
-    private bool PanelPath => Fam is NeoDesigns.Family.Cyber or NeoDesigns.Family.Rain or NeoDesigns.Family.Neon or NeoDesigns.Family.Scope or NeoDesigns.Family.Stealth;
+    private bool PanelPath => Fam is NeoDesigns.Family.Cyber or NeoDesigns.Family.Rain or NeoDesigns.Family.Neon or NeoDesigns.Family.Scope or NeoDesigns.Family.Stealth
+        || gal?.Arrangement is GalleryDesigns.Layout.Table or GalleryDesigns.Layout.BigNumbers or GalleryDesigns.Layout.Segments or GalleryDesigns.Layout.Split;
     /// <summary>Designs that write captions and titles in capitals.</summary>
     private bool Upper => Fam is NeoDesigns.Family.Cyber or NeoDesigns.Family.Matrix or NeoDesigns.Family.Tron or NeoDesigns.Family.Rain
-        or NeoDesigns.Family.Neon or NeoDesigns.Family.Scope or NeoDesigns.Family.Stealth or NeoDesigns.Family.Thermal;
+        or NeoDesigns.Family.Neon or NeoDesigns.Family.Scope or NeoDesigns.Family.Stealth or NeoDesigns.Family.Thermal || gal?.Capitals == true;
     /// <summary>Designs whose big numbers glow in the accent.</summary>
-    private bool Glowing => Fam is NeoDesigns.Family.Matrix or NeoDesigns.Family.Tron or NeoDesigns.Family.Rain or NeoDesigns.Family.Neon or NeoDesigns.Family.Scope;
+    private bool Glowing => Fam is NeoDesigns.Family.Matrix or NeoDesigns.Family.Tron or NeoDesigns.Family.Rain or NeoDesigns.Family.Neon or NeoDesigns.Family.Scope
+        || gal?.Look == GalleryDesigns.Panel.Glow;
     private Color NA => nAcc[0];
     private Color NB => nAcc[Math.Min(1, nAcc.Length - 1)];
     private Color NAcc(int i) => nAcc[i % nAcc.Length];
@@ -40,7 +42,7 @@ public sealed partial class AioTile
     private void NeoDesign()
     {
         drivesPlaced = true; coreBars = null; mainboardCores = null;
-        neo = NeoDesigns.For(designStyle);
+        neo = NeoDesigns.For(designStyle); gal = neo.Gallery;
         // A colour chosen for the card or in Appearance (or monochrome) replaces the design's accents.
         Color? own = Color.TryParse(slot?.Accent, out var picked) ? picked : skin;
         nAcc = own is Color o ? (Cyber ? new[] { o, Palette.Mix(o, Colors.White, .45) } : new[] { o }) : neo.Accents.Select(Color.Parse).ToArray();
@@ -98,6 +100,9 @@ public sealed partial class AioTile
         });
         Padding = new Thickness(Fam switch { NeoDesigns.Family.Cyber => 8, NeoDesigns.Family.Neumorph or NeoDesigns.Family.Gold or NeoDesigns.Family.Ink => 14, _ => 10 });
         content.Spacing = Fam switch { NeoDesigns.Family.Neumorph => 16, NeoDesigns.Family.Gold or NeoDesigns.Family.Ink => 14, _ => 10 };
+
+        nBigFont = nValueFont;
+        if (gal != null) GalleryLook();
 
         var top = new HashSet<string>();
         if (PanelPath) CyberParts(top); else NeumorphTop(top);
@@ -164,17 +169,26 @@ public sealed partial class AioTile
     {
         var main = rows.FirstOrDefault(r => r.Key.EndsWith(".temp")) ?? rows.FirstOrDefault(r => r.Key.EndsWith(".load")) ?? rows[0];
         top.Add(main.Key);
+        if (GalleryLayout(GalleryDesigns.Layout.Table))
+        {
+            // Table: every value a row, the temperature first.
+            var table = Stack(8, Stack(3, Ordered(rows.Where(r => r != main)).Prepend(main).Select(r => NKV(r)).ToArray()));
+            if (NHistory(main) is { } trace) table.Children.Add(trace);
+            if (main.Group == "CPU") AddCoreTemps(table);
+            return table;
+        }
         var left = Stack(2);
         if (neo.Parts) left.Children.Add(NPart(art, art == "gpu" ? 128 : 104));
         left.Children.Add(NBig(main, BigSize(46), true, colour));
         var list = Stack(3, Ordered(rows.Where(r => r != main)).Select(r => NKV(r)).ToArray());
-        var row = Ui.Columns("Auto,*", left, new Border { VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(14, 0, 0, 4), Child = list });
+        // Big numbers: the values keep their width and the number shrinks into what is left, so a wide reading ("34 %" without a temperature) never pushes the values out.
+        var row = Ui.Columns(GalleryLayout(GalleryDesigns.Layout.BigNumbers) || GalleryLayout(GalleryDesigns.Layout.Segments) ? "*,Auto" : "Auto,*", left, new Border { VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(14, 0, 0, 4), Child = list });
         var body = Stack(8, row);
         if (NHistory(main) is { } plot) body.Children.Add(plot);
         if (main.Group == "CPU") AddCoreTemps(body);
         return body;
     }
-    private double BigSize(double cyber) => Fam switch
+    private double BigSize(double cyber) => gal?.Arrangement == GalleryDesigns.Layout.BigNumbers ? cyber + 30 : gal?.Arrangement == GalleryDesigns.Layout.Segments ? cyber - 4 : Fam switch
     {
         NeoDesigns.Family.Stealth => cyber + 8, NeoDesigns.Family.Rain or NeoDesigns.Family.Scope => cyber - 6, _ => cyber
     };
@@ -232,6 +246,7 @@ public sealed partial class AioTile
         foreach (var d in drives) if (d.Temp != null) items.Add((d.Temp, AioReadings.DriveName(snapshot, d.Id), "ssd", 3));
         foreach (var i in items) top.Add(i.R.Key);
         if (items.Count == 0) return;
+        if (GalleryTop(items, top)) return;
 
         if (neo.Layout == NeoDesigns.Arrangement.Bars)
         {
@@ -421,7 +436,8 @@ public sealed partial class AioTile
     {
         var parts = new List<Control>();
         var cpu = Ordered(Rs("CPU").Where(r => !top.Contains(r.Key)));
-        if (cpu.Count > 0 || Rs("Cores").Length > 0)
+        // The history chart of the processor keeps its column when every other value is shown large (Orbit puts temperature and load on top).
+        if (cpu.Count > 0 || Rs("Cores").Length > 0 || R("temp") is { } shownTemp && AioReadings.Graphs(settings, shownTemp.Key))
         {
             var column = Stack(3, NHeading("CPU", NAcc(0)));
             if (NModelLine(WidgetKind.Cpu, 0, snapshot.Cpu?.Name) is { } cpuModel) column.Children.Add(cpuModel);
@@ -569,7 +585,7 @@ public sealed partial class AioTile
     /// light designs (LED, Tron, code rain, neon, oscilloscope) a soft glow in the part's colour.</summary>
     private Control NBig(AioReading r, double size, bool left = true, int colour = 0)
     {
-        var t = NV(r, size, Fam == NeoDesigns.Family.Stealth ? Color.Parse("#A2A2AA") : null);
+        var t = NV(r, size, Fam == NeoDesigns.Family.Stealth ? Color.Parse("#A2A2AA") : null); t.FontFamily = nBigFont;
         bool temperature = r.Key.EndsWith(".temp") || r.Key.StartsWith("aio.system.disk.");
         Control face = t;
         if (temperature)
@@ -627,7 +643,7 @@ public sealed partial class AioTile
     private Color HeadingColour(Color part) => Fam switch
     {
         NeoDesigns.Family.Cyber => NA,
-        NeoDesigns.Family.Matrix or NeoDesigns.Family.Tron or NeoDesigns.Family.Neon or NeoDesigns.Family.Rain or NeoDesigns.Family.Scope or NeoDesigns.Family.Gold => part,
+        NeoDesigns.Family.Matrix or NeoDesigns.Family.Tron or NeoDesigns.Family.Neon or NeoDesigns.Family.Rain or NeoDesigns.Family.Scope or NeoDesigns.Family.Gold or NeoDesigns.Family.Gallery => part,
         _ => nLabel
     };
     private TextBlock NHeading(string title, Color? part = null)
@@ -660,6 +676,7 @@ public sealed partial class AioTile
         }
         if (heading != null && Fam == NeoDesigns.Family.Ink) heading = Stack(4, heading, new ArtBrushStroke(nInk));
         var inner = heading == null ? body : Stack(Cyber ? 8 : 10, heading, body);
+        if (gal != null) return GalleryPanel(inner, part);
         switch (Fam)
         {
             case NeoDesigns.Family.Neumorph: return NRaised(inner, new Thickness(16, 14));

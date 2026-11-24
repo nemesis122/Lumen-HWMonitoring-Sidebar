@@ -1,0 +1,150 @@
+namespace Lumen.Core;
+
+/// <summary>
+/// The 100 gallery designs of 5.3.0 (drafts 21–120): each one a layout (rings, hero ring, bars, tiles, table, big numbers,
+/// seven-segment, gauges, columns, split, ticker, orbit) in one of twenty colour worlds on black, with its own panel style and
+/// a quiet background pattern. They are drawn by the Cyberpunk/Neumorph builder (NeoDesigns, family Gallery), so every
+/// value is bound to its AIO sensor and every sensor, history and appearance setting works as in all AIO designs.
+/// </summary>
+public static class GalleryDesigns
+{
+    public enum Layout { Rings, Hero, Bars, Tiles, Table, BigNumbers, Segments, Gauges, Columns, Split, Ticker, Orbit }
+    public enum Panel { Flat, Outline, Glass, Glow, Bevel, Cut, Pill, Underline, Double, Dashed }
+    public enum Pattern { None, Grid, Scan, Glow, Dots, Stripes }
+    /// <param name="Accents">Three accents (processor, graphics, memory/drives).</param>
+    /// <param name="LabelFont">Font key of captions and titles; <paramref name="ValueFont"/> of the numbers.</param>
+    public sealed record World(string Name, string Background, string[] Accents, string Ink, string Muted, string LabelFont, string ValueFont);
+    public sealed record Design(WidgetStyle Style, string Name, int Draft, Layout Arrangement, World World, Panel Look, Pattern Backdrop, bool Capitals);
+
+    public static readonly World[] Worlds =
+    {
+        new("Ember", "#070403", new[] { "#FF6A2B", "#FFB347", "#FF2E4D" }, "#FFF1E6", "#9C7A68", "oswald", "oswald"),
+        new("Glacier", "#03070A", new[] { "#7FE7FF", "#C9F6FF", "#4AA8FF" }, "#EFFBFF", "#7C98A6", "rajdhani", "rajdhani"),
+        new("Forest", "#030704", new[] { "#6BE38A", "#B8F27C", "#2FBF71" }, "#EEFFF2", "#7E9C86", "exo-2", "exo-2"),
+        new("Royal", "#06040A", new[] { "#B48CFF", "#E6C36A", "#8A5CFF" }, "#F6F0FF", "#9B90AE", "source-sans-3", "playfair"),
+        new("Mono", "#060606", new[] { "#FFFFFF", "#BDBDBD", "#8A8A8A" }, "#FFFFFF", "#8A8A8A", "roboto", "roboto"),
+        new("Sakura", "#09040A", new[] { "#FF8FC8", "#FFD1E6", "#FF4FA3" }, "#FFF0F7", "#A68899", "source-sans-3", "source-sans-3"),
+        new("Toxic", "#040602", new[] { "#C6FF1A", "#7DFF4D", "#F0FF6B" }, "#F4FFE0", "#8E9E72", "chakra-petch", "chakra-petch"),
+        new("Copper", "#080504", new[] { "#D9894B", "#F2B880", "#B5643A" }, "#FBEFE6", "#A08470", "oswald", "bebas-neue"),
+        new("Teal", "#020707", new[] { "#2DE1C2", "#A3FFF0", "#16A99A" }, "#E9FFFB", "#7A9E98", "exo-2", "exo-2"),
+        new("Lava", "#0A0302", new[] { "#FF3B1F", "#FFC21A", "#FF7A1A" }, "#FFF4EC", "#A07E70", "black-ops-one", "black-ops-one"),
+        new("Mint", "#050807", new[] { "#8CFFD2", "#D7FFF0", "#4DD9A6" }, "#F0FFF8", "#86A398", "noto-sans", "noto-sans"),
+        new("Sunset", "#0A0406", new[] { "#FF8A3D", "#FF4F81", "#FFD36B" }, "#FFF3EC", "#A58A8C", "source-sans-3", "source-sans-3"),
+        new("Steel", "#07080A", new[] { "#AFC3D6", "#E4EDF5", "#7D93A8" }, "#F2F6FA", "#7F8B96", "rajdhani", "rajdhani"),
+        new("Magenta", "#08030A", new[] { "#FF2BD6", "#C6FF1A", "#9A4DFF" }, "#FFF0FD", "#A08AA6", "orbitron", "orbitron"),
+        new("Arctic", "#05070A", new[] { "#E8F6FF", "#8FD3FF", "#5CA8FF" }, "#FFFFFF", "#8696A6", "noto-sans", "noto-sans"),
+        new("Gold", "#070604", new[] { "#E6C36A", "#FFE7A3", "#B8913A" }, "#FFF8E8", "#A89A7A", "source-sans-3", "playfair"),
+        new("Crimson", "#090203", new[] { "#FF2238", "#FF8A96", "#C2001A" }, "#FFF0F2", "#A08084", "oswald", "oswald"),
+        new("Violet", "#05030A", new[] { "#7C5CFF", "#C9B8FF", "#4D2BFF" }, "#F3F0FF", "#8E88A8", "exo-2", "exo-2"),
+        new("Amber", "#060402", new[] { "#FFB000", "#FFD27A", "#FF8A00" }, "#FFF4DC", "#A0906E", "share-tech-mono", "doto"),
+        new("Holo", "#050608", new[] { "#7CF5FF", "#FF7CF0", "#FFF27C" }, "#FFFFFF", "#8F96A6", "chakra-petch", "chakra-petch"),
+    };
+    private static World W(string name) => Worlds.First(w => w.Name == name);
+
+    public static readonly Design[] All =
+    {
+        new(WidgetStyle.AioEmberRings, "Ember Rings", 21, Layout.Rings, W("Ember"), Panel.Flat, Pattern.None, true),
+        new(WidgetStyle.AioCopperHero, "Copper Hero", 22, Layout.Hero, W("Copper"), Panel.Glow, Pattern.Stripes, true),
+        new(WidgetStyle.AioArcticBars, "Arctic Bars", 23, Layout.Bars, W("Arctic"), Panel.Pill, Pattern.Dots, false),
+        new(WidgetStyle.AioGlacierTiles, "Glacier Tiles", 24, Layout.Tiles, W("Glacier"), Panel.Dashed, Pattern.Glow, true),
+        new(WidgetStyle.AioTealTable, "Teal Table", 25, Layout.Table, W("Teal"), Panel.Glass, Pattern.Scan, true),
+        new(WidgetStyle.AioGoldBigNumbers, "Gold Big Numbers", 26, Layout.BigNumbers, W("Gold"), Panel.Cut, Pattern.Grid, false),
+        new(WidgetStyle.AioForestSegments, "Forest Segments", 27, Layout.Segments, W("Forest"), Panel.Double, Pattern.None, true),
+        new(WidgetStyle.AioLavaGauges, "Lava Gauges", 28, Layout.Gauges, W("Lava"), Panel.Outline, Pattern.Stripes, true),
+        new(WidgetStyle.AioCrimsonColumns, "Crimson Columns", 29, Layout.Columns, W("Crimson"), Panel.Bevel, Pattern.Dots, true),
+        new(WidgetStyle.AioRoyalSplit, "Royal Split", 30, Layout.Split, W("Royal"), Panel.Underline, Pattern.Glow, true),
+        new(WidgetStyle.AioMintTicker, "Mint Ticker", 31, Layout.Ticker, W("Mint"), Panel.Flat, Pattern.Scan, false),
+        new(WidgetStyle.AioVioletOrbit, "Violet Orbit", 32, Layout.Orbit, W("Violet"), Panel.Glow, Pattern.Grid, true),
+        new(WidgetStyle.AioMonoRings, "Mono Rings", 33, Layout.Rings, W("Mono"), Panel.Pill, Pattern.None, true),
+        new(WidgetStyle.AioSunsetHero, "Sunset Hero", 34, Layout.Hero, W("Sunset"), Panel.Dashed, Pattern.Stripes, false),
+        new(WidgetStyle.AioAmberBars, "Amber Bars", 35, Layout.Bars, W("Amber"), Panel.Glass, Pattern.Dots, true),
+        new(WidgetStyle.AioSakuraTiles, "Sakura Tiles", 36, Layout.Tiles, W("Sakura"), Panel.Cut, Pattern.Glow, true),
+        new(WidgetStyle.AioSteelTable, "Steel Table", 37, Layout.Table, W("Steel"), Panel.Double, Pattern.Scan, true),
+        new(WidgetStyle.AioHoloBigNumbers, "Holo Big Numbers", 38, Layout.BigNumbers, W("Holo"), Panel.Outline, Pattern.Grid, true),
+        new(WidgetStyle.AioToxicSegments, "Toxic Segments", 39, Layout.Segments, W("Toxic"), Panel.Bevel, Pattern.None, true),
+        new(WidgetStyle.AioMagentaGauges, "Magenta Gauges", 40, Layout.Gauges, W("Magenta"), Panel.Underline, Pattern.Stripes, true),
+        new(WidgetStyle.AioEmberColumns, "Ember Columns", 41, Layout.Columns, W("Ember"), Panel.Flat, Pattern.Dots, true),
+        new(WidgetStyle.AioCopperSplit, "Copper Split", 42, Layout.Split, W("Copper"), Panel.Glow, Pattern.Glow, true),
+        new(WidgetStyle.AioArcticTicker, "Arctic Ticker", 43, Layout.Ticker, W("Arctic"), Panel.Pill, Pattern.Scan, false),
+        new(WidgetStyle.AioGlacierOrbit, "Glacier Orbit", 44, Layout.Orbit, W("Glacier"), Panel.Dashed, Pattern.Grid, true),
+        new(WidgetStyle.AioTealRings, "Teal Rings", 45, Layout.Rings, W("Teal"), Panel.Glass, Pattern.None, true),
+        new(WidgetStyle.AioGoldHero, "Gold Hero", 46, Layout.Hero, W("Gold"), Panel.Cut, Pattern.Stripes, false),
+        new(WidgetStyle.AioForestBars, "Forest Bars", 47, Layout.Bars, W("Forest"), Panel.Double, Pattern.Dots, true),
+        new(WidgetStyle.AioLavaTiles, "Lava Tiles", 48, Layout.Tiles, W("Lava"), Panel.Outline, Pattern.Glow, true),
+        new(WidgetStyle.AioCrimsonTable, "Crimson Table", 49, Layout.Table, W("Crimson"), Panel.Bevel, Pattern.Scan, true),
+        new(WidgetStyle.AioRoyalBigNumbers, "Royal Big Numbers", 50, Layout.BigNumbers, W("Royal"), Panel.Underline, Pattern.Grid, false),
+        new(WidgetStyle.AioMintSegments, "Mint Segments", 51, Layout.Segments, W("Mint"), Panel.Flat, Pattern.None, true),
+        new(WidgetStyle.AioVioletGauges, "Violet Gauges", 52, Layout.Gauges, W("Violet"), Panel.Glow, Pattern.Stripes, true),
+        new(WidgetStyle.AioMonoColumns, "Mono Columns", 53, Layout.Columns, W("Mono"), Panel.Pill, Pattern.Dots, false),
+        new(WidgetStyle.AioSunsetSplit, "Sunset Split", 54, Layout.Split, W("Sunset"), Panel.Dashed, Pattern.Glow, true),
+        new(WidgetStyle.AioAmberTicker, "Amber Ticker", 55, Layout.Ticker, W("Amber"), Panel.Glass, Pattern.Scan, true),
+        new(WidgetStyle.AioSakuraOrbit, "Sakura Orbit", 56, Layout.Orbit, W("Sakura"), Panel.Cut, Pattern.Grid, false),
+        new(WidgetStyle.AioSteelRings, "Steel Rings", 57, Layout.Rings, W("Steel"), Panel.Double, Pattern.None, true),
+        new(WidgetStyle.AioHoloHero, "Holo Hero", 58, Layout.Hero, W("Holo"), Panel.Outline, Pattern.Stripes, true),
+        new(WidgetStyle.AioToxicBars, "Toxic Bars", 59, Layout.Bars, W("Toxic"), Panel.Bevel, Pattern.Dots, true),
+        new(WidgetStyle.AioMagentaTiles, "Magenta Tiles", 60, Layout.Tiles, W("Magenta"), Panel.Underline, Pattern.Glow, true),
+        new(WidgetStyle.AioEmberTable, "Ember Table", 61, Layout.Table, W("Ember"), Panel.Flat, Pattern.Scan, true),
+        new(WidgetStyle.AioCopperBigNumbers, "Copper Big Numbers", 62, Layout.BigNumbers, W("Copper"), Panel.Glow, Pattern.Grid, true),
+        new(WidgetStyle.AioArcticSegments, "Arctic Segments", 63, Layout.Segments, W("Arctic"), Panel.Pill, Pattern.None, true),
+        new(WidgetStyle.AioGlacierGauges, "Glacier Gauges", 64, Layout.Gauges, W("Glacier"), Panel.Dashed, Pattern.Stripes, true),
+        new(WidgetStyle.AioTealColumns, "Teal Columns", 65, Layout.Columns, W("Teal"), Panel.Glass, Pattern.Dots, true),
+        new(WidgetStyle.AioGoldSplit, "Gold Split", 66, Layout.Split, W("Gold"), Panel.Cut, Pattern.Glow, true),
+        new(WidgetStyle.AioForestTicker, "Forest Ticker", 67, Layout.Ticker, W("Forest"), Panel.Double, Pattern.Scan, true),
+        new(WidgetStyle.AioLavaOrbit, "Lava Orbit", 68, Layout.Orbit, W("Lava"), Panel.Outline, Pattern.Grid, true),
+        new(WidgetStyle.AioCrimsonRings, "Crimson Rings", 69, Layout.Rings, W("Crimson"), Panel.Bevel, Pattern.None, true),
+        new(WidgetStyle.AioRoyalHero, "Royal Hero", 70, Layout.Hero, W("Royal"), Panel.Underline, Pattern.Stripes, false),
+        new(WidgetStyle.AioMintBars, "Mint Bars", 71, Layout.Bars, W("Mint"), Panel.Flat, Pattern.Dots, false),
+        new(WidgetStyle.AioVioletTiles, "Violet Tiles", 72, Layout.Tiles, W("Violet"), Panel.Glow, Pattern.Glow, true),
+        new(WidgetStyle.AioMonoTable, "Mono Table", 73, Layout.Table, W("Mono"), Panel.Pill, Pattern.Scan, false),
+        new(WidgetStyle.AioSunsetBigNumbers, "Sunset Big Numbers", 74, Layout.BigNumbers, W("Sunset"), Panel.Dashed, Pattern.Grid, false),
+        new(WidgetStyle.AioAmberSegments, "Amber Segments", 75, Layout.Segments, W("Amber"), Panel.Glass, Pattern.None, true),
+        new(WidgetStyle.AioSakuraGauges, "Sakura Gauges", 76, Layout.Gauges, W("Sakura"), Panel.Cut, Pattern.Stripes, false),
+        new(WidgetStyle.AioSteelColumns, "Steel Columns", 77, Layout.Columns, W("Steel"), Panel.Double, Pattern.Dots, true),
+        new(WidgetStyle.AioHoloSplit, "Holo Split", 78, Layout.Split, W("Holo"), Panel.Outline, Pattern.Glow, true),
+        new(WidgetStyle.AioToxicTicker, "Toxic Ticker", 79, Layout.Ticker, W("Toxic"), Panel.Bevel, Pattern.Scan, true),
+        new(WidgetStyle.AioMagentaOrbit, "Magenta Orbit", 80, Layout.Orbit, W("Magenta"), Panel.Underline, Pattern.Grid, true),
+        new(WidgetStyle.AioGlacierRings, "Glacier Rings", 81, Layout.Rings, W("Glacier"), Panel.Flat, Pattern.None, true),
+        new(WidgetStyle.AioTealHero, "Teal Hero", 82, Layout.Hero, W("Teal"), Panel.Glow, Pattern.Stripes, true),
+        new(WidgetStyle.AioGoldBars, "Gold Bars", 83, Layout.Bars, W("Gold"), Panel.Pill, Pattern.Dots, false),
+        new(WidgetStyle.AioForestTiles, "Forest Tiles", 84, Layout.Tiles, W("Forest"), Panel.Dashed, Pattern.Glow, true),
+        new(WidgetStyle.AioLavaTable, "Lava Table", 85, Layout.Table, W("Lava"), Panel.Glass, Pattern.Scan, true),
+        new(WidgetStyle.AioCrimsonBigNumbers, "Crimson Big Numbers", 86, Layout.BigNumbers, W("Crimson"), Panel.Cut, Pattern.Grid, true),
+        new(WidgetStyle.AioRoyalSegments, "Royal Segments", 87, Layout.Segments, W("Royal"), Panel.Double, Pattern.None, true),
+        new(WidgetStyle.AioMintGauges, "Mint Gauges", 88, Layout.Gauges, W("Mint"), Panel.Outline, Pattern.Stripes, false),
+        new(WidgetStyle.AioVioletColumns, "Violet Columns", 89, Layout.Columns, W("Violet"), Panel.Bevel, Pattern.Dots, true),
+        new(WidgetStyle.AioMonoSplit, "Mono Split", 90, Layout.Split, W("Mono"), Panel.Underline, Pattern.Glow, true),
+        new(WidgetStyle.AioSunsetTicker, "Sunset Ticker", 91, Layout.Ticker, W("Sunset"), Panel.Flat, Pattern.Scan, false),
+        new(WidgetStyle.AioAmberOrbit, "Amber Orbit", 92, Layout.Orbit, W("Amber"), Panel.Glow, Pattern.Grid, true),
+        new(WidgetStyle.AioSakuraRings, "Sakura Rings", 93, Layout.Rings, W("Sakura"), Panel.Pill, Pattern.None, true),
+        new(WidgetStyle.AioSteelHero, "Steel Hero", 94, Layout.Hero, W("Steel"), Panel.Dashed, Pattern.Stripes, true),
+        new(WidgetStyle.AioHoloBars, "Holo Bars", 95, Layout.Bars, W("Holo"), Panel.Glass, Pattern.Dots, true),
+        new(WidgetStyle.AioToxicTiles, "Toxic Tiles", 96, Layout.Tiles, W("Toxic"), Panel.Cut, Pattern.Glow, true),
+        new(WidgetStyle.AioMagentaTable, "Magenta Table", 97, Layout.Table, W("Magenta"), Panel.Double, Pattern.Scan, true),
+        new(WidgetStyle.AioEmberBigNumbers, "Ember Big Numbers", 98, Layout.BigNumbers, W("Ember"), Panel.Outline, Pattern.Grid, true),
+        new(WidgetStyle.AioCopperSegments, "Copper Segments", 99, Layout.Segments, W("Copper"), Panel.Bevel, Pattern.None, true),
+        new(WidgetStyle.AioArcticGauges, "Arctic Gauges", 100, Layout.Gauges, W("Arctic"), Panel.Underline, Pattern.Stripes, false),
+        new(WidgetStyle.AioGlacierColumns, "Glacier Columns", 101, Layout.Columns, W("Glacier"), Panel.Flat, Pattern.Dots, true),
+        new(WidgetStyle.AioTealSplit, "Teal Split", 102, Layout.Split, W("Teal"), Panel.Glow, Pattern.Glow, true),
+        new(WidgetStyle.AioGoldTicker, "Gold Ticker", 103, Layout.Ticker, W("Gold"), Panel.Pill, Pattern.Scan, false),
+        new(WidgetStyle.AioForestOrbit, "Forest Orbit", 104, Layout.Orbit, W("Forest"), Panel.Dashed, Pattern.Grid, true),
+        new(WidgetStyle.AioLavaRings, "Lava Rings", 105, Layout.Rings, W("Lava"), Panel.Glass, Pattern.None, true),
+        new(WidgetStyle.AioCrimsonHero, "Crimson Hero", 106, Layout.Hero, W("Crimson"), Panel.Cut, Pattern.Stripes, true),
+        new(WidgetStyle.AioRoyalBars, "Royal Bars", 107, Layout.Bars, W("Royal"), Panel.Double, Pattern.Dots, false),
+        new(WidgetStyle.AioMintTiles, "Mint Tiles", 108, Layout.Tiles, W("Mint"), Panel.Outline, Pattern.Glow, true),
+        new(WidgetStyle.AioVioletTable, "Violet Table", 109, Layout.Table, W("Violet"), Panel.Bevel, Pattern.Scan, true),
+        new(WidgetStyle.AioMonoBigNumbers, "Mono Big Numbers", 110, Layout.BigNumbers, W("Mono"), Panel.Underline, Pattern.Grid, false),
+        new(WidgetStyle.AioSunsetSegments, "Sunset Segments", 111, Layout.Segments, W("Sunset"), Panel.Flat, Pattern.None, true),
+        new(WidgetStyle.AioAmberGauges, "Amber Gauges", 112, Layout.Gauges, W("Amber"), Panel.Glow, Pattern.Stripes, true),
+        new(WidgetStyle.AioSakuraColumns, "Sakura Columns", 113, Layout.Columns, W("Sakura"), Panel.Pill, Pattern.Dots, false),
+        new(WidgetStyle.AioSteelSplit, "Steel Split", 114, Layout.Split, W("Steel"), Panel.Dashed, Pattern.Glow, true),
+        new(WidgetStyle.AioHoloTicker, "Holo Ticker", 115, Layout.Ticker, W("Holo"), Panel.Glass, Pattern.Scan, true),
+        new(WidgetStyle.AioToxicOrbit, "Toxic Orbit", 116, Layout.Orbit, W("Toxic"), Panel.Cut, Pattern.Grid, true),
+        new(WidgetStyle.AioMagentaRings, "Magenta Rings", 117, Layout.Rings, W("Magenta"), Panel.Double, Pattern.None, true),
+        new(WidgetStyle.AioEmberHero, "Ember Hero", 118, Layout.Hero, W("Ember"), Panel.Outline, Pattern.Stripes, true),
+        new(WidgetStyle.AioCopperBars, "Copper Bars", 119, Layout.Bars, W("Copper"), Panel.Bevel, Pattern.Dots, true),
+        new(WidgetStyle.AioArcticTiles, "Arctic Tiles", 120, Layout.Tiles, W("Arctic"), Panel.Underline, Pattern.Glow, true),
+    };
+    private static readonly Dictionary<WidgetStyle, Design> ByStyle = All.ToDictionary(d => d.Style);
+    public static bool Contains(WidgetStyle style) => ByStyle.ContainsKey(style);
+    public static Design For(WidgetStyle style) => ByStyle[style];
+}

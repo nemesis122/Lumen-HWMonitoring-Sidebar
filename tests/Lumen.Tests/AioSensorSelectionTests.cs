@@ -45,6 +45,8 @@ public class AioSensorSelectionTests
         string key = item.Key;
         // A value of a further graphics card, switched on, brings that card (with its other chosen values) onto the card.
         if (System.Text.RegularExpressions.Regex.Match(option, @"^aio\.gpu\.([^.]+)\.") is { Success: true } gpu && (key.StartsWith("aio.gpu." + gpu.Groups[1].Value + ".") || key == "aio.cooling.gpu:" + gpu.Groups[1].Value)) return true;
+        // The fan of a further graphics card brings its card along in the same way.
+        if (option.StartsWith("aio.cooling.gpu:") && key.StartsWith("aio.gpu." + option["aio.cooling.gpu:".Length..] + ".")) return true;
         if (AioReadings.IsGraphKey(option)) return item.Kind == 'h' && AioReadings.GraphKey(key) == option;
         if (key == option || key.StartsWith(option + ".")) return true;
         if (option == "aio.cpu.cores") return key.StartsWith("aio.cpu.core.");

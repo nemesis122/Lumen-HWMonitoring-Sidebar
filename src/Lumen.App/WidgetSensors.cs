@@ -27,6 +27,13 @@ public static class WidgetSensors
         // A value of a further graphics card (integrated graphics too) brings that card into the AIO card.
         if(selected&&key.StartsWith("aio.gpu.")&&!key.EndsWith(".extra")&&key.LastIndexOf('.')>"aio.gpu.".Length)
             Set(key[..key.LastIndexOf('.')]+".extra",true);
+        // So does the fan of a further graphics card: without its card the fan is not shown, and the switch stayed off
+        // although it was ticked (found by the release check on a PC with two graphics cards).
+        if (selected && key.StartsWith("aio.cooling.gpu:") && snapshot != null)
+        {
+            var all = GpuGroup.All(snapshot); var main = GpuGroup.Main(all);
+            if (all.FirstOrDefault(g => key == "aio.cooling.gpu:" + g.Id) is { } card && card != main) { Set("aio.gpu", true); Set(GpuGroup.ExtraKey(card), true); }
+        }
         // A curve of a history chart, ticked, also shows the chart it is drawn in ("History chart · Load" alone
         // showed nothing while "History chart" was off).
         if (selected && !key.StartsWith("aio.") && key.EndsWith(".history") && Summaries.ChartKey(slot.Kind) is string chart

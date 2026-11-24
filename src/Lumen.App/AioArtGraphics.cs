@@ -129,3 +129,110 @@ public sealed class ArtCrosshair : ArtDecoration
         c.DrawLine(pen, new Point(0, 13), new Point(8, 13)); c.DrawLine(pen, new Point(18, 13), new Point(26, 13));
     }
 }
+
+/// <summary>Quiet background of a gallery panel: grid, scan lines, a soft glow, dots or diagonal stripes.</summary>
+public sealed class ArtPattern : ArtDecoration
+{
+    private readonly GalleryKind kind;
+    public enum GalleryKind { Grid, Scan, Glow, Dots, Stripes }
+    public ArtPattern(GalleryKind kind, Color color) : base(color) { this.kind = kind; ClipToBounds = true; }
+    public override void Render(DrawingContext c)
+    {
+        double w = Bounds.Width, h = Bounds.Height; if (w < 2 || h < 2) return;
+        switch (kind)
+        {
+            case GalleryKind.Grid:
+            {
+                var pen = new Pen(BlackDraw.B(BlackDraw.A(Color, .07)), 1);
+                for (double x = 14; x < w; x += 28) c.DrawLine(pen, new Point(x, 0), new Point(x, h));
+                for (double y = 14; y < h; y += 28) c.DrawLine(pen, new Point(0, y), new Point(w, y));
+                break;
+            }
+            case GalleryKind.Scan:
+            {
+                var pen = new Pen(BlackDraw.B(Color.FromArgb(12, 255, 255, 255)), 1);
+                for (double y = 1; y < h; y += 3) c.DrawLine(pen, new Point(0, y), new Point(w, y));
+                break;
+            }
+            case GalleryKind.Glow:
+                c.DrawRectangle(new RadialGradientBrush
+                {
+                    Center = new RelativePoint(0, 0, RelativeUnit.Relative), GradientOrigin = new RelativePoint(0, 0, RelativeUnit.Relative),
+                    RadiusX = new RelativeScalar(.9, RelativeUnit.Relative), RadiusY = new RelativeScalar(.9, RelativeUnit.Relative),
+                    GradientStops = { new(BlackDraw.A(Color, .2), 0), new(BlackDraw.A(Color, 0), 1) }
+                }, null, new Rect(0, 0, w, h));
+                break;
+            case GalleryKind.Dots:
+            {
+                var brush = BlackDraw.B(BlackDraw.A(Color, .12));
+                for (double y = 8; y < h; y += 16) for (double x = 8; x < w; x += 16) c.DrawEllipse(brush, null, new Point(x, y), 1, 1);
+                break;
+            }
+            case GalleryKind.Stripes:
+            {
+                var pen = new Pen(BlackDraw.B(BlackDraw.A(Color, .045)), 10);
+                for (double x = -h; x < w; x += 24) c.DrawLine(pen, new Point(x, h), new Point(x + h, 0));
+                break;
+            }
+        }
+    }
+}
+
+/// <summary>A half-circle speedometer: eleven ticks (lit up to the level), a track and a needle.</summary>
+public sealed class ArtGauge : ArtDecoration
+{
+    private readonly Color track; private double? level;
+    public ArtGauge(Color color, Color track) : base(color) { this.track = track; }
+    public void Set(double? value) { level = value; InvalidateVisual(); }
+    public override void Render(DrawingContext c)
+    {
+        double w = Bounds.Width, h = Bounds.Height; if (w < 10 || h < 10) return;
+        double r = Math.Min(w / 2, h) - 4, cx = w / 2, cy = Math.Min(h, r + 4);
+        double f = Math.Clamp(level ?? 0, 0, 1);
+        for (int i = 0; i <= 10; i++)
+        {
+            double a = Math.PI + Math.PI * i / 10;
+            var pen = new Pen(BlackDraw.B(level.HasValue && i / 10d <= f + 1e-6 ? Color : Color.FromArgb(70, 255, 255, 255)), 2) { LineCap = PenLineCap.Round };
+            c.DrawLine(pen, new Point(cx + (r - 8) * Math.Cos(a), cy + (r - 8) * Math.Sin(a)), new Point(cx + r * Math.Cos(a), cy + r * Math.Sin(a)));
+        }
+        double inner = r - 15;
+        c.DrawGeometry(null, new Pen(BlackDraw.B(track), 5), Rings.Arc(new Point(cx, cy), inner, 180, 180));
+        if (!level.HasValue) return;
+        double n = Math.PI + Math.PI * f;
+        c.DrawLine(new Pen(BlackDraw.B(Color), 3) { LineCap = PenLineCap.Round }, new Point(cx, cy), new Point(cx + (inner - 4) * Math.Cos(n), cy + (inner - 4) * Math.Sin(n)));
+        c.DrawEllipse(BlackDraw.B(Color), null, new Point(cx, cy), 5, 5);
+    }
+}
+
+/// <summary>A vertical column filled from the bottom to its level, with a soft fade.</summary>
+public sealed class ArtColumn : ArtDecoration
+{
+    private readonly Color track; private double? level;
+    public ArtColumn(Color color, Color track) : base(color) { this.track = track; }
+    public void Set(double? value) { level = value; InvalidateVisual(); }
+    public override void Render(DrawingContext c)
+    {
+        double w = Bounds.Width, h = Bounds.Height; if (w < 2 || h < 2) return;
+        c.DrawRectangle(BlackDraw.B(track), null, new RoundedRect(new Rect(0, 0, w, h), 5));
+        if (level is not double f) return;
+        double fill = h * Math.Clamp(f, 0, 1); if (fill < 1) return;
+        var brush = new LinearGradientBrush
+        {
+            StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative), EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
+            GradientStops = { new(Color, 0), new(BlackDraw.A(Color, .35), 1) }
+        };
+        c.DrawRectangle(brush, null, new RoundedRect(new Rect(0, h - fill, w, fill), 5));
+    }
+}
+
+/// <summary>The orbits of the Orbit layout: three thin circles around the centre.</summary>
+public sealed class ArtOrbits : ArtDecoration
+{
+    private readonly double[] radii; private readonly Color[] colors;
+    public ArtOrbits(double[] radii, Color[] colors) : base(colors[0]) { this.radii = radii; this.colors = colors; }
+    public override void Render(DrawingContext c)
+    {
+        var center = new Point(Bounds.Width / 2, Bounds.Height / 2);
+        for (int i = 0; i < radii.Length; i++) c.DrawEllipse(null, new Pen(BlackDraw.B(BlackDraw.A(colors[i % colors.Length], .25)), 1), center, radii[i], radii[i]);
+    }
+}
