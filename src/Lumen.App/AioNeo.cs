@@ -28,12 +28,16 @@ public sealed partial class AioTile
     private bool Soft => Fam == NeoDesigns.Family.Neumorph;
     /// <summary>Designs built from panels, one per part (processor and graphics first).</summary>
     private bool PanelPath => Fam is NeoDesigns.Family.Cyber or NeoDesigns.Family.Rain or NeoDesigns.Family.Neon or NeoDesigns.Family.Scope or NeoDesigns.Family.Stealth
+        or NeoDesigns.Family.Vfd or NeoDesigns.Family.Mission or NeoDesigns.Family.Swiss
         || gal?.Arrangement is GalleryDesigns.Layout.Table or GalleryDesigns.Layout.BigNumbers or GalleryDesigns.Layout.Segments or GalleryDesigns.Layout.Split;
     /// <summary>Designs that write captions and titles in capitals.</summary>
     private bool Upper => Fam is NeoDesigns.Family.Cyber or NeoDesigns.Family.Matrix or NeoDesigns.Family.Tron or NeoDesigns.Family.Rain
-        or NeoDesigns.Family.Neon or NeoDesigns.Family.Scope or NeoDesigns.Family.Stealth or NeoDesigns.Family.Thermal || gal?.Capitals == true;
+        or NeoDesigns.Family.Neon or NeoDesigns.Family.Scope or NeoDesigns.Family.Stealth or NeoDesigns.Family.Thermal
+        or NeoDesigns.Family.Vfd or NeoDesigns.Family.Synth or NeoDesigns.Family.Radar or NeoDesigns.Family.Hex or NeoDesigns.Family.Pixel or NeoDesigns.Family.Mission
+        or NeoDesigns.Family.Equalizer || gal?.Capitals == true;
     /// <summary>Designs whose big numbers glow in the accent.</summary>
     private bool Glowing => Fam is NeoDesigns.Family.Matrix or NeoDesigns.Family.Tron or NeoDesigns.Family.Rain or NeoDesigns.Family.Neon or NeoDesigns.Family.Scope
+        or NeoDesigns.Family.Vfd or NeoDesigns.Family.Synth or NeoDesigns.Family.Radar or NeoDesigns.Family.Equalizer
         || gal?.Look == GalleryDesigns.Panel.Glow;
     private Color NA => nAcc[0];
     private Color NB => nAcc[Math.Min(1, nAcc.Length - 1)];
@@ -101,8 +105,9 @@ public sealed partial class AioTile
         Padding = new Thickness(Fam switch { NeoDesigns.Family.Cyber => 8, NeoDesigns.Family.Neumorph or NeoDesigns.Family.Gold or NeoDesigns.Family.Ink => 14, _ => 10 });
         content.Spacing = Fam switch { NeoDesigns.Family.Neumorph => 16, NeoDesigns.Family.Gold or NeoDesigns.Family.Ink => 14, _ => 10 };
 
-        nBigFont = nValueFont;
+        nBigFont = nValueFont; nScale = 1;
         if (gal != null) GalleryLook();
+        if (Studio) StudioLook();
 
         var top = new HashSet<string>();
         if (PanelPath) CyberParts(top); else NeumorphTop(top);
@@ -120,7 +125,7 @@ public sealed partial class AioTile
     }
 
     /// <summary>A panel title: the Cyberpunk code name, or the plain name (in capitals where the design writes so).</summary>
-    private string T(string cyber, string plain) => Cyber ? cyber : Upper ? L.T(plain).ToUpperInvariant() : L.T(plain);
+    private string T(string cyber, string plain) => Cyber ? cyber : Fam == NeoDesigns.Family.Mission ? MissionName(cyber) : Upper ? L.T(plain).ToUpperInvariant() : L.T(plain);
 
     // ------------------------------------------------------------------ panel designs: processor and graphics
     private void CyberParts(HashSet<string> top)
@@ -160,6 +165,7 @@ public sealed partial class AioTile
         var info = snapshot.Gpus.FirstOrDefault(g => g.Id == device);
         if (info?.Integrated == true) return Cyber ? (shortForm ? "iGPU" : "IGPU_UNIT") : Soft ? "Integrated graphics" : shortForm ? "iGPU" : L.T("Integrated graphics");
         if (Cyber) return shortForm ? (index == 0 ? "GPU" : "GPU " + (index + 1)) : index == 0 ? "GPU_UNIT" : "GPU_UNIT_" + (index + 1);
+        if (Fam == NeoDesigns.Family.Mission && !shortForm) return "GUIDANCE · GPU" + (index == 0 ? "" : " " + (index + 1));
         return index == 0 ? "GPU" : "GPU " + (index + 1);
     }
     private string GpuArt(string? device) => "gpu";
@@ -169,7 +175,7 @@ public sealed partial class AioTile
     {
         var main = rows.FirstOrDefault(r => r.Key.EndsWith(".temp")) ?? rows.FirstOrDefault(r => r.Key.EndsWith(".load")) ?? rows[0];
         top.Add(main.Key);
-        if (GalleryLayout(GalleryDesigns.Layout.Table))
+        if (GalleryLayout(GalleryDesigns.Layout.Table) || Fam == NeoDesigns.Family.Mission)
         {
             // Table: every value a row, the temperature first.
             var table = Stack(8, Stack(3, Ordered(rows.Where(r => r != main)).Prepend(main).Select(r => NKV(r)).ToArray()));
@@ -182,13 +188,14 @@ public sealed partial class AioTile
         left.Children.Add(NBig(main, BigSize(46), true, colour));
         var list = Stack(3, Ordered(rows.Where(r => r != main)).Select(r => NKV(r)).ToArray());
         // Big numbers: the values keep their width and the number shrinks into what is left, so a wide reading ("34 %" without a temperature) never pushes the values out.
-        var row = Ui.Columns(GalleryLayout(GalleryDesigns.Layout.BigNumbers) || GalleryLayout(GalleryDesigns.Layout.Segments) ? "*,Auto" : "Auto,*", left, new Border { VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(14, 0, 0, 4), Child = list });
+        var row = Ui.Columns(GalleryLayout(GalleryDesigns.Layout.BigNumbers) || GalleryLayout(GalleryDesigns.Layout.Segments) || Fam is NeoDesigns.Family.Swiss or NeoDesigns.Family.Vfd ? "*,Auto" : "Auto,*", left, new Border { VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(14, 0, 0, 4), Child = list });
         var body = Stack(8, row);
         if (NHistory(main) is { } plot) body.Children.Add(plot);
         if (main.Group == "CPU") AddCoreTemps(body);
         return body;
     }
-    private double BigSize(double cyber) => gal?.Arrangement == GalleryDesigns.Layout.BigNumbers ? cyber + 30 : gal?.Arrangement == GalleryDesigns.Layout.Segments ? cyber - 4 : Fam switch
+    private double BigSize(double cyber) => gal?.Arrangement == GalleryDesigns.Layout.BigNumbers || Fam == NeoDesigns.Family.Swiss ? cyber + 30
+        : gal?.Arrangement == GalleryDesigns.Layout.Segments || Fam == NeoDesigns.Family.Vfd ? cyber - 4 : Fam switch
     {
         NeoDesigns.Family.Stealth => cyber + 8, NeoDesigns.Family.Rain or NeoDesigns.Family.Scope => cyber - 6, _ => cyber
     };
@@ -246,7 +253,7 @@ public sealed partial class AioTile
         foreach (var d in drives) if (d.Temp != null) items.Add((d.Temp, AioReadings.DriveName(snapshot, d.Id), "ssd", 3));
         foreach (var i in items) top.Add(i.R.Key);
         if (items.Count == 0) return;
-        if (GalleryTop(items, top)) return;
+        if (GalleryTop(items, top) || StudioTop(items, top)) return;
 
         if (neo.Layout == NeoDesigns.Arrangement.Bars)
         {
@@ -302,7 +309,7 @@ public sealed partial class AioTile
         // A larger main value size shrinks back into the ring instead of being cut off at its edge.
         var value = new Border { Width = big * 4, HorizontalAlignment = HorizontalAlignment.Center,
             Child = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Child = number } };
-        var label = NText(Upper ? caption.ToUpperInvariant() : caption, design > 150 ? 12 : 10, Fam is NeoDesigns.Family.Tron or NeoDesigns.Family.Gold ? colour : nLabel, true);
+        var label = NText(Upper ? caption.ToUpperInvariant() : caption, design > 150 ? 12 : 10, Fam is NeoDesigns.Family.Tron or NeoDesigns.Family.Gold or NeoDesigns.Family.Chalk ? colour : nLabel, true);
         label.HorizontalAlignment = HorizontalAlignment.Center;
         var face = Stack(0, value, label); face.HorizontalAlignment = HorizontalAlignment.Center; face.VerticalAlignment = VerticalAlignment.Center;
         var dial = new Grid { Width = size, Height = size };
@@ -337,6 +344,11 @@ public sealed partial class AioTile
                 dial.Children.Add(new Ellipse { Width = size, Height = size, Fill = Palette.Brush(SeeThrough(Palette.Mix(nSurface, colour, .04))), Stroke = Palette.Brush(BlackDraw.A(colour, .75)), StrokeThickness = 1.2 });
                 dial.Children.Add(new ArtTicks(colour) { Width = size * .92, Height = size * .92, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
                 ring.Width = ring.Height = size * .74; dial.Children.Add(ring);
+                break;
+            case NeoDesigns.Family.Chalk:
+                dial.Children.Add(new Ellipse { Width = size * .94, Height = size * .94, Stroke = Palette.Brush(BlackDraw.A(nInk, .35)), StrokeThickness = 1.5,
+                    StrokeDashArray = new Avalonia.Collections.AvaloniaList<double> { 2, 3 }, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
+                ring.Width = ring.Height = size * .86; dial.Children.Add(ring);
                 break;
             default:
                 dial.Children.Add(ring);
@@ -459,8 +471,10 @@ public sealed partial class AioTile
             parts.Add(column); index++;
         }
         if (parts.Count == 0) return;
-        for (int i = 0; i < parts.Count; i += 2)
-            content.Children.Add(Shell(NGrid(parts.Skip(i).Take(2), 2, 16)));
+        // The 8-bit face is wide: one part per panel.
+        int per = Fam == NeoDesigns.Family.Pixel ? 1 : 2;
+        for (int i = 0; i < parts.Count; i += per)
+            content.Children.Add(Shell(NGrid(parts.Skip(i).Take(per), per, 16)));
     }
 
     // ------------------------------------------------------------------ the other parts (all families)
@@ -570,12 +584,14 @@ public sealed partial class AioTile
     // ------------------------------------------------------------------ pieces
     private TextBlock NText(string text, double size, Color color, bool bold = false, bool number = false)
     {
-        var t = Text(text, size, color, number); TextFonts.Mark(t, TextRole.Label); t.FontFamily = nFont;
+        var t = Text(text, size * nScale, color, number); TextFonts.Mark(t, TextRole.Label); t.FontFamily = nFont;
+        // The 8-bit face fills its whole em: a little more line height keeps two lines apart.
+        if (Fam == NeoDesigns.Family.Pixel) t.LineHeight = size * nScale * 1.5;
         t.FontWeight = bold ? FontWeight.Bold : FontWeight.SemiBold; t.TextWrapping = TextWrapping.NoWrap; return t;
     }
     private TextBlock NV(AioReading r, double size, Color? color = null)
     {
-        var t = V(r, size, color ?? nInk); t.FontFamily = nValueFont;
+        var t = V(r, size * nScale, color ?? nInk); t.FontFamily = nValueFont;
         t.FontWeight = Fam is NeoDesigns.Family.Stealth or NeoDesigns.Family.Gold or NeoDesigns.Family.Ink ? FontWeight.Normal : FontWeight.Bold; return t;
     }
     private void AddField(string key, TextBlock t) { TextFonts.Mark(t, TextRole.Value); if (t is AioValueText v) v.Hint = "888.8 / 888.8 GB"; if (!fields.TryGetValue(key, out var list)) fields[key] = list = new(); list.Add(t); }
@@ -637,13 +653,15 @@ public sealed partial class AioTile
     {
         var name = PartModel(kind, index, model ?? "");
         if (name.Length == 0) return null;
-        var t = NText(name, 10, nLabel); t.TextTrimming = TextTrimming.CharacterEllipsis; t.Margin = new Thickness(0, -2, 0, 4); return t;
+        var t = NText(name, 10, nLabel); t.TextTrimming = TextTrimming.CharacterEllipsis; t.Margin = new Thickness(0, Fam == NeoDesigns.Family.Pixel ? 2 : -2, 0, 4); return t;
     }
     /// <summary>The colour of a heading: the accent of its part where the design colours its headings, else the caption grey.</summary>
     private Color HeadingColour(Color part) => Fam switch
     {
         NeoDesigns.Family.Cyber => NA,
         NeoDesigns.Family.Matrix or NeoDesigns.Family.Tron or NeoDesigns.Family.Neon or NeoDesigns.Family.Rain or NeoDesigns.Family.Scope or NeoDesigns.Family.Gold or NeoDesigns.Family.Gallery => part,
+        NeoDesigns.Family.Swiss or NeoDesigns.Family.Tubes => nLabel,
+        _ when Studio => part,
         _ => nLabel
     };
     private TextBlock NHeading(string title, Color? part = null)
@@ -661,6 +679,7 @@ public sealed partial class AioTile
     private Control NPanel(string? title, Control body, string? model = null, int colour = 0)
     {
         var part = NAcc(colour);
+        if (Studio) return StudioPanel(title, body, model, part);
         Control? heading = title == null ? null : NHeading(title, part);
         if (heading != null && !string.IsNullOrEmpty(model))
         {

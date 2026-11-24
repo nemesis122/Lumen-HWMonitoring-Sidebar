@@ -424,7 +424,18 @@ public enum WidgetStyle
     AioMagentaRings,
     AioEmberHero,
     AioCopperBars,
-    AioArcticTiles
+    AioArcticTiles,
+    // 5.4.0: the studio designs (drafts 11–20).
+    AioVfdStereo,
+    AioSynthwave,
+    AioRadar,
+    AioHexGrid,
+    AioPixel8,
+    AioLabTubes,
+    AioMissionControl,
+    AioSwiss,
+    AioChalkboard,
+    AioEqualizer
 }
 
 

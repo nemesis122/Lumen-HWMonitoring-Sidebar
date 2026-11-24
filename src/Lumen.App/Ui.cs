@@ -56,6 +56,10 @@ public static class Ui
 
 	/// <summary>DSEG7 Classic, seven-segment digits (embedded, OFL): the Segments gallery designs.</summary>
 	public static readonly FontFamily Dseg = new FontFamily("avares://Lumen/Assets/Fonts#DSEG7 Classic");
+	/// <summary>Press Start 2P, an 8-bit pixel face (embedded, OFL): the 8-Bit Pixel design.</summary>
+	public static readonly FontFamily Pixel = new FontFamily("avares://Lumen/Assets/Fonts#Press Start 2P");
+	/// <summary>Gochi Hand, a handwriting face (embedded, OFL): the Chalkboard design.</summary>
+	public static readonly FontFamily Chalk = new FontFamily("avares://Lumen/Assets/Fonts#Gochi Hand");
 
 	/// <summary>A design's own font (Orbitron, Mono, Digital …) unless the user chose a typeface other than Inter: then that one, in every design.</summary>
 	public static FontFamily DesignFont(FontFamily own) => FontKey == "inter" ? own : Font;

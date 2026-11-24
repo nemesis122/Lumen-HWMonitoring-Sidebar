@@ -9,7 +9,8 @@ public static class NeoDesigns
 {
     /// <summary>Cyber and Neumorph (5.1.0); the ten art families of 5.2.0: LED dot matrix, Tron grid, code rain, Tokyo neon,
     /// thermal camera, phone widgets, oscilloscope, stealth, black and gold, sumi-e ink.</summary>
-    public enum Family { Cyber, Neumorph, Matrix, Tron, Rain, Neon, Thermal, Phone, Scope, Stealth, Gold, Ink, Gallery }
+    public enum Family { Cyber, Neumorph, Matrix, Tron, Rain, Neon, Thermal, Phone, Scope, Stealth, Gold, Ink, Gallery,
+        Vfd, Synth, Radar, Hex, Pixel, Tubes, Mission, Swiss, Chalk, Equalizer }
     /// <summary>Cyber: Stack (one panel per part) or Split (processor and graphics side by side).
     /// Neumorph: Dials (2 × 2 rings), Hero (one large processor ring) or Bars (one bar per part).</summary>
     public enum Arrangement { Stack, Split, Dials, Hero, Bars }
@@ -44,14 +45,28 @@ public static class NeoDesigns
         new(WidgetStyle.AioArtBlackGold, "Black & Gold", Family.Gold, Arrangement.Dials, new[] { "#D4AF6A", "#D4AF6A", "#D4AF6A", "#D4AF6A" }, "#070604"),
         new(WidgetStyle.AioArtSumiInk, "Sumi-e Ink", Family.Ink, Arrangement.Hero, new[] { "#F2EFE8", "#F2EFE8", "#F2EFE8", "#C8102E" }, "#0B0B0A"),
     };
-    /// <summary>All designs of this builder: the 22 own ones and the 100 gallery designs (5.3.0).</summary>
+    /// <summary>5.4.0: ten designs from the drafts 11–20, each with a layout of its own.</summary>
+    private static readonly Look[] Studio =
+    {
+        new(WidgetStyle.AioVfdStereo, "VFD Stereo", Family.Vfd, Arrangement.Stack, new[] { "#38F2DC", "#FF9A3C", "#38F2DC", "#38F2DC" }, "#040706"),
+        new(WidgetStyle.AioSynthwave, "Synthwave", Family.Synth, Arrangement.Dials, new[] { "#FF5FA2", "#FF9A5F", "#C084FC", "#FF5FA2" }, "#0B0412"),
+        new(WidgetStyle.AioRadar, "Radar", Family.Radar, Arrangement.Dials, new[] { "#4BE36B", "#4BE36B", "#4BE36B", "#4BE36B" }, "#030803"),
+        new(WidgetStyle.AioHexGrid, "Hex Grid", Family.Hex, Arrangement.Dials, new[] { "#3FA9F5", "#F5A623", "#3FA9F5", "#F5A623" }, "#05080D"),
+        new(WidgetStyle.AioPixel8, "8-Bit Pixel", Family.Pixel, Arrangement.Bars, new[] { "#3DFF6E", "#FFA53D", "#C08CFF", "#4DB2FF" }, "#000000"),
+        new(WidgetStyle.AioLabTubes, "Lab Tubes", Family.Tubes, Arrangement.Dials, new[] { "#FF7A59", "#FFB347", "#4DD0F5", "#B48CFF" }, "#08090B"),
+        new(WidgetStyle.AioMissionControl, "Mission Control", Family.Mission, Arrangement.Stack, new[] { "#FF8A3D", "#FF8A3D", "#FF8A3D", "#FF8A3D" }, "#060606"),
+        new(WidgetStyle.AioSwiss, "Swiss", Family.Swiss, Arrangement.Stack, new[] { "#FF3B30", "#FF3B30", "#FF3B30", "#FF3B30" }, "#0A0A0A"),
+        new(WidgetStyle.AioChalkboard, "Chalkboard", Family.Chalk, Arrangement.Dials, new[] { "#F2D27A", "#8EC5FF", "#F2A3C7", "#A6E3A1" }, "#121916"),
+        new(WidgetStyle.AioEqualizer, "Equalizer", Family.Equalizer, Arrangement.Bars, new[] { "#3DFF6E", "#3DFF6E", "#3DFF6E", "#3DFF6E" }, "#050605"),
+    };
+    /// <summary>All designs of this builder: the 22 own ones, the 100 gallery designs (5.3.0) and the ten studio designs (5.4.0).</summary>
     public static readonly Look[] All = Own.Concat(GalleryDesigns.All.Select(d => new Look(d.Style, d.Name, Family.Gallery,
         d.Arrangement switch
         {
             GalleryDesigns.Layout.Split => Arrangement.Split, GalleryDesigns.Layout.Hero => Arrangement.Hero, GalleryDesigns.Layout.Bars => Arrangement.Bars,
             GalleryDesigns.Layout.Table or GalleryDesigns.Layout.BigNumbers or GalleryDesigns.Layout.Segments => Arrangement.Stack, _ => Arrangement.Dials
         },
-        d.World.Accents.Append(d.World.Accents[0]).ToArray(), d.World.Background, Gallery: d))).ToArray();
+        d.World.Accents.Append(d.World.Accents[0]).ToArray(), d.World.Background, Gallery: d))).Concat(Studio).ToArray();
     private static readonly Dictionary<WidgetStyle, Look> ByStyle = All.ToDictionary(l => l.Style);
     public static bool Contains(WidgetStyle style) => ByStyle.ContainsKey(style);
     public static Look For(WidgetStyle style) => ByStyle[style];

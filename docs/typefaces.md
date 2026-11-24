@@ -14,7 +14,7 @@ The 22 additional families are embedded in the application; no font installation
 - Bold titles: Bebas Neue, Anton, Oswald, Barlow Condensed, Black Ops One.
 - Graffiti / handwriting: Rubik Spray Paint, Rubik Wet Paint, Permanent Marker, Rock Salt.
 
-Two design faces came with 5.2.0: Doto (dot matrix, LED Dot Matrix design) and Playfair Display (serif, Black & Gold and Sumi-e Ink); they are used by those designs, not offered in the font list. 5.3.0 added DSEG7 Classic (seven-segment digits, OFL) for the Segments gallery designs. Inter and Orbitron were already bundled. Existing Windows font options remain available. Decorative fonts can be assigned to any role; narrow widgets may shrink or trim long text according to their existing layout rules.
+Two design faces came with 5.2.0: Doto (dot matrix, LED Dot Matrix design) and Playfair Display (serif, Black & Gold and Sumi-e Ink); they are used by those designs, not offered in the font list. 5.3.0 added DSEG7 Classic (seven-segment digits, OFL) for the Segments gallery designs. 5.4.0 added Press Start 2P (8-bit pixel, OFL) for 8-Bit Pixel and Gochi Hand (handwriting, OFL) for Chalkboard. Inter and Orbitron were already bundled. Existing Windows font options remain available. Decorative fonts can be assigned to any role; narrow widgets may shrink or trim long text according to their existing layout rules.
 
 ## Font provenance and licensing
 

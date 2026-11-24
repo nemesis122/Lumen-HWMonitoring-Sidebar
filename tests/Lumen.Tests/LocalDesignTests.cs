@@ -22,7 +22,7 @@ public class LocalDesignTests
             WidgetStyle.AioMainboardType,WidgetStyle.AioMainboardMatrix,WidgetStyle.AioMainboardGauges,WidgetStyle.AioMainboardStrips,
             WidgetStyle.AioPopConsole,WidgetStyle.AioChromatic,WidgetStyle.Aperture,
             WidgetStyle.PureWidgets,WidgetStyle.PureWidgetsRight,WidgetStyle.PillRowGraph,WidgetStyle.FillBarsGraph,WidgetStyle.AioMainboard,WidgetStyle.AioPanelBadges,WidgetStyle.AioBlackCopperRings };
-        Assert.Equal(245, Settings.Selectable.Count()); // 123 + 6 Cyberpunk + 6 Neumorph (5.1.0) + 10 art designs (5.2.0) + 100 gallery designs (5.3.0)
+        Assert.Equal(255, Settings.Selectable.Count()); // 123 + 6 Cyberpunk + 6 Neumorph (5.1.0) + 10 art designs (5.2.0) + 100 gallery designs (5.3.0) + 10 studio designs (5.4.0)
         Assert.All(removed, style => { Assert.DoesNotContain(style, Settings.Selectable); Assert.Equal(WidgetStyle.Standard, Settings.Successor(style)); });
     }
 

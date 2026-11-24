@@ -46,7 +46,8 @@ public class NeoDesignTests
         if (string.IsNullOrEmpty(folder)) return true;
         Directory.CreateDirectory(folder);
         var hardware = Environment.GetEnvironmentVariable("LUMEN_NEO_HARDWARE") ?? "demo";
-        foreach (var look in NeoDesigns.All)
+        var only = Environment.GetEnvironmentVariable("LUMEN_NEO_STYLES")?.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        foreach (var look in NeoDesigns.All.Where(l => only == null || only.Contains(l.Style.ToString())))
         {
             var s = Sidebar(look.Style); s.Glass = false; s.Width = 340;
             var view = new SidebarView(s, Palette.For(s, true, null));
