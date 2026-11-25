@@ -22,6 +22,7 @@ public sealed partial class AioTile
     private void StudioLook()
     {
         swissNumber = 0;
+        if (Depth) { DepthLook(); return; }
         nScale = Fam switch { NeoDesigns.Family.Pixel => .72, NeoDesigns.Family.Chalk => 1.18, _ => 1 };
         nInk = lightSurface ? ink : Color.Parse(Fam switch
         {
@@ -72,6 +73,7 @@ public sealed partial class AioTile
     private bool StudioTop(List<(AioReading R, string Caption, string Art, int Colour)> items, HashSet<string> top)
     {
         if (!Studio || Fam == NeoDesigns.Family.Chalk) return false;
+        if (Depth) return DepthTop(items);
         string Cap(string c) => Upper ? c.ToUpperInvariant() : c;
         double g = settings.ActiveWidget?.Graphics ?? 1;
         switch (Fam)
@@ -203,6 +205,7 @@ public sealed partial class AioTile
     /// <summary>A panel of a studio design with its heading.</summary>
     private Control StudioPanel(string? title, Control body, string? model, Color part)
     {
+        if (Depth) return DepthPanel(title, body, model, part);
         Control? heading = null;
         if (title != null)
         {

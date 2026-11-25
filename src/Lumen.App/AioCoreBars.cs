@@ -49,6 +49,8 @@ public sealed class AioCoreBars : Control, IColourGraph, RedSkin.IOneColour
     public bool NumbersOnly { get; init; }
     /// <summary>One cell per core, filled with the load colour; core name small at the top, load large in the middle.</summary>
     public bool Heatmap { get; init; }
+    /// <summary>3D bar chart (5.5.0): one isometric column per core on a floor grid, as tall as its load.</summary>
+    public bool Iso { get; init; }
     private const double HeatCell = 32, HeatGap = 4;
     private readonly Color ink, muted, track;
     private IReadOnlyList<double> loads = Array.Empty<double>();
@@ -69,6 +71,7 @@ public sealed class AioCoreBars : Control, IColourGraph, RedSkin.IOneColour
     protected override Size MeasureOverride(Size available)
     {
         double width = double.IsFinite(available.Width) ? available.Width : 260;
+        if (Iso) return new Size(width, Math.Min(190, width * .62));
         int rows = Rows(width);
         if (Heatmap) return new Size(width, rows * HeatCell + Math.Max(0, rows - 1) * HeatGap);
         return new Size(width, rows * (BarHeight(width) + Labels) + Math.Max(0, rows - 1) * 6);
@@ -90,10 +93,31 @@ public sealed class AioCoreBars : Control, IColourGraph, RedSkin.IOneColour
     /// <summary>Value and label colours chosen in Appearance (null: the design's own).</summary>
     public Color? ValueInk { get; set; }
     public Color? LabelInk { get; set; }
+    private void RenderIso(DrawingContext c, double w, double h)
+    {
+        int n = loads.Count, columns = Math.Max(1, (int)Math.Ceiling(Math.Sqrt(n))), rows = (int)Math.Ceiling(n / (double)columns);
+        const double cell = 38, box = 24;
+        double floorW = columns * cell, floorD = rows * cell;
+        // Fit the floor (and room for the tallest column) into the box.
+        double s = Math.Min((w - 8) / ((floorW + floorD) * Lumen.App.Iso.Cos), (h - 6) / ((floorW + floorD) * Lumen.App.Iso.Sin + 100));
+        var o = new Point(w / 2 - (floorW - floorD) / 2 * Lumen.App.Iso.Cos * s, h - 4 - (floorW + floorD) * Lumen.App.Iso.Sin * s);
+        var line = new Pen(Palette.Brush(Color.FromArgb(40, (Tint ?? ink).R, (Tint ?? ink).G, (Tint ?? ink).B)), 1);
+        for (int i = 0; i <= columns; i++) c.DrawLine(line, Lumen.App.Iso.P(i * cell, 0, 0, o, s), Lumen.App.Iso.P(i * cell, floorD, 0, o, s));
+        for (int i = 0; i <= rows; i++) c.DrawLine(line, Lumen.App.Iso.P(0, i * cell, 0, o, s), Lumen.App.Iso.P(floorW, i * cell, 0, o, s));
+        var order = Enumerable.Range(0, n).OrderBy(i => i % columns + i / columns).ToArray();
+        foreach (int i in order)
+        {
+            double f = double.IsFinite(loads[i]) ? Math.Clamp(loads[i] / 100, 0, 1) : 0;
+            var colour = Tint is Color tint ? RedSkin.Tint(Heat(f), tint, OneColour) : Heat(f);
+            Lumen.App.Iso.Box(c, (i % columns) * cell + (cell - box) / 2, (i / columns) * cell + (cell - box) / 2, box, box, 6 + f * 94, colour, o, s);
+        }
+    }
+
     public override void Render(DrawingContext c)
     {
         double w = Bounds.Width; if (loads.Count == 0 || w < 10) return;
         if (Heatmap) { RenderHeatmap(c, w); return; }
+        if (Iso) { RenderIso(c, w, Bounds.Height); return; }
         int perRow = PerRow(w); double barHeight = BarHeight(w);
         double col = (w - Gap * (perRow - 1)) / perRow;
         double radius = Math.Min(5, col / 2);

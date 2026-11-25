@@ -8,9 +8,26 @@ public static class HardwareVariants
 {
     public static readonly string[] Names = { "demo", "intel-nvidia", "apu-laptop", "big-rig", "minimal" };
 
+    /// <summary>
+    /// The variant PC with a history of its own: every demo reading of the last 160 updates turned into the variant, so the
+    /// graphics cards of the variant (nv0, igpu, gpu7) have history curves like on a real PC. Until 5.5.0 the variants carried
+    /// the demo history, which has no curves for those cards (found by the release check: a history switch of the laptop's
+    /// integrated graphics changed nothing because there was nothing to draw).
+    /// </summary>
     public static (Snapshot Snap, History History) For(string name)
     {
-        var (demo, h) = Render.Demo();
+        if (name == "demo") return Render.Demo();
+        var source = new DemoSource(); var h = new History(); var frame = source.Read();
+        Snapshot snap = Variant(name, frame with { Battery = null }, 0);
+        for (int i = 0; i < 160; i++) { frame = source.Read(); snap = Variant(name, frame with { Battery = null }, i - 159); h.Record(snap); }
+        return (snap, h);
+    }
+
+    /// <summary>The demo reading turned into the variant; <paramref name="phase"/> moves the fixed readings of the variant's
+    /// own cards a little over time (0 for the last update, which keeps the values the tests expect).</summary>
+    private static Snapshot Variant(string name, Snapshot demo, int phase)
+    {
+        double Wave(double value, double amplitude, double period) => value + amplitude * Math.Sin(phase / period);
         var main = demo.Gpus.First(g => !g.Integrated);
         Snapshot snap = name switch
         {
@@ -26,7 +43,7 @@ public static class HardwareVariants
             "apu-laptop" => demo with
             {
                 Cpu = demo.Cpu! with { Name = "AMD Ryzen 7 7840U w/ Radeon 780M Graphics", PowerW = null },
-                Gpus = new[] { new GpuInfo("igpu", "AMD Radeon 780M Graphics", 52, null, 14, 800, null, null, 512, 4096) { Integrated = true } },
+                Gpus = new[] { new GpuInfo("igpu", "AMD Radeon 780M Graphics", Wave(52, 3, 8), null, Wave(14, 8, 5), 800, null, null, 512, 4096) { Integrated = true } },
                 Disks = demo.Disks.Take(1).ToArray(),
                 Fans = new[] { new FanInfo("CPU Fan", 0, 0) },
                 Battery = new BatteryInfo(76, false, false, 9.5, 240, 4),
@@ -40,7 +57,7 @@ public static class HardwareVariants
                 {
                     main,
                     main with { Id = "gpu7", Name = "AMD Radeon RX 7900 XTX", MemoryJunction = 74 },
-                    new GpuInfo("igpu", "Intel(R) UHD Graphics 770", 40, null, 3, 300, null, null, 128, 2048) { Integrated = true },
+                    new GpuInfo("igpu", "Intel(R) UHD Graphics 770", Wave(40, 2, 8), null, Wave(3, 2.5, 5), 300, null, null, 128, 2048) { Integrated = true },
                 },
                 Disks = demo.Disks.Concat(demo.Disks.Select((d, i) => d with { Id = d.Id + "b", Name = d.Name + " B", Letters = "X" + i + ":" })).ToArray(),
                 Fans = Enumerable.Range(1, 8).Select(i => new FanInfo("Fan " + i, 600 + i * 90, 30 + i * 5)).ToArray(),
@@ -56,6 +73,6 @@ public static class HardwareVariants
             },
             _ => demo
         };
-        return (snap, h);
+        return snap;
     }
 }

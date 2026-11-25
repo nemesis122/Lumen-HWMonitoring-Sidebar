@@ -435,7 +435,18 @@ public enum WidgetStyle
     AioMissionControl,
     AioSwiss,
     AioChalkboard,
-    AioEqualizer
+    AioEqualizer,
+    // 5.5.0: the 3D designs.
+    AioIsoSkyline,
+    AioGlassCubes,
+    AioPerspectiveHud,
+    AioTorusRings,
+    AioExplodedStack,
+    AioChromeNumbers,
+    AioBarChart3D,
+    AioHologramPads,
+    AioGlassCylinders,
+    AioIsoTower
 }
 
 

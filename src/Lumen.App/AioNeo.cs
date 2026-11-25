@@ -28,16 +28,18 @@ public sealed partial class AioTile
     private bool Soft => Fam == NeoDesigns.Family.Neumorph;
     /// <summary>Designs built from panels, one per part (processor and graphics first).</summary>
     private bool PanelPath => Fam is NeoDesigns.Family.Cyber or NeoDesigns.Family.Rain or NeoDesigns.Family.Neon or NeoDesigns.Family.Scope or NeoDesigns.Family.Stealth
-        or NeoDesigns.Family.Vfd or NeoDesigns.Family.Mission or NeoDesigns.Family.Swiss
+        or NeoDesigns.Family.Vfd or NeoDesigns.Family.Mission or NeoDesigns.Family.Swiss or NeoDesigns.Family.Tilted or NeoDesigns.Family.Chrome
         || gal?.Arrangement is GalleryDesigns.Layout.Table or GalleryDesigns.Layout.BigNumbers or GalleryDesigns.Layout.Segments or GalleryDesigns.Layout.Split;
     /// <summary>Designs that write captions and titles in capitals.</summary>
     private bool Upper => Fam is NeoDesigns.Family.Cyber or NeoDesigns.Family.Matrix or NeoDesigns.Family.Tron or NeoDesigns.Family.Rain
         or NeoDesigns.Family.Neon or NeoDesigns.Family.Scope or NeoDesigns.Family.Stealth or NeoDesigns.Family.Thermal
         or NeoDesigns.Family.Vfd or NeoDesigns.Family.Synth or NeoDesigns.Family.Radar or NeoDesigns.Family.Hex or NeoDesigns.Family.Pixel or NeoDesigns.Family.Mission
-        or NeoDesigns.Family.Equalizer || gal?.Capitals == true;
+        or NeoDesigns.Family.Equalizer or NeoDesigns.Family.Skyline or NeoDesigns.Family.Tilted or NeoDesigns.Family.Exploded or NeoDesigns.Family.Bars3D
+        or NeoDesigns.Family.Hologram or NeoDesigns.Family.Tower || gal?.Capitals == true;
     /// <summary>Designs whose big numbers glow in the accent.</summary>
     private bool Glowing => Fam is NeoDesigns.Family.Matrix or NeoDesigns.Family.Tron or NeoDesigns.Family.Rain or NeoDesigns.Family.Neon or NeoDesigns.Family.Scope
         or NeoDesigns.Family.Vfd or NeoDesigns.Family.Synth or NeoDesigns.Family.Radar or NeoDesigns.Family.Equalizer
+        or NeoDesigns.Family.Skyline or NeoDesigns.Family.Tilted or NeoDesigns.Family.Hologram
         || gal?.Look == GalleryDesigns.Panel.Glow;
     private Color NA => nAcc[0];
     private Color NB => nAcc[Math.Min(1, nAcc.Length - 1)];
@@ -188,13 +190,13 @@ public sealed partial class AioTile
         left.Children.Add(NBig(main, BigSize(46), true, colour));
         var list = Stack(3, Ordered(rows.Where(r => r != main)).Select(r => NKV(r)).ToArray());
         // Big numbers: the values keep their width and the number shrinks into what is left, so a wide reading ("34 %" without a temperature) never pushes the values out.
-        var row = Ui.Columns(GalleryLayout(GalleryDesigns.Layout.BigNumbers) || GalleryLayout(GalleryDesigns.Layout.Segments) || Fam is NeoDesigns.Family.Swiss or NeoDesigns.Family.Vfd ? "*,Auto" : "Auto,*", left, new Border { VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(14, 0, 0, 4), Child = list });
+        var row = Ui.Columns(GalleryLayout(GalleryDesigns.Layout.BigNumbers) || GalleryLayout(GalleryDesigns.Layout.Segments) || Fam is NeoDesigns.Family.Swiss or NeoDesigns.Family.Vfd or NeoDesigns.Family.Chrome or NeoDesigns.Family.Tilted ? "*,Auto" : "Auto,*", left, new Border { VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(14, 0, 0, 4), Child = list });
         var body = Stack(8, row);
         if (NHistory(main) is { } plot) body.Children.Add(plot);
         if (main.Group == "CPU") AddCoreTemps(body);
         return body;
     }
-    private double BigSize(double cyber) => gal?.Arrangement == GalleryDesigns.Layout.BigNumbers || Fam == NeoDesigns.Family.Swiss ? cyber + 30
+    private double BigSize(double cyber) => gal?.Arrangement == GalleryDesigns.Layout.BigNumbers || Fam is NeoDesigns.Family.Swiss or NeoDesigns.Family.Chrome ? cyber + 30
         : gal?.Arrangement == GalleryDesigns.Layout.Segments || Fam == NeoDesigns.Family.Vfd ? cyber - 4 : Fam switch
     {
         NeoDesigns.Family.Stealth => cyber + 8, NeoDesigns.Family.Rain or NeoDesigns.Family.Scope => cyber - 6, _ => cyber
@@ -611,6 +613,7 @@ public sealed partial class AioTile
             face = new StackPanel { Orientation = Orientation.Horizontal, Children = { t, unit } };
         }
         if (Cyber) t.Effect = new DropShadowEffect { OffsetX = 2.5, OffsetY = 0, BlurRadius = 0, Color = BlackDraw.A(NB, .5) };
+        else if (Fam == NeoDesigns.Family.Chrome) t.Effect = Extrusion(colour);
         else if (Glowing) t.Effect = Glow(NAcc(colour), 12);
         else if (Fam == NeoDesigns.Family.Stealth) t.Effect = new DropShadowEffect { OffsetX = 1, OffsetY = 1, BlurRadius = 0, Color = Color.Parse("#3A3A40") };
         var value = new AioReferenceValue(t, face);

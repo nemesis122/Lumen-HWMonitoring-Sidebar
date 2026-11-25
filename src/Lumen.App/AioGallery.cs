@@ -110,6 +110,7 @@ public sealed partial class AioTile
             formats[t] = row => Format.Temperature(row.Number, settings.Fahrenheit) + (unit ? "°" : ""); t.Text = formats[t](r);
         }
         if (Glowing) t.Effect = Glow(NA, 10);
+        else if (Fam == NeoDesigns.Family.Chrome) t.Effect = Extrusion(0);
         return t;
     }
 
