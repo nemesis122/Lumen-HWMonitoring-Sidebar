@@ -152,7 +152,8 @@ public sealed partial class AioTile
                 if (r != null) cells.Add(Stack(3, PanelPlot(r, null) ?? new Border(), PanelValue(r, label, 11)));
             if (cells.Count > 0) body.Children.Add(FixedCols(cells.Count, cells.ToArray()));
             if (net.FirstOrDefault(r => r.Key.EndsWith(".link")) is { } link) body.Children.Add(PanelLine("LINK", link));
-            PanelSection("net", "CONNECTION", "NETWORK", body, null, null);
+            // "NETWORK" like the other short part names: "CONNECTION" broke over two lines under the picture (5.7.0 audit).
+            PanelSection("net", "NETWORK", "NETWORK", body, null, null);
         }
 
         // Core temperatures, when ticked
@@ -217,7 +218,7 @@ public sealed partial class AioTile
     {
         Control left;
         Control? header = null;
-        var nameText = TextFonts.Mark(PanelText(name, 8.4, ink), TextRole.Title); nameText.TextAlignment = TextAlignment.Center; nameText.HorizontalAlignment = HorizontalAlignment.Center;
+        var nameText = TextFonts.Mark(PanelText(name, 8.4, ink), TextRole.Title); nameText.TextAlignment = TextAlignment.Center; nameText.HorizontalAlignment = HorizontalAlignment.Center; nameText.TextWrapping = TextWrapping.NoWrap;
         bool gauge = style != WidgetStyle.AioPanel && !PanelPlain && (temp != null || load != null);
         if (gauge && style == WidgetStyle.AioPanelRings)
             left = Stack(4, PanelTwin(temp, load, null, 92), nameText);
@@ -377,7 +378,7 @@ public sealed partial class AioTile
         bool large = size > 60;
         size *= settings.ActiveWidget?.Graphics ?? 1;
         var gauge = new PanelGauge { Mode = mode, Theme = panel, Width = size, Height = size, Tag = "graphic" };
-        var value = PanelV(r, large ? 14 : 11, ink); var caption = PanelText(label, large ? 10 : 8, panel.Accent);
+        var value = PanelV(r, large ? 14 : 11, ink); var caption = PanelText(label, large ? 12 : 11, panel.Accent); // 5.7.0 audit: drawn at 8 px before
         var face = new StackPanel { Spacing = 0, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         PanelGaugeLive(gauge, r, null, PanelFace(face, (value, ink), (caption, panel.Accent)));
         return new Viewbox
@@ -427,7 +428,8 @@ public sealed partial class AioTile
         foreach (var (r, caption) in new[] { (temp, "TEMP"), (load, "LOAD") })
         {
             if (r == null) continue;
-            var line = Ui.Columns("Auto,*,Auto", PanelText(caption, 7, muted), PanelBarFor(r, true), PanelV(r, 9.5, ink)); line.ColumnSpacing = 5;
+            // 5.7.0 audit: the captions were drawn at 8.5 px; 8 with the Panel boost (1.22) draws them at about 9.8 px.
+            var line = Ui.Columns("Auto,*,Auto", PanelText(caption, 8, muted), PanelBarFor(r, true), PanelV(r, 10, ink)); line.ColumnSpacing = 5;
             cells.Add(line); columns += ",*";
         }
         var row = Ui.Columns(columns, cells.ToArray()); row.ColumnSpacing = 10; return row;

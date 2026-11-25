@@ -136,7 +136,7 @@ public class StyleSelectionTests
             var buttons = parts.SelectMany(c => c.GetLogicalDescendants().Prepend(c)).OfType<UniformGrid>().Single().Children.OfType<Button>().ToList();
             string Name(Button button) => button.GetLogicalDescendants().OfType<TextBlock>().Single().Text!;
             Assert.Equal(Expected.Select(SettingsWindow.StyleName), buttons.Select(Name));
-            var mainboard=buttons.TakeLast(201).Single(b=>Name(b)=="Mainboard Map");
+            var mainboard=buttons.TakeLast(208).Single(b=>Name(b)=="Mainboard Map");
             mainboard.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Assert.All(settings.Widgets.Where(w=>Settings.HasStyles(w.Kind)),w=>Assert.Equal(WidgetStyle.AioMainboardMap,w.Style));
             buttons.Single(b=>Name(b)=="Mainboard Map Desktop").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));

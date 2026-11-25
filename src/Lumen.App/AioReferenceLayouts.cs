@@ -87,7 +87,8 @@ public sealed partial class AioTile
     private Control MainTemp(AioReading r,double size=67,Color? color=null)
     {
         var t=V(r,size,color??Accent(r));formats[t]=row=>Format.Temperature(row.Number,settings.Fahrenheit);t.Text=formats[t](r);
-        var unit=Text(Format.TemperatureUnit(settings.Fahrenheit),size*.34,color??Accent(r));unit.VerticalAlignment=VerticalAlignment.Bottom;unit.Margin=new Thickness(1,0,0,size*.13);
+        // The unit never smaller than 10 (5.7.0 audit: "°C" at 4 px beside small numbers).
+        var unit=Text(Format.TemperatureUnit(settings.Fahrenheit),Math.Max(10,size*.34),color??Accent(r));unit.VerticalAlignment=VerticalAlignment.Bottom;unit.Margin=new Thickness(1,0,0,size*.13);
         var line=new StackPanel{Orientation=Orientation.Horizontal,Spacing=0,Children={t,unit}};
         return new AioReferenceValue(t,line);
     }
@@ -538,7 +539,11 @@ public sealed partial class AioTile
             }).ToArray()){MaxColumns=4,MinimumColumnWidth=43,RespectIntrinsicWidth=false,RowSpacing=4});
         }
         foreach(var r in referenceRows.Where(r=>r.Key.EndsWith(".voltage")||r.Key.EndsWith(".power")||r.Group=="Rails"))
-            right.Children.Add(Stack(2,FitLeft(Text(r.Group=="Rails"?r.Label:r.Group+" · "+L.T(r.Label),10,muted)),Fit(V(r,15))));
+        {
+            // The name wraps between its words instead of shrinking (5.7.0 audit: "CPU · Package" at 8 px in the Red design).
+            var name=Text(r.Group=="Rails"?r.Label:r.Group+" · "+L.T(r.Label),10,muted);name.TextWrapping=TextWrapping.Wrap;
+            right.Children.Add(Stack(2,name,Fit(V(r,15))));
+        }
         foreach(var group in referenceRows.Where(r=>r.Group is "CPU" or "GPU").GroupBy(r=>r.Group+":"+r.Device))
         {
             var first=group.First();var t=group.FirstOrDefault(r=>r.Key.EndsWith(".temp"));var load=group.FirstOrDefault(r=>r.Key.EndsWith(".load"));

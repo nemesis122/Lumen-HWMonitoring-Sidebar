@@ -165,7 +165,7 @@ public sealed partial class AioTile
     private string GpuTitle(string? device, int index, bool shortForm)
     {
         var info = snapshot.Gpus.FirstOrDefault(g => g.Id == device);
-        if (info?.Integrated == true) return Cyber ? (shortForm ? "iGPU" : "IGPU_UNIT") : Soft ? "Integrated graphics" : shortForm ? "iGPU" : L.T("Integrated graphics");
+        if (info?.Integrated == true) return Cyber ? (shortForm ? "iGPU" : "IGPU_UNIT") : "iGPU"; // short as the user prefers (5.7.0: "INTEGRATED GRAPHICS" was cut off in 47 designs)
         if (Cyber) return shortForm ? (index == 0 ? "GPU" : "GPU " + (index + 1)) : index == 0 ? "GPU_UNIT" : "GPU_UNIT_" + (index + 1);
         if (Fam == NeoDesigns.Family.Mission && !shortForm) return "GUIDANCE · GPU" + (index == 0 ? "" : " " + (index + 1));
         return index == 0 ? "GPU" : "GPU " + (index + 1);
@@ -311,9 +311,12 @@ public sealed partial class AioTile
         // A larger main value size shrinks back into the ring instead of being cut off at its edge.
         var value = new Border { Width = big * 4, HorizontalAlignment = HorizontalAlignment.Center,
             Child = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Child = number } };
-        var label = NText(Upper ? caption.ToUpperInvariant() : caption, design > 150 ? 12 : 10, Fam is NeoDesigns.Family.Tron or NeoDesigns.Family.Gold or NeoDesigns.Family.Chalk ? colour : nLabel, true);
-        label.HorizontalAlignment = HorizontalAlignment.Center;
-        var face = Stack(0, value, label); face.HorizontalAlignment = HorizontalAlignment.Center; face.VerticalAlignment = VerticalAlignment.Center;
+        // Only the number shrinks into the ring; the caption keeps its size (5.7.0: shrunk with the number it was drawn at
+        // 6 px in the ring designs, found by the design audit).
+        var label = NText(Upper ? caption.ToUpperInvariant() : caption, design > 150 ? 13 : 11, Fam is NeoDesigns.Family.Tron or NeoDesigns.Family.Gold or NeoDesigns.Family.Chalk ? colour : nLabel, true);
+        label.HorizontalAlignment = HorizontalAlignment.Center; label.MaxWidth = size * .7; label.TextTrimming = TextTrimming.CharacterEllipsis;
+        var squeezed = Squeeze(value, 0); squeezed.MaxWidth = size * .6;
+        var face = Stack(0, squeezed, label); face.HorizontalAlignment = HorizontalAlignment.Center; face.VerticalAlignment = VerticalAlignment.Center;
         var dial = new Grid { Width = size, Height = size };
         switch (Fam)
         {
@@ -356,7 +359,7 @@ public sealed partial class AioTile
                 dial.Children.Add(ring);
                 break;
         }
-        dial.Children.Add(Squeeze(face, size * .2));
+        dial.Children.Add(face);
         // A narrow sidebar or a large graphic size: the whole ring shrinks to its column instead of leaving the card.
         // Not clipped: the soft shadow of the raised disc reaches past the ring and would otherwise end in a square.
         return new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, MaxWidth = size, MaxHeight = size, ClipToBounds = false,
@@ -451,12 +454,14 @@ public sealed partial class AioTile
         var parts = new List<Control>();
         var cpu = Ordered(Rs("CPU").Where(r => !top.Contains(r.Key)));
         // The history chart of the processor keeps its column when every other value is shown large (Orbit puts temperature and load on top).
-        if (cpu.Count > 0 || Rs("Cores").Length > 0 || R("temp") is { } shownTemp && AioReadings.Graphs(settings, shownTemp.Key))
+        // Without a temperature (no administrator rights) the history shows the load instead (5.7.0: the switch did nothing).
+        var cpuTrace = R("temp") ?? R("load");
+        if (cpu.Count > 0 || Rs("Cores").Length > 0 || cpuTrace != null && AioReadings.Graphs(settings, cpuTrace.Key))
         {
             var column = Stack(3, NHeading("CPU", NAcc(0)));
             if (NModelLine(WidgetKind.Cpu, 0, snapshot.Cpu?.Name) is { } cpuModel) column.Children.Add(cpuModel);
             foreach (var r in cpu) column.Children.Add(NKV(r));
-            if (R("temp") is { } t && NHistory(t) is { } plot) column.Children.Add(plot);
+            if (cpuTrace != null && NHistory(cpuTrace) is { } plot) column.Children.Add(plot);
             AddCoreTemps(column);
             parts.Add(column);
         }
@@ -468,7 +473,7 @@ public sealed partial class AioTile
             var column = Stack(3, NHeading(GpuTitle(gpu.Key, index, false), NAcc(1)));
             if (NModelLine(WidgetKind.Gpu, index, info?.Name) is { } gpuModel) column.Children.Add(gpuModel);
             foreach (var r in rows) column.Children.Add(NKV(r));
-            var main = gpu.FirstOrDefault(r => r.Key.EndsWith(".temp"));
+            var main = gpu.FirstOrDefault(r => r.Key.EndsWith(".temp")) ?? gpu.FirstOrDefault(r => r.Key.EndsWith(".load"));
             if (main != null && NHistory(main) is { } plot) column.Children.Add(plot);
             parts.Add(column); index++;
         }
@@ -580,7 +585,8 @@ public sealed partial class AioTile
     {
         var rails = Rs("Rails").Where(r => !top.Contains(r.Key)).ToArray();
         if (rails.Length == 0) return;
-        content.Children.Add(NPanel(T("POWER_RAILS", "Power supply"), NGrid(rails.Select(r => NKV(r, r.Label)), 3, 10), null, 1));
+        // Two columns: three side by side shrank "12.08 V" below 9 px in the wide faces (5.7.0 audit).
+        content.Children.Add(NPanel(T("POWER_RAILS", "Power supply"), NGrid(rails.Select(r => NKV(r, r.Label)), 2, 14), null, 1));
     }
 
     // ------------------------------------------------------------------ pieces
@@ -656,7 +662,8 @@ public sealed partial class AioTile
     {
         var name = PartModel(kind, index, model ?? "");
         if (name.Length == 0) return null;
-        var t = NText(name, 10, nLabel); t.TextTrimming = TextTrimming.CharacterEllipsis; t.Margin = new Thickness(0, Fam == NeoDesigns.Family.Pixel ? 2 : -2, 0, 4); return t;
+        // A long model wraps onto a second line between its words instead of being cut off (5.7.0 audit).
+        var t = NText(name, 10, nLabel); t.TextWrapping = TextWrapping.Wrap; t.MaxLines = 2; t.TextTrimming = TextTrimming.CharacterEllipsis; t.Margin = new Thickness(0, Fam == NeoDesigns.Family.Pixel ? 2 : -2, 0, 4); return t;
     }
     /// <summary>The colour of a heading: the accent of its part where the design colours its headings, else the caption grey.</summary>
     private Color HeadingColour(Color part) => Fam switch

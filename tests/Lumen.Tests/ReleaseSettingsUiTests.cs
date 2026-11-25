@@ -260,7 +260,9 @@ public class ReleaseSettingsUiTests
             if (!box.IsEnabled || box.IsChecked is null) continue;
             bool was = box.IsChecked == true;
             bool historySwitch = key.EndsWith(".history") || key.EndsWith(".chart");
-            string pictureOn = was || historySwitch ? rig.Picture(kind) : "";
+            // Every AIO switch must change something on this PC (5.7.0, user request: no switch without effect).
+            bool aio = key.StartsWith("aio.");
+            string pictureOn = was || historySwitch || aio ? rig.Picture(kind) : "";
             int before = rig.Changes;
             box.IsChecked = !was;
             if (rig.Changes == before) { problems.Add($"'{key}': clicking the switch applies nothing"); continue; }
@@ -281,6 +283,7 @@ public class ReleaseSettingsUiTests
                 if (foreign.Count > 0) problems.Add($"'{key}' off also removes: {Short(foreign)}");
                 if (added.Count > 0) problems.Add($"'{key}' off adds: {Short(added)}");
                 if (baseline.Any(i => Belongs(kind, key, i)) && gone.Count == 0 && added.Count == 0 && pictureOn == rig.Picture(kind)) problems.Add($"'{key}' off: the sidebar still shows it ({Short(baseline.Where(i => Belongs(kind, key, i)))})");
+                else if (aio && gone.Count == 0 && added.Count == 0 && pictureOn == rig.Picture(kind)) problems.Add($"'{key}' off: the sidebar does not change (a switch without effect)");
             }
             else
             {
@@ -292,7 +295,7 @@ public class ReleaseSettingsUiTests
                     gone = gone.Where(i => i.Key != "aio.cooling.cpu").ToList();
                 if (gone.Count > 0) problems.Add($"'{key}' on removes: {Short(gone)}");
                 // A history chart switched on must show something (the demo has history for every reading).
-                if (historySwitch && added.Count == 0 && pictureOn == rig.Picture(kind)) problems.Add($"'{key}' on: the sidebar does not change");
+                if ((historySwitch || aio) && added.Count == 0 && gone.Count == 0 && pictureOn == rig.Picture(kind)) problems.Add($"'{key}' on: the sidebar does not change (a switch without effect)");
             }
             foreach (var o in rig.Outside().Except(outside0).Take(2)) problems.Add($"'{key}' {(was ? "off" : "on")}: outside its card: {o}");
             // And back, by clicking the same switch again.
@@ -318,6 +321,33 @@ public class ReleaseSettingsUiTests
         }
         if (total == 0) problems.Add("no sensor switches in Settings → Widgets");
         return problems;
+    }
+
+    /// <summary>For the audit: every switch in Settings flipped once; those after which neither the values shown nor the
+    /// pixels of the widget change ("on"/"off" = the state the switch was in).</summary>
+    internal static List<string> SwitchesWithoutEffect(WidgetStyle style, string hardware)
+    {
+        var result = new List<string>();
+        using var rig = new Rig(style, hardware);
+        string raw0 = rig.Raw(), json0 = rig.Json();
+        foreach (var kind in rig.Kinds)
+        {
+            rig.Open(kind); rig.Page(0);
+            var keys = rig.Content.GetLogicalDescendants().OfType<CheckBox>().Select(c => c.Tag as string).OfType<string>().Distinct().ToList();
+            foreach (var key in keys)
+            {
+                var box = rig.Check(key);
+                if (box is null || !box.IsEnabled || box.IsChecked is null) continue;
+                bool was = box.IsChecked == true;
+                var before = rig.Shown().ToHashSet(); string picture = rig.Picture(kind);
+                box.IsChecked = !was;
+                var after = rig.Shown().ToHashSet();
+                if (after.SetEquals(before) && rig.Picture(kind) == picture) result.Add($"{kind}	{key}	{(was ? "on" : "off")}");
+                if (rig.Check(key) is { } again) again.IsChecked = was;
+                if (rig.Json() != json0) { rig.Restore(raw0); rig.Page(0); }
+            }
+        }
+        return result;
     }
 
     [Theory, MemberData(nameof(Designs))]

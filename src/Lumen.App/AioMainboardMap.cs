@@ -38,7 +38,9 @@ public sealed partial class AioTile
         {
             string label = r.Key.StartsWith("aio.system.disk.") ? "Temp" : r.Key.EndsWith(".power") ? "Power" : r.Key.EndsWith(".junction") ? "VRAM °C" : RefLabel(r);
             var caption=Text(label,11,muted);caption.Tag="map-label:"+r.Key;
-            var row = Ui.Columns("*,1.6*", FitLeft(caption), FitRight(V(r, 13)));
+            // The name at its own width, the value takes the rest (5.7.0 audit: in a fixed share "VRAM °C" shrank to 8 px).
+            caption.TextWrapping=TextWrapping.NoWrap;
+            var row = Ui.Columns("Auto,*", caption, FitRight(V(r, 13)));
             row.ColumnSpacing = 6;
             return row;
         }
@@ -50,7 +52,7 @@ public sealed partial class AioTile
             var body = Stack(5,new Border{Height=3,Background=Palette.Brush(accent)},header);
             if(model.Length > 0)
             {
-                var name=Text(model,10,muted); name.TextWrapping=TextWrapping.NoWrap; name.TextTrimming=TextTrimming.CharacterEllipsis;
+                var name=Text(model,10,muted); name.TextWrapping=TextWrapping.Wrap; name.MaxLines=2; name.TextTrimming=TextTrimming.CharacterEllipsis;
                 ToolTip.SetTip(name,model); body.Children.Add(name);
             }
             foreach(var row in rows) body.Children.Add(row);

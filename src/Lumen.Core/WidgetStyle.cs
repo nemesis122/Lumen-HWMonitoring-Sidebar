@@ -458,7 +458,15 @@ public enum WidgetStyle
     AioFloatingPodiums,
     AioFloatingStrip,
     AioPartCardsHeat,
-    AioPartList
+    AioPartList,
+    // 5.7.0: designs after well-known interfaces.
+    AioActivityRings,
+    AioLiveTiming,
+    AioSmartHome,
+    AioGlassTubes,
+    AioGlassDial,
+    AioChromeBezels,
+    AioGlossyPills
 }
 
 

@@ -17,7 +17,7 @@ public class Lumen501DesignTests
     [InlineData("13th Gen Intel(R) Core(TM) i7-13700K", "Core i7-13700K")]
     [InlineData("Intel(R) Core(TM) i5-8400 CPU @ 2.80GHz", "Core i5-8400")]
     [InlineData("AMD Radeon(TM) Graphics", "Radeon Graphics")]
-    [InlineData("Samsung SSD 990 PRO 2TB", "Samsung SSD 990 PRO 2TB")]
+    [InlineData("Samsung SSD 990 PRO 2TB", "990 PRO 2TB")] // since 5.7.0 drives drop the maker too (cut off in narrow designs)
     [InlineData("Pump", "Pump")]
     public void Built_in_names_drop_maker_and_filler_words(string name, string expected) => Assert.Equal(expected, Naming.Short(name));
 

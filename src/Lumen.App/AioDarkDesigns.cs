@@ -76,7 +76,7 @@ public sealed partial class AioTile
         if (part.Title.Length > 0) values.Children.Add(DarkCaption(part.Title, accent, 13, true));
         if (part.Model.Length > 0)
         {
-            var model = DarkCaption(part.Model, muted, 9.5);
+            var model = DarkCaption(part.Model, muted, 9.5); model.TextWrapping = TextWrapping.Wrap; model.MaxLines = 2; model.TextTrimming = TextTrimming.CharacterEllipsis;
             ToolTip.SetTip(model, part.Model);
             values.Children.Add(model);
         }

@@ -110,7 +110,8 @@ public class DarkAioTests
     [InlineData(WidgetStyle.AioAirflowMapC)]
     public void Only_disk_capacity_has_a_meter_and_the_footer_cards_align(WidgetStyle style) => UiHost.Run(() =>
     {
-        var (snapshot, history) = Render.Demo();
+        // A PC with voltage rails: since 5.7.0 a PC without rail sensors (the demo) has no power card at all.
+        var (snapshot, history) = HardwareVariants.For("big-rig");
         var s = Settings.Starter();
         AioDesigns.ShowAllParts(s);
         var overview = s.Widgets.Single(w => w.Kind == WidgetKind.Overview);

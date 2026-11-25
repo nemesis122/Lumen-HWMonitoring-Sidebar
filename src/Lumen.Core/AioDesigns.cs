@@ -154,6 +154,9 @@ public static class AioDesigns
         if(key.StartsWith("aio.gpu.")&&key.EndsWith(".extra")) return false; // a second graphics card is off by default
         // (history switches are decided at the top)
         if(key=="aio.cpu.cores"||key.StartsWith("aio.cpu.core.")) return style==WidgetStyle.AioThermalGrid;
+        // Mainboard temperatures are off until switched on (user request 5.7.0: "not shown by default"); switched on,
+        // every board temperature appears in every design. Until 5.7.0 the switch was on but showed nothing in most designs.
+        if(key=="aio.board") return false;
         if(style==WidgetStyle.AioSignalRack)
             return !key.EndsWith("clock") && !key.EndsWith("hotspot") && !key.EndsWith("junction")
                 && !key.EndsWith("vram") && !key.StartsWith("aio.system.disk.");

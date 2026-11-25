@@ -60,7 +60,7 @@ public sealed partial class AioTile
                 foreach (var group in part.Rows.GroupBy(r => r.Device))
                 {
                     string model = part.Id == "gpu" ? snapshot.Gpus.FirstOrDefault(g => g.Id == group.Key)?.Name ?? ""
-                        : snapshot.Disks.FirstOrDefault(d => d.Id == group.Key)?.Name ?? "";
+                        : Naming.Short(snapshot.Disks.FirstOrDefault(d => d.Id == group.Key)?.Name ?? "");
                     int index = part.Id == "gpu" ? snapshot.Gpus.ToList().FindIndex(g => g.Id == group.Key) : snapshot.Disks.ToList().FindIndex(d => d.Id == group.Key);
                     cards.Add(part with { Model = PartModel(part.Id == "gpu" ? WidgetKind.Gpu : WidgetKind.Drives, Math.Max(0,index), model), Rows = group.ToList() });
                 }

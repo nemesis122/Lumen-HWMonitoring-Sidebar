@@ -94,7 +94,7 @@ public sealed partial class AioTile
         Add("cpu", "CPU", WidgetKind.Cpu, snapshot.Cpu?.Name ?? "", r => r.Group is "CPU" or "Cores");
         Add("gpu", "GPU", WidgetKind.Gpu, string.Join(" · ", snapshot.Gpus.Where(g => rows.Any(r => r.Group == "GPU" && r.Device == g.Id)).Select(g => g.Name)), r => r.Group == "GPU");
         Add("ram", "RAM", WidgetKind.Memory, L.T("Memory"), r => r.Key == "aio.system.ram" || r.Key.StartsWith("aio.system.ram."));
-        Add("ssd", L.T("Drives"), WidgetKind.Drives, string.Join(" · ", snapshot.Disks.Where(d => rows.Any(r => r.Device == d.Id)).Select(d => d.Name)), r => r.Group == "Drives" || r.Key.StartsWith("aio.system.disk."));
+        Add("ssd", L.T("Drives"), WidgetKind.Drives, string.Join(" · ", snapshot.Disks.Where(d => rows.Any(r => r.Device == d.Id)).Select(d => Naming.Short(d.Name))), r => r.Group == "Drives" || r.Key.StartsWith("aio.system.disk."));
         Add("fan", L.T("Cooling"), WidgetKind.Cooling, snapshot.BoardName ?? "", r => r.Group is "Cooling" or "Board");
         Add("power", L.T("Voltages"), WidgetKind.Power, "", r => r.Group == "Rails");
         Add("net", L.T("Network"), WidgetKind.Network, snapshot.Network?.Name ?? "", r => r.Group == "Network");
@@ -140,7 +140,8 @@ public sealed partial class AioTile
     {
         var names = Stack(2);
         if (part.Title.Length > 0) names.Children.Add(DashboardText(part.Title, 14, true));
-        if (part.Model.Length > 0) names.Children.Add(DashboardText(part.Model, 10.5));
+        // Several drive models wrap between their names instead of being cut off (5.7.0 audit).
+        if (part.Model.Length > 0) { var model = DashboardText(part.Model, 10.5); model.TextWrapping = TextWrapping.Wrap; model.MaxLines = 3; model.TextTrimming = TextTrimming.CharacterEllipsis; names.Children.Add(model); }
         return picture ? Ui.Columns("54,*", DashboardImage(part.Id), names) : names;
     }
     private Border DashboardFrame(Control body) => new()
@@ -348,6 +349,8 @@ public sealed class DashboardFlow : Grid
     private readonly bool reserved;
     private int columns;
     public int VisibleColumns => columns;
+    /// <summary>The number of part cards the flow lays out.</summary>
+    public int Items => items.Length;
     public DashboardFlow(int maximum, (Control Card, double Weight)[] items, bool firstColumnReserved = false)
     {
         this.maximum = Math.Clamp(maximum, 1, 6); this.items = items; reserved = firstColumnReserved;

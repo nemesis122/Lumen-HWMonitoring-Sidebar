@@ -39,7 +39,7 @@ public sealed partial class AioTile
         :r.Key.EndsWith(".hotspot")?"Hotspot":r.Key.EndsWith(".junction")?"VRAM temp."
         :r.Group=="Cooling"?L.T(r.Label):r.Key.EndsWith(".read")?L.T("Read"):r.Key.EndsWith(".write")?L.T("Write")
         :r.Key.EndsWith(".voltage")?L.T("Voltage"):r.Key.EndsWith(".power")?L.T("Power")
-        :r.Key.EndsWith(".clock")?L.T("Clock"):r.Key.EndsWith(".vram")?"VRAM":L.T(r.Label);
+        :r.Key.EndsWith(".clock")?L.T("Clock"):r.Key.EndsWith(".vram")?"VRAM":r.Key.EndsWith(".hours")?"Hours":r.Key.EndsWith(".activity")?"Activity":L.T(r.Label);
     private Control EditionLine(AioReading row)
     {
         var label=TextColours.Bind(EditionText(EditionLabel(row),11,C("#CED6DF")),row.Key);
@@ -122,7 +122,7 @@ public sealed partial class AioTile
             foreach(var group in groups)
             {
                 int index=part.Id=="gpu"?snapshot.Gpus.ToList().FindIndex(g=>g.Id==group.Key):snapshot.Disks.ToList().FindIndex(d=>d.Id==group.Key);index=Math.Max(0,index);
-                string model=part.Id=="gpu"?snapshot.Gpus.FirstOrDefault(g=>g.Id==group.Key)?.Name??"":snapshot.Disks.FirstOrDefault(d=>d.Id==group.Key)?.Name??"";
+                string model=part.Id=="gpu"?snapshot.Gpus.FirstOrDefault(g=>g.Id==group.Key)?.Name??"":Naming.Short(snapshot.Disks.FirstOrDefault(d=>d.Id==group.Key)?.Name??"");
                 var owner=source.Widgets.FirstOrDefault(w=>w.Kind==EditionKind(part.Id));
                 string fallback=part.Id=="ssd"?"SSD "+(++ordinal):groups.Length>1?"GPU "+(++ordinal):"GPU";
                 result.Add(part with{Title=owner?.ShowTitle==false?"":Naming.Title(owner,index,fallback),Model=PartModel(EditionKind(part.Id),index,model),Rows=group.ToList()});
@@ -143,7 +143,12 @@ public sealed partial class AioTile
         {
             var load=rows.FirstOrDefault(r=>r.Key=="aio.system.ram");
             if(look.Layout==Edition.Nvidia && load!=null)
-            {used.Add(load.Key);body.Children.Add(Ui.Columns(".45*,.55*",EditionDial(load,accent),Stack(4,rows.Where(r=>r!=load).Select(EditionLine).ToArray())));foreach(var row in rows)used.Add(row.Key);}
+            {
+                // The dial above its values: side by side in the narrow card "Available" broke over two lines and the
+                // amounts shrank to 7 px (5.7.0 audit).
+                used.Add(load.Key);var dial=EditionDial(load,accent);dial.HorizontalAlignment=HorizontalAlignment.Center;
+                body.Children.Add(Stack(6,dial,Stack(4,rows.Where(r=>r!=load).Select(EditionLine).ToArray())));foreach(var row in rows)used.Add(row.Key);
+            }
             else if(look.Layout==Edition.Intel)
             {body.Children.Add(FixedCols(2,rows.Select(r=>EditionTile(r,accent,18)).ToArray()));foreach(var row in rows)used.Add(row.Key);}
             else if(load!=null){body.Children.Add(EditionBar(load,accent));}
@@ -177,13 +182,16 @@ public sealed partial class AioTile
                 body.Children.Add(EditionTile(temp,accent,30));used.Add(temp.Key);
                 if(plots)body.Children.Add(EditionTrace(temp,accent,28));
             }
+            // Without a temperature (no administrator rights) the history shows the load (5.7.0: the switch did nothing).
+            else if(plots && rows.FirstOrDefault(r=>r.Key.EndsWith(".load")) is {} gpuLoad)body.Children.Add(EditionTrace(gpuLoad,accent,28));
         }
         if(part.Id=="power" && look.Layout==Edition.Command)
         {body.Children.Add(EditionCells(rows.Select(r=>EditionDial(r,accent,true,1.25)),3,85));foreach(var r in rows)used.Add(r.Key);}
         if(part.Id=="net" && look.Layout is Edition.Intel or Edition.Command)
         {
             var rates=rows.Where(r=>r.Key is "aio.network.down" or "aio.network.up").ToArray();
-            body.Children.Add(FixedCols(Math.Max(1,rates.Length),rates.Select(r=>EditionTile(r,accent,19)).ToArray()));foreach(var r in rates)used.Add(r.Key);
+            // One rate per row: side by side in the narrow network card "676 Mbit/s" shrank to 8 px (5.7.0 audit).
+            body.Children.Add(FixedCols(1,rates.Select(r=>EditionTile(r,accent,19)).ToArray()));foreach(var r in rates)used.Add(r.Key);
         }
         foreach(var row in rows.Where(r=>!used.Contains(r.Key)))body.Children.Add(EditionLine(row));
         var cores=part.Rows.Where(r=>r.Group=="Cores").ToArray();if(cores.Length>0)body.Children.Add(FixedCols(2,cores.Select(EditionLine).ToArray()));

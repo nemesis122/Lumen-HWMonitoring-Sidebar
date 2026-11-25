@@ -23,21 +23,49 @@ public static class HardwareVariants
         return (snap, h);
     }
 
+    /// <summary>The demo PC with voltage rails (+12 V, +5 V, +3.3 V) as a Super I/O chip reports them: since 5.7.0 a rail without
+    /// a sensor is left out, so tests of the power supply part need a PC that has them.</summary>
+    public static Snapshot WithRails(Snapshot demo) => demo with
+    {
+        HardwareSensors = demo.HardwareSensors.Append(new SensorNode("Motherboard", "ASUS ROG STRIX X570-E", "/mainboard", Array.Empty<SensorValue>(), new[]
+        {
+            new SensorNode("SuperIO", "Nuvoton NCT6798D", "/lpc/nct6798d", new[]
+            {
+                new SensorValue("Voltage", "+12V", 12.08, 0, "/lpc/nct6798d/voltage/0"),
+                new SensorValue("Voltage", "+5V", 5.04, 1, "/lpc/nct6798d/voltage/1"),
+                new SensorValue("Voltage", "+3.3V", 3.31, 2, "/lpc/nct6798d/voltage/2"),
+            }, Array.Empty<SensorNode>()),
+        })).ToArray()
+    };
+
     /// <summary>The demo reading turned into the variant; <paramref name="phase"/> moves the fixed readings of the variant's
     /// own cards a little over time (0 for the last update, which keeps the values the tests expect).</summary>
     private static Snapshot Variant(string name, Snapshot demo, int phase)
     {
         double Wave(double value, double amplitude, double period) => value + amplitude * Math.Sin(phase / period);
         var main = demo.Gpus.First(g => !g.Integrated);
+        // Per-core temperatures and voltage rails as Libre Hardware Monitor reports them (5.7.0: until then no test PC had
+        // either, so "Core temperatures" and the rails were never seen working in a test).
+        SensorNode Cores(string name, int count, double first) => new("Cpu", name, "/cpu/0",
+            Enumerable.Range(1, count).Select(i => new SensorValue("Temperature", "Core #" + i, Wave(first + (i * 7 % 9), 2, 6 + i), i, "/cpu/0/temperature/" + i)).ToArray(), Array.Empty<SensorNode>());
+        SensorNode Rails() => new("Motherboard", "ASUS ROG STRIX X670E-E", "/mainboard", Array.Empty<SensorValue>(), new[]
+        {
+            new SensorNode("SuperIO", "Nuvoton NCT6799D", "/lpc/nct6799d", new[]
+            {
+                new SensorValue("Voltage", "+12V", Wave(12.08, .02, 4), 0, "/lpc/nct6799d/voltage/0"),
+                new SensorValue("Voltage", "+5V", Wave(5.04, .01, 5), 1, "/lpc/nct6799d/voltage/1"),
+                new SensorValue("Voltage", "+3.3V", Wave(3.31, .01, 6), 2, "/lpc/nct6799d/voltage/2"),
+            }, Array.Empty<SensorNode>()),
+        });
         Snapshot snap = name switch
         {
-            // Intel processor with 8 cores, one NVIDIA card, no voltage rails or board sensors, one drive.
+            // Intel processor with 8 cores (with core temperatures), one NVIDIA card, no voltage rails or board sensors, one drive.
             "intel-nvidia" => demo with
             {
                 Cpu = demo.Cpu! with { Name = "13th Gen Intel(R) Core(TM) i7-13700K", CoreLoads = demo.Cpu!.CoreLoads.Take(8).ToArray() },
                 Gpus = new[] { main with { Id = "nv0", Name = "NVIDIA GeForce RTX 4070 Ti", HotSpot = null } },
                 Disks = demo.Disks.Take(1).ToArray(),
-                HardwareSensors = Array.Empty<SensorNode>(), BoardTemps = Array.Empty<TempReading>(), BoardName = null,
+                HardwareSensors = new[] { Cores("13th Gen Intel Core i7-13700K", 8, 41) }, BoardTemps = Array.Empty<TempReading>(), BoardName = null,
             },
             // Laptop: AMD processor with integrated graphics only, battery, one drive, fans that stand still.
             "apu-laptop" => demo with
@@ -49,7 +77,8 @@ public static class HardwareVariants
                 Battery = new BatteryInfo(76, false, false, 9.5, 240, 4),
                 HardwareSensors = Array.Empty<SensorNode>(), BoardTemps = Array.Empty<TempReading>(),
             },
-            // Big rig: two dedicated cards and integrated graphics, four drives, eight fans, no CPU voltage or power.
+            // Big rig: two dedicated cards and integrated graphics, four drives, eight fans, core temperatures, voltage rails,
+            // no CPU voltage or power.
             "big-rig" => demo with
             {
                 Cpu = demo.Cpu! with { PowerW = null, Voltage = null, CoreLoads = demo.Cpu!.CoreLoads.Concat(demo.Cpu!.CoreLoads).ToArray() },
@@ -61,6 +90,7 @@ public static class HardwareVariants
                 },
                 Disks = demo.Disks.Concat(demo.Disks.Select((d, i) => d with { Id = d.Id + "b", Name = d.Name + " B", Letters = "X" + i + ":" })).ToArray(),
                 Fans = Enumerable.Range(1, 8).Select(i => new FanInfo("Fan " + i, 600 + i * 90, 30 + i * 5)).ToArray(),
+                HardwareSensors = new[] { Cores(demo.Cpu!.Name, 8, 44), Rails() },
             },
             // Minimal: no administrator rights — no temperatures, no fans, no hardware tree, no network.
             "minimal" => demo with

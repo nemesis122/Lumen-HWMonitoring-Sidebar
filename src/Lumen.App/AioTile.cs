@@ -285,11 +285,15 @@ public sealed partial class AioTile : Border, IWidget, INamed
     {
         if(style!=WidgetStyle.AioOrbitNetwork)size*=settings.ActiveWidget?.Graphics??1;
         var ring=new AioRing(style==WidgetStyle.AioPopConsole&&lightSurface?C("#252B1D"):Accent(r),track,style==WidgetStyle.AioCarbonPulse,style is WidgetStyle.AioAuroraFusion or WidgetStyle.AioPopConsole) {Width=size,Height=size}; rings.Add((r.Key,ring));
-        var face=Stack(2,Text(caption??(r.Group=="System"?r.Label:L.T(r.Label)),10,muted),Value(r,size>110?27:style is WidgetStyle.AioAuroraFusion or WidgetStyle.AioPopConsole?26:20,style==WidgetStyle.AioPopConsole?ink:Accent(r)));
-        if(secondary!=null)face.Children.Add(Value(secondary,11));
-        foreach(var text in face.Children.OfType<TextBlock>())text.TextAlignment=TextAlignment.Center;
-        var fit=new AioFit{Child=new Viewbox {Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,Child=new AioWidest{Child=face},Margin=new Thickness(12)}};
+        // Only the numbers shrink into the ring; the caption keeps its size (5.7.0 audit: "Load" was drawn at 6 px).
+        var label=Text(caption??(r.Group=="System"?r.Label:L.T(r.Label)),10.5,muted);label.TextAlignment=TextAlignment.Center;
+        label.HorizontalAlignment=HorizontalAlignment.Center;label.MaxWidth=size*.72;label.TextTrimming=TextTrimming.CharacterEllipsis;
+        var numbers=Stack(2,Value(r,size>110?27:style is WidgetStyle.AioAuroraFusion or WidgetStyle.AioPopConsole?26:20,style==WidgetStyle.AioPopConsole?ink:Accent(r)));
+        if(secondary!=null)numbers.Children.Add(Value(secondary,11));
+        foreach(var text in numbers.Children.OfType<TextBlock>())text.TextAlignment=TextAlignment.Center;
+        var fit=new AioFit{MaxWidth=size*.68,Child=new Viewbox {Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,Child=new AioWidest{Child=numbers}}};
+        var face=Stack(1,label,fit);face.HorizontalAlignment=HorizontalAlignment.Center;face.VerticalAlignment=VerticalAlignment.Center;
         return new Viewbox {MaxWidth=size,MaxHeight=size,Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,
-            Child=new Grid {Width=size,Height=size,Background=style==WidgetStyle.AioOrbitNetwork?Palette.Brush(back):null,Children={ring,fit}}};
+            Child=new Grid {Width=size,Height=size,Background=style==WidgetStyle.AioOrbitNetwork?Palette.Brush(back):null,Children={ring,face}}};
     }
 }

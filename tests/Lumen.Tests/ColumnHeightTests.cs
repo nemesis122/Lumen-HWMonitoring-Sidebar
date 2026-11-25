@@ -44,7 +44,9 @@ public class ColumnHeightTests
                     var card = Assert.Single(sidebar.GetLogicalDescendants().OfType<AioTile>());
                     Assert.True(card.Padding.Bottom < 24, "Empty padding must not masquerade as filled sensor panels");
                     var flows = card.GetLogicalDescendants().OfType<DashboardFlow>().ToArray();
-                    if (columns >= 3) Assert.Contains(flows, f => f.VisibleColumns == columns);
+                    // As many columns as asked for, or one per part when there are fewer parts (since 5.7.0 the demo PC,
+                    // which has no voltage rails, has no power card).
+                    if (columns >= 3) Assert.Contains(flows, f => f.VisibleColumns == Math.Min(columns, f.Items));
                     foreach (var flow in flows)
                         foreach (var col in flow.Children.OfType<DashboardVertical>())
                         {

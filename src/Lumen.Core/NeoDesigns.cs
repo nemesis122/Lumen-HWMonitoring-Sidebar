@@ -12,7 +12,7 @@ public static class NeoDesigns
     public enum Family { Cyber, Neumorph, Matrix, Tron, Rain, Neon, Thermal, Phone, Scope, Stealth, Gold, Ink, Gallery,
         Vfd, Synth, Radar, Hex, Pixel, Tubes, Mission, Swiss, Chalk, Equalizer,
         Skyline, Cubes, Tilted, Torus, Exploded, Chrome, Bars3D, Hologram, Cylinders, Tower,
-        Race, Scada, GaugeWall, Mixer, Capsule, Floating, PartCards, Podiums, Strip, HeatBar, HeatList }
+        Race, Scada, GaugeWall, Mixer, Capsule, Floating, PartCards, Podiums, Strip, HeatBar, HeatList, Rings, Timing, Home, GlassTubes, GlassDial, ChromeBezel, GlossPills }
     /// <summary>Cyber: Stack (one panel per part) or Split (processor and graphics side by side).
     /// Neumorph: Dials (2 × 2 rings), Hero (one large processor ring) or Bars (one bar per part).</summary>
     public enum Arrangement { Stack, Split, Dials, Hero, Bars }
@@ -84,6 +84,15 @@ public static class NeoDesigns
         new(WidgetStyle.AioFloatingStrip, "Floating Strip", Family.Strip, Arrangement.Dials, new[] { "#40DCC8", "#FFAA3C", "#40DCC8", "#FFAA3C" }, "#05070A"),
         new(WidgetStyle.AioPartCardsHeat, "Part Cards Heat", Family.HeatBar, Arrangement.Dials, new[] { "#40DCC8", "#FFAA3C", "#40DCC8", "#FFAA3C" }, "#000000"),
         new(WidgetStyle.AioPartList, "Part List", Family.HeatList, Arrangement.Dials, new[] { "#40DCC8", "#FFAA3C", "#40DCC8", "#FFAA3C" }, "#000000"),
+        // 5.7.0: designs after well-known interfaces (drafts W-01, W-07, W-24).
+        new(WidgetStyle.AioActivityRings, "Pulse Rings", Family.Rings, Arrangement.Dials, new[] { "#FF7A1A", "#9B7CFF", "#2EE6B8", "#FFD60A" }, "#000000"),
+        new(WidgetStyle.AioLiveTiming, "Live Timing", Family.Timing, Arrangement.Dials, new[] { "#E10600", "#27F4D2", "#FF8000", "#3671C6" }, "#000000"),
+        new(WidgetStyle.AioSmartHome, "Smart Home", Family.Home, Arrangement.Dials, new[] { "#FFD60A", "#0A84FF", "#30D158", "#BF5AF2" }, "#000000"),
+        // 5.7.0: glass and glossy designs (drafts G-05, G-08, G-13, G-15).
+        new(WidgetStyle.AioGlassTubes, "Glass Tubes", Family.GlassTubes, Arrangement.Dials, new[] { "#FF6A3D", "#3DA5FF", "#3DFFA8", "#FFC93D" }, "#05060A"),
+        new(WidgetStyle.AioGlassDial, "Glass Dial", Family.GlassDial, Arrangement.Dials, new[] { "#7CF3FF", "#FF8AD8", "#B07CFF", "#5AA9FF" }, "#05060A"),
+        new(WidgetStyle.AioChromeBezels, "Chrome Bezels", Family.ChromeBezel, Arrangement.Dials, new[] { "#FF4D4D", "#4DA6FF", "#3DFF8B", "#FFC34D" }, "#000000"),
+        new(WidgetStyle.AioGlossyPills, "Glossy Pills", Family.GlossPills, Arrangement.Dials, new[] { "#FF3B5C", "#3B7BFF", "#2FD17A", "#FFAE2B" }, "#000000"),
     };
     /// <summary>All designs of this builder: the 22 own ones, the 100 gallery designs (5.3.0) and the ten studio designs (5.4.0).</summary>
     public static readonly Look[] All = Own.Concat(GalleryDesigns.All.Select(d => new Look(d.Style, d.Name, Family.Gallery,

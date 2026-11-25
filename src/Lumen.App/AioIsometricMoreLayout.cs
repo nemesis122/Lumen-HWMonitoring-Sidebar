@@ -335,7 +335,8 @@ public sealed partial class AioTile
             var value = V(ram, 19, Cyan); formats[value] = row => Format.Percent(row.Number); value.Text = formats[value](ram);
             var amount = AmountText(ram, 10, muted); amount.TextWrapping = TextWrapping.NoWrap; fields[ram.Key].Add(amount); formats[amount] = Amount;
             var header = new AioFit{Child=new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Left,
-                Child = new AioWidest { Child = new StackPanel { Orientation = Orientation.Horizontal, Children = { Text("RAM · ", 10, muted), amount } } } }};
+                // Name and amount on two lines (5.7.0 audit: on one line they shrank to 7 px in the tag).
+                Child = new AioWidest { Child = new StackPanel { Children = { Text("RAM", 10, muted), amount } } } }};
             Leader(new Point(248, 178), new Point(244, 142), Cyan);
             At(RigTag(header, Align(Fit(value), HorizontalAlignment.Right), Cyan, 104), 196, 178);
         }

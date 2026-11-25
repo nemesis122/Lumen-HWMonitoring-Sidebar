@@ -109,7 +109,7 @@ public static class AioReadings
             Add(k+"power","GPU","Power",Format.Watts(g.PowerW),g.PowerW,450,"aio.power."+g.Id,g.Id);
             Add(k+"clock","GPU","Clock",g.ClockMhz.HasValue?Format.Number(g.ClockMhz)+" MHz":"—",g.ClockMhz,3500,device:g.Id);
             // Integrated graphics share the main memory and often report no total: the used part alone.
-            if(!none(g.MemoryUsedMb))Add(k+"vram","GPU","VRAM",g.MemoryUsedMb.HasValue && g.MemoryTotalMb.HasValue ? Format.Number(g.MemoryUsedMb/1024,"0.#")+" / "+Format.Gigabytes(g.MemoryTotalMb/1024)
+            if(!none(g.MemoryUsedMb))Add(k+"vram","GPU","VRAM",g.MemoryUsedMb.HasValue && g.MemoryTotalMb.HasValue ? Format.Number(g.MemoryUsedMb/1024,"0.#")+" / "+Format.Number(g.MemoryTotalMb/1024,"0.#")+" GB" // "5.5 / 10 GB": shorter, it fits narrow cards (5.7.0)
                 : g.MemoryUsedMb.HasValue && !Unreported.Reported(g.Id,"total",g.MemoryTotalMb) ? Format.Gigabytes(g.MemoryUsedMb/1024) : "—",g.MemoryUsedMb,Math.Max(1,g.MemoryTotalMb??16384),device:g.Id);
         }
         var fans=new List<(string Id,string Name,double? Rpm)>();
@@ -146,13 +146,17 @@ public static class AioReadings
         foreach(var g in gpus)
             if(g.FanRpm.HasValue && !nodes.Any(n=>n.IsGpu&&(n.Id==g.Id||n.Name==g.Name)&&n.All.Any(v=>v.Type=="Fan"))
                 && !fans.Any(f=>f.Id.Contains(g.Id,StringComparison.OrdinalIgnoreCase)||f.Name.Contains(g.Name,StringComparison.OrdinalIgnoreCase)))
-                fans.Add(("gpu:"+g.Id,Naming.Short(g.Name),g.FanRpm)); // "RTX 3080", not "NVIDIA GeForce RT…"
+                // "GPU Fan" (5.7.0: the model name, "RTX 4070 Ti", was cut off in narrow fan grids); with several cards "GPU 2 Fan".
+                fans.Add(("gpu:"+g.Id,gpus.Length>1&&g!=gpus[0]?"GPU "+(Array.IndexOf(gpus,g)+1)+" Fan":"GPU Fan",g.FanRpm));
         foreach(var f in fans.DistinctBy(f=>f.Id))
             Add("aio.cooling."+f.Id,"Cooling",Names.Fan(f.Name,settings),Format.Rpm(f.Rpm),f.Rpm,3000);
         foreach(var (id,name) in new[]{("12","+12 V"),("5","+5 V"),("3.3","+3.3 V")})
         {
             var voltage=nodes.Where(n=>!n.IsGpu && n.Type!="Cpu").SelectMany(n=>n.Sensors).FirstOrDefault(v=>v.Type=="Voltage" && Rail(v.Name,id));
-            Add("aio.rails."+id,"Rails",name,Volts(voltage?.Value),voltage?.Value,id=="12"?13:id=="5"?5.5:3.6);
+            // A rail the PC has no sensor for is left out (until 5.7.0 every design showed "+12 V —" on such PCs).
+            if(voltage==null)continue;
+            // Rails with two decimals ("12.08 V"): three made the value too wide for narrow designs (5.7.0 audit).
+            Add("aio.rails."+id,"Rails",name,voltage.Value is double rv&&double.IsFinite(rv)?Format.Number(rv,"0.00")+" V":"—",voltage.Value,id=="12"?13:id=="5"?5.5:3.6);
         }
         var m=s.Memory;
         Add("aio.system.ram","System","RAM",m==null?"—":Format.Number(m.UsedGb,"0.#")+" / "+Format.Gigabytes(m.TotalGb),m?.Load,100,"mem.load");
@@ -165,11 +169,14 @@ public static class AioReadings
         Detail("aio.system.ram.used","System","Used",Format.Gigabytes(m?.UsedGb),m?.UsedGb,m?.TotalGb??1);
         Detail("aio.system.ram.free","System","Available",Format.Gigabytes(m?.AvailableGb),m?.AvailableGb,m?.TotalGb??1);
         Detail("aio.system.ram.total","System","Installed",Format.Gigabytes(m?.TotalGb),m?.TotalGb,m?.TotalGb??1);
+        // Switched on, the Mainboard part brings every board temperature (each can still be unticked on its own).
+        bool board=settings.ActiveWidget?.AioEnabledSensors?.Contains("aio.board")==true;
         foreach(var temp in s.BoardTemps)
-            Detail("aio.board."+temp.Name+".temp","Board",Names.Temp(temp.Name,settings),Temp(temp.Celsius),temp.Celsius);
+            if(board) Add("aio.board."+temp.Name+".temp","Board",Names.Temp(temp.Name,settings),Temp(temp.Celsius),temp.Celsius);
+            else Detail("aio.board."+temp.Name+".temp","Board",Names.Temp(temp.Name,settings),Temp(temp.Celsius),temp.Celsius);
         var drives=DriveOrdering.Order(s.Disks,DriveOrdering.Mode(settings.ForWidget(WidgetKind.Drives)));
         foreach(var d in drives)
-            Add("aio.system.disk."+d.Id,"System",s.Disks.Count==1?"SSD":(d.Letters.Length>0?d.Letters:d.Name),Temp(d.Temperature),d.Temperature,100,"disk."+d.Id+".temp",d.Id);
+            Add("aio.system.disk."+d.Id,"System",s.Disks.Count==1?"SSD":(d.Letters.Length>0?d.Letters:Naming.Short(d.Name)),Temp(d.Temperature),d.Temperature,100,"disk."+d.Id+".temp",d.Id);
         // Transfer rates and fill level per drive: the same identities the Drives widget records in its history.
         foreach(var d in drives)
         {
@@ -199,7 +206,7 @@ public static class AioReadings
     public static string DriveName(Snapshot s,string id)
     {
         var d=s.Disks.FirstOrDefault(x=>x.Id==id);if(d==null)return id;
-        return d.Letters.Length>0?d.Letters:s.Disks.Count==1?"SSD":d.Name;
+        return d.Letters.Length>0?d.Letters:s.Disks.Count==1?"SSD":Naming.Short(d.Name);
     }
     private static readonly HashSet<string> KnownFans=new();
     [ThreadStatic] private static bool listingAllFans;
@@ -215,11 +222,19 @@ public static class AioReadings
 
     public static IEnumerable<(string Key,string Label)> Options(Snapshot? snapshot, WidgetStyle? style = null)
     {
+        // Only switches that can change something on this PC (user request 5.7.0: no switch without effect). Without a
+        // snapshot (first moment after start) every switch is listed.
+        List<AioReading>? present=null;
+        if(snapshot!=null){listingAllFans=true;try{present=For(snapshot,new Settings());}finally{listingAllFans=false;}}
+        bool Has(Func<AioReading,bool> test)=>present==null||present.Any(test);
         // Every part switch, except "System": its RAM is switched under Memory and its drive temperatures under Drives.
-        foreach(var g in Groups.Where(g=>g.Key!="aio.system")) yield return (g.Key,"AIO · "+L.T(g.Label));
-        foreach(var g in GraphSwitches.Where(g=>HistorySupport.Draws(style,g.Key))) yield return (g.Key,"AIO · "+L.T(g.Label)+" · "+L.T("History chart"));
-        yield return ("aio.cpu.coreloads","AIO · CPU · "+L.T("Core load"));
-        yield return ("aio.cpu.cores","AIO · "+L.T("Core temperatures"));
+        foreach(var g in Groups.Where(g=>g.Key!="aio.system"&&(g.Key=="aio.cpu"||Has(r=>r.Key.StartsWith(g.Key+"."))||g.Key=="aio.board"&&snapshot?.BoardTemps.Count>0)))
+            yield return (g.Key,"AIO · "+L.T(g.Label));
+        // A history chart needs a value that is read (a PC without fans or without any graphics value has nothing to draw).
+        foreach(var g in GraphSwitches.Where(g=>HistorySupport.Draws(style,g.Key)&&Has(r=>g.Readings.Any(r.Key.StartsWith)&&r.History.Length>0&&r.Number.HasValue)))
+            yield return (g.Key,"AIO · "+L.T(g.Label)+" · "+L.T("History chart"));
+        if(snapshot?.Cpu?.CoreLoads is not { Count: 0 }) yield return ("aio.cpu.coreloads","AIO · CPU · "+L.T("Core load"));
+        if(Has(r=>r.Group=="Cores")) yield return ("aio.cpu.cores","AIO · "+L.T("Core temperatures"));
         if (style == null || AioDesigns.Instruments(style.Value))
         {
             yield return (InstrumentFps, "AIO · Performance · FPS");
@@ -233,7 +248,9 @@ public static class AioReadings
         List<AioReading> all;
         listingAllFans=true;try{all=For(snapshot,new Settings());}finally{listingAllFans=false;}
         var gpuOrder = cards.OrderBy(g => g == main ? 0 : 1).ToArray();
-        foreach(var r in all.Where(r=>r.Group!="Cores"))
+        // Board temperatures have one switch, "Mainboard", like the core temperatures (5.7.0): ticked one by one, the first
+        // tick switched the whole part on and brought every other board temperature along.
+        foreach(var r in all.Where(r=>r.Group is not ("Cores" or "Board")))
         {
             if (r.Group == "GPU")
             {

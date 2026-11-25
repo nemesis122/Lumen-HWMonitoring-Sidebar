@@ -182,11 +182,12 @@ public sealed partial class AioTile
                 var value = Fit(GValue(r, 13));
                 var planet = new Border
                 {
-                    Width = 46, Height = 46, CornerRadius = new CornerRadius(23), BorderThickness = new Thickness(2), BorderBrush = Palette.Brush(colour),
-                    Background = Palette.Brush(SeeThrough(nSurface)), Padding = new Thickness(5, 0), Child = new Border { VerticalAlignment = VerticalAlignment.Center, Child = value },
+                    // 50 px with little padding: in 46 px with more padding a wide face shrank "47 %" to 8 px (5.7.0 audit).
+                    Width = 50, Height = 50, CornerRadius = new CornerRadius(25), BorderThickness = new Thickness(2), BorderBrush = Palette.Brush(colour),
+                    Background = Palette.Brush(SeeThrough(nSurface)), Padding = new Thickness(2, 0), Child = new Border { VerticalAlignment = VerticalAlignment.Center, Child = value },
                     BoxShadow = new BoxShadows(new BoxShadow { Blur = 10, Color = BlackDraw.A(colour, .45) })
                 };
-                Canvas.SetLeft(planet, x - 23); Canvas.SetTop(planet, y - 23); canvas.Children.Add(planet);
+                Canvas.SetLeft(planet, x - 25); Canvas.SetTop(planet, y - 25); canvas.Children.Add(planet);
                 var label = NText(caption, 9.5, nLabel, true); label.Width = 60; label.TextAlignment = TextAlignment.Center; label.TextTrimming = TextTrimming.CharacterEllipsis;
                 Canvas.SetLeft(label, x - 30); Canvas.SetTop(label, y + 25); canvas.Children.Add(label);
             }

@@ -43,8 +43,9 @@ public sealed partial class AioTile
         var owned = source.Widgets.FirstOrDefault(w => w.Kind == kind);
         if (!Naming.ShowHardware(owned, settings)) return "";
         // CPU and GPU: a built-in name is shortened (maker and filler words dropped) instead of being cut off at the end,
-        // in every AIO design; an own name stays as typed. Drive and memory names stay as they are.
-        return kind is WidgetKind.Cpu or WidgetKind.Gpu ? Naming.HardwareShort(owned, index, model) : Naming.Hardware(owned, index, model);
+        // in every AIO design; an own name stays as typed. Drives too since 5.7.0 ("970 EVO Plus 2TB", the maker dropped);
+        // memory names stay as they are.
+        return kind is WidgetKind.Cpu or WidgetKind.Gpu or WidgetKind.Drives ? Naming.HardwareShort(owned, index, model) : Naming.Hardware(owned, index, model);
     }
 
     private Control PartTitle(string title, Color color, string model)
@@ -75,8 +76,10 @@ public sealed partial class AioTile
     /// </summary>
     private Control Pill(AioReading r, Color color, double size = 15)
     {
-        var label = Text(RefLabel(r), 12, muted);
-        var line = Ui.Columns("*,Auto", FitLeft(label), V(r, size, ink)); line.ColumnSpacing = 6;
+        // Name above the value: side by side in a narrow column the name shrank to 6 px (5.7.0 audit, Isometric Core Red).
+        var label = Text(RefLabel(r), 11, muted); label.TextWrapping = TextWrapping.NoWrap; label.TextTrimming = TextTrimming.CharacterEllipsis;
+        var value = V(r, size, ink); value.HorizontalAlignment = HorizontalAlignment.Right;
+        var line = Stack(0, label, value);
         return WarnWhenHot(new Border
         {
             BorderThickness = new Thickness(1.2), CornerRadius = new CornerRadius(9), Padding = new Thickness(8, 3), Child = line

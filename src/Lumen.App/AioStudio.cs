@@ -225,8 +225,9 @@ public sealed partial class AioTile
                     Control left = name;
                     if (!string.IsNullOrEmpty(model))
                     {
-                        name.Text += " ·"; var device = NText(model, 10, nLabel, true); device.TextTrimming = TextTrimming.CharacterEllipsis;
-                        var both = Ui.Columns("Auto,*", name, device); both.ColumnSpacing = 6; left = both;
+                        // The model on a line of its own under the title: beside it the model was cut off (5.7.0 audit).
+                        var device = NText(model, 10, nLabel, true); device.TextWrapping = TextWrapping.Wrap; device.MaxLines = 2; device.TextTrimming = TextTrimming.CharacterEllipsis;
+                        left = Stack(1, name, device);
                     }
                     var status = NText("● NOMINAL", 10, Color.Parse("#4BE36B"), true); status.Margin = new Thickness(8, 0, 0, 0);
                     heading = new Border

@@ -14,6 +14,7 @@ public static class ShortNames
     {
         ("Supply voltages (PSU)", "PSU"), ("Cooling – Fan (rpm)", "Fans (rpm)"), ("Cooling (Fans) – speed", "Fans"),
         ("Memory junction", "VRAM °C"), ("VRAM Temp.", "VRAM °C"), ("VRAM Temp", "VRAM °C"), ("Power supply", "PSU"),
+        ("Power-on hours", "Hours"), ("Total activity", "Activity"), // 5.7.0 audit: cut off in narrow label columns
         ("Link speed", "Link"), ("Download", "DL"), ("Upload", "UP"), ("Temperature", "Temp"),
         ("Temp.", "Temp"), ("Clock speed", "Clock"), ("Average clock", "Clock"), ("Core clock", "Clock"), ("Core voltage", "Vcore"), ("Processor", "CPU"), ("Voltage", "Volt"), ("Read", "R"), ("Write", "W"), ("Chipset", "Chip"), ("Video memory", "VRAM"),
     };

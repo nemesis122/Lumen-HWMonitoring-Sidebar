@@ -12,7 +12,7 @@ public class MainboardMapTests
     [Fact]
     public void Mainboard_cores_has_aligned_rows_and_a_wide_live_core_strip()=>UiHost.Run(()=>
     {
-        var (snapshot,history)=Render.Demo();snapshot=snapshot with{Cpu=snapshot.Cpu! with{CoreLoads=Enumerable.Range(1,16).Select(i=>(double)i).ToArray()}};
+        var (snapshot,history)=Render.Demo();snapshot=HardwareVariants.WithRails(snapshot);snapshot=snapshot with{Cpu=snapshot.Cpu! with{CoreLoads=Enumerable.Range(1,16).Select(i=>(double)i).ToArray()}};
         var settings=Settings.Starter();AioDesigns.ShowAllParts(settings);
         var slot=settings.Widgets.Single(w=>w.Kind==WidgetKind.Overview);slot.Style=WidgetStyle.AioMainboardCores;
         var card=new AioTile(slot.Style,Palette.For(true,false),Metrics.For(Density.Fit),settings);card.Own(slot,0);card.Update(snapshot,history);
@@ -50,7 +50,7 @@ public class MainboardMapTests
     [Fact]
     public void Mainboard_rails_never_cross_full_width_fields_even_with_glass()=>UiHost.Run(()=>
     {
-        var (snapshot,history)=Render.Demo();
+        var (snapshot,history)=Render.Demo();snapshot=HardwareVariants.WithRails(snapshot);
         foreach(bool fans in new[]{true,false})
         foreach(double width in new[]{260d,360d,440d})
         {
@@ -83,7 +83,7 @@ public class MainboardMapTests
     [Fact]
     public void Network_values_stay_inside_their_own_cells_after_unit_changes()=>UiHost.Run(()=>
     {
-        var (snap,history)=Render.Demo();var settings=Settings.Starter();AioDesigns.ShowAllParts(settings);
+        var (snap,history)=Render.Demo();snap=HardwareVariants.WithRails(snap);var settings=Settings.Starter();AioDesigns.ShowAllParts(settings);
         var slot=settings.Widgets.Single(w=>w.Kind==WidgetKind.Overview);slot.Style=WidgetStyle.AioMainboard;
         var card=new AioTile(slot.Style,Palette.For(true,false),Metrics.For(Density.Fit),settings);card.Own(slot,0);
         var window=new Window{Width=380,Height=2600,Content=new StackPanel{Children={card}}};
@@ -113,7 +113,7 @@ public class MainboardMapTests
     [Fact]
     public void Desktop_fits_real_monitor_sizes_with_readable_values()=>UiHost.Run(()=>
     {
-        var (snap,history)=Render.Demo();
+        var (snap,history)=Render.Demo();snap=HardwareVariants.WithRails(snap);
         foreach(var size in new[]{new Size(1920,1080),new Size(2560,1440)})
         {
             var settings=Settings.Starter();settings.FullScreen=true;settings.Columns=1;AioDesigns.ShowAllParts(settings);
@@ -145,7 +145,7 @@ public class MainboardMapTests
     [Fact]
     public void Vram_stays_in_the_same_row_as_its_label()=>UiHost.Run(()=>
     {
-        var (snap,history)=Render.Demo();var settings=Settings.Starter();AioDesigns.ShowAllParts(settings);
+        var (snap,history)=Render.Demo();snap=HardwareVariants.WithRails(snap);var settings=Settings.Starter();AioDesigns.ShowAllParts(settings);
         var slot=settings.Widgets.Single(w=>w.Kind==WidgetKind.Overview);slot.Style=WidgetStyle.AioMainboardMap;
         var card=new AioTile(slot.Style,Palette.For(true,false),Metrics.For(Density.Fit),settings);card.Own(slot,0);card.Update(snap,history);
         var window=new Window{Width=440,Height=2500,Content=new StackPanel{Children={card}}};
@@ -170,7 +170,7 @@ public class MainboardMapTests
     [Fact]
     public void Contour_connections_follow_components_without_crossing_sensor_text()=>UiHost.Run(()=>
     {
-        var (snap,history)=Render.Demo();var settings=Settings.Starter();AioDesigns.ShowAllParts(settings);
+        var (snap,history)=Render.Demo();snap=HardwareVariants.WithRails(snap);var settings=Settings.Starter();AioDesigns.ShowAllParts(settings);
         var slot=settings.Widgets.Single(w=>w.Kind==WidgetKind.Overview);slot.Style=WidgetStyle.AioMainboardMap;
         var card=new AioTile(slot.Style,Palette.For(true,false),Metrics.For(Density.Fit),settings);card.Own(slot,0);card.Update(snap,history);
         var window=new Window{Width=440,Height=2500,Content=new StackPanel{Children={card}}};
@@ -213,7 +213,7 @@ public class MainboardMapTests
     [Fact]
     public void Separate_window_updates_live_and_keeps_sensor_switches()=>UiHost.Run(()=>
     {
-        var (snap,history)=Render.Demo();var settings=Settings.Starter();AioDesigns.ShowAllParts(settings);
+        var (snap,history)=Render.Demo();snap=HardwareVariants.WithRails(snap);var settings=Settings.Starter();AioDesigns.ShowAllParts(settings);
         var window=new MainboardMapWindow(settings,Palette.For(true,false));
         try
         {
@@ -234,7 +234,7 @@ public class MainboardMapTests
     [Fact]
     public void Map_reflows_between_sidebar_and_window_without_losing_values()=>UiHost.Run(()=>
     {
-        var (snap,history)=Render.Demo();var settings=Settings.Starter();AioDesigns.ShowAllParts(settings);
+        var (snap,history)=Render.Demo();snap=HardwareVariants.WithRails(snap);var settings=Settings.Starter();AioDesigns.ShowAllParts(settings);
         var slot=settings.Widgets.Single(w=>w.Kind==WidgetKind.Overview);slot.Style=WidgetStyle.AioMainboardMap;
         var card=new AioTile(slot.Style,Palette.For(true,false),Metrics.For(Density.Fit),settings);card.Own(slot,0);card.Update(snap,history);
         var expected=AioReadings.For(snap,settings.ForSlot(slot)).Where(r=>r.Group!="Cores").Select(r=>r.Key).Order().ToArray();

@@ -71,6 +71,9 @@ public static class Naming
 		n = System.Text.RegularExpressions.Regex.Replace(n, @"^\s*(AMD|Intel|NVIDIA)\s+", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 		n = System.Text.RegularExpressions.Regex.Replace(n, @"^\s*(Radeon|GeForce)\s+(?=(RX|RTX|GTX|GT|Pro|VII)\b)", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 		n = System.Text.RegularExpressions.Regex.Replace(n, @"\s*@\s*[\d.]+\s*GHz", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+		// Drives (5.7.0, names were cut off in narrow designs): "Samsung SSD 970 EVO Plus 2TB" reads "970 EVO Plus 2TB".
+		n = System.Text.RegularExpressions.Regex.Replace(n, @"^\s*(Samsung|WDC?|Western Digital|Crucial|Kingston|Seagate|SK ?hynix|Sabrent|Corsair|ADATA|Lexar|Team ?Group|Micron|Toshiba|KIOXIA|SanDisk|Solidigm|Phison|Patriot|PNY|Gigabyte|Lenovo)\s+", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+		n = System.Text.RegularExpressions.Regex.Replace(n, @"^\s*(SSD|NVMe)\s+", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 		n = System.Text.RegularExpressions.Regex.Replace(n, @"\s{2,}", " ").Trim(' ', ',', '-');
 		return n.Length == 0 ? name.Trim() : n;
 	}

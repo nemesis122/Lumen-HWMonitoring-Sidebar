@@ -141,7 +141,7 @@ public sealed partial class AioTile
         if (part.Model.Length > 0)
         {
             var model = InstrumentLabel(part.Model, 10.5);
-            model.TextAlignment = TextAlignment.Center;
+            model.TextAlignment = TextAlignment.Center; model.TextWrapping = TextWrapping.Wrap; model.MaxLines = 2; model.TextTrimming = TextTrimming.CharacterEllipsis;
             ToolTip.SetTip(model, part.Model);
             body.Children.Add(model);
         }
@@ -209,7 +209,7 @@ public sealed partial class AioTile
         if (part == null && !AioReadings.Selected(settings, "aio.cooling")) return null;
         var owner = source.Widgets.FirstOrDefault(w => w.Kind == WidgetKind.Cooling);
         var body = Stack(4);
-        if (!string.IsNullOrWhiteSpace(part?.Model)) body.Children.Add(InstrumentLabel(part.Model, 10));
+        if (!string.IsNullOrWhiteSpace(part?.Model)) { var model = InstrumentLabel(part.Model, 10); model.TextWrapping = TextWrapping.Wrap; model.MaxLines = 2; model.TextTrimming = TextTrimming.CharacterEllipsis; body.Children.Add(model); }
         if (part == null)
         {
             var empty = InstrumentLabel(L.T("No data"), 11);
@@ -302,6 +302,9 @@ public sealed partial class AioTile
         {
             var caption = InstrumentLabel(text, 9, title: heading);
             caption.TextAlignment = TextAlignment.Center;
+            // A model wraps onto a second line instead of being cut off; every model keeps room for two lines so the values
+            // of neighbouring cells stay level (5.7.0 audit).
+            if (!heading) { caption.TextWrapping = TextWrapping.Wrap; caption.MaxLines = 2; caption.TextTrimming = TextTrimming.CharacterEllipsis; caption.MinHeight = caption.FontSize * 2.6; }
             if (text.Trim().Length > 0) ToolTip.SetTip(caption, text);
             return caption;
         }

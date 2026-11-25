@@ -58,11 +58,12 @@ public sealed partial class AioTile
         int badgeIndex=0;
         foreach(var r in gpu.Where(r=>r.Device==primary&&(r.Key.EndsWith(".hotspot")||r.Key.EndsWith(".junction"))))
         {
-            var text=Text(RefLabel(r),14,muted);text.FontWeight=FontWeight.Bold;
-            var value=V(r,18,ink);value.FontWeight=FontWeight.Bold;
-            var line=Ui.Columns("*,Auto",FitLeft(text),value);line.ColumnSpacing=5;
-            var badge=WarnWhenHot(new Border{Width=130,Padding=new Thickness(6,3),CornerRadius=new CornerRadius(4),BorderThickness=new Thickness(1.2),Child=line},r,r.Key.EndsWith(".hotspot")?Coral:Purple);
-            Place(badge,202,244+badgeIndex++*40);
+            // Name above the value: on one line the wide face of the Red design shrank the name to 6 px (5.7.0 audit).
+            var text=Text(RefLabel(r),11,muted);text.FontWeight=FontWeight.Bold;text.TextWrapping=TextWrapping.NoWrap;text.TextTrimming=TextTrimming.CharacterEllipsis;
+            var value=V(r,16,ink);value.FontWeight=FontWeight.Bold;value.HorizontalAlignment=HorizontalAlignment.Right;
+            var line=Ui.Stack(0,text,value);
+            var badge=WarnWhenHot(new Border{Width=130,Padding=new Thickness(6,2),CornerRadius=new CornerRadius(4),BorderThickness=new Thickness(1.2),Child=line},r,r.Key.EndsWith(".hotspot")?Coral:Purple);
+            Place(badge,202,240+badgeIndex++*48);
         }
         Box(Rs("System").Where(r=>r.Key.EndsWith("ram")),258,344,74,"RAM",Palette.Mix(Cyan,back,.6));
         var firstDisk=Rs("System").FirstOrDefault(r=>!r.Key.EndsWith("ram"));if(firstDisk!=null)diagramDisks.Add(firstDisk.Key);

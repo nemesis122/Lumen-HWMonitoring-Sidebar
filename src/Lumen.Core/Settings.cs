@@ -350,7 +350,9 @@ public sealed class Settings
         if (Unreported?.Invoke(value) == true) return false;
         if (value.StartsWith("aio.") && ActiveWidget is WidgetSlot aio && AioDesigns.Contains(aio.Style)
             && !AioDesigns.SensorDefault(aio.Style,value) && !(aio.AioEnabledSensors?.Contains(value) ?? false)
-            && !(value.StartsWith("aio.cpu.core.")&&(aio.AioEnabledSensors?.Contains("aio.cpu.cores")??false))) return false;
+            && !(value.StartsWith("aio.cpu.core.")&&(aio.AioEnabledSensors?.Contains("aio.cpu.cores")??false))
+            // A board temperature ticked by hand (before 5.7.0) keeps the Mainboard part on.
+            && !(value=="aio.board"&&(aio.AioEnabledSensors?.Any(k=>k.StartsWith("aio.board."))??false))) return false;
 		return !HiddenValues.Contains(value) && !(ActiveWidget?.HiddenSensors.Contains(value) ?? false);
 	}
 
