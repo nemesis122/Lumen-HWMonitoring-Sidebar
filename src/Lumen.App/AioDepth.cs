@@ -42,12 +42,14 @@ public sealed partial class AioTile
         CornerRadius = new CornerRadius(Fam == NeoDesigns.Family.Tilted ? 6 : 14);
         Padding = new Thickness(10);
         content.Spacing = 10;
+        if (Dash) DashLook();
     }
 
     /// <summary>The 3D layout on top; false for the designs that keep the panel skeleton (perspective HUD, chrome numbers).</summary>
     private bool DepthTop(List<(AioReading R, string Caption, string Art, int Colour)> items)
     {
         if (items.Count == 0 || Fam is NeoDesigns.Family.Tilted or NeoDesigns.Family.Chrome) return false;
+        if (Dash) return DashTop(items);
         string Cap(string c) => Upper ? c.ToUpperInvariant() : c;
         double g = settings.ActiveWidget?.Graphics ?? 1;
         Viewbox Fit3D(Control c, double max) => new() { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, MaxWidth = max, HorizontalAlignment = HorizontalAlignment.Center, Child = c };
@@ -214,6 +216,7 @@ public sealed partial class AioTile
         panel.CornerRadius = new CornerRadius(Fam is NeoDesigns.Family.Torus or NeoDesigns.Family.Cylinders or NeoDesigns.Family.Cubes ? 14 : 10);
         panel.BorderBrush = Palette.Brush(tinted ? BlackDraw.A(part, .2) : Palette.Mix(nSurface, Colors.White, .09));
         panel.Background = Palette.Brush(SeeThrough(tinted ? Palette.Mix(nSurface, part, .05) : Palette.Mix(nSurface, Colors.White, .035)));
+        if (Dash) return DashPanel(panel, part);
         if (Fam == NeoDesigns.Family.Chrome) panel.BoxShadow = new BoxShadows(new BoxShadow { OffsetY = 1, Blur = 0, Color = Color.FromArgb(40, 255, 255, 255), IsInset = true });
         return panel;
     }

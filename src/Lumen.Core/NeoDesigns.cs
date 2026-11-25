@@ -11,7 +11,8 @@ public static class NeoDesigns
     /// thermal camera, phone widgets, oscilloscope, stealth, black and gold, sumi-e ink.</summary>
     public enum Family { Cyber, Neumorph, Matrix, Tron, Rain, Neon, Thermal, Phone, Scope, Stealth, Gold, Ink, Gallery,
         Vfd, Synth, Radar, Hex, Pixel, Tubes, Mission, Swiss, Chalk, Equalizer,
-        Skyline, Cubes, Tilted, Torus, Exploded, Chrome, Bars3D, Hologram, Cylinders, Tower }
+        Skyline, Cubes, Tilted, Torus, Exploded, Chrome, Bars3D, Hologram, Cylinders, Tower,
+        Race, Scada, GaugeWall, Mixer, Capsule, Floating, PartCards, Podiums, Strip, HeatBar, HeatList }
     /// <summary>Cyber: Stack (one panel per part) or Split (processor and graphics side by side).
     /// Neumorph: Dials (2 × 2 rings), Hero (one large processor ring) or Bars (one bar per part).</summary>
     public enum Arrangement { Stack, Split, Dials, Hero, Bars }
@@ -70,6 +71,19 @@ public static class NeoDesigns
         new(WidgetStyle.AioHologramPads, "Hologram Pads", Family.Hologram, Arrangement.Dials, new[] { "#3DE7FF", "#B57CFF", "#4DFFA8", "#FFB84D" }, "#03060B"),
         new(WidgetStyle.AioGlassCylinders, "Glass Cylinders", Family.Cylinders, Arrangement.Dials, new[] { "#FF7A59", "#59A8FF", "#59FFB2", "#FFC34D" }, "#060607"),
         new(WidgetStyle.AioIsoTower, "Iso Tower", Family.Tower, Arrangement.Dials, new[] { "#FF3B5C", "#59A8FF", "#59FFB2", "#FFC34D" }, "#070304"),
+        // 5.6.0: dashboards (drafts D-06 … D-09) and Capsule Glass (N-01).
+        new(WidgetStyle.AioRaceTelemetry, "Race Telemetry", Family.Race, Arrangement.Dials, new[] { "#3DFF8B", "#5AA9FF", "#FFD400", "#FF3B3B" }, "#0B0B0B"),
+        new(WidgetStyle.AioControlRoom, "Control Room", Family.Scada, Arrangement.Dials, new[] { "#FF8A3D", "#3DA5FF", "#3DFF8B", "#C08CFF" }, "#06080A"),
+        new(WidgetStyle.AioGaugeWall, "Gauge Wall", Family.GaugeWall, Arrangement.Dials, new[] { "#FF7A3D", "#3DB4FF", "#3DFF8B", "#B27CFF" }, "#000000"),
+        new(WidgetStyle.AioStudioMixer, "Studio Mixer", Family.Mixer, Arrangement.Dials, new[] { "#E3D3A6", "#E3D3A6", "#3DFF8B", "#C8102E" }, "#0C0C0C"),
+        new(WidgetStyle.AioCapsuleGlass, "Capsule Glass", Family.Capsule, Arrangement.Dials, new[] { "#FF8A5B", "#5BA8FF", "#5BFFB0", "#C38BFF" }, "#05060A"),
+        // 5.6.0: Living PC (drafts L-07 and L-08): the parts glow in the colour of their temperature.
+        new(WidgetStyle.AioFloatingParts, "Floating Parts", Family.Floating, Arrangement.Dials, new[] { "#40DCC8", "#FFAA3C", "#40DCC8", "#FFAA3C" }, "#05070A"),
+        new(WidgetStyle.AioPartCards, "Part Cards", Family.PartCards, Arrangement.Dials, new[] { "#40DCC8", "#FFAA3C", "#40DCC8", "#FFAA3C" }, "#000000"),
+        new(WidgetStyle.AioFloatingPodiums, "Floating Podiums", Family.Podiums, Arrangement.Dials, new[] { "#40DCC8", "#FFAA3C", "#40DCC8", "#FFAA3C" }, "#05070A"),
+        new(WidgetStyle.AioFloatingStrip, "Floating Strip", Family.Strip, Arrangement.Dials, new[] { "#40DCC8", "#FFAA3C", "#40DCC8", "#FFAA3C" }, "#05070A"),
+        new(WidgetStyle.AioPartCardsHeat, "Part Cards Heat", Family.HeatBar, Arrangement.Dials, new[] { "#40DCC8", "#FFAA3C", "#40DCC8", "#FFAA3C" }, "#000000"),
+        new(WidgetStyle.AioPartList, "Part List", Family.HeatList, Arrangement.Dials, new[] { "#40DCC8", "#FFAA3C", "#40DCC8", "#FFAA3C" }, "#000000"),
     };
     /// <summary>All designs of this builder: the 22 own ones, the 100 gallery designs (5.3.0) and the ten studio designs (5.4.0).</summary>
     public static readonly Look[] All = Own.Concat(GalleryDesigns.All.Select(d => new Look(d.Style, d.Name, Family.Gallery,

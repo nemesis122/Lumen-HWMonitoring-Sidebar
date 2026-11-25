@@ -446,7 +446,19 @@ public enum WidgetStyle
     AioBarChart3D,
     AioHologramPads,
     AioGlassCylinders,
-    AioIsoTower
+    AioIsoTower,
+    // 5.6.0: dashboards and Capsule Glass.
+    AioRaceTelemetry,
+    AioControlRoom,
+    AioGaugeWall,
+    AioStudioMixer,
+    AioCapsuleGlass,
+    AioFloatingParts,
+    AioPartCards,
+    AioFloatingPodiums,
+    AioFloatingStrip,
+    AioPartCardsHeat,
+    AioPartList
 }
 
 
