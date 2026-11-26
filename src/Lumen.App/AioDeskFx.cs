@@ -185,12 +185,14 @@ public sealed partial class AioTile
                 var star = big.FirstOrDefault() ?? items.FirstOrDefault();
                 if (star != null)
                 {
-                    var text = Stack(2, DeskCaption(star.Caption + (star.Model.Length > 0 ? " · " + star.Model : ""), star.Colour, 13));
+                    var caption = DeskCaption(star.Caption + (star.Model.Length > 0 ? " · " + star.Model : ""), star.Colour, 13);
+                    var text = Stack(2, caption);
                     text.Children.Add(FitLeft(GValue(star.R, 120)));
                     if (star.Under != null) text.Children.Add(star.Under);
                     text.VerticalAlignment = VerticalAlignment.Center;
                     var stage = new Grid { Children = { new ArtDeskSpot(), DeskStagePicture(star, DeskStage.Glow, 160) } };
                     var hero = Ui.Columns("1.1*,1*", stage, text); hero.ColumnSpacing = 24;
+                    hero.ColumnDefinitions[1].MinWidth = DeskNatural(caption, star.Under);
                     var body = new Grid { RowDefinitions = new RowDefinitions("*,Auto"), RowSpacing = 10, Children = { hero } };
                     if (AioReadings.Graphs(settings, star.R.Key)) { var plot = HistoryPlot(star.R, 44, "area", star.Colour); Grid.SetRow(plot, 1); body.Children.Add(plot); }
                     deskParts["scene"] = new Border { Child = body, Padding = new Thickness(10) };
@@ -292,11 +294,14 @@ public sealed partial class AioTile
     /// <summary>FX-09: a part in the tower: picture left, value right.</summary>
     private Control DeskTowerRow(DeskItem it)
     {
-        var text = Stack(2, DeskCaption(it.Caption, it.Colour));
+        var caption = DeskCaption(it.Caption, it.Colour);
+        var text = Stack(2, caption);
         text.Children.Add(FitLeft(GValue(it.R, 40)));
-        if (DeskUnder(it) is { } u) { u.TextTrimming = TextTrimming.CharacterEllipsis; text.Children.Add(u); }
+        var under = DeskUnder(it);
+        if (under != null) { under.TextTrimming = TextTrimming.CharacterEllipsis; text.Children.Add(under); }
         text.VerticalAlignment = VerticalAlignment.Center;
         var row = Ui.Columns("1*,1.1*", DeskStagePicture(it, DeskStage.Glow, 56), text); row.ColumnSpacing = 14;
+        row.ColumnDefinitions[1].MinWidth = DeskNatural(caption, under);
         return row;
     }
 
@@ -416,13 +421,19 @@ public sealed class DeskExploded : Panel
     public DeskExploded() { Children.Add(lines); }
     public void Add(Control part, Control label, Color colour) { items.Add((part, label, colour)); Children.Add(part); Children.Add(label); }
     private const double LabelWidth = .3;
+    private const double ListPart = .28, ListGap = 12;
+    /// <summary>Narrow (a sidebar): a label would not fit in its third, so the parts stand in a list, label beside each.</summary>
+    private bool list;
     protected override Size MeasureOverride(Size available)
     {
         double w = double.IsFinite(available.Width) ? available.Width : 800, need = 0;
         lines.Measure(default);
+        list = false;
+        foreach (var (_, label, _) in items) { label.Measure(Size.Infinity); if (label.DesiredSize.Width > w * LabelWidth + .5) list = true; }
+        double labelWidth = list ? w * (1 - ListPart) - ListGap : w * LabelWidth;
         foreach (var (part, label, _) in items)
         {
-            part.Measure(new Size(w * .4, double.PositiveInfinity)); label.Measure(new Size(w * LabelWidth, double.PositiveInfinity));
+            part.Measure(new Size(w * (list ? ListPart : .4), double.PositiveInfinity)); label.Measure(new Size(labelWidth, double.PositiveInfinity));
             need += Math.Max(label.DesiredSize.Height, part.DesiredSize.Height) + 8;
         }
         return new Size(w, need);
@@ -435,9 +446,10 @@ public sealed class DeskExploded : Panel
         {
             var (part, label, colour) = items[i];
             bool left = i % 2 == 0; double y = i * slot;
-            double lh = Math.Min(slot - 4, label.DesiredSize.Height), lw = final.Width * LabelWidth;
-            var partRect = new Rect(final.Width * (left ? .42 : .28), y + 2, final.Width * .3, slot - 4);
-            var labelRect = new Rect(left ? final.Width - lw : 0, y + (slot - lh) / 2, lw, lh);
+            double lh = Math.Min(slot - 4, label.DesiredSize.Height), lw = list ? final.Width * (1 - ListPart) - ListGap : final.Width * LabelWidth;
+            var partRect = list ? new Rect(0, y + 2, final.Width * ListPart, slot - 4) : new Rect(final.Width * (left ? .42 : .28), y + 2, final.Width * .3, slot - 4);
+            var labelRect = list ? new Rect(final.Width - lw, y + (slot - lh) / 2, lw, lh) : new Rect(left ? final.Width - lw : 0, y + (slot - lh) / 2, lw, lh);
+            if (list) { part.Arrange(partRect); label.Arrange(labelRect); continue; }
             part.Arrange(partRect); label.Arrange(labelRect);
             var from = new Point(left ? labelRect.X : labelRect.Right, labelRect.Y + lh / 2);
             var to = new Point(left ? partRect.Right - partRect.Width * .2 : partRect.X + partRect.Width * .2, partRect.Y + partRect.Height / 2);

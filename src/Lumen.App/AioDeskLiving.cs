@@ -42,6 +42,17 @@ public sealed partial class AioTile
     }
 
     /// <summary>The line under a part's value: the memory amount, else the model.</summary>
+    /// <summary>
+    /// The width the texts need on one line: the column holding them is never narrower, so in a narrow sidebar the picture
+    /// or the history gives way instead of the name being cut off.
+    /// </summary>
+    private static double DeskNatural(params TextBlock?[] texts)
+    {
+        double most = 0;
+        foreach (var t in texts) { if (t == null) continue; t.Measure(Size.Infinity); most = Math.Max(most, t.DesiredSize.Width); }
+        return most > 0 ? Math.Ceiling(most) + 4 : 0;
+    }
+
     private TextBlock? DeskUnder(DeskItem it) => it.Under ?? (it.Model.Length > 0 ? NText(it.Model, 12, nLabel) : null);
 
     private Image DeskArt(string art) => new()
@@ -90,11 +101,14 @@ public sealed partial class AioTile
     /// <summary>A part in a card: picture left, caption, value and model right.</summary>
     private Control DeskTile(DeskItem it, double big, bool card = true)
     {
-        var text = Stack(2, DeskCaption(it.Caption, it.Colour));
+        var caption = DeskCaption(it.Caption, it.Colour);
+        var text = Stack(2, caption);
         text.Children.Add(FitLeft(GValue(it.R, big)));
-        if (DeskUnder(it) is { } u) { u.TextTrimming = TextTrimming.CharacterEllipsis; text.Children.Add(u); }
+        var under = DeskUnder(it);
+        if (under != null) { under.TextTrimming = TextTrimming.CharacterEllipsis; text.Children.Add(under); }
         text.VerticalAlignment = VerticalAlignment.Center;
         var row = Ui.Columns("1*,1.25*", DeskStagePicture(it, DeskStage.Glow, 64), text); row.ColumnSpacing = 12;
+        row.ColumnDefinitions[1].MinWidth = DeskNatural(caption, under);
         return card ? DeskCard(row, new Thickness(14, 10, 16, 10)) : row;
     }
 
@@ -375,11 +389,14 @@ public sealed partial class AioTile
         var frame = new ArtHeatCard(nSurface); frame.Set(Celsius(it.R)); watchers.Add((it.R.Key, row => frame.Set(Celsius(row))));
         var scale = new ArtHeatScale { Margin = new Thickness(18, 0, 18, 14), VerticalAlignment = VerticalAlignment.Bottom };
         scale.Set(Celsius(it.R)); watchers.Add((it.R.Key, row => scale.Set(Celsius(row))));
-        var text = Stack(2, DeskCaption(it.Caption, nLabel));
+        var caption = DeskCaption(it.Caption, nLabel);
+        var text = Stack(2, caption);
         text.Children.Add(FitLeft(GValue(it.R, 54)));
-        if (DeskUnder(it) is { } u) { u.TextTrimming = TextTrimming.CharacterEllipsis; text.Children.Add(u); }
+        var under = DeskUnder(it);
+        if (under != null) { under.TextTrimming = TextTrimming.CharacterEllipsis; text.Children.Add(under); }
         text.VerticalAlignment = VerticalAlignment.Center; text.Margin = new Thickness(18, 12, 0, 12);
         var row = Ui.Columns("1*,1.1*", text, DeskStagePicture(it, DeskStage.Glow, 80));
+        row.ColumnDefinitions[0].MinWidth = DeskNatural(caption, under) + 18;
         var face = new Grid { RowDefinitions = new RowDefinitions("*,Auto"), Children = { row, scale } };
         Grid.SetRow(scale, 1);
         return new Grid { Children = { frame, face } };
@@ -388,12 +405,15 @@ public sealed partial class AioTile
     /// <summary>LP-05 and LP-10: picture, caption, value and model, and the part's history across the row.</summary>
     private Control DeskListRow(DeskItem it, double pictureWidth)
     {
-        var text = Stack(2, DeskCaption(it.Caption, it.Colour));
+        var caption = DeskCaption(it.Caption, it.Colour);
+        var text = Stack(2, caption);
         text.Children.Add(FitLeft(GValue(it.R, 44)));
-        if (DeskUnder(it) is { } u) { u.TextTrimming = TextTrimming.CharacterEllipsis; text.Children.Add(u); }
+        var under = DeskUnder(it);
+        if (under != null) { under.TextTrimming = TextTrimming.CharacterEllipsis; text.Children.Add(under); }
         text.VerticalAlignment = VerticalAlignment.Center;
-        // Shares, not fixed widths: the row also fits a narrow sidebar.
+        // Shares, not fixed widths: the row also fits a narrow sidebar, where the names keep their width.
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions(pictureWidth > 120 ? "1.2*,1.6*,4*" : "1*,1.6*,4*"), ColumnSpacing = 14, MaxHeight = double.PositiveInfinity };
+        grid.ColumnDefinitions[0].MinWidth = 52; grid.ColumnDefinitions[1].MinWidth = DeskNatural(caption, under);
         grid.Children.Add(DeskStagePicture(it, DeskStage.Glow, 60));
         Grid.SetColumn(text, 1); grid.Children.Add(text);
         if (AioReadings.Graphs(settings, it.R.Key))

@@ -58,31 +58,58 @@ public class DesignAuditTests
                         using var frame = window.CaptureRenderedFrame()!;
                         frame.Save(Path.Combine(pictures, $"{style}-{hw}.png"));
                     }
-                    foreach (var t in card.GetLogicalDescendants().OfType<TextBlock>().Where(t => !string.IsNullOrWhiteSpace(t.Text) && SensorDetails.Visible(t, card) && t.Bounds.Width > 0))
-                    {
-                        var m = t.TransformToVisual(card);
-                        double drawn = t.FontSize * (m is { } x ? Math.Sqrt(Math.Abs(x.M11 * x.M22)) : 1);
-                        if (drawn < 9) lines.Add($"{style}\t{hw}\ttiny\t{drawn:0.0}px\t{t.Text}");
-                        // A word broken over two lines ("Availa-ble"): wrapping text whose longest word is wider than its box.
-                        if (t.TextWrapping != TextWrapping.NoWrap && t.Text!.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(w => new TextBlock { Text = w, FontFamily = t.FontFamily, FontSize = t.FontSize, FontWeight = t.FontWeight, LetterSpacing = t.LetterSpacing })
-                                .Any(w => { w.Measure(Size.Infinity); return w.DesiredSize.Width > t.Bounds.Width + 1; }))
-                            lines.Add($"{style}\t{hw}\tbroken\t{t.Bounds.Width:0}\t{t.Text}");
-                        if (t.TextTrimming != TextTrimming.None)
-                        {
-                            // Cut when the whole text needs more room than the box has: wider on one line, or (wrapping text with
-                            // a line limit) more lines than it may show.
-                            var full = new TextBlock { Text = t.Text, FontFamily = t.FontFamily, FontSize = t.FontSize, FontWeight = t.FontWeight, LetterSpacing = t.LetterSpacing, FontStretch = t.FontStretch,
-                                TextWrapping = t.TextWrapping, LineHeight = t.LineHeight };
-                            bool wraps = t.TextWrapping != TextWrapping.NoWrap;
-                            full.Measure(wraps ? new Size(t.Bounds.Width, double.PositiveInfinity) : Size.Infinity);
-                            if (wraps ? full.DesiredSize.Height > t.Bounds.Height + 1 : full.DesiredSize.Width > t.Bounds.Width + 1) lines.Add($"{style}\t{hw}\tcut\t{t.Bounds.Width:0}<{full.DesiredSize.Width:0}\t{t.Text}");
-                        }
-                    }
+                    Inspect(card, $"{style}\t{hw}", lines);
                 }
                 finally { window.Close(); Dispatcher.UIThread.RunJobs(); }
             }
         return lines;
     }
+
+    /// <summary>Every visible text under <paramref name="root"/>: drawn below 9 px, a word broken over two lines, or cut off.</summary>
+    internal static void Inspect(Control root, string tag, List<string> lines)
+    {
+        foreach (var t in root.GetLogicalDescendants().OfType<TextBlock>().Where(t => !string.IsNullOrWhiteSpace(t.Text) && SensorDetails.Visible(t, root) && t.Bounds.Width > 0))
+        {
+            var m = t.TransformToVisual(root);
+            double drawn = t.FontSize * (m is { } x ? Math.Sqrt(Math.Abs(x.M11 * x.M22)) : 1);
+            if (drawn < 9) lines.Add($"{tag}\ttiny\t{drawn:0.0}px\t{t.Text}");
+            // A word broken over two lines ("Availa-ble"): wrapping text whose longest word is wider than its box.
+            if (t.TextWrapping != TextWrapping.NoWrap && t.Text!.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(w => new TextBlock { Text = w, FontFamily = t.FontFamily, FontSize = t.FontSize, FontWeight = t.FontWeight, LetterSpacing = t.LetterSpacing })
+                    .Any(w => { w.Measure(Size.Infinity); return w.DesiredSize.Width > t.Bounds.Width + 1; }))
+                lines.Add($"{tag}\tbroken\t{t.Bounds.Width:0}\t{t.Text}");
+            if (t.TextTrimming != TextTrimming.None)
+            {
+                // Cut when the whole text needs more room than the box has: wider on one line, or (wrapping text with
+                // a line limit) more lines than it may show.
+                var full = new TextBlock { Text = t.Text, FontFamily = t.FontFamily, FontSize = t.FontSize, FontWeight = t.FontWeight, LetterSpacing = t.LetterSpacing, FontStretch = t.FontStretch,
+                    TextWrapping = t.TextWrapping, LineHeight = t.LineHeight };
+                bool wraps = t.TextWrapping != TextWrapping.NoWrap;
+                full.Measure(wraps ? new Size(t.Bounds.Width, double.PositiveInfinity) : Size.Infinity);
+                if (wraps ? full.DesiredSize.Height > t.Bounds.Height + 1 : full.DesiredSize.Width > t.Bounds.Width + 1) lines.Add($"{tag}\tcut\t{t.Bounds.Width:0}<{full.DesiredSize.Width:0}\t{t.Text}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// The full-screen desktop designs (5.8.0) on every monitor shape and test PC: no name cut off, no word broken, nothing
+    /// below 9 px, the same audit as above but at the size the design is made for.
+    /// </summary>
+    [Fact]
+    public void Desktop_designs_keep_every_text_whole_on_every_screen() => UiHost.Run(() =>
+    {
+        var lines = new List<string>();
+        foreach (var look in NeoDesigns.All.Where(l => l.Kind == NeoDesigns.Family.Desk))
+            foreach (var hw in HardwareVariants.Names)
+                foreach (var screen in DeskDesignTests.Screens)
+                {
+                    var (view, window) = DeskDesignTests.Show(look.Style, hw, screen);
+                    try { Inspect(view, $"{look.Style}\t{hw}@{screen.Width}x{screen.Height}", lines); }
+                    finally { window.Close(); Dispatcher.UIThread.RunJobs(); }
+                }
+        var problems = lines.Where(l => l.Split('\t') is var f && !(f[2] == "tiny" && Units.Contains(f[4]))).ToList();
+        Assert.True(problems.Count == 0, string.Join("\n", problems.Take(40)));
+        return true;
+    }, 3600);
 
     [Fact]
     public void Lists_switches_that_change_nothing_on_request() => UiHost.Run(() =>
