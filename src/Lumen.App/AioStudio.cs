@@ -14,7 +14,7 @@ namespace Lumen.App;
 /// </summary>
 public sealed partial class AioTile
 {
-    private bool Studio => Fam >= NeoDesigns.Family.Vfd;
+    private bool Studio => Fam >= NeoDesigns.Family.Vfd && Fam < NeoDesigns.Family.Desk;
     /// <summary>Text sizes of the design relative to the others: the 8-bit face is wide, the chalk hand small.</summary>
     private double nScale = 1;
     private int swissNumber;

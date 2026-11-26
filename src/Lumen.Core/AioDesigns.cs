@@ -26,6 +26,8 @@ public static class AioDesigns
         or WidgetStyle.AioPrecision or WidgetStyle.AioStudioLight or WidgetStyle.AioInstrument or WidgetStyle.AioAuroraFusion
         or WidgetStyle.AioCarbonPulse or WidgetStyle.AioIsometricCompact;
     public static bool Dashboard(WidgetStyle style) => DashboardStyles.Contains(style) || CaseDesigns.Contains(style) || CaseEditionDesigns.Contains(style) || DarkAioDesigns.Contains(style) || Instruments(style);
+    /// <summary>5.8.0: designs that fill the whole screen; choosing one switches the sidebar to full screen (as Mainboard Map Desktop).</summary>
+    public static bool Desktop(WidgetStyle style) => style == WidgetStyle.AioMainboardDesktop || NeoDesigns.Contains(style) && NeoDesigns.For(style).Kind == NeoDesigns.Family.Desk;
     public static bool DashboardWide(WidgetStyle style) => style is WidgetStyle.AioBoardCard or WidgetStyle.AioDoubleTable or WidgetStyle.AioQuadrants;
     public static readonly WidgetStyle[] Styles = new[]
     {

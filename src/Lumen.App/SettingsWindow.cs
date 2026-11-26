@@ -753,7 +753,7 @@ public sealed partial class SettingsWindow : Window
 			}
 			button.Click += delegate
 			{
-				ApplyMainboardPlacement(style, s.Widgets.Any(w => w.Style == WidgetStyle.AioMainboardDesktop));
+				ApplyMainboardPlacement(style, s.Widgets.Any(w => AioDesigns.Desktop(w.Style)));
 				DesignWidgetSelection.Apply(s,style,styleRegister);
 				changed();
 				Build();
@@ -985,7 +985,8 @@ public sealed partial class SettingsWindow : Window
             // Dashboard layouts adapt to Placement; selecting a design must not rewrite it.
             return;
         }
-        if(style==WidgetStyle.AioMainboardDesktop)
+        // The desktop designs (5.8.0) fill the screen like Mainboard Map Desktop.
+        if(AioDesigns.Desktop(style))
         {
             s.FullScreen=true;s.Floating=false;s.Columns=1;
             if(s.Horizontal)s.Edge=Edge.Right;
@@ -1792,7 +1793,7 @@ public sealed partial class SettingsWindow : Window
 					Button button3 = button2;
 					button3.Click += delegate
 					{
-						ApplyMainboardPlacement(style, slot.Style == WidgetStyle.AioMainboardDesktop);
+						ApplyMainboardPlacement(style, AioDesigns.Desktop(slot.Style));
 						DesignWidgetSelection.Apply(s,style,only:slot);
 						changed();
 						Build();

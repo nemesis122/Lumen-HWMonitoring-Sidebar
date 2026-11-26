@@ -13,7 +13,7 @@ namespace Lumen.App;
 /// </summary>
 public sealed partial class AioTile
 {
-    private bool Depth => Fam >= NeoDesigns.Family.Skyline;
+    private bool Depth => Fam >= NeoDesigns.Family.Skyline && Fam < NeoDesigns.Family.Desk;
 
     private void DepthLook()
     {

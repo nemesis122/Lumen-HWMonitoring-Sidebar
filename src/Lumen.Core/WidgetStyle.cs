@@ -466,7 +466,30 @@ public enum WidgetStyle
     AioGlassTubes,
     AioGlassDial,
     AioChromeBezels,
-    AioGlossyPills
+    AioGlossyPills,
+    // 5.8.0: full-screen desktop designs (drafts Desktop A/B, LP-01 … LP-10, FX-01 … FX-10).
+    AioDeskBoard,
+    AioDeskBoardLeft,
+    AioDeskShowcase,
+    AioDeskPodiums,
+    AioDeskCards,
+    AioDeskHero,
+    AioDeskList,
+    AioDeskIsland,
+    AioDeskBento,
+    AioDeskCase,
+    AioDeskHeatFrame,
+    AioDeskHistory,
+    AioDeskCommand,
+    AioDeskExploded,
+    AioDeskThermal,
+    AioDeskHalo,
+    AioDeskSpotlight,
+    AioDeskShowroom,
+    AioDeskFlow,
+    AioDeskTelemetry,
+    AioDeskTower,
+    AioDeskKeynote
 }
 
 

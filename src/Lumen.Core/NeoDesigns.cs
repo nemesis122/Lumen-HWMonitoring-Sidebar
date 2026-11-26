@@ -12,7 +12,9 @@ public static class NeoDesigns
     public enum Family { Cyber, Neumorph, Matrix, Tron, Rain, Neon, Thermal, Phone, Scope, Stealth, Gold, Ink, Gallery,
         Vfd, Synth, Radar, Hex, Pixel, Tubes, Mission, Swiss, Chalk, Equalizer,
         Skyline, Cubes, Tilted, Torus, Exploded, Chrome, Bars3D, Hologram, Cylinders, Tower,
-        Race, Scada, GaugeWall, Mixer, Capsule, Floating, PartCards, Podiums, Strip, HeatBar, HeatList, Rings, Timing, Home, GlassTubes, GlassDial, ChromeBezel, GlossPills }
+        Race, Scada, GaugeWall, Mixer, Capsule, Floating, PartCards, Podiums, Strip, HeatBar, HeatList, Rings, Timing, Home, GlassTubes, GlassDial, ChromeBezel, GlossPills,
+        /// <summary>5.8.0: full-screen desktop designs; every value in a scene that fills the screen (see AioDesigns.Desktop).</summary>
+        Desk }
     /// <summary>Cyber: Stack (one panel per part) or Split (processor and graphics side by side).
     /// Neumorph: Dials (2 × 2 rings), Hero (one large processor ring) or Bars (one bar per part).</summary>
     public enum Arrangement { Stack, Split, Dials, Hero, Bars }
@@ -93,6 +95,31 @@ public static class NeoDesigns
         new(WidgetStyle.AioGlassDial, "Glass Dial", Family.GlassDial, Arrangement.Dials, new[] { "#7CF3FF", "#FF8AD8", "#B07CFF", "#5AA9FF" }, "#05060A"),
         new(WidgetStyle.AioChromeBezels, "Chrome Bezels", Family.ChromeBezel, Arrangement.Dials, new[] { "#FF4D4D", "#4DA6FF", "#3DFF8B", "#FFC34D" }, "#000000"),
         new(WidgetStyle.AioGlossyPills, "Glossy Pills", Family.GlossPills, Arrangement.Dials, new[] { "#FF3B5C", "#3B7BFF", "#2FD17A", "#FFAE2B" }, "#000000"),
+        // 5.8.0: full-screen desktop designs. Accents: processor, graphics, memory, drives.
+        new(WidgetStyle.AioDeskBoard, "Desktop Mainboard", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#B57CFF", "#40DCC8", "#5AA9FF" }, "#05080B"),
+        new(WidgetStyle.AioDeskBoardLeft, "Desktop Mainboard Left", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#B57CFF", "#40DCC8", "#5AA9FF" }, "#05080B"),
+        // Living PC (drafts LP-01 … LP-10).
+        new(WidgetStyle.AioDeskShowcase, "Desktop Showcase", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#FFAA3C", "#40DCC8", "#5AA9FF" }, "#05080B"),
+        new(WidgetStyle.AioDeskPodiums, "Desktop Podium Hall", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#FFAA3C", "#40DCC8", "#5AA9FF" }, "#05080B"),
+        new(WidgetStyle.AioDeskCards, "Desktop Part Cards", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#FFAA3C", "#40DCC8", "#5AA9FF" }, "#05080B"),
+        new(WidgetStyle.AioDeskHero, "Desktop Hero", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#FFAA3C", "#40DCC8", "#5AA9FF" }, "#05080B"),
+        new(WidgetStyle.AioDeskList, "Desktop Part List", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#FFAA3C", "#40DCC8", "#5AA9FF" }, "#05080B"),
+        new(WidgetStyle.AioDeskIsland, "Desktop Floating Island", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#FFAA3C", "#40DCC8", "#5AA9FF" }, "#05080B"),
+        new(WidgetStyle.AioDeskBento, "Desktop Bento", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#FFAA3C", "#40DCC8", "#5AA9FF" }, "#05080B"),
+        new(WidgetStyle.AioDeskCase, "Desktop Inside the Case", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#FFAA3C", "#40DCC8", "#5AA9FF" }, "#05080B"),
+        new(WidgetStyle.AioDeskHeatFrame, "Desktop Heat Frame", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#FFAA3C", "#40DCC8", "#5AA9FF" }, "#05080B"),
+        new(WidgetStyle.AioDeskHistory, "Desktop History Wall", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#FFAA3C", "#40DCC8", "#5AA9FF" }, "#05080B"),
+        // Effects (drafts FX-01 … FX-10).
+        new(WidgetStyle.AioDeskCommand, "Desktop Command Deck", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#B57CFF", "#40DCC8", "#5AA9FF" }, "#05080B"),
+        new(WidgetStyle.AioDeskExploded, "Desktop Exploded View", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#B57CFF", "#40DCC8", "#5AA9FF" }, "#05080B"),
+        new(WidgetStyle.AioDeskThermal, "Desktop Thermal Camera", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#B57CFF", "#40DCC8", "#5AA9FF" }, "#05080B"),
+        new(WidgetStyle.AioDeskHalo, "Desktop Halo Grid", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#B57CFF", "#40DCC8", "#5AA9FF" }, "#05080B"),
+        new(WidgetStyle.AioDeskSpotlight, "Desktop Spotlight", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#B57CFF", "#40DCC8", "#5AA9FF" }, "#05080B"),
+        new(WidgetStyle.AioDeskShowroom, "Desktop Glass Showroom", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#B57CFF", "#40DCC8", "#5AA9FF" }, "#05080B"),
+        new(WidgetStyle.AioDeskFlow, "Desktop Flow Map", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#B57CFF", "#40DCC8", "#5AA9FF" }, "#05080B"),
+        new(WidgetStyle.AioDeskTelemetry, "Desktop Telemetry", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#B57CFF", "#40DCC8", "#5AA9FF" }, "#05080B"),
+        new(WidgetStyle.AioDeskTower, "Desktop Tower Cutaway", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#B57CFF", "#40DCC8", "#5AA9FF" }, "#05080B"),
+        new(WidgetStyle.AioDeskKeynote, "Desktop Keynote", Family.Desk, Arrangement.Dials, new[] { "#40DCC8", "#B57CFF", "#40DCC8", "#5AA9FF" }, "#05080B"),
     };
     /// <summary>All designs of this builder: the 22 own ones, the 100 gallery designs (5.3.0) and the ten studio designs (5.4.0).</summary>
     public static readonly Look[] All = Own.Concat(GalleryDesigns.All.Select(d => new Look(d.Style, d.Name, Family.Gallery,

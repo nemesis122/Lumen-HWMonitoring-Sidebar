@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Media;
@@ -48,6 +49,20 @@ public class DesignThumbnailTests
 
     private static void Write(WidgetStyle style)
     {
+        if (NeoDesigns.Contains(style) && AioDesigns.Desktop(style))
+        {
+            // A desktop design (5.8.0) is shown as it fills a screen, not stacked in a narrow card.
+            var (_, screen) = DeskDesignTests.Show(style, "demo", new Size(1920, 1120));
+            try
+            {
+                using var frame = screen.CaptureRenderedFrame()!;
+                var picture = new RenderTargetBitmap(new Avalonia.PixelSize(Width, Height));
+                using (var dc = picture.CreateDrawingContext()) dc.DrawImage(frame, new Avalonia.Rect(0, 0, 1920, 1120), new Avalonia.Rect(0, 0, Width, Height));
+                picture.Save(Path.Combine(Folder, style + ".png"));
+            }
+            finally { screen.Close(); }
+            return;
+        }
         var s = Settings.Starter(); s.HiddenValues.Clear(); DesignWidgetSelection.Apply(s, style);
         bool aio = AioDesigns.Contains(style);
         if (aio) AioDesigns.ShowAllParts(s);

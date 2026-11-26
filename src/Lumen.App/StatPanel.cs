@@ -21,6 +21,8 @@ public sealed class StatPanel : Panel
     public double MinimumColumnWidth { get; set; } = MinColumn;
     public bool RespectIntrinsicWidth { get; init; }
     private double intrinsicMinimum;
+    private double measuredWidth = double.NaN;
+    private int measuredColumns = 1;
     public static readonly StyledProperty<double> RowSpacingProperty =
         AvaloniaProperty.Register<StatPanel,double>(nameof(RowSpacing));
     public double RowSpacing { get => GetValue(RowSpacingProperty); set => SetValue(RowSpacingProperty,value); }
@@ -92,6 +94,7 @@ public sealed class StatPanel : Panel
         }
 		double num = (double.IsFinite(available.Width) ? available.Width : ((double)(list.Count * 90)));
 		int num2 = Columns(num);
+        measuredWidth = num; measuredColumns = num2;
         RowGaps=Math.Max(0,(list.Count+num2-1)/num2-1);
 		double[] array = Widths(num, num2, list.Count);
 		double num3 = 0.0;
@@ -116,7 +119,9 @@ public sealed class StatPanel : Panel
 		{
 			return final;
 		}
-		int num = Columns(final.Width);
+		// Layout rounding can hand over a pixel more or less than was measured: at the edge of a column count that must not
+		// put the values side by side here after measuring them stacked (5.8.0: values drawn beside their neighbours' names).
+		int num = Math.Abs(final.Width - measuredWidth) < 1.5 ? measuredColumns : Columns(final.Width);
 		double[] array = Widths(final.Width, num, list.Count);
 		double num2 = 0.0;
 		double num3 = 0.0;

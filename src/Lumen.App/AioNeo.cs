@@ -108,6 +108,7 @@ public sealed partial class AioTile
         content.Spacing = Fam switch { NeoDesigns.Family.Neumorph => 16, NeoDesigns.Family.Gold or NeoDesigns.Family.Ink => 14, _ => 10 };
 
         nBigFont = nValueFont; nScale = 1;
+        if (Desk) { DeskDesign(); return; }
         if (gal != null) GalleryLook();
         if (Studio) StudioLook();
 

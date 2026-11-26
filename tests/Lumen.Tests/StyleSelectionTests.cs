@@ -136,7 +136,7 @@ public class StyleSelectionTests
             var buttons = parts.SelectMany(c => c.GetLogicalDescendants().Prepend(c)).OfType<UniformGrid>().Single().Children.OfType<Button>().ToList();
             string Name(Button button) => button.GetLogicalDescendants().OfType<TextBlock>().Single().Text!;
             Assert.Equal(Expected.Select(SettingsWindow.StyleName), buttons.Select(Name));
-            var mainboard=buttons.TakeLast(208).Single(b=>Name(b)=="Mainboard Map");
+            var mainboard=buttons.TakeLast(230).Single(b=>Name(b)=="Mainboard Map");
             mainboard.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Assert.All(settings.Widgets.Where(w=>Settings.HasStyles(w.Kind)),w=>Assert.Equal(WidgetStyle.AioMainboardMap,w.Style));
             buttons.Single(b=>Name(b)=="Mainboard Map Desktop").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -145,6 +145,10 @@ public class StyleSelectionTests
             mainboard.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));Assert.False(settings.FullScreen);
             buttons.Last().RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Assert.All(settings.Widgets.Where(w => Settings.HasStyles(w.Kind)), w => Assert.Equal(Expected.Last(), w.Style));
+            // The last design is a full-screen desktop design (5.8.0): choosing it switches to full screen, another design back.
+            Assert.True(settings.FullScreen); Assert.Equal(1, settings.Columns); Assert.False(settings.Floating);
+            mainboard.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); Assert.False(settings.FullScreen);
+            buttons.Last().RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
 
             ((HashSet<WidgetKind>)typeof(SettingsWindow).GetField("expanded", Private)!.GetValue(window)!).Add(WidgetKind.Cpu);
             typeof(SettingsWindow).GetMethod("Build", Private)!.Invoke(window, null);

@@ -14,7 +14,7 @@ namespace Lumen.App;
 /// </summary>
 public sealed partial class AioTile
 {
-    private bool Dash => Fam >= NeoDesigns.Family.Race;
+    private bool Dash => Fam >= NeoDesigns.Family.Race && Fam < NeoDesigns.Family.Desk;
 
     private void DashLook()
     {

@@ -222,6 +222,8 @@ public sealed class AioReferenceHistory : Control, IColourGraph, RedSkin.IOneCol
     /// (on a linear scale the line was flat with one spike).
     /// </summary>
     public bool Log { get; init; }
+    /// <summary>A fixed top of the scale (desktop telemetry: several histories on one 0–100 scale); null: the highest value.</summary>
+    public double? Top { get; init; }
     private double Level(double value,double max)=>Log?Math.Clamp(Math.Log10(1+99*Math.Max(0,value)/max)/2,0,1):Math.Clamp(value/max,0,1);
     private double[] values=Array.Empty<double>(), other=Array.Empty<double>();
     public void Set(double[] first,double[]? second=null){values=first;other=second??Array.Empty<double>();InvalidateVisual();}
@@ -232,7 +234,7 @@ public sealed class AioReferenceHistory : Control, IColourGraph, RedSkin.IOneCol
         else Series(values,Color,h-2,h-5,false);
         void Series(double[] data,Color color,double origin,double amplitude,bool invert)
         {
-            if(data.Length<2)return;double max=Math.Max(.001,data.Where(double.IsFinite).DefaultIfEmpty(1).Max()*1.2);var stroke=new StreamGeometry();var area=new StreamGeometry();
+            if(data.Length<2)return;double max=Top??Math.Max(.001,data.Where(double.IsFinite).DefaultIfEmpty(1).Max()*1.2);var stroke=new StreamGeometry();var area=new StreamGeometry();
             using(var s=stroke.Open())using(var a=area.Open())
             {
                 a.BeginFigure(new Point(0,origin),true);bool started=false;

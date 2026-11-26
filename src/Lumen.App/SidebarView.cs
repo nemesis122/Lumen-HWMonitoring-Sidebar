@@ -184,7 +184,10 @@ public sealed class SidebarView : Border
 		{
 			lists.Add(new StackPanel());
 		}
-		bool flag2 = settings.Density == Density.Fit || settings.Horizontal;
+		// A desktop design (5.8.0) fills the screen itself; should its parts need more than the screen (a big PC at 125 %),
+		// the sidebar scrolls instead of shrinking every text below 9 px.
+		bool desktop = settings.FullScreen && !settings.Horizontal && settings.Widgets.Any(w => w.Visible && NeoDesigns.Contains(w.Style) && NeoDesigns.For(w.Style).Kind == NeoDesigns.Family.Desk);
+		bool flag2 = (settings.Density == Density.Fit || settings.Horizontal) && !desktop;
 		fit = new FitPanel(lists, settings.TextScale, flag2, metrics.Gap);
 		BuildCards();
 		Control item = (settings.Horizontal ? barRows : (flag2 ? ((Control)fit) : ((Control)new ScrollViewer
