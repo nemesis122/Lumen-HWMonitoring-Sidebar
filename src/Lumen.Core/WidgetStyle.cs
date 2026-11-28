@@ -489,7 +489,38 @@ public enum WidgetStyle
     AioDeskFlow,
     AioDeskTelemetry,
     AioDeskTower,
-    AioDeskKeynote
+    AioDeskKeynote,
+    // 5.9.0: seven designs from the X drafts (sidebar).
+    AioLiquidMetal,
+    AioPowerFlow,
+    AioHoloCards,
+    AioLoadout,
+    AioAmbilight,
+    AioCoverStory,
+    AioLavaLamp,
+    // 5.9.0: twenty more full-screen desktop designs (drafts F-01 … F-20); keep them together (AioTile.DeskNext is a range).
+    AioDeskPowerGrid,
+    AioDeskLoadout,
+    AioDeskHoloDeck,
+    AioDeskMetalHall,
+    AioDeskMagazine,
+    AioDeskLavaShelf,
+    AioDeskAmbilight,
+    AioDeskVersus,
+    AioDeskBroadcast,
+    AioDeskVitals,
+    AioDeskGlobe,
+    AioDeskClock,
+    AioDeskConsole,
+    AioDeskRack,
+    AioDeskTurntable,
+    AioDeskOcean,
+    AioDeskPitWall,
+    AioDeskTrading,
+    AioDeskBigType,
+    AioDeskStation,
+    // 5.9.0: the first animated sidebar design (draft A-02).
+    AioLiquidGlass
 }
 
 

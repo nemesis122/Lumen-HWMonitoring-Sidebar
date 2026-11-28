@@ -46,10 +46,10 @@ public sealed partial class AioTile
     }
 
     /// <summary>The 3D layout on top; false for the designs that keep the panel skeleton (perspective HUD, chrome numbers).</summary>
-    private bool DepthTop(List<(AioReading R, string Caption, string Art, int Colour)> items)
+    private bool DepthTop(List<(AioReading R, string Caption, string Art, int Colour)> items, HashSet<string> top)
     {
         if (items.Count == 0 || Fam is NeoDesigns.Family.Tilted or NeoDesigns.Family.Chrome) return false;
-        if (Dash) return DashTop(items);
+        if (Dash) return DashTop(items, top);
         string Cap(string c) => Upper ? c.ToUpperInvariant() : c;
         double g = settings.ActiveWidget?.Graphics ?? 1;
         Viewbox Fit3D(Control c, double max) => new() { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, MaxWidth = max, HorizontalAlignment = HorizontalAlignment.Center, Child = c };

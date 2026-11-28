@@ -1,8 +1,28 @@
-# Lumen 5.8.0 – Full-Screen Desktop Designs
+# Lumen 5.9.0 – 28 New Designs and the First Animated One
 
-A portable hardware-monitoring sidebar for Windows 10 and 11 with **305 designs**, including All-in-One designs that show the whole PC in one card. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
+A portable hardware-monitoring sidebar for Windows 10 and 11 with **333 designs**, including All-in-One designs that show the whole PC in one card. Every widget – hardware and info alike – takes the look of the design you choose. Use it vertically at either side of your desktop or horizontally at the top or bottom, in dark or light.
 
-**[Download Lumen 5.8.0](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v5.8.0)** · [All releases](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases) · [Design gallery](docs/style-gallery.md) · [Release notes 4.5.2](docs/release-notes/v4.5.2.md) · [4.5.1](docs/release-notes/v4.5.1.md) · [4.5.0](docs/release-notes/v4.5.0.md) · [4.4.0](docs/release-notes/v4.4.0.md) · [4.3.0](docs/release-notes/v4.3.0.md) · [4.2.1](docs/release-notes/v4.2.1.md) · [4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
+**[Download Lumen 5.9.0](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v5.9.0)** · [All releases](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases) · [Design gallery](docs/style-gallery.md) · [Release notes 4.5.2](docs/release-notes/v4.5.2.md) · [4.5.1](docs/release-notes/v4.5.1.md) · [4.5.0](docs/release-notes/v4.5.0.md) · [4.4.0](docs/release-notes/v4.4.0.md) · [4.3.0](docs/release-notes/v4.3.0.md) · [4.2.1](docs/release-notes/v4.2.1.md) · [4.2.0](docs/release-notes/v4.2.0.md) · [4.1.1](docs/release-notes/v4.1.1.md) · [4.1.0](docs/release-notes/v4.1.0.md) · [4.0.3](docs/release-notes/v4.0.3.md) · [4.0.2](docs/release-notes/v4.0.2.md) · [4.0.1](docs/release-notes/v4.0.1.md) · [What's new in 4.0.0](docs/release-notes/v4.0.0.md)
+
+## New in 5.9.0
+
+28 new designs. For the sidebar: Liquid Metal, Power Flow, Holo Cards, Loadout, Ambilight, Cover Story, Lava Lamp and **Liquid Glass, the first animated design** (the liquid waves and bubbles rise, new readings glide into place; it stands still when motion is switched off). And 20 full-screen designs: Power Grid, Loadout, Holo Deck, Liquid Metal, Magazine, Lava Shelf, Ambilight, Versus, Esports, Vital Signs, Network Globe, Ambient Clock, EV Console, Server Rack, Turntable, Ocean Live, Pit Wall, Trading Floor, Big Type and Space Station, each showing every sensor on every screen size.
+
+<img src="docs/images/v5.9.0/sidebar-designs-1.png" width="900" alt="Sidebar designs">
+
+<img src="docs/images/v5.9.0/sidebar-designs-2.png" width="900" alt="Sidebar designs">
+
+<img src="docs/images/v5.9.0/desktop-designs-1.png" width="900" alt="Full-screen designs">
+
+<img src="docs/images/v5.9.0/desktop-designs-2.png" width="900" alt="Full-screen designs">
+
+<img src="docs/images/v5.9.0/desktop-designs-3.png" width="900" alt="Full-screen designs">
+
+<img src="docs/images/v5.9.0/desktop-designs-4.png" width="900" alt="Full-screen designs">
+
+<img src="docs/images/v5.9.0/desktop-designs-5.png" width="900" alt="Full-screen designs">
+
+[5.9.0 release notes](docs/release-notes/v5.9.0.md) · [Previous release 5.8.0](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v5.8.0)
 
 ## New in 5.8.0
 
@@ -280,9 +300,9 @@ Logs and reports stay local. Nothing is uploaded automatically.
 
 ## Download and run
 
-Download [Lumen-5.8.0.exe](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/download/v5.8.0/Lumen-5.8.0.exe) for the portable Windows x64 application. No separate .NET installation is required. Close an older running instance before starting the new EXE. Settings are stored beside the EXE, with an AppData fallback when that folder is read-only.
+Download [Lumen-5.9.0.exe](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/download/v5.9.0/Lumen-5.9.0.exe) for the portable Windows x64 application. No separate .NET installation is required. Close an older running instance before starting the new EXE. Settings are stored beside the EXE, with an AppData fallback when that folder is read-only.
 
-The [5.8.0 release page](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v5.8.0) includes the source archive and SHA-256 checksum.
+The [5.9.0 release page](https://github.com/nemesis122/Lumen-HWMonitoring-Sidebar/releases/tag/v5.9.0) includes the source archive and SHA-256 checksum.
 
 ## Build and verify
 

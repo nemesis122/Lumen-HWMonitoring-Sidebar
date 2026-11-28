@@ -39,7 +39,8 @@ public sealed partial class AioTile
     private void DeskDesign()
     {
         DeskLook();
-        deskParts.Clear(); deskPlain = false;
+        deskParts.Clear(); deskPlain = false; deskSkin = DeskSkin.Default; deskBackdrop = null; deskMetal = false;
+        if (DeskNext) DeskNextLook();
         var top = new HashSet<string>();
         (DeskGrid[] Wide, DeskGrid[] Tall) grids;
         if (designStyle is WidgetStyle.AioDeskBoard or WidgetStyle.AioDeskBoardLeft)
@@ -57,7 +58,8 @@ public sealed partial class AioTile
         var scene = new DeskScene(grids.Wide, grids.Tall) { Tag = "aio-section", Gap = 14 };
         // Stacked in a narrow sidebar the parts follow the order they were built in.
         foreach (var (name, part) in deskParts) { DeskScene.SetArea(part, name); scene.Children.Add(part); }
-        content.Children.Add(scene);
+        // A design with a picture behind everything (the sea, space): the picture fills the screen, the scene lies on it.
+        content.Children.Add(deskBackdrop == null ? scene : new Grid { Children = { deskBackdrop, scene } });
     }
 
     /// <summary>The grids of the desktop designs: wide screens (16:9, 21:9, 5:4) and upright ones, each in the order tried
@@ -85,7 +87,7 @@ public sealed partial class AioTile
     }
 
     // ------------------------------------------------------------------ pieces
-    private Border DeskCard(Control body, Thickness? padding = null) => deskPlain ? new Border
+    private Border DeskCard(Control body, Thickness? padding = null) => deskSkin != DeskSkin.Default && !deskPlain ? DeskSkinned(body, padding) : deskPlain ? new Border
     {
         BorderBrush = Palette.Brush(Palette.Mix(nSurface, Colors.White, .14)), BorderThickness = new Thickness(0, 1, 0, 0),
         Padding = new Thickness(0, 14, 0, 4), Child = body, ClipToBounds = true

@@ -73,7 +73,7 @@ public sealed partial class AioTile
     private bool StudioTop(List<(AioReading R, string Caption, string Art, int Colour)> items, HashSet<string> top)
     {
         if (!Studio || Fam == NeoDesigns.Family.Chalk) return false;
-        if (Depth) return DepthTop(items);
+        if (Depth) return DepthTop(items, top);
         string Cap(string c) => Upper ? c.ToUpperInvariant() : c;
         double g = settings.ActiveWidget?.Graphics ?? 1;
         switch (Fam)

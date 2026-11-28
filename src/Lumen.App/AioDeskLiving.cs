@@ -58,7 +58,7 @@ public sealed partial class AioTile
     private Image DeskArt(string art) => new()
     {
         // Stretched alignment: the picture fills its space (drawn centred and uniform); centred alignment would keep its measured size.
-        Source = isometricParts[RedParts ? art + "_red" : art].Value, Stretch = Stretch.Uniform, Tag = "graphic"
+        Source = isometricParts[RedParts ? art + "_red" : deskMetal ? art + "_metal" : art].Value, Stretch = Stretch.Uniform, Tag = "graphic"
     };
 
     private enum DeskStage { Glow, Podium, Plain }
@@ -220,6 +220,7 @@ public sealed partial class AioTile
     {
         var items = DeskItems(top);
         if (DeskFx) return DeskEffects(top, items);
+        if (DeskNext) return DeskNextDesigns(top, items);
         var big = items.Where(i => i.Kind is "cpu" or "gpu").ToList(); var small = items.Where(i => i.Kind is not ("cpu" or "gpu")).ToList();
         DeskGrid G(string columns, string rows, params string[] areas) => DeskGrid.Of(columns, rows, areas);
         switch (designStyle)

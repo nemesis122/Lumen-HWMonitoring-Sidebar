@@ -18,7 +18,7 @@ public sealed partial class AioTile
 {
     private static readonly Dictionary<string, Lazy<Bitmap>> isometricParts =
         new[] { "cpu", "gpu", "ram", "ssd", "fan0", "fan1", "fan2", "fan3", "fan4", "psu", "router" }
-            .SelectMany(n => new[] { n, n + "_red" })
+            .SelectMany(n => new[] { n, n + "_red", n + "_metal" })
             .ToDictionary(n => n, n => new Lazy<Bitmap>(() => new Bitmap(AssetLoader.Open(new Uri("avares://Lumen/Assets/Aio/Parts/" + n + ".png")))));
 
     /// <summary>Red designs (without an own colour from Appearance) show every illustration in the one red: no teal, purple or amber glow.</summary>
@@ -26,7 +26,7 @@ public sealed partial class AioTile
 
     private Control Part(string name, double width, double height) => new Image
     {
-        Source = isometricParts[RedParts ? name + "_red" : name].Value, MaxWidth = width, MaxHeight = height, Stretch = Stretch.Uniform,
+        Source = isometricParts[RedParts ? name + "_red" : Fam == NeoDesigns.Family.Metal || deskMetal ? name + "_metal" : name].Value, MaxWidth = width, MaxHeight = height, Stretch = Stretch.Uniform,
         HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Tag = "graphic"
     };
 

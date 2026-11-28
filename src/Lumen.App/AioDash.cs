@@ -26,16 +26,18 @@ public sealed partial class AioTile
             NeoDesigns.Family.Timing => (F("barlow-condensed"), F("barlow-condensed"), F("barlow-condensed")),
             NeoDesigns.Family.Rings or NeoDesigns.Family.Home or NeoDesigns.Family.GlassTubes or NeoDesigns.Family.GlassDial or NeoDesigns.Family.ChromeBezel or NeoDesigns.Family.GlossPills
                 => (F("open-sans"), F("open-sans"), F("open-sans")),
+            _ when Fresh => FreshFonts(),
             _ => (Ui.DesignFont(Ui.Inter), Ui.DesignFont(Ui.Inter), Ui.DesignFont(Ui.Inter))
         };
         nLabel = lightSurface ? muted : Color.Parse(Fam == NeoDesigns.Family.Scada ? "#9AA6B2" : "#8E949C");
         nInk = lightSurface ? ink : Color.Parse("#F2F4F6");
-        CornerRadius = new CornerRadius(Fam switch { NeoDesigns.Family.Race => 18, NeoDesigns.Family.Timing => 4, NeoDesigns.Family.Rings or NeoDesigns.Family.Home => 20, NeoDesigns.Family.Scada => 6, NeoDesigns.Family.Capsule => 22, _ => 14 });
+        CornerRadius = new CornerRadius(Fam switch { NeoDesigns.Family.Race => 18, NeoDesigns.Family.Timing => 4, NeoDesigns.Family.Rings or NeoDesigns.Family.Home => 20, NeoDesigns.Family.Scada => 6, NeoDesigns.Family.Capsule => 22, NeoDesigns.Family.Cover or NeoDesigns.Family.Loadout => 4, _ => 14 });
         BorderBrush = Palette.Brush(Palette.Mix(nSurface, Colors.White, .09));
     }
 
-    private bool DashTop(List<(AioReading R, string Caption, string Art, int Colour)> items)
+    private bool DashTop(List<(AioReading R, string Caption, string Art, int Colour)> items, HashSet<string> top)
     {
+        if (Fresh) return FreshTop(items, top);
         string Cap(string c) => Upper ? c.ToUpperInvariant() : c;
         double g = settings.ActiveWidget?.Graphics ?? 1;
         TextBlock Caption(string text, Color colour, double size = 10)
@@ -412,6 +414,7 @@ public sealed partial class AioTile
 
     private Control DashPanel(Border panel, Color part)
     {
+        if (Fresh) { FreshPanel(panel, part); return panel; }
         switch (Fam)
         {
             case NeoDesigns.Family.Race:
